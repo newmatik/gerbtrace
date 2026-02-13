@@ -15,13 +15,24 @@
           View and compare Gerber PCB files.
         </p>
 
-        <div class="flex justify-center gap-3 mb-10">
-          <UButton size="lg" icon="i-lucide-eye" @click="createProject('viewer')">
-            New Viewer Project
-          </UButton>
-          <UButton size="lg" icon="i-lucide-columns-2" variant="outline" @click="createProject('compare')">
-            New Compare Project
-          </UButton>
+        <div class="mb-10">
+          <div class="flex justify-center gap-3">
+            <UButton size="lg" icon="i-lucide-eye" @click="createProject('viewer')">
+              New Viewer Project
+            </UButton>
+            <UButton size="lg" icon="i-lucide-columns-2" variant="outline" @click="createProject('compare')">
+              New Compare Project
+            </UButton>
+          </div>
+          <div class="mt-3 flex flex-wrap items-center justify-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
+            <span>Try an example:</span>
+            <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-eye" @click="loadSample('viewer')">
+              View Arduino UNO
+            </UButton>
+            <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-columns-2" @click="loadSample('compare')">
+              Compare UNO Revisions
+            </UButton>
+          </div>
         </div>
 
         <section class="mb-10">
@@ -66,15 +77,43 @@
           </div>
         </section>
 
-        <div class="pt-6 border-t border-neutral-200 dark:border-neutral-800">
-          <h2 class="text-xs font-semibold text-neutral-400 uppercase tracking-wide mb-3">Try a Sample</h2>
-          <div class="flex justify-center gap-3">
-            <UButton size="sm" variant="soft" icon="i-lucide-eye" @click="loadSample('viewer')">
-              View Arduino UNO
-            </UButton>
-            <UButton size="sm" variant="soft" icon="i-lucide-columns-2" @click="loadSample('compare')">
-              Compare UNO Revisions
-            </UButton>
+        <!-- Desktop app download (only in browser, not in Tauri) -->
+        <div v-if="!isTauri && release" class="pt-6 border-t border-neutral-200 dark:border-neutral-800">
+          <div class="flex items-center justify-center gap-2 text-xs text-neutral-400 dark:text-neutral-500 mb-3">
+            <UIcon name="i-lucide-download" class="text-sm" />
+            <span>Download the desktop app</span>
+          </div>
+          <div class="flex items-center justify-center gap-3">
+            <a
+              v-if="release.macosUrl"
+              :href="release.macosUrl"
+              class="flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs transition-colors border border-neutral-200 dark:border-neutral-700 hover:border-primary hover:text-primary dark:hover:border-primary dark:hover:text-primary text-neutral-600 dark:text-neutral-400"
+              :class="platform === 'macos' ? 'border-primary/40 text-primary font-medium' : ''"
+            >
+              <UIcon name="i-lucide-apple" class="text-base" />
+              <span>macOS</span>
+              <span class="text-neutral-400 dark:text-neutral-500 font-normal">.dmg</span>
+            </a>
+            <a
+              v-if="release.windowsExeUrl"
+              :href="release.windowsExeUrl"
+              class="flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs transition-colors border border-neutral-200 dark:border-neutral-700 hover:border-primary hover:text-primary dark:hover:border-primary dark:hover:text-primary text-neutral-600 dark:text-neutral-400"
+              :class="platform === 'windows' ? 'border-primary/40 text-primary font-medium' : ''"
+            >
+              <UIcon name="i-lucide-monitor" class="text-base" />
+              <span>Windows</span>
+              <span class="text-neutral-400 dark:text-neutral-500 font-normal">.exe</span>
+            </a>
+          </div>
+          <div class="text-center mt-2">
+            <a
+              :href="release.releasePage"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-[11px] text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+            >
+              v{{ release.version }} release notes
+            </a>
           </div>
         </div>
       </div>
@@ -118,6 +157,8 @@ const colorMode = useColorMode()
 const isDark = computed(() => colorMode.value === 'dark')
 const { projects, createNewProject, removeProject } = useProject()
 const { loadSampleProject } = useSampleProject()
+const { release, platform } = useLatestRelease()
+const isTauri = import.meta.client && !!(window as any).__TAURI_INTERNALS__
 
 const query = ref('')
 const modeFilter = ref<'all' | 'viewer' | 'compare'>('all')
