@@ -119,6 +119,16 @@
       </div>
     </main>
 
+    <footer class="py-4 px-4 flex items-center justify-center gap-3 text-[11px] text-neutral-400 dark:text-neutral-500">
+      <span class="font-mono">v{{ appVersion }}</span>
+      <span class="opacity-30">|</span>
+      <button class="hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors" @click="aboutOpen = true">
+        About
+      </button>
+    </footer>
+
+    <AppAboutModal v-model:open="aboutOpen" />
+
     <UModal v-model:open="deleteModalOpen">
       <template #content>
         <div class="p-5 space-y-4">
@@ -159,6 +169,8 @@ const { projects, createNewProject, removeProject } = useProject()
 const { loadSampleProject } = useSampleProject()
 const { release, platform } = useLatestRelease()
 const isTauri = import.meta.client && !!(window as any).__TAURI_INTERNALS__
+const appVersion = useRuntimeConfig().public.appVersion as string
+const aboutOpen = ref(false)
 
 const query = ref('')
 const modeFilter = ref<'all' | 'viewer' | 'compare'>('all')
