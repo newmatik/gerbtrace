@@ -26,6 +26,7 @@
             />
             <LayerToggle
               :layer="layer"
+              @toggle-visibility="$emit('toggleVisibility', index)"
               @color-change="(color: string) => $emit('changeColor', index, color)"
               @type-change="(type: string) => $emit('changeType', index, type)"
             />
@@ -81,6 +82,10 @@ const showIndicatorAt = computed<number | null>(() => {
 
 function onPointerDown(index: number, e: PointerEvent) {
   if (e.button !== 0) return
+  const target = e.target as HTMLElement | null
+  // Let interactive controls (color popover trigger, eye button, type select)
+  // handle pointer events without starting row drag logic.
+  if (target?.closest('button, select, input, textarea, [role="button"]')) return
 
   dragFrom.value = index
   startY.value = e.clientY
@@ -120,9 +125,6 @@ function onPointerDown(index: number, e: PointerEvent) {
           emit('reorder', from, to)
         }
       }
-    } else {
-      // Short click — toggle layer visibility
-      emit('toggleVisibility', index)
     }
 
     dragFrom.value = null

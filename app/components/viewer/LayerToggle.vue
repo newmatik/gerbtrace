@@ -6,6 +6,7 @@
     <UPopover :content="{ side: 'right', align: 'start', sideOffset: 8 }" @pointerdown.stop>
       <button
         class="w-4 h-4 rounded-full shrink-0 cursor-pointer ring-1 ring-white/20 hover:ring-white/50 transition-shadow"
+        :class="{ 'border border-neutral-400': isWhiteLike(layer.color) }"
         :style="{ backgroundColor: layer.color }"
         @click.stop
       />
@@ -18,7 +19,10 @@
               v-for="preset in PRESET_COLORS"
               :key="preset"
               class="w-5 h-5 rounded-full cursor-pointer ring-1 ring-white/10 hover:ring-white/60 hover:scale-110 transition-all"
-              :class="{ 'ring-2 ring-white!': layer.color.toLowerCase() === preset.toLowerCase() }"
+              :class="{
+                'ring-2 ring-white!': layer.color.toLowerCase() === preset.toLowerCase(),
+                'border border-neutral-400': isWhiteLike(preset),
+              }"
               :style="{ backgroundColor: preset }"
               @click="selectColor(preset)"
             />
@@ -30,10 +34,16 @@
       </template>
     </UPopover>
 
-    <UIcon
+    <button
+      class="shrink-0 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors cursor-pointer"
+      title="Toggle layer visibility"
+      @pointerdown.stop
+      @click.stop="emit('toggleVisibility')"
+    >
+      <UIcon
       :name="layer.visible ? 'i-lucide-eye' : 'i-lucide-eye-off'"
-      class="text-neutral-400 shrink-0"
-    />
+      />
+    </button>
     <span class="truncate flex-1">{{ layer.file.fileName }}</span>
     <select
       :value="layer.type"
@@ -70,6 +80,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
+  toggleVisibility: []
   colorChange: [color: string]
   typeChange: [type: string]
 }>()
@@ -87,5 +98,10 @@ function selectColor(color: string) {
 
 function onCustomColor(color: string | undefined) {
   if (color) emit('colorChange', color)
+}
+
+function isWhiteLike(color: string): boolean {
+  const c = color.trim().toLowerCase()
+  return c === '#fff' || c === '#ffffff' || c === 'white'
 }
 </script>
