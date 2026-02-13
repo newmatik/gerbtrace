@@ -1,0 +1,39 @@
+# Nuxt dev/build outputs
+.output
+.nuxt
+.data
+.nitro
+.cache
+
+# Node dependencies
+node_modules
+
+# Logs
+logs
+*.log
+
+# Misc
+.DS_Store
+.fleet
+.idea
+*.sw?
+
+# Local env files
+.env
+.env.*
+!.env.example
+
+# Playwright test screenshots
+test-screenshots
+
+# Tauri build artifacts
+src-tauri/target/
+
+# Tauri signing keys (NEVER commit)
+src-tauri/.tauri-private-key
+src-tauri/.tauri-private-key.pub
+
+# Generated output
+dist/
+
+.local

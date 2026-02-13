@@ -1,0 +1,38 @@
+{
+  "name": "gerbtrace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Gerbtrace — View and compare Gerber PCB files in the browser",
+  "author": "Newmatik GmbH",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
+  },
+  "dependencies": {
+    "@nuxt/ui": "^4.4.0",
+    "@tauri-apps/plugin-process": "^2.3.1",
+    "@tauri-apps/plugin-updater": "^2.10.0",
+    "@tauri-apps/plugin-window-state": "^2.4.1",
+    "dexie": "^4.3.0",
+    "diff": "^8.0.3",
+    "jszip": "^3.10.1",
+    "nuxt": "^4.3.1"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.10.0",
+    "@types/diff": "^7.0.2",
+    "playwright": "^1.58.2",
+    "png-to-ico": "^3.0.1",
+    "sharp": "^0.34.5",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
