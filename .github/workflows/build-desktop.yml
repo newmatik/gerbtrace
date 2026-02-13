@@ -73,7 +73,7 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: 'Gerbtrace ${{ github.ref_name }}'
           releaseBody: 'See the assets below to download and install Gerbtrace for your platform.'
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
           includeUpdaterJson: true
           updaterJsonPreferNsis: true

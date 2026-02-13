@@ -3,7 +3,7 @@
     ref="canvasEl"
     class="w-full h-full"
     :class="{
-      'cursor-crosshair': measure?.active.value || info?.active.value || deleteTool?.active.value,
+      'cursor-crosshair': measure?.active.value || info?.active.value || deleteTool?.active.value || (alignMode && alignMode !== 'idle'),
     }"
     @wheel.prevent="onWheel"
     @mousedown="onMouseDown"
@@ -16,6 +16,7 @@
 
 <script setup lang="ts">
 import type { LayerInfo } from '~/utils/gerber-helpers'
+import { isPnPLayer } from '~/utils/gerber-helpers'
 import type { PcbPreset } from '~/utils/pcb-presets'
 import type { ImageTree, BoundingBox } from '@lib/gerber/types'
 import { renderToCanvas, renderOutlineMask, computeAutoFitTransform } from '@lib/renderer/canvas-renderer'
@@ -24,6 +25,8 @@ import type { RealisticLayers } from '@lib/renderer/realistic-renderer'
 import { parseGerber } from '@lib/gerber'
 import { plotImageTree } from '@lib/gerber/plotter'
 import { mergeBounds, emptyBounds, isEmpty } from '@lib/gerber/bounding-box'
+import type { PnPComponent } from '~/utils/pnp-parser'
+import type { AlignMode, AlignPoint } from '~/composables/usePickAndPlace'
 
 export type ViewMode = 'layers' | 'realistic'
 
@@ -42,6 +45,22 @@ const props = defineProps<{
   preset?: PcbPreset
   /** All layers (including hidden ones) — needed for realistic mode to find layers by type */
   allLayers?: LayerInfo[]
+  /** Visible PnP components to render as dots */
+  pnpComponents?: PnPComponent[]
+  /** Currently selected PnP component designator */
+  selectedPnpDesignator?: string | null
+  /** PnP origin in Gerber coordinate space (null = use default outline bottom-left) */
+  pnpOriginX?: number | null
+  pnpOriginY?: number | null
+  /** Current alignment mode */
+  alignMode?: AlignMode
+  /** First alignment click for 2-pad mode */
+  alignClickA?: AlignPoint | null
+}>()
+
+const emit = defineEmits<{
+  pnpClick: [designator: string | null]
+  alignClick: [gerberX: number, gerberY: number]
 }>()
 
 const canvasEl = ref<HTMLCanvasElement | null>(null)
@@ -54,6 +73,9 @@ const { settings: appSettings } = useAppSettings()
 const imageTreeCache = new Map<string, ImageTree>()
 
 function getImageTree(layer: LayerInfo): ImageTree | null {
+  // PnP layers are not Gerber — skip parsing
+  if (isPnPLayer(layer.type)) return null
+
   const key = layer.file.fileName
   if (imageTreeCache.has(key)) return imageTreeCache.get(key)!
 
@@ -95,8 +117,19 @@ function onMouseDown(e: MouseEvent) {
     props.interaction.handleMouseDown(e)
     return
   }
-  // Left-click: route to active tool
+  // Left-click: route to active tool or mode
   if (e.button === 0 && canvasEl.value) {
+    // Alignment mode: click with snap
+    if (props.alignMode && props.alignMode !== 'idle') {
+      const rect = canvasEl.value.getBoundingClientRect()
+      const sx = e.clientX - rect.left
+      const sy = e.clientY - rect.top
+      let gerber = screenToGerber(sx, sy, props.interaction.transform.value)
+      const snap = findSnapForOrigin(gerber, props.interaction.transform.value)
+      if (snap) gerber = snap
+      emit('alignClick', gerber.x, gerber.y)
+      return
+    }
     if (props.deleteTool?.active.value) {
       props.deleteTool.handleMouseDown(e, canvasEl.value)
     } else if (props.measure?.active.value) {
@@ -104,6 +137,21 @@ function onMouseDown(e: MouseEvent) {
     } else if (props.info?.active.value) {
       const layerData = buildLayerData()
       props.info.handleClick(e, canvasEl.value, props.interaction.transform.value, layerData)
+    } else if (props.pnpComponents && props.pnpComponents.length > 0) {
+      // In cursor mode, check for PnP dot clicks
+      const rect = canvasEl.value.getBoundingClientRect()
+      const clickX = e.clientX - rect.left
+      const clickY = e.clientY - rect.top
+      const { cssWidth } = getCssDimensions()
+      const hit = hitTestPnP(
+        clickX,
+        clickY,
+        cssWidth,
+        props.interaction.transform.value,
+        !!props.mirrored,
+      )
+      // Emit the clicked designator (or null to deselect)
+      emit('pnpClick', hit)
     }
   }
 }
@@ -111,6 +159,23 @@ function onMouseDown(e: MouseEvent) {
 function onMouseMove(e: MouseEvent) {
   // Always update pan if dragging (right-click drag)
   props.interaction.handleMouseMove(e, { invertPanX: !!props.mirrored })
+
+  // Alignment mode: track cursor with snap
+  if (props.alignMode && props.alignMode !== 'idle' && canvasEl.value) {
+    const rect = canvasEl.value.getBoundingClientRect()
+    const sx = e.clientX - rect.left
+    const sy = e.clientY - rect.top
+    let gerber = screenToGerber(sx, sy, props.interaction.transform.value)
+    const snap = findSnapForOrigin(gerber, props.interaction.transform.value)
+    if (snap) {
+      gerber = snap
+      originActiveSnap.value = snap
+    } else {
+      originActiveSnap.value = null
+    }
+    originCursorGerber.value = gerber
+  }
+
   // Route to active tool
   if (props.deleteTool?.active.value && canvasEl.value) {
     props.deleteTool.handleMouseMove(e, canvasEl.value)
@@ -130,6 +195,10 @@ function onMouseUp(e: MouseEvent) {
 
 function onMouseLeave(e: MouseEvent) {
   props.interaction.handleMouseUp()
+  if (props.alignMode && props.alignMode !== 'idle') {
+    originCursorGerber.value = null
+    originActiveSnap.value = null
+  }
 }
 
 // ── Collect snap points when layers change ──
@@ -302,6 +371,333 @@ function drawGrid(
   ctx.restore()
 }
 
+// ── PnP marker rendering ──
+
+/** Radius of PnP center dots in CSS pixels */
+const PNP_DOT_RADIUS = 3
+/** Hit-test radius for clicking PnP dots (CSS px) */
+const PNP_HIT_RADIUS = 8
+/** Highlight ring colour for the selected component */
+const PNP_HIGHLIGHT_COLOR = '#00FFFF'
+/** Default PnP dot color */
+const PNP_DOT_COLOR = '#FF69B4'
+
+/**
+ * Convert PnP mm coordinate to Gerber coordinate space,
+ * offset by the PnP origin.
+ */
+function pnpToGerber(mmVal: number, originGerber: number, units: 'mm' | 'in'): number {
+  const inGerberUnits = units === 'in' ? mmVal / 25.4 : mmVal
+  return originGerber + inGerberUnits
+}
+
+/**
+ * Compute the effective PnP origin in Gerber coordinate space.
+ * If the user has manually set an origin, use that.
+ * Otherwise, default to the bottom-left corner of the outline bounding box.
+ */
+function getEffectiveOrigin(): { ox: number; oy: number } {
+  if (props.pnpOriginX != null && props.pnpOriginY != null) {
+    return { ox: props.pnpOriginX, oy: props.pnpOriginY }
+  }
+  // Default: bottom-left of outline bounds
+  const source = props.allLayers ?? props.layers
+  const outlineSrc = source.find(l => l.type === 'Outline' || l.type === 'Keep-Out')
+  if (outlineSrc) {
+    const tree = getImageTree(outlineSrc)
+    if (tree && !isEmpty(tree.bounds as BoundingBox)) {
+      const b = tree.bounds as BoundingBox
+      return { ox: b[0], oy: b[1] } // minX, minY = bottom-left
+    }
+  }
+  // Fallback: Gerber origin (0,0)
+  return { ox: 0, oy: 0 }
+}
+
+/**
+ * Draw PnP component center dots on top of the rendered board.
+ * Handles mirroring so dots appear at the correct screen position.
+ */
+function drawPnPMarkers(
+  ctx: CanvasRenderingContext2D,
+  cssWidth: number,
+  dpr: number,
+  transform: { offsetX: number; offsetY: number; scale: number },
+  mirrored: boolean,
+) {
+  const components = props.pnpComponents
+  if (!components || components.length === 0) return
+
+  const units = detectUnits()
+  const { ox, oy } = getEffectiveOrigin()
+
+  ctx.save()
+  if (dpr !== 1) ctx.scale(dpr, dpr)
+
+  for (const comp of components) {
+    const gx = pnpToGerber(comp.x, ox, units)
+    const gy = pnpToGerber(comp.y, oy, units)
+
+    let screenX = transform.offsetX + gx * transform.scale
+    const screenY = transform.offsetY - gy * transform.scale
+
+    if (mirrored) {
+      screenX = cssWidth - screenX
+    }
+
+    const isSelected = props.selectedPnpDesignator === comp.designator
+
+    // Draw the filled dot
+    ctx.beginPath()
+    ctx.arc(screenX, screenY, PNP_DOT_RADIUS, 0, Math.PI * 2)
+    ctx.fillStyle = PNP_DOT_COLOR
+    ctx.fill()
+
+    // Draw highlight ring for selected component
+    if (isSelected) {
+      ctx.beginPath()
+      ctx.arc(screenX, screenY, PNP_DOT_RADIUS + 3, 0, Math.PI * 2)
+      ctx.strokeStyle = PNP_HIGHLIGHT_COLOR
+      ctx.lineWidth = 2
+      ctx.stroke()
+
+      // Draw designator label
+      ctx.font = '11px system-ui, sans-serif'
+      ctx.fillStyle = PNP_HIGHLIGHT_COLOR
+      ctx.fillText(comp.designator, screenX + PNP_DOT_RADIUS + 5, screenY + 4)
+    }
+  }
+
+  ctx.restore()
+}
+
+/**
+ * Hit-test PnP dots at a screen coordinate. Returns the designator
+ * of the closest component within hit radius, or null.
+ */
+function hitTestPnP(
+  screenClickX: number,
+  screenClickY: number,
+  cssWidth: number,
+  transform: { offsetX: number; offsetY: number; scale: number },
+  mirrored: boolean,
+): string | null {
+  const components = props.pnpComponents
+  if (!components || components.length === 0) return null
+
+  const units = detectUnits()
+  const { ox, oy } = getEffectiveOrigin()
+  let closest: { designator: string; dist: number } | null = null
+
+  for (const comp of components) {
+    const gx = pnpToGerber(comp.x, ox, units)
+    const gy = pnpToGerber(comp.y, oy, units)
+
+    let screenX = transform.offsetX + gx * transform.scale
+    const screenY = transform.offsetY - gy * transform.scale
+
+    if (mirrored) {
+      screenX = cssWidth - screenX
+    }
+
+    const dx = screenClickX - screenX
+    const dy = screenClickY - screenY
+    const dist = Math.sqrt(dx * dx + dy * dy)
+
+    if (dist <= PNP_HIT_RADIUS && (!closest || dist < closest.dist)) {
+      closest = { designator: comp.designator, dist }
+    }
+  }
+
+  return closest?.designator ?? null
+}
+
+// ── Set-origin mode: snap infrastructure ──
+
+const SNAP_THRESHOLD_PX = 10
+
+function screenToGerber(sx: number, sy: number, t: { offsetX: number; offsetY: number; scale: number }) {
+  return {
+    x: (sx - t.offsetX) / t.scale,
+    y: (t.offsetY - sy) / t.scale,
+  }
+}
+
+function gerberToScreen(gx: number, gy: number, t: { offsetX: number; offsetY: number; scale: number }) {
+  return {
+    sx: t.offsetX + gx * t.scale,
+    sy: t.offsetY - gy * t.scale,
+  }
+}
+
+/**
+ * Find the nearest snap point to a Gerber position from the measure tool's snap targets.
+ * Returns the snapped Gerber coordinate, or null if no snap found.
+ */
+function findSnapForOrigin(
+  gerberPos: { x: number; y: number },
+  transform: { offsetX: number; offsetY: number; scale: number },
+): { x: number; y: number } | null {
+  if (!props.measure) return null
+  const cursorScreen = gerberToScreen(gerberPos.x, gerberPos.y, transform)
+
+  const snapTargets = props.measure.snapTargets.value
+  if (!snapTargets || snapTargets.length === 0) return null
+
+  let best: { x: number; y: number } | null = null
+  let bestDist = SNAP_THRESHOLD_PX
+
+  for (const sp of snapTargets) {
+    const spScreen = gerberToScreen(sp.x, sp.y, transform)
+    const dx = spScreen.sx - cursorScreen.sx
+    const dy = spScreen.sy - cursorScreen.sy
+    const dist = Math.sqrt(dx * dx + dy * dy)
+    if (dist < bestDist) {
+      bestDist = dist
+      best = { x: sp.x, y: sp.y }
+    }
+  }
+
+  return best
+}
+
+/** The live cursor position in Gerber coords during set-origin mode */
+const originCursorGerber = ref<{ x: number; y: number } | null>(null)
+const originActiveSnap = ref<{ x: number; y: number } | null>(null)
+
+/**
+ * Convert a Gerber point to screen coordinates, applying mirror.
+ */
+function gerberToScreenPt(
+  gx: number,
+  gy: number,
+  transform: { offsetX: number; offsetY: number; scale: number },
+  cssWidth: number,
+  mirrored: boolean,
+): { sx: number; sy: number } {
+  let sx = transform.offsetX + gx * transform.scale
+  const sy = transform.offsetY - gy * transform.scale
+  if (mirrored) sx = cssWidth - sx
+  return { sx, sy }
+}
+
+/**
+ * Draw alignment cursor, points, and midpoint line.
+ */
+function drawAlignOverlay(
+  ctx: CanvasRenderingContext2D,
+  cssWidth: number,
+  cssHeight: number,
+  dpr: number,
+  transform: { offsetX: number; offsetY: number; scale: number },
+  mirrored: boolean,
+) {
+  const mode = props.alignMode
+  if (!mode || mode === 'idle') return
+
+  ctx.save()
+  if (dpr !== 1) ctx.scale(dpr, dpr)
+
+  const isSnapped = originActiveSnap.value !== null
+  const snapColor = '#00FF00'
+  const cursorColor = '#00FFFF'
+  const activeColor = isSnapped ? snapColor : cursorColor
+
+  // Draw the first alignment click point (for 2-pad mode)
+  if (props.alignClickA && (mode === 'align-second')) {
+    const ptA = gerberToScreenPt(props.alignClickA.x, props.alignClickA.y, transform, cssWidth, mirrored)
+
+    // Point A marker
+    ctx.beginPath()
+    ctx.arc(ptA.sx, ptA.sy, 5, 0, Math.PI * 2)
+    ctx.fillStyle = snapColor
+    ctx.fill()
+    ctx.strokeStyle = snapColor
+    ctx.lineWidth = 2
+    ctx.stroke()
+
+    // If we have a cursor position, draw line from A to cursor and the midpoint
+    if (originCursorGerber.value) {
+      const ptCursor = gerberToScreenPt(originCursorGerber.value.x, originCursorGerber.value.y, transform, cssWidth, mirrored)
+
+      // Line from A to cursor
+      ctx.beginPath()
+      ctx.moveTo(ptA.sx, ptA.sy)
+      ctx.lineTo(ptCursor.sx, ptCursor.sy)
+      ctx.strokeStyle = activeColor
+      ctx.lineWidth = 1.5
+      ctx.setLineDash([6, 3])
+      ctx.stroke()
+      ctx.setLineDash([])
+
+      // Midpoint
+      const midSx = (ptA.sx + ptCursor.sx) / 2
+      const midSy = (ptA.sy + ptCursor.sy) / 2
+
+      // Midpoint diamond
+      ctx.beginPath()
+      ctx.moveTo(midSx, midSy - 6)
+      ctx.lineTo(midSx + 6, midSy)
+      ctx.lineTo(midSx, midSy + 6)
+      ctx.lineTo(midSx - 6, midSy)
+      ctx.closePath()
+      ctx.strokeStyle = '#FFD700'
+      ctx.lineWidth = 2
+      ctx.stroke()
+      ctx.fillStyle = 'rgba(255, 215, 0, 0.3)'
+      ctx.fill()
+
+      // Midpoint label
+      ctx.font = '10px system-ui, sans-serif'
+      ctx.fillStyle = '#FFD700'
+      ctx.fillText('center', midSx + 8, midSy - 4)
+    }
+  }
+
+  // Draw cursor crosshair
+  if (originCursorGerber.value) {
+    const pt = gerberToScreenPt(originCursorGerber.value.x, originCursorGerber.value.y, transform, cssWidth, mirrored)
+
+    // Crosshair lines
+    ctx.strokeStyle = activeColor
+    ctx.lineWidth = 1
+    ctx.setLineDash([4, 4])
+    ctx.beginPath()
+    ctx.moveTo(pt.sx, 0)
+    ctx.lineTo(pt.sx, cssHeight)
+    ctx.moveTo(0, pt.sy)
+    ctx.lineTo(cssWidth, pt.sy)
+    ctx.stroke()
+    ctx.setLineDash([])
+
+    // Cursor circle
+    ctx.beginPath()
+    ctx.arc(pt.sx, pt.sy, 5, 0, Math.PI * 2)
+    ctx.strokeStyle = activeColor
+    ctx.lineWidth = 2
+    ctx.stroke()
+
+    // Snap dot
+    if (isSnapped) {
+      ctx.beginPath()
+      ctx.arc(pt.sx, pt.sy, 3, 0, Math.PI * 2)
+      ctx.fillStyle = snapColor
+      ctx.fill()
+    }
+
+    // Label based on mode
+    ctx.font = '11px system-ui, sans-serif'
+    ctx.fillStyle = activeColor
+    const label = mode === 'set-origin' ? '0/0'
+      : mode === 'align-single' ? 'center'
+      : mode === 'align-first' ? 'pad 1'
+      : 'pad 2'
+    ctx.fillText(label, pt.sx + 10, pt.sy - 10)
+  }
+
+  ctx.restore()
+}
+
 function draw() {
   const canvas = canvasEl.value
   if (!canvas) return
@@ -452,11 +848,17 @@ function draw() {
       ctx.restore()
     }
   }
+
+  // ── Draw PnP markers on top of everything ──
+  drawPnPMarkers(ctx, cssWidth, dpr, transform, !!props.mirrored)
+
+  // ── Draw alignment overlay (crosshair, points, midpoint line) ──
+  drawAlignOverlay(ctx, cssWidth, cssHeight, dpr, transform, !!props.mirrored)
 }
 
 // Watch for layer or transform changes and redraw
 watch(
-  () => [props.layers, props.allLayers, props.interaction.transform.value, props.mirrored, props.cropToOutline, props.outlineLayer, props.viewMode, props.preset, bgColor.value, appSettings.gridEnabled, appSettings.gridSpacingMm],
+  () => [props.layers, props.allLayers, props.interaction.transform.value, props.mirrored, props.cropToOutline, props.outlineLayer, props.viewMode, props.preset, bgColor.value, appSettings.gridEnabled, appSettings.gridSpacingMm, props.pnpComponents, props.selectedPnpDesignator, props.pnpOriginX, props.pnpOriginY, props.alignMode, props.alignClickA, originCursorGerber.value],
   () => draw(),
   { deep: true },
 )

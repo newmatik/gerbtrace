@@ -7,6 +7,10 @@ interface ProjectRecord {
   mode: 'viewer' | 'compare'
   createdAt: Date
   updatedAt: Date
+  /** PnP origin X in Gerber coordinate units (null = auto / default) */
+  pnpOriginX?: number | null
+  /** PnP origin Y in Gerber coordinate units */
+  pnpOriginY?: number | null
 }
 
 interface FileRecord {
@@ -30,6 +34,11 @@ class GerbtraceDB extends Dexie {
     })
     // v2: add layerType column to files (non-indexed, just stored)
     this.version(2).stores({
+      projects: '++id, name, mode, createdAt, updatedAt',
+      files: '++id, projectId, packet, fileName',
+    })
+    // v3: add pnpOriginX/pnpOriginY to projects (non-indexed, just stored)
+    this.version(3).stores({
       projects: '++id, name, mode, createdAt, updatedAt',
       files: '++id, projectId, packet, fileName',
     })
@@ -119,6 +128,10 @@ export function useProject() {
     await loadProjects()
   }
 
+  async function updateProjectOrigin(id: number, originX: number | null, originY: number | null) {
+    await db.projects.update(id, { pnpOriginX: originX, pnpOriginY: originY, updatedAt: new Date() })
+  }
+
   async function clearFiles(projectId: number, packet: number) {
     await db.files
       .where('projectId').equals(projectId)
@@ -143,5 +156,6 @@ export function useProject() {
     clearFiles,
     updateFileContent,
     updateFileLayerType,
+    updateProjectOrigin,
   }
 }

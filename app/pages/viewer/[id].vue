@@ -133,23 +133,69 @@
     </AppHeader>
 
     <div class="flex-1 flex overflow-hidden">
-      <!-- Layer panel -->
+      <!-- Sidebar -->
       <aside
         class="border-r border-neutral-200 dark:border-neutral-800 flex flex-col overflow-hidden shrink-0"
         :style="{ width: sidebarWidth + 'px' }"
       >
-        <div class="p-4">
-          <ImportPanel
-            :packet="1"
-            @import="handleImport"
-          />
+        <!-- Sidebar tabs: Layers / Components (shown before everything) -->
+        <div
+          v-if="pnp.hasPnP.value"
+          class="flex items-center gap-0.5 px-3 pt-3 pb-1"
+        >
+          <button
+            class="text-[11px] font-medium px-2 py-0.5 rounded transition-colors"
+            :class="sidebarTab === 'layers'
+              ? 'bg-neutral-200/80 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100'
+              : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'"
+            @click="sidebarTab = 'layers'"
+          >
+            Layers
+          </button>
+          <button
+            class="text-[11px] font-medium px-2 py-0.5 rounded transition-colors"
+            :class="sidebarTab === 'components'
+              ? 'bg-neutral-200/80 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100'
+              : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'"
+            @click="sidebarTab = 'components'"
+          >
+            Components
+          </button>
         </div>
-        <LayerPanel
-          :layers="layers"
-          @toggle-visibility="toggleLayerVisibility"
-          @change-color="changeLayerColor"
-          @change-type="changeLayerType"
-          @reorder="reorderLayers"
+
+        <!-- Layers view -->
+        <template v-if="sidebarTab === 'layers' || !pnp.hasPnP.value">
+          <div class="p-4" :class="{ 'pt-2': pnp.hasPnP.value }">
+            <ImportPanel
+              :packet="1"
+              @import="handleImport"
+            />
+          </div>
+          <LayerPanel
+            :layers="layers"
+            @toggle-visibility="toggleLayerVisibility"
+            @change-color="changeLayerColor"
+            @change-type="changeLayerType"
+            @reorder="reorderLayers"
+          />
+        </template>
+
+        <!-- Components view -->
+        <ComponentPanel
+          v-else
+          :all-components="pnp.allComponents.value"
+          :filtered-components="pnp.filteredComponents.value"
+          :selected-designator="pnp.selectedDesignator.value"
+          :search-query="pnp.searchQuery.value"
+          :align-mode="pnp.alignMode.value"
+          :has-origin="pnp.hasOrigin.value"
+          :origin-x="pnp.originX.value"
+          :origin-y="pnp.originY.value"
+          @update:search-query="pnp.searchQuery.value = $event"
+          @select="pnp.selectComponent($event)"
+          @start-set-origin="startSetOrigin"
+          @start-component-align="startComponentAlign"
+          @reset-origin="pnp.resetOrigin()"
         />
       </aside>
 
@@ -182,6 +228,14 @@
           :delete-tool="deleteTool"
           :view-mode="viewMode"
           :preset="viewMode === 'realistic' ? selectedPreset : undefined"
+          :pnp-components="pnp.visibleComponents.value"
+          :selected-pnp-designator="pnp.selectedDesignator.value"
+          :pnp-origin-x="pnp.originX.value"
+          :pnp-origin-y="pnp.originY.value"
+          :align-mode="pnp.alignMode.value"
+          :align-click-a="pnp.alignClickA.value"
+          @pnp-click="pnp.selectComponent($event)"
+          @align-click="handleAlignClick"
         />
         <MeasureOverlay
           :measure="measureTool"
@@ -208,7 +262,7 @@
 <script setup lang="ts">
 import type { GerberFile, LayerInfo, LayerFilter } from '~/utils/gerber-helpers'
 import type { SourceRange } from '@lib/gerber/types'
-import { sortLayersByPcbOrder, isTopLayer, isBottomLayer, isSharedLayer, getColorForType } from '~/utils/gerber-helpers'
+import { sortLayersByPcbOrder, isTopLayer, isBottomLayer, isSharedLayer, getColorForType, isPnPLayer } from '~/utils/gerber-helpers'
 import type { ViewMode } from '~/components/viewer/BoardCanvas.vue'
 import { getPresetById, type PcbPreset } from '~/utils/pcb-presets'
 import { exportRealisticSvg } from '../../../lib/renderer/svg-exporter'
@@ -217,13 +271,16 @@ import JSZip from 'jszip'
 
 const route = useRoute()
 const projectId = Number(route.params.id)
-const { getProject, getFiles, addFiles, renameProject, updateFileLayerType, updateFileContent } = useProject()
+const { getProject, getFiles, addFiles, renameProject, updateFileLayerType, updateFileContent, updateProjectOrigin } = useProject()
 const canvasInteraction = useCanvasInteraction()
 const measureTool = useMeasureTool()
 const infoTool = useInfoTool()
 const deleteTool = useDeleteTool()
 const { backgroundColor } = useBackgroundColor()
 const { sidebarWidth, dragging: sidebarDragging, onDragStart: onSidebarDragStart } = useSidebarWidth()
+
+// ── Sidebar tab (Layers / Components) ──
+const sidebarTab = ref<'layers' | 'components'>('layers')
 
 // Toolbar button styling (outline + blue active border)
 const tbBtnBase =
@@ -292,6 +349,11 @@ watch(() => deleteTool.active.value, (isActive) => {
 })
 
 function handleKeyDown(e: KeyboardEvent) {
+  // Cancel alignment mode on Escape
+  if (pnp.isAligning.value && e.key === 'Escape') {
+    pnp.cancelAlign()
+    return
+  }
   if (activeMode.value === 'measure') {
     measureTool.handleKeyDown(e)
   } else if (activeMode.value === 'info') {
@@ -305,6 +367,40 @@ function handleKeyDown(e: KeyboardEvent) {
   } else if (activeMode.value === 'delete') {
     deleteTool.handleKeyDown(e)
   }
+}
+
+function startSetOrigin() {
+  // Switch to cursor mode to allow canvas clicking
+  if (activeMode.value !== 'cursor') {
+    setMode('cursor')
+  }
+  pnp.startSettingOrigin()
+}
+
+function startComponentAlign() {
+  if (!pnp.selectedComponent.value) return
+  // Switch to cursor mode to allow canvas clicking
+  if (activeMode.value !== 'cursor') {
+    setMode('cursor')
+  }
+  pnp.startComponentAlign(pnp.selectedComponent.value)
+}
+
+function handleAlignClick(x: number, y: number) {
+  // Detect Gerber units from the board
+  const units = detectGerberUnits()
+  pnp.handleAlignClick(x, y, units)
+}
+
+/** Detect the Gerber coordinate units from loaded layers */
+function detectGerberUnits(): 'mm' | 'in' {
+  const canvas = boardCanvasRef.value
+  if (!canvas) return 'mm'
+  for (const layer of layers.value) {
+    const tree = canvas.getImageTree(layer)
+    if (tree) return tree.units
+  }
+  return 'mm'
 }
 
 function handleKeyUp(e: KeyboardEvent) {
@@ -322,6 +418,21 @@ const showSettings = ref(false)
 
 const outlineLayer = computed(() => layers.value.find(l => l.type === 'Outline') || undefined)
 const hasOutline = computed(() => layers.value.some(l => l.type === 'Outline'))
+
+// ── Pick & Place ──
+const pnp = usePickAndPlace(layers)
+
+// Auto-switch to Components tab when PnP layers appear for the first time
+watch(pnp.hasPnP, (has) => {
+  if (has && sidebarTab.value === 'layers') {
+    sidebarTab.value = 'components'
+  }
+})
+
+// Persist PnP origin to database when it changes
+watch([pnp.originX, pnp.originY], ([ox, oy]) => {
+  updateProjectOrigin(projectId, ox, oy)
+})
 
 const viewModeOptions: { label: string; value: ViewMode }[] = [
   { label: 'Layers', value: 'layers' },
@@ -438,6 +549,12 @@ onMounted(async () => {
   if (activeMode.value === 'measure') measureTool.active.value = true
   if (activeMode.value === 'info') infoTool.active.value = true
   if (activeMode.value === 'delete') deleteTool.active.value = true
+
+  // Restore persisted PnP origin
+  if (project.value?.pnpOriginX != null && project.value?.pnpOriginY != null) {
+    pnp.originX.value = project.value.pnpOriginX
+    pnp.originY.value = project.value.pnpOriginY
+  }
 })
 
 async function handleImport(newFiles: GerberFile[], sourceName: string) {
@@ -446,14 +563,19 @@ async function handleImport(newFiles: GerberFile[], sourceName: string) {
     await renameProject(projectId, sourceName)
     project.value = await getProject(projectId)
   }
-  const newLayers = newFiles.map(f => ({
-    file: f,
-    visible: true,
-    color: getDefaultLayerColor(f.fileName),
-    type: detectLayerType(f.fileName),
-  }))
+  const newLayers = newFiles.map(f => {
+    const type = f.layerType || detectLayerType(f.fileName)
+    return {
+      file: f,
+      visible: true,
+      color: getColorForType(type),
+      type,
+    }
+  })
   layers.value = sortLayersByPcbOrder([...layers.value, ...newLayers])
   applyDefaultCropToOutline()
+  // Invalidate PnP cache for newly imported files
+  pnp.invalidateCache()
 }
 
 function toggleLayerVisibility(index: number) {
@@ -539,6 +661,8 @@ async function handleConfirmDelete() {
 async function handleDownloadGerber() {
   const zip = new JSZip()
   for (const layer of layers.value) {
+    // Skip PnP layers from Gerber download
+    if (isPnPLayer(layer.type)) continue
     zip.file(layer.file.fileName, layer.file.content)
   }
   const blob = await zip.generateAsync({ type: 'blob' })
