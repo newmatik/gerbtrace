@@ -1,0 +1,19 @@
+{
+  "name": "QFN-56-8x8-P0.50",
+  "type": "FourSymmetricLeadGroups",
+  "aliases": [
+    "QFN-56",
+    "QFN56"
+  ],
+  "body": {
+    "length": 8,
+    "width": 8
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 56,
+    "widthOverLeads": 10,
+    "leadPitch": 0.5,
+    "leadWidth": 0.35,
+    "leadLength": 0.25
+  }
+}

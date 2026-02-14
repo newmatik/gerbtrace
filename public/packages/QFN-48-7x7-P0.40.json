@@ -1,0 +1,19 @@
+{
+  "name": "QFN-48-7x7-P0.40",
+  "type": "FourSymmetricLeadGroups",
+  "body": {
+    "length": 7,
+    "width": 7
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 48,
+    "widthOverLeads": 9,
+    "leadPitch": 0.4,
+    "leadWidth": 0.35,
+    "leadLength": 0.25
+  },
+  "aliases": [
+    "QFN48-0.40",
+    "QFN-48-0.40"
+  ]
+}

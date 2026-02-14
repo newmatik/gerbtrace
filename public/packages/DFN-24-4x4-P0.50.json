@@ -1,0 +1,19 @@
+{
+  "name": "DFN-24-4x4-P0.50",
+  "type": "TwoSymmetricLeadGroups",
+  "aliases": [
+    "DFN-24",
+    "DFN24"
+  ],
+  "body": {
+    "length": 4,
+    "width": 4
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 24,
+    "widthOverLeads": 3,
+    "leadPitch": 0.5,
+    "leadWidth": 0.35,
+    "leadLength": 0.25
+  }
+}

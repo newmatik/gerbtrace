@@ -1,0 +1,18 @@
+{
+  "name": "DFN-8-3x3-P0.50",
+  "body": {
+    "length": 3,
+    "width": 3
+  },
+  "type": "TwoSymmetricLeadGroups",
+  "twoSymmetric": {
+    "numberOfLeads": 8,
+    "widthOverLeads": 2,
+    "leadPitch": 0.5,
+    "leadWidth": 0.7,
+    "leadLength": 0.25
+  },
+  "aliases": [
+    "DFN-8"
+  ]
+}

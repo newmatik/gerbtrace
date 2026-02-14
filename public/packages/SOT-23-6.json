@@ -1,0 +1,15 @@
+{
+  "name": "SOT-23-6",
+  "type": "TwoSymmetricLeadGroups",
+  "body": {
+    "length": 2.9,
+    "width": 1.6
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 6,
+    "widthOverLeads": 2.5,
+    "leadPitch": 0.95,
+    "leadWidth": 0.3,
+    "leadLength": 0.25
+  }
+}

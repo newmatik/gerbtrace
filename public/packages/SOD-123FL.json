@@ -1,0 +1,16 @@
+{
+  "name": "SOD-123FL",
+  "type": "Chip",
+  "body": {
+    "length": 3.7,
+    "width": 1.7
+  },
+  "chip": {
+    "chipLength": 3.7,
+    "leadWidth": 1.7,
+    "leadLength": 0.3
+  },
+  "aliases": [
+    "SOD123FL"
+  ]
+}

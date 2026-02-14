@@ -1,0 +1,19 @@
+{
+  "name": "QFN-64-9x9-P0.50",
+  "type": "FourSymmetricLeadGroups",
+  "aliases": [
+    "QFN-64",
+    "QFN64"
+  ],
+  "body": {
+    "length": 9,
+    "width": 9
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 64,
+    "widthOverLeads": 11,
+    "leadPitch": 0.5,
+    "leadWidth": 0.35,
+    "leadLength": 0.25
+  }
+}

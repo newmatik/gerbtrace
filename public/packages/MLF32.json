@@ -1,0 +1,19 @@
+{
+  "name": "MLF32",
+  "type": "FourSymmetricLeadGroups",
+  "aliases": [
+    "QFN32",
+    "QFN-32"
+  ],
+  "body": {
+    "length": 5,
+    "width": 5
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 32,
+    "widthOverLeads": 5,
+    "leadPitch": 0.5,
+    "leadWidth": 0.3,
+    "leadLength": 0.5
+  }
+}

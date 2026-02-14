@@ -1,0 +1,16 @@
+{
+  "name": "3225",
+  "type": "Outline",
+  "body": {
+    "length": 3.2,
+    "width": 2.5
+  },
+  "outline": {
+    "length": 3.2,
+    "width": 2.5
+  },
+  "aliases": [
+    "OSC-3225",
+    "XTAL-3225"
+  ]
+}

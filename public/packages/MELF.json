@@ -1,0 +1,13 @@
+{
+  "name": "MELF",
+  "type": "Chip",
+  "body": {
+    "length": 5.9,
+    "width": 2.2
+  },
+  "chip": {
+    "chipLength": 5.9,
+    "leadWidth": 2.2,
+    "leadLength": 0.3
+  }
+}

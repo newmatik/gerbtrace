@@ -1,0 +1,19 @@
+{
+  "name": "1812",
+  "type": "Chip",
+  "aliases": [
+    "C1812",
+    "L1812",
+    "R1812",
+    "CHIP-1812"
+  ],
+  "body": {
+    "length": 4.6,
+    "width": 3
+  },
+  "chip": {
+    "chipLength": 4.6,
+    "leadWidth": 3,
+    "leadLength": 0.5
+  }
+}

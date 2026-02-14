@@ -1,0 +1,18 @@
+{
+  "name": "TSSOP-14",
+  "type": "TwoSymmetricLeadGroups",
+  "aliases": [
+    "TSSOP14"
+  ],
+  "body": {
+    "length": 5.3,
+    "width": 4.4
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 14,
+    "widthOverLeads": 6,
+    "leadPitch": 0.65,
+    "leadWidth": 0.3,
+    "leadLength": 0.5
+  }
+}

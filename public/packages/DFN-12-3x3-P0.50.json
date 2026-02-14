@@ -1,0 +1,19 @@
+{
+  "name": "DFN-12-3x3-P0.50",
+  "type": "TwoSymmetricLeadGroups",
+  "aliases": [
+    "DFN-12",
+    "DFN12"
+  ],
+  "body": {
+    "length": 3,
+    "width": 3
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 12,
+    "widthOverLeads": 2.1,
+    "leadPitch": 0.5,
+    "leadWidth": 0.35,
+    "leadLength": 0.25
+  }
+}

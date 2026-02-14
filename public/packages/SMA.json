@@ -1,0 +1,17 @@
+{
+  "name": "SMA",
+  "type": "Chip",
+  "body": {
+    "length": 4.6,
+    "width": 2.6
+  },
+  "chip": {
+    "chipLength": 4.6,
+    "leadWidth": 2.6,
+    "leadLength": 0.6
+  },
+  "aliases": [
+    "DO-214AC",
+    "DO214AC"
+  ]
+}

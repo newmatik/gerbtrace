@@ -1,0 +1,18 @@
+{
+  "name": "TQFP-32",
+  "type": "FourSymmetricLeadGroups",
+  "aliases": [
+    "TQFP32"
+  ],
+  "body": {
+    "length": 7,
+    "width": 7
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 32,
+    "widthOverLeads": 10.2,
+    "leadPitch": 0.8,
+    "leadWidth": 0.3,
+    "leadLength": 0.8
+  }
+}

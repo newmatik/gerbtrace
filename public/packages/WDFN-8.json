@@ -1,0 +1,15 @@
+{
+  "name": "WDFN-8",
+  "body": {
+    "length": 3.05,
+    "width": 3.05
+  },
+  "type": "TwoSymmetricLeadGroups",
+  "twoSymmetric": {
+    "numberOfLeads": 8,
+    "widthOverLeads": 3.3,
+    "leadPitch": 0.62,
+    "leadWidth": 0.45,
+    "leadLength": 0.05
+  }
+}

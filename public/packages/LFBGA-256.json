@@ -1,0 +1,19 @@
+{
+  "name": "LFBGA-256",
+  "type": "BGA",
+  "aliases": [
+    "LFBGA256"
+  ],
+  "body": {
+    "length": 17,
+    "width": 17
+  },
+  "bga": {
+    "leadsPerRow": 16,
+    "leadsPerColumn": 16,
+    "leadPitch": 1,
+    "leadDiameter": 0.45,
+    "leadsPerRowInHole": 0,
+    "leadsPerColumnInHole": 0
+  }
+}

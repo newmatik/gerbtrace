@@ -1,0 +1,17 @@
+{
+  "name": "SMB",
+  "type": "Chip",
+  "body": {
+    "length": 5.9,
+    "width": 3.2
+  },
+  "chip": {
+    "chipLength": 5.9,
+    "leadWidth": 3.2,
+    "leadLength": 0.7
+  },
+  "aliases": [
+    "DO-214AA",
+    "DO214AA"
+  ]
+}

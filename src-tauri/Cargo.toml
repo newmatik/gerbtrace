@@ -1,6 +1,6 @@
 [package]
 name = "gerbtrace"
-version = "1.0.1"
+version = "1.0.3"
 description = "Gerbtrace — View and compare Gerber PCB files"
 authors = ["Newmatik GmbH"]
 license = "MIT"

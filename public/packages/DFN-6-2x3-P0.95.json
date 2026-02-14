@@ -1,0 +1,19 @@
+{
+  "name": "DFN-6-2x3-P0.95",
+  "type": "TwoSymmetricLeadGroups",
+  "body": {
+    "length": 3,
+    "width": 2
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 6,
+    "widthOverLeads": 1.3,
+    "leadPitch": 0.95,
+    "leadWidth": 0.6,
+    "leadLength": 0.25
+  },
+  "aliases": [
+    "DFN-6-2x3",
+    "SOT-23-6-DFN"
+  ]
+}

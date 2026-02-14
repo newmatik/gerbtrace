@@ -1,0 +1,18 @@
+{
+  "name": "TSSOP-32",
+  "type": "TwoSymmetricLeadGroups",
+  "aliases": [
+    "TSSOP32"
+  ],
+  "body": {
+    "length": 11.15,
+    "width": 6.1
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 32,
+    "widthOverLeads": 7.7,
+    "leadPitch": 0.65,
+    "leadWidth": 0.3,
+    "leadLength": 0.5
+  }
+}

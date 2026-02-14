@@ -1,0 +1,18 @@
+{
+  "name": "SSOP-24",
+  "body": {
+    "length": 9.3,
+    "width": 8.8
+  },
+  "type": "TwoSymmetricLeadGroups",
+  "twoSymmetric": {
+    "numberOfLeads": 24,
+    "widthOverLeads": 7.8,
+    "leadPitch": 0.65,
+    "leadWidth": 1.45,
+    "leadLength": 0.3
+  },
+  "aliases": [
+    "SSOP24"
+  ]
+}

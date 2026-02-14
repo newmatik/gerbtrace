@@ -1,0 +1,19 @@
+{
+  "name": "BGA-324",
+  "type": "BGA",
+  "aliases": [
+    "BGA324"
+  ],
+  "body": {
+    "length": 15.6,
+    "width": 15.6
+  },
+  "bga": {
+    "leadsPerRow": 18,
+    "leadsPerColumn": 18,
+    "leadPitch": 0.8,
+    "leadDiameter": 0.35,
+    "leadsPerRowInHole": 0,
+    "leadsPerColumnInHole": 0
+  }
+}

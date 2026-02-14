@@ -1,0 +1,12 @@
+{
+  "name": "SC-90",
+  "type": "Outline",
+  "body": {
+    "length": 2,
+    "width": 2.1
+  },
+  "outline": {
+    "length": 2,
+    "width": 2.1
+  }
+}

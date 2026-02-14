@@ -1,0 +1,22 @@
+{
+  "name": "0603",
+  "type": "Chip",
+  "aliases": [
+    "C0603",
+    "C0603-ROUND",
+    "R0603",
+    "R0603-ROUND",
+    "CT/CN0603",
+    "L0603",
+    "CHIP-0603"
+  ],
+  "body": {
+    "length": 1.6,
+    "width": 0.8
+  },
+  "chip": {
+    "chipLength": 1.6,
+    "leadWidth": 0.8,
+    "leadLength": 0.3
+  }
+}

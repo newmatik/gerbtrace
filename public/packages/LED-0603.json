@@ -1,0 +1,20 @@
+{
+  "name": "LED-0603",
+  "type": "Chip",
+  "aliases": [
+    "0603 LED",
+    "LED 0603",
+    "LED0603",
+    "CHIP-LED0603",
+    "CHIP-LED603"
+  ],
+  "body": {
+    "length": 1.6,
+    "width": 0.8
+  },
+  "chip": {
+    "chipLength": 1.6,
+    "leadWidth": 0.8,
+    "leadLength": 0.3
+  }
+}

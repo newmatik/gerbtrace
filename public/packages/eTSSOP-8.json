@@ -1,0 +1,15 @@
+{
+  "name": "eTSSOP-8",
+  "type": "TwoSymmetricLeadGroups",
+  "body": {
+    "length": 3.35,
+    "width": 3
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 8,
+    "widthOverLeads": 5.3,
+    "leadPitch": 0.65,
+    "leadWidth": 0.35,
+    "leadLength": 0.7
+  }
+}

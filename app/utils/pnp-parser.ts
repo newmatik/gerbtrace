@@ -47,6 +47,33 @@ function splitLine(line: string, delimiter: '\t' | ','): string[] {
   return line.split(delimiter).map(f => f.trim())
 }
 
+type ColumnKey = 'designator' | 'x' | 'y' | 'rotation' | 'value' | 'package' | 'side'
+
+function normaliseHeaderName(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]/g, '')
+}
+
+function buildHeaderMap(fields: string[]): Partial<Record<ColumnKey, number>> {
+  const map: Partial<Record<ColumnKey, number>> = {}
+  for (let i = 0; i < fields.length; i++) {
+    const h = normaliseHeaderName(fields[i] || '')
+
+    if (!map.designator && /^(ref|designator|reference|name|component|part)$/.test(h)) map.designator = i
+    else if (!map.x && /^(posx|x|centerx|midx|cx)/.test(h)) map.x = i
+    else if (!map.y && /^(posy|y|centery|midy|cy)/.test(h)) map.y = i
+    else if (!map.rotation && /^(rot|rotation|angle|deg)/.test(h)) map.rotation = i
+    else if (!map.value && /^(val|value)$/.test(h)) map.value = i
+    else if (!map.package && /^(package|footprint|pkg)$/.test(h)) map.package = i
+    else if (!map.side && /^(side|layer)$/.test(h)) map.side = i
+  }
+  return map
+}
+
+function getField(fields: string[], idx: number | undefined): string {
+  if (idx == null || idx < 0 || idx >= fields.length) return ''
+  return fields[idx] ?? ''
+}
+
 /**
  * Check if a row looks like a header rather than data.
  */
@@ -80,6 +107,7 @@ export function parsePnPFile(content: string, side: 'top' | 'bottom'): PnPCompon
   const lines = content.split('\n')
   const delimiter = detectDelimiter(content)
   const components: PnPComponent[] = []
+  let headerMap: Partial<Record<ColumnKey, number>> | null = null
 
   for (const rawLine of lines) {
     const line = rawLine.trim()
@@ -90,24 +118,59 @@ export function parsePnPFile(content: string, side: 'top' | 'bottom'): PnPCompon
     // Need at least 4 fields (designator, x, y, rotation) — value and package are optional
     if (fields.length < 4) continue
 
-    // Skip header rows
-    if (isHeaderRow(fields)) continue
+    // If this is a header row, try to learn the column mapping and continue.
+    // (e.g. KiCad .pos: Ref,Val,Package,PosX,PosY,Rot,Side)
+    if (isHeaderRow(fields)) {
+      const maybeMap = buildHeaderMap(fields)
+      if (
+        maybeMap.designator != null
+        && maybeMap.x != null
+        && maybeMap.y != null
+        && maybeMap.rotation != null
+      ) {
+        headerMap = maybeMap
+      }
+      continue
+    }
 
-    const x = parseFloat(fields[1]!)
-    const y = parseFloat(fields[2]!)
-    const rotation = parseFloat(fields[3]!)
+    // Default fixed order (legacy): Designator, X, Y, Rotation, Value, Package
+    const designator = headerMap ? getField(fields, headerMap.designator) : (fields[0] || '')
+    const xStr = headerMap ? getField(fields, headerMap.x) : (fields[1] || '')
+    const yStr = headerMap ? getField(fields, headerMap.y) : (fields[2] || '')
+    const rotStr = headerMap ? getField(fields, headerMap.rotation) : (fields[3] || '')
+    const value = headerMap ? getField(fields, headerMap.value) : (fields[4] || '')
+    let pkg = headerMap ? getField(fields, headerMap.package) : (fields[5] || '')
+
+    const x = parseFloat(xStr)
+    const y = parseFloat(yStr)
+    const rotation = parseFloat(rotStr)
 
     // Validate numeric fields
     if (isNaN(x) || isNaN(y) || isNaN(rotation)) continue
 
+    // Normalise KiCad-style footprints like "Package_SO:SOIC-8_5.3x5.3mm_P1.27mm"
+    // to "SOIC-8_5.3x5.3mm_P1.27mm" (library prefix removed).
+    if (pkg.includes(':')) {
+      pkg = pkg.split(':').pop() || pkg
+    }
+
+    // Allow an explicit Side/Layer column to override the inferred side.
+    // Common values: "top", "bottom", "F.Cu", "B.Cu".
+    let effectiveSide: 'top' | 'bottom' = side
+    if (headerMap?.side != null) {
+      const sideVal = getField(fields, headerMap.side).toLowerCase()
+      if (/(bottom|bot|b\.cu)/.test(sideVal)) effectiveSide = 'bottom'
+      else if (/(top|f\.cu)/.test(sideVal)) effectiveSide = 'top'
+    }
+
     components.push({
-      designator: fields[0]!,
+      designator: designator.trim(),
       x,
       y,
       rotation,
-      value: fields[4]?.trim() || '',
-      package: fields[5]?.trim() || '',
-      side,
+      value: value.trim(),
+      package: pkg.trim(),
+      side: effectiveSide,
     })
   }
 

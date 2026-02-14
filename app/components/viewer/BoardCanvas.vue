@@ -27,6 +27,9 @@ import { plotImageTree } from '@lib/gerber/plotter'
 import { mergeBounds, emptyBounds, isEmpty } from '@lib/gerber/bounding-box'
 import type { PnPComponent } from '~/utils/pnp-parser'
 import type { AlignMode, AlignPoint } from '~/composables/usePickAndPlace'
+import type { PackageDefinition, FootprintShape } from '~/utils/package-types'
+import type { PnPConvention } from '~/utils/pnp-conventions'
+import { computeFootprint, getConventionRotationTransform } from '~/utils/package-types'
 
 export type ViewMode = 'layers' | 'realistic'
 
@@ -56,6 +59,12 @@ const props = defineProps<{
   alignMode?: AlignMode
   /** First alignment click for 2-pad mode */
   alignClickA?: AlignPoint | null
+  /** Package lookup function — returns definition for a package name */
+  matchPackage?: (name: string) => PackageDefinition | undefined
+  /** Whether to render package footprints */
+  showPackages?: boolean
+  /** PnP orientation convention used in the PnP file */
+  pnpConvention?: PnPConvention
 }>()
 
 const emit = defineEmits<{
@@ -471,6 +480,182 @@ function drawPnPMarkers(
   ctx.restore()
 }
 
+// ── Footprint shape cache ──
+const footprintCache = new Map<string, FootprintShape[]>()
+
+function getFootprint(pkg: PackageDefinition): FootprintShape[] {
+  const key = pkg.name
+  if (footprintCache.has(key)) return footprintCache.get(key)!
+  const shapes = computeFootprint(pkg)
+  footprintCache.set(key, shapes)
+  return shapes
+}
+
+/**
+ * Draw package footprints (body + pads) for PnP components.
+ * Renders underneath the PnP center dots.
+ */
+function drawPackageFootprints(
+  ctx: CanvasRenderingContext2D,
+  cssWidth: number,
+  dpr: number,
+  transform: { offsetX: number; offsetY: number; scale: number },
+  mirrored: boolean,
+) {
+  const components = props.pnpComponents
+  if (!components || components.length === 0 || !props.matchPackage || !props.showPackages) return
+
+  const units = detectUnits()
+  const { ox, oy } = getEffectiveOrigin()
+
+  // Scale factor: mm -> screen pixels
+  const mmToGerber = units === 'in' ? 1 / 25.4 : 1
+  const mmToScreen = mmToGerber * transform.scale
+
+  ctx.save()
+  if (dpr !== 1) ctx.scale(dpr, dpr)
+
+  for (const comp of components) {
+    const pkg = props.matchPackage(comp.package)
+    if (!pkg) continue
+
+    const shapes = getFootprint(pkg)
+    const gx = pnpToGerber(comp.x, ox, units)
+    const gy = pnpToGerber(comp.y, oy, units)
+
+    let centerSx = transform.offsetX + gx * transform.scale
+    const centerSy = transform.offsetY - gy * transform.scale
+    if (mirrored) centerSx = cssWidth - centerSx
+
+    // Convert PnP file rotation into our baseline (degrees CCW, top view)
+    // - IPC / IEC: typically CCW-positive
+    // - Mycronic: CW-positive
+    const { direction, offsetDeg } = getConventionRotationTransform(pkg, props.pnpConvention ?? 'mycronic')
+    const adjustedRotationCCW = direction * comp.rotation + offsetDeg
+
+    // Rotation in radians (we keep adjustedRotationCCW in CCW degrees; canvas rotate is visually CW)
+    const rotRad = (-adjustedRotationCCW * Math.PI) / 180
+    // Mirror flips the rotation direction
+    const effectiveRot = mirrored ? -rotRad : rotRad
+
+    const isSelected = props.selectedPnpDesignator === comp.designator
+
+    ctx.save()
+    ctx.translate(centerSx, centerSy)
+    ctx.rotate(effectiveRot)
+
+    // Draw each shape
+    for (const shape of shapes) {
+      drawFootprintShape(ctx, shape, mmToScreen, mirrored, isSelected)
+    }
+
+    ctx.restore()
+  }
+
+  ctx.restore()
+}
+
+// ── Package footprint colors ──
+const PKG_BODY_FILL = 'rgba(50, 50, 50, 0.85)'
+const PKG_BODY_STROKE = 'rgba(80, 80, 80, 0.9)'
+const PKG_PAD_FILL = 'rgba(180, 180, 180, 0.8)'
+const PKG_PIN1_FILL = 'rgba(255, 60, 60, 0.95)'
+const PKG_BODY_FILL_SEL = 'rgba(0, 180, 180, 0.7)'
+const PKG_BODY_STROKE_SEL = 'rgba(0, 255, 255, 0.9)'
+const PKG_PAD_FILL_SEL = 'rgba(140, 230, 230, 0.8)'
+const PKG_PIN1_FILL_SEL = '#FF3333'
+
+/**
+ * Draw a single footprint shape at the current transform.
+ * Coordinates are in mm, scaled by mmToScreen.
+ */
+function drawFootprintShape(
+  ctx: CanvasRenderingContext2D,
+  shape: FootprintShape,
+  mmToScreen: number,
+  mirrored: boolean,
+  isSelected: boolean,
+) {
+  const mirrorFactor = mirrored ? -1 : 1
+
+  if (shape.kind === 'rect') {
+    const sx = shape.cx * mmToScreen * mirrorFactor
+    const sy = -shape.cy * mmToScreen
+    const sw = shape.w * mmToScreen
+    const sh = shape.h * mmToScreen
+
+    if (shape.role === 'body') {
+      ctx.fillStyle = isSelected ? PKG_BODY_FILL_SEL : PKG_BODY_FILL
+      ctx.fillRect(sx - sw / 2, sy - sh / 2, sw, sh)
+      ctx.strokeStyle = isSelected ? PKG_BODY_STROKE_SEL : PKG_BODY_STROKE
+      ctx.lineWidth = 1
+      ctx.strokeRect(sx - sw / 2, sy - sh / 2, sw, sh)
+    } else if (shape.role === 'pad') {
+      ctx.fillStyle = isSelected ? PKG_PAD_FILL_SEL : PKG_PAD_FILL
+      ctx.fillRect(sx - sw / 2, sy - sh / 2, sw, sh)
+    } else if (shape.role === 'pin1') {
+      ctx.fillStyle = isSelected ? PKG_PIN1_FILL_SEL : PKG_PIN1_FILL
+      ctx.fillRect(sx - sw / 2, sy - sh / 2, sw, sh)
+    }
+  } else if (shape.kind === 'circle') {
+    const sx = shape.cx * mmToScreen * mirrorFactor
+    const sy = -shape.cy * mmToScreen
+    const sr = shape.r * mmToScreen
+
+    if (shape.role === 'body') {
+      ctx.beginPath()
+      ctx.arc(sx, sy, sr, 0, Math.PI * 2)
+      ctx.fillStyle = isSelected ? PKG_BODY_FILL_SEL : PKG_BODY_FILL
+      ctx.fill()
+      ctx.strokeStyle = isSelected ? PKG_BODY_STROKE_SEL : PKG_BODY_STROKE
+      ctx.lineWidth = 1
+      ctx.stroke()
+    } else if (shape.role === 'pad') {
+      ctx.beginPath()
+      ctx.arc(sx, sy, Math.max(sr, 0.5), 0, Math.PI * 2)
+      ctx.fillStyle = isSelected ? PKG_PAD_FILL_SEL : PKG_PAD_FILL
+      ctx.fill()
+    } else if (shape.role === 'pin1') {
+      ctx.beginPath()
+      ctx.arc(sx, sy, Math.max(sr, 0.5), 0, Math.PI * 2)
+      ctx.fillStyle = isSelected ? PKG_PIN1_FILL_SEL : PKG_PIN1_FILL
+      ctx.fill()
+    }
+  } else if (shape.kind === 'roundedRect') {
+    const sx = shape.cx * mmToScreen * mirrorFactor
+    const sy = -shape.cy * mmToScreen
+    const sw = shape.w * mmToScreen
+    const sh = shape.h * mmToScreen
+    const sr = Math.min(shape.r * mmToScreen, sw / 2, sh / 2)
+
+    ctx.beginPath()
+    roundRect(ctx, sx - sw / 2, sy - sh / 2, sw, sh, sr)
+
+    if (shape.role === 'body') {
+      ctx.fillStyle = isSelected ? PKG_BODY_FILL_SEL : PKG_BODY_FILL
+      ctx.fill()
+      ctx.strokeStyle = isSelected ? PKG_BODY_STROKE_SEL : PKG_BODY_STROKE
+      ctx.lineWidth = 1
+      ctx.stroke()
+    } else {
+      ctx.fillStyle = isSelected ? PKG_PAD_FILL_SEL : PKG_PAD_FILL
+      ctx.fill()
+    }
+  }
+}
+
+/** Draw a rounded rectangle path (polyfill for older Canvas APIs) */
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  if (w < 2 * r) r = w / 2
+  if (h < 2 * r) r = h / 2
+  ctx.moveTo(x + r, y)
+  ctx.arcTo(x + w, y, x + w, y + h, r)
+  ctx.arcTo(x + w, y + h, x, y + h, r)
+  ctx.arcTo(x, y + h, x, y, r)
+  ctx.arcTo(x, y, x + w, y, r)
+  ctx.closePath()
+}
+
 /**
  * Hit-test PnP dots at a screen coordinate. Returns the designator
  * of the closest component within hit radius, or null.
@@ -736,8 +921,13 @@ function draw() {
 
   if (shouldCrop && outlineSource) {
     const outlineTree = getImageTree(outlineSource as LayerInfo)
-    if (outlineTree && !isEmpty(outlineTree.bounds as BoundingBox)) {
-      const ob = outlineTree.bounds as BoundingBox
+    // Only use outline bounds if the outline actually has drawable content and non-degenerate bounds.
+    // Some projects contain an "outline" file that plots to an empty tree with bounds [0,0,0,0],
+    // which would break auto-fit (everything appears in a corner).
+    const ob = outlineTree?.bounds as BoundingBox | undefined
+    const outlineHasContent = !!outlineTree && outlineTree.children.length > 0
+    const outlineHasValidBounds = !!ob && !isEmpty(ob) && (ob[2] - ob[0]) > 0 && (ob[3] - ob[1]) > 0
+    if (outlineHasContent && outlineHasValidBounds) {
       fitBounds = [ob[0], ob[1], ob[2], ob[3]]
     } else {
       fitBounds = [unifiedBounds[0], unifiedBounds[1], unifiedBounds[2], unifiedBounds[3]]
@@ -849,6 +1039,9 @@ function draw() {
     }
   }
 
+  // ── Draw package footprints (under the dots) ──
+  drawPackageFootprints(ctx, cssWidth, dpr, transform, !!props.mirrored)
+
   // ── Draw PnP markers on top of everything ──
   drawPnPMarkers(ctx, cssWidth, dpr, transform, !!props.mirrored)
 
@@ -858,7 +1051,7 @@ function draw() {
 
 // Watch for layer or transform changes and redraw
 watch(
-  () => [props.layers, props.allLayers, props.interaction.transform.value, props.mirrored, props.cropToOutline, props.outlineLayer, props.viewMode, props.preset, bgColor.value, appSettings.gridEnabled, appSettings.gridSpacingMm, props.pnpComponents, props.selectedPnpDesignator, props.pnpOriginX, props.pnpOriginY, props.alignMode, props.alignClickA, originCursorGerber.value],
+  () => [props.layers, props.allLayers, props.interaction.transform.value, props.mirrored, props.cropToOutline, props.outlineLayer, props.viewMode, props.preset, bgColor.value, appSettings.gridEnabled, appSettings.gridSpacingMm, props.pnpComponents, props.selectedPnpDesignator, props.pnpOriginX, props.pnpOriginY, props.alignMode, props.alignClickA, originCursorGerber.value, props.showPackages, props.pnpConvention],
   () => draw(),
   { deep: true },
 )
@@ -887,8 +1080,9 @@ function getExportBounds(): [number, number, number, number] | null {
   const outlineSrc = props.outlineLayer ?? source.find(l => l.type === 'Outline')
   if (outlineSrc) {
     const tree = getImageTree(outlineSrc as LayerInfo)
-    if (tree && !isEmpty(tree.bounds as BoundingBox)) {
-      return tree.bounds as [number, number, number, number]
+    const b = tree?.bounds as BoundingBox | undefined
+    if (tree && tree.children.length > 0 && b && !isEmpty(b) && (b[2] - b[0]) > 0 && (b[3] - b[1]) > 0) {
+      return b as [number, number, number, number]
     }
   }
 

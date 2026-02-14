@@ -1,0 +1,19 @@
+{
+  "name": "QFN-80-12x12-P0.50",
+  "type": "FourSymmetricLeadGroups",
+  "aliases": [
+    "QFN-80",
+    "QFN80"
+  ],
+  "body": {
+    "length": 12,
+    "width": 12
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 80,
+    "widthOverLeads": 14,
+    "leadPitch": 0.5,
+    "leadWidth": 0.35,
+    "leadLength": 0.25
+  }
+}

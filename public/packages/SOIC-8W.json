@@ -1,0 +1,20 @@
+{
+  "name": "SOIC-8W",
+  "type": "TwoSymmetricLeadGroups",
+  "aliases": [
+    "SOIC8W",
+    "SO-8W",
+    "SO8W"
+  ],
+  "body": {
+    "length": 5.41,
+    "width": 5.3
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 8,
+    "widthOverLeads": 7.4,
+    "leadPitch": 1.27,
+    "leadWidth": 0.4,
+    "leadLength": 0.6
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "SOT-723",
+  "type": "ThreePole",
+  "body": {
+    "length": 1.2,
+    "width": 0.8
+  },
+  "threePole": {
+    "widthOverLeads": 1.9,
+    "ccDistance": 1,
+    "leadWidth": 0.35,
+    "leadLength": 0.35
+  }
+}

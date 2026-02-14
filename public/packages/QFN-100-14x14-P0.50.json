@@ -1,0 +1,19 @@
+{
+  "name": "QFN-100-14x14-P0.50",
+  "type": "FourSymmetricLeadGroups",
+  "aliases": [
+    "QFN-100",
+    "QFN100"
+  ],
+  "body": {
+    "length": 14,
+    "width": 14
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 100,
+    "widthOverLeads": 16,
+    "leadPitch": 0.5,
+    "leadWidth": 0.35,
+    "leadLength": 0.25
+  }
+}

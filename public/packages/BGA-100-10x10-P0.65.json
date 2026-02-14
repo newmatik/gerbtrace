@@ -1,0 +1,21 @@
+{
+  "name": "BGA-100-10x10-P0.65",
+  "type": "BGA",
+  "aliases": [
+    "BGA100C65P10X10_800X800X170",
+    "BGA100",
+    "BGA-100"
+  ],
+  "body": {
+    "length": 8,
+    "width": 8
+  },
+  "bga": {
+    "leadsPerRow": 10,
+    "leadsPerColumn": 10,
+    "leadPitch": 0.65,
+    "leadDiameter": 0.35,
+    "leadsPerRowInHole": 0,
+    "leadsPerColumnInHole": 0
+  }
+}
