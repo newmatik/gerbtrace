@@ -273,6 +273,7 @@ export function useMeasureTool() {
     unitsToMm,
     liveEnd,
     liveDistanceMm,
+    snapTargets,
     toggle,
     clear,
     handleMouseMove,

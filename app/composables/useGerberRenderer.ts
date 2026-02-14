@@ -4,6 +4,8 @@ import { renderToCanvas } from '@lib/renderer/canvas-renderer'
 import type { ImageTree } from '@lib/gerber/types'
 
 export function useGerberRenderer() {
+  const defaultTransform = { offsetX: 0, offsetY: 0, scale: 1 }
+
   function parse(gerberContent: string): ImageTree {
     const ast = parseGerber(gerberContent)
     return plotImageTree(ast)
@@ -17,7 +19,7 @@ export function useGerberRenderer() {
   ) {
     renderToCanvas(imageTree, canvas, {
       color,
-      transform,
+      transform: transform ?? defaultTransform,
     })
   }
 

@@ -63,73 +63,6 @@
             Reset to defaults
           </button>
         </div>
-
-        <!-- About section -->
-        <div class="border-t border-neutral-200 dark:border-neutral-700 pt-4 space-y-3">
-          <h4 class="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">About</h4>
-
-          <div class="space-y-1.5">
-            <div class="flex items-center gap-2">
-              <UIcon name="i-lucide-circuit-board" class="text-primary text-base" />
-              <span class="text-sm font-semibold text-neutral-900 dark:text-white">Gerbtrace</span>
-              <span class="text-xs text-neutral-400 dark:text-neutral-500 font-mono">v{{ appVersion }}</span>
-            </div>
-
-            <p class="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">
-              Gerber PCB file viewer and comparison tool.
-            </p>
-          </div>
-
-          <div class="space-y-1">
-            <a
-              href="https://www.newmatik.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="flex items-center gap-1.5 text-xs text-neutral-500 hover:text-primary transition-colors"
-            >
-              <UIcon name="i-lucide-building-2" class="text-sm" />
-              <span>Newmatik GmbH</span>
-              <UIcon name="i-lucide-external-link" class="text-[10px] opacity-50" />
-            </a>
-            <a
-              href="mailto:software@newmatik.com"
-              class="flex items-center gap-1.5 text-xs text-neutral-500 hover:text-primary transition-colors"
-            >
-              <UIcon name="i-lucide-mail" class="text-sm" />
-              <span>software@newmatik.com</span>
-            </a>
-            <a
-              href="https://github.com/newmatik/gerbtrace"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="flex items-center gap-1.5 text-xs text-neutral-500 hover:text-primary transition-colors"
-            >
-              <UIcon name="i-lucide-github" class="text-sm" />
-              <span>GitHub</span>
-              <UIcon name="i-lucide-external-link" class="text-[10px] opacity-50" />
-            </a>
-          </div>
-
-          <p class="text-[11px] text-neutral-400 dark:text-neutral-500">
-            MIT License
-          </p>
-
-          <!-- Update check (only in Tauri desktop app) -->
-          <div v-if="isTauri" class="pt-1">
-            <UButton
-              size="xs"
-              variant="soft"
-              icon="i-lucide-refresh-cw"
-              :loading="updaterStatus.checking || updaterStatus.downloading"
-              @click="handleUpdateCheck"
-            >
-              {{ updateButtonLabel }}
-            </UButton>
-            <p v-if="updaterStatus.error" class="text-[11px] text-red-500 mt-1">
-              {{ updaterStatus.error }}
-            </p>
-          </div>
-        </div>
       </div>
     </template>
   </UModal>
@@ -138,10 +71,6 @@
 <script setup lang="ts">
 const open = defineModel<boolean>('open', { default: false })
 const { settings, resetDefaults } = useAppSettings()
-const { status: updaterStatus, isTauri, checkForUpdate, downloadAndInstall } = useUpdater()
-
-const config = useRuntimeConfig()
-const appVersion = config.public.appVersion as string
 
 const gridPresets = [1, 2.54, 5, 10, 25]
 
@@ -164,20 +93,5 @@ function commitGridSpacing() {
 function setGridSpacing(mm: number) {
   settings.gridSpacingMm = mm
   gridSpacingInput.value = mm
-}
-
-const updateButtonLabel = computed(() => {
-  if (updaterStatus.downloading) return 'Installing...'
-  if (updaterStatus.checking) return 'Checking...'
-  if (updaterStatus.available) return `Update to v${updaterStatus.version}`
-  return 'Check for updates'
-})
-
-async function handleUpdateCheck() {
-  if (updaterStatus.available) {
-    await downloadAndInstall()
-  } else {
-    await checkForUpdate()
-  }
 }
 </script>
