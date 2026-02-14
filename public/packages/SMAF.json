@@ -2,8 +2,8 @@
   "name": "SMAF",
   "type": "Chip",
   "aliases": [
-    "SMA-F",
-    "DO-219AB"
+    "DO-219AB",
+    "SMA-F"
   ],
   "body": {
     "length": 3.5,

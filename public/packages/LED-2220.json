@@ -3,9 +3,9 @@
   "type": "Chip",
   "aliases": [
     "2220 LED",
+    "CHIP-LED2220",
     "LED 2220",
-    "LED2220",
-    "CHIP-LED2220"
+    "LED2220"
   ],
   "body": {
     "length": 5.7,

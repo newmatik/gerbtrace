@@ -2,11 +2,9 @@
   "name": "QFP44",
   "type": "FourSymmetricLeadGroups",
   "aliases": [
-    "TQFP44",
-    "TQFP-44",
-    "QFP-44",
+    "LQFP-44",
     "LQFP44",
-    "LQFP-44"
+    "QFP-44"
   ],
   "body": {
     "length": 10,

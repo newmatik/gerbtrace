@@ -9,10 +9,14 @@
     "numberOfLeads": 8,
     "widthOverLeads": 2,
     "leadPitch": 0.5,
-    "leadWidth": 0.7,
+    "leadWidth": 0.25,
     "leadLength": 0.25
   },
   "aliases": [
-    "DFN-8"
+    "DFN-08-3x3-P0.50",
+    "DFN08-3x3-P0.50",
+    "DFN083x3P0.50",
+    "DFN8-3x3-P0.50",
+    "DFN83x3P0.50"
   ]
 }

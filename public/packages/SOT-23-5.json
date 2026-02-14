@@ -1,12 +1,35 @@
 {
   "name": "SOT-23-5",
-  "type": "Outline",
+  "type": "PT_GENERIC",
   "body": {
     "length": 2.9,
     "width": 1.6
   },
-  "outline": {
-    "length": 2.9,
-    "width": 1.6
-  }
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "GULLWING",
+        "numLeads": 3,
+        "distFromCenter": -1.4,
+        "ccHalf": 0.95,
+        "angleMilliDeg": 180000,
+        "padLength": 0.6,
+        "padWidth": 0.4
+      },
+      {
+        "shape": "GULLWING",
+        "numLeads": 2,
+        "distFromCenter": 1.4,
+        "ccHalf": -0.95,
+        "angleMilliDeg": 0,
+        "padLength": 0.6,
+        "padWidth": 0.4
+      }
+    ]
+  },
+  "aliases": [
+    "SOT23-5",
+    "SOT23-DBV",
+    "SOT235"
+  ]
 }

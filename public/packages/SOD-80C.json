@@ -9,5 +9,8 @@
     "chipLength": 3.5,
     "leadWidth": 1.5,
     "leadLength": 0.3
-  }
+  },
+  "aliases": [
+    "SOD80C"
+  ]
 }

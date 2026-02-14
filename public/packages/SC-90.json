@@ -8,5 +8,8 @@
   "outline": {
     "length": 2,
     "width": 2.1
-  }
+  },
+  "aliases": [
+    "SC90"
+  ]
 }

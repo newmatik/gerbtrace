@@ -1,6 +1,6 @@
 {
   "name": "SOT-223",
-  "type": "ThreePole",
+  "type": "PT_GENERIC",
   "aliases": [
     "SOT223"
   ],
@@ -8,10 +8,26 @@
     "length": 6.5,
     "width": 3.5
   },
-  "threePole": {
-    "widthOverLeads": 7,
-    "ccDistance": 2.3,
-    "leadWidth": 0.7,
-    "leadLength": 0.95
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "GULLWING",
+        "numLeads": 3,
+        "distFromCenter": -3.5,
+        "ccHalf": 2.3,
+        "angleMilliDeg": 180000,
+        "padLength": 1.75,
+        "padWidth": 0.7
+      },
+      {
+        "shape": "GULLWING",
+        "numLeads": 1,
+        "distFromCenter": 3.5,
+        "ccHalf": 0,
+        "angleMilliDeg": 0,
+        "padLength": 1.75,
+        "padWidth": 3
+      }
+    ]
   }
 }

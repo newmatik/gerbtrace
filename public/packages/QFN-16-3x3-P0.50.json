@@ -2,8 +2,8 @@
   "name": "QFN-16-3x3-P0.50",
   "type": "FourSymmetricLeadGroups",
   "aliases": [
-    "QFN-16",
-    "QFN16"
+    "QFN16-3x3-P0.50",
+    "QFN163x3P0.50"
   ],
   "body": {
     "length": 3,

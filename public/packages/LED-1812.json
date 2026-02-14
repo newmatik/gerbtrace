@@ -3,9 +3,9 @@
   "type": "Chip",
   "aliases": [
     "1812 LED",
+    "CHIP-LED1812",
     "LED 1812",
-    "LED1812",
-    "CHIP-LED1812"
+    "LED1812"
   ],
   "body": {
     "length": 4.5,

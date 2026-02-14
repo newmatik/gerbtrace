@@ -2,9 +2,9 @@
   "name": "SOIC-8W",
   "type": "TwoSymmetricLeadGroups",
   "aliases": [
-    "SOIC8W",
     "SO-8W",
-    "SO8W"
+    "SO8W",
+    "SOIC8W"
   ],
   "body": {
     "length": 5.41,

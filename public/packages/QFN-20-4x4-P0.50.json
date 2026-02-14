@@ -2,8 +2,8 @@
   "name": "QFN-20-4x4-P0.50",
   "type": "FourSymmetricLeadGroups",
   "aliases": [
-    "QFN-20",
-    "QFN20"
+    "QFN20-4x4-P0.50",
+    "QFN204x4P0.50"
   ],
   "body": {
     "length": 4,
@@ -13,7 +13,7 @@
     "numberOfLeads": 20,
     "widthOverLeads": 6,
     "leadPitch": 0.5,
-    "leadWidth": 0.35,
+    "leadWidth": 0.27,
     "leadLength": 0.25
   }
 }

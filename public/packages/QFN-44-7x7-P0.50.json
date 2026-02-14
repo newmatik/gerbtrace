@@ -2,8 +2,8 @@
   "name": "QFN-44-7x7-P0.50",
   "type": "FourSymmetricLeadGroups",
   "aliases": [
-    "QFN-44",
-    "QFN44"
+    "QFN44-7x7-P0.50",
+    "QFN447x7P0.50"
   ],
   "body": {
     "length": 7,

@@ -3,9 +3,11 @@
   "type": "Chip",
   "aliases": [
     "C2010",
-    "R2010",
+    "CAP2010",
+    "CHIP-2010",
     "L2010",
-    "CHIP-2010"
+    "R2010",
+    "RES2010"
   ],
   "body": {
     "length": 5,

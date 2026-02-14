@@ -230,6 +230,7 @@ interface FormData {
   fourSymmetric?: { numberOfLeads: number; widthOverLeads: number; leadPitch: number; leadWidth: number; leadLength: number }
   bga?: { leadsPerRow: number; leadsPerColumn: number; leadPitch: number; leadDiameter: number; leadsPerRowInHole?: number; leadsPerColumnInHole?: number }
   outline?: { length: number; width: number }
+  generic?: { leadGroups: Array<{ shape: 'GULLWING' | 'FLAT' | 'J_LEAD'; numLeads: number; distFromCenter: number; ccHalf: number; angleMilliDeg: number; padLength: number; padWidth: number }> }
 }
 
 const props = defineProps<{
@@ -247,6 +248,7 @@ const typeOptions = [
   { label: 'Two-Symmetric (SOIC, SSOP)', value: 'TwoSymmetricLeadGroups' },
   { label: 'Four-Symmetric (QFP, QFN)', value: 'FourSymmetricLeadGroups' },
   { label: 'BGA (Ball Grid Array)', value: 'BGA' },
+  { label: 'TPSys Generic (advanced)', value: 'PT_GENERIC' },
   { label: 'Outline (body only)', value: 'Outline' },
 ]
 
@@ -265,6 +267,7 @@ const form = computed<FormData>(() => {
     case 'TwoSymmetricLeadGroups': base.twoSymmetric = { ...pkg.twoSymmetric }; break
     case 'FourSymmetricLeadGroups': base.fourSymmetric = { ...pkg.fourSymmetric }; break
     case 'BGA': base.bga = { ...pkg.bga }; break
+    case 'PT_GENERIC': base.generic = { leadGroups: pkg.generic.leadGroups.map(g => ({ ...g })) }; break
     case 'Outline': base.outline = { ...pkg.outline }; break
   }
   return base
@@ -313,6 +316,22 @@ const typeDefaults: Record<PackageType, Partial<FormData>> = {
     body: { length: 7.0, width: 7.0 },
     bga: { leadsPerRow: 8, leadsPerColumn: 8, leadPitch: 0.8, leadDiameter: 0.4, leadsPerRowInHole: 0, leadsPerColumnInHole: 0 },
   },
+  PT_GENERIC: {
+    body: { length: 3.0, width: 2.0 },
+    generic: {
+      leadGroups: [
+        {
+          shape: 'GULLWING',
+          numLeads: 2,
+          distFromCenter: 0.8,
+          ccHalf: 0.5,
+          angleMilliDeg: 0,
+          padLength: 0.8,
+          padWidth: 0.4,
+        },
+      ],
+    },
+  },
   Outline: {
     body: { length: 3.0, width: 2.0 },
     outline: { length: 3.0, width: 2.0 },
@@ -350,6 +369,8 @@ function buildPackageDefinition(data: FormData): PackageDefinition {
       return { ...base, type: 'FourSymmetricLeadGroups', fourSymmetric: data.fourSymmetric! }
     case 'BGA':
       return { ...base, type: 'BGA', bga: data.bga! }
+    case 'PT_GENERIC':
+      return { ...base, type: 'PT_GENERIC', generic: data.generic! }
     case 'Outline':
       return { ...base, type: 'Outline', outline: data.outline! }
   }

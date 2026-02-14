@@ -2,9 +2,9 @@
   "name": "SO-18",
   "type": "TwoSymmetricLeadGroups",
   "aliases": [
+    "SO18",
     "SOIC-18",
-    "SOIC18",
-    "SO18"
+    "SOIC18"
   ],
   "body": {
     "length": 11.96,

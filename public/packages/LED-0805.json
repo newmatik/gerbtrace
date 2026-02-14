@@ -3,10 +3,10 @@
   "type": "Chip",
   "aliases": [
     "0805 LED",
-    "LED 0805",
-    "LED0805",
     "CHIP-LED0805",
-    "CHIP-LED805"
+    "CHIP-LED805",
+    "LED 0805",
+    "LED0805"
   ],
   "body": {
     "length": 2,

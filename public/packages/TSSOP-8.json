@@ -2,6 +2,8 @@
   "name": "TSSOP-8",
   "type": "TwoSymmetricLeadGroups",
   "aliases": [
+    "TSSOP-08",
+    "TSSOP08",
     "TSSOP8"
   ],
   "body": {

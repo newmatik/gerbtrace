@@ -10,5 +10,8 @@
     "ccDistance": 1.3,
     "leadWidth": 0.35,
     "leadLength": 0.35
-  }
+  },
+  "aliases": [
+    "SOT323"
+  ]
 }

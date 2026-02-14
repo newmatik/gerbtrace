@@ -1,9 +1,6 @@
 {
   "name": "BGA-324",
   "type": "BGA",
-  "aliases": [
-    "BGA324"
-  ],
   "body": {
     "length": 15.6,
     "width": 15.6

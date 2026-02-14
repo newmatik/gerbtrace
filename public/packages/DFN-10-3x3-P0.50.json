@@ -2,8 +2,8 @@
   "name": "DFN-10-3x3-P0.50",
   "type": "TwoSymmetricLeadGroups",
   "aliases": [
-    "DFN-10",
-    "DFN10"
+    "DFN10-3x3-P0.50",
+    "DFN103x3P0.50"
   ],
   "body": {
     "length": 3,

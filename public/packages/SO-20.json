@@ -2,9 +2,9 @@
   "name": "SO-20",
   "type": "TwoSymmetricLeadGroups",
   "aliases": [
+    "SO20",
     "SOIC-20",
-    "SOIC20",
-    "SO20"
+    "SOIC20"
   ],
   "body": {
     "length": 13.43,

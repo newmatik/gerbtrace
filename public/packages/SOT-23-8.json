@@ -11,5 +11,9 @@
     "leadPitch": 0.65,
     "leadWidth": 0.3,
     "leadLength": 0.25
-  }
+  },
+  "aliases": [
+    "SOT23-8",
+    "SOT238"
+  ]
 }

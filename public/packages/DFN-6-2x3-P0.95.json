@@ -13,7 +13,12 @@
     "leadLength": 0.25
   },
   "aliases": [
+    "DFN-06-2x3-P0.95",
     "DFN-6-2x3",
+    "DFN06-2x3-P0.95",
+    "DFN062x3P0.95",
+    "DFN6-2x3-P0.95",
+    "DFN62x3P0.95",
     "SOT-23-6-DFN"
   ]
 }

@@ -11,7 +11,7 @@
   "bga": {
     "leadsPerRow": 16,
     "leadsPerColumn": 16,
-    "leadPitch": 1,
+    "leadPitch": 0.8,
     "leadDiameter": 0.45,
     "leadsPerRowInHole": 0,
     "leadsPerColumnInHole": 0
