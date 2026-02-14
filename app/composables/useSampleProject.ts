@@ -13,6 +13,7 @@ export function useSampleProject() {
 
     for (const [name, entry] of Object.entries(zip.files)) {
       if (entry.dir) continue
+      if (name.startsWith('__MACOSX/')) continue
       // Strip directory prefix if present
       const fileName = name.includes('/') ? name.split('/').pop()! : name
       if (!isImportableFile(fileName)) continue

@@ -1,0 +1,16 @@
+{
+  "name": "D2PAK",
+  "type": "Outline",
+  "aliases": [
+    "TO-263",
+    "D2PAK (TO-263)"
+  ],
+  "body": {
+    "length": 10.2,
+    "width": 9.2
+  },
+  "outline": {
+    "length": 10.2,
+    "width": 9.2
+  }
+}

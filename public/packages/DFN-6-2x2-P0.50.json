@@ -1,0 +1,19 @@
+{
+  "name": "DFN-6-2x2-P0.50",
+  "type": "TwoSymmetricLeadGroups",
+  "aliases": [
+    "DFN-6",
+    "DFN6"
+  ],
+  "body": {
+    "length": 2,
+    "width": 2
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 6,
+    "widthOverLeads": 1.4,
+    "leadPitch": 0.5,
+    "leadWidth": 0.35,
+    "leadLength": 0.25
+  }
+}

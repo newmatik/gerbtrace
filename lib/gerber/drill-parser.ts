@@ -12,6 +12,7 @@
 import type { GerberAST, ASTNode, Format, ZeroSuppression, UnitsType } from './types'
 
 const FORMAT_COMMENT_RE = /FORMAT[=:\s]*\{?(\d)[:\.](\d)/i
+const EXCELLON_FORMAT_RE = /(?:INCH|METRIC)\s*,\s*(?:TZ|LZ)(?:\s*,\s*([0-9]+)\.([0-9]+))?/i
 const SUPPRESS_TRAILING_RE = /suppress\s*trail/i
 const SUPPRESS_LEADING_RE = /(suppress\s*lead|keep\s*zeros)/i
 const UNITS_INCH_RE = /(INCH|english)/i
@@ -81,12 +82,14 @@ export function parseDrillSource(source: string): GerberAST {
         units = 'in'
         if (/TZ/i.test(line)) zeroSuppression = 'leading'
         if (/LZ/i.test(line)) zeroSuppression = 'trailing'
+        detectFormatFromUnitsLine(line)
         continue
       }
       if (UNITS_METRIC_RE.test(line)) {
         units = 'mm'
         if (/TZ/i.test(line)) zeroSuppression = 'leading'
         if (/LZ/i.test(line)) zeroSuppression = 'trailing'
+        detectFormatFromUnitsLine(line)
         continue
       }
 
@@ -145,6 +148,18 @@ export function parseDrillSource(source: string): GerberAST {
       continue
     }
 
+    // Unit changes in drill body
+    if (line === 'M71') {
+      units = 'mm'
+      children.push({ type: 'units', units, sourceStart: lineStart, sourceEnd: lineEnd })
+      continue
+    }
+    if (line === 'M72') {
+      units = 'in'
+      children.push({ type: 'units', units, sourceStart: lineStart, sourceEnd: lineEnd })
+      continue
+    }
+
     // Repeat hole patterns (R) - simplified, ignore
     if (line.startsWith('R') && /^\d/.test(line[1])) continue
   }
@@ -173,6 +188,22 @@ export function parseDrillSource(source: string): GerberAST {
       zeroSuppression = 'trailing'
     } else if (SUPPRESS_LEADING_RE.test(comment)) {
       zeroSuppression = 'leading'
+    }
+  }
+
+  function detectFormatFromUnitsLine(line: string) {
+    // Excellon style: METRIC,TZ,000.000 or INCH,LZ,00.0000
+    const fmtMatch = EXCELLON_FORMAT_RE.exec(line)
+    if (!fmtMatch) return
+
+    const intPattern = fmtMatch[1]
+    const decPattern = fmtMatch[2]
+    if (!intPattern || !decPattern) return
+
+    const intDigits = intPattern.length
+    const decDigits = decPattern.length
+    if (intDigits > 0 && decDigits > 0) {
+      format = [intDigits, decDigits]
     }
   }
 }

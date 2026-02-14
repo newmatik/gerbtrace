@@ -1,0 +1,18 @@
+{
+  "name": "TSSOP-8",
+  "type": "TwoSymmetricLeadGroups",
+  "aliases": [
+    "TSSOP8"
+  ],
+  "body": {
+    "length": 3.35,
+    "width": 4.4
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 8,
+    "widthOverLeads": 6,
+    "leadPitch": 0.65,
+    "leadWidth": 0.3,
+    "leadLength": 0.5
+  }
+}

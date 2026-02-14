@@ -23,11 +23,41 @@
       </div>
     </div>
 
+    <!-- Package controls row -->
+    <div class="flex items-center justify-between px-3 pb-1 gap-1">
+      <div class="flex items-center gap-2 shrink-0">
+        <span class="text-[10px] text-neutral-400">
+          {{ filteredComponents.length }}/{{ allComponents.length }}
+        </span>
+        <button
+          class="text-[10px] px-1 py-0.5 rounded transition-colors flex items-center gap-0.5"
+          :class="showPackages
+            ? 'text-pink-500 dark:text-pink-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+            : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'"
+          :title="showPackages ? 'Hide package outlines' : 'Show package outlines'"
+          @click="$emit('update:showPackages', !showPackages)"
+        >
+          <UIcon name="i-lucide-box" class="text-[10px]" />
+          <span>Pkg</span>
+        </button>
+      </div>
+
+      <!-- Convention selector -->
+      <select
+        :value="pnpConvention"
+        class="text-[10px] bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded px-1 py-0.5 outline-none text-neutral-500 dark:text-neutral-400 cursor-pointer"
+        title="PnP orientation standard"
+        @change="$emit('update:pnpConvention', ($event.target as HTMLSelectElement).value as PnPConvention)"
+      >
+        <option v-for="[value, label] in conventionOptions" :key="value" :value="value">
+          {{ label }}
+        </option>
+      </select>
+    </div>
+
     <!-- Alignment controls -->
     <div class="flex items-center justify-between px-3 pb-1.5 gap-1">
-      <span class="text-[10px] text-neutral-400 shrink-0">
-        {{ filteredComponents.length }}/{{ allComponents.length }}
-      </span>
+      <div class="flex items-center gap-0 shrink-0"></div>
 
       <!-- Origin coordinates (inline, between counter and buttons) -->
       <span
@@ -88,9 +118,9 @@
       class="grid grid-cols-[minmax(0,1fr)_3.2rem_3.2rem_2.6rem_minmax(0,1fr)_minmax(0,1fr)] gap-px px-3 py-1 text-[10px] font-medium text-neutral-400 uppercase tracking-wider border-b border-neutral-200 dark:border-neutral-700 shrink-0"
     >
       <span>Ref</span>
-      <span class="text-right">X</span>
-      <span class="text-right">Y</span>
-      <span class="text-right">Rot</span>
+      <span>X</span>
+      <span>Y</span>
+      <span>Rot</span>
       <span>Value</span>
       <span>Package</span>
     </div>
@@ -117,9 +147,9 @@
             class="text-[9px] font-normal text-neutral-400 ml-0.5"
           >{{ comp.side === 'top' ? 'T' : 'B' }}</span>
         </span>
-        <span class="text-right text-neutral-500 tabular-nums">{{ comp.x.toFixed(2) }}</span>
-        <span class="text-right text-neutral-500 tabular-nums">{{ comp.y.toFixed(2) }}</span>
-        <span class="text-right text-neutral-500 tabular-nums">{{ comp.rotation.toFixed(0) }}</span>
+        <span class="text-neutral-500 tabular-nums">{{ comp.x.toFixed(2) }}</span>
+        <span class="text-neutral-500 tabular-nums">{{ comp.y.toFixed(2) }}</span>
+        <span class="text-neutral-500 tabular-nums">{{ comp.rotation.toFixed(0) }}</span>
         <span class="truncate text-neutral-500" :title="comp.value">{{ comp.value || '—' }}</span>
         <span class="truncate text-neutral-500" :title="comp.package">{{ comp.package || '—' }}</span>
       </div>
@@ -130,6 +160,8 @@
 <script setup lang="ts">
 import type { PnPComponent } from '~/utils/pnp-parser'
 import type { AlignMode } from '~/composables/usePickAndPlace'
+import type { PnPConvention } from '~/utils/pnp-conventions'
+import { PNP_CONVENTION_LABELS } from '~/utils/pnp-conventions'
 
 const props = defineProps<{
   allComponents: PnPComponent[]
@@ -140,15 +172,21 @@ const props = defineProps<{
   hasOrigin: boolean
   originX: number | null
   originY: number | null
+  showPackages: boolean
+  pnpConvention: PnPConvention
 }>()
 
 const emit = defineEmits<{
   'update:searchQuery': [value: string]
+  'update:showPackages': [value: boolean]
+  'update:pnpConvention': [value: PnPConvention]
   select: [designator: string | null]
   startSetOrigin: []
   startComponentAlign: []
   resetOrigin: []
 }>()
+
+const conventionOptions = Object.entries(PNP_CONVENTION_LABELS) as [PnPConvention, string][]
 
 const searchQuery = computed({
   get: () => props.searchQuery,

@@ -1,0 +1,17 @@
+{
+  "name": "SMC",
+  "type": "Chip",
+  "body": {
+    "length": 7.2,
+    "width": 6.2
+  },
+  "chip": {
+    "chipLength": 7.2,
+    "leadWidth": 6.2,
+    "leadLength": 0.8
+  },
+  "aliases": [
+    "DO-214AB",
+    "DO214AB"
+  ]
+}

@@ -191,7 +191,11 @@
           :has-origin="pnp.hasOrigin.value"
           :origin-x="pnp.originX.value"
           :origin-y="pnp.originY.value"
+          :show-packages="showPackages"
+          :pnp-convention="pnp.convention.value"
           @update:search-query="pnp.searchQuery.value = $event"
+          @update:show-packages="showPackages = $event"
+          @update:pnp-convention="updateConvention"
           @select="pnp.selectComponent($event)"
           @start-set-origin="startSetOrigin"
           @start-component-align="startComponentAlign"
@@ -234,6 +238,9 @@
           :pnp-origin-y="pnp.originY.value"
           :align-mode="pnp.alignMode.value"
           :align-click-a="pnp.alignClickA.value"
+          :match-package="pkgLib.matchPackage"
+          :show-packages="showPackages"
+          :pnp-convention="pnp.convention.value"
           @pnp-click="pnp.selectComponent($event)"
           @align-click="handleAlignClick"
         />
@@ -265,13 +272,14 @@ import type { SourceRange } from '@lib/gerber/types'
 import { sortLayersByPcbOrder, isTopLayer, isBottomLayer, isSharedLayer, getColorForType, isPnPLayer } from '~/utils/gerber-helpers'
 import type { ViewMode } from '~/components/viewer/BoardCanvas.vue'
 import { getPresetById, type PcbPreset } from '~/utils/pcb-presets'
+import type { PnPConvention } from '~/utils/pnp-conventions'
 import { exportRealisticSvg } from '../../../lib/renderer/svg-exporter'
 import { removeSourceRanges } from '@lib/gerber/editor'
 import JSZip from 'jszip'
 
 const route = useRoute()
 const projectId = Number(route.params.id)
-const { getProject, getFiles, addFiles, renameProject, updateFileLayerType, updateFileContent, updateProjectOrigin } = useProject()
+const { getProject, getFiles, addFiles, clearFiles, renameProject, updateFileLayerType, updateFileContent, updateProjectOrigin, updateProjectConvention } = useProject()
 const canvasInteraction = useCanvasInteraction()
 const measureTool = useMeasureTool()
 const infoTool = useInfoTool()
@@ -421,6 +429,11 @@ const hasOutline = computed(() => layers.value.some(l => l.type === 'Outline'))
 
 // ── Pick & Place ──
 const pnp = usePickAndPlace(layers)
+const pkgLib = usePackageLibrary()
+const showPackages = ref(true)
+
+// Load package library on mount (non-blocking)
+onMounted(() => { pkgLib.loadPackages() })
 
 // Auto-switch to Components tab when PnP layers appear for the first time
 watch(pnp.hasPnP, (has) => {
@@ -433,6 +446,12 @@ watch(pnp.hasPnP, (has) => {
 watch([pnp.originX, pnp.originY], ([ox, oy]) => {
   updateProjectOrigin(projectId, ox, oy)
 })
+
+// Update PnP convention and persist
+function updateConvention(convention: PnPConvention) {
+  pnp.convention.value = convention
+  updateProjectConvention(projectId, convention)
+}
 
 const viewModeOptions: { label: string; value: ViewMode }[] = [
   { label: 'Layers', value: 'layers' },
@@ -555,9 +574,24 @@ onMounted(async () => {
     pnp.originX.value = project.value.pnpOriginX
     pnp.originY.value = project.value.pnpOriginY
   }
+
+  // Restore persisted PnP convention
+  if (project.value?.pnpConvention) {
+    pnp.convention.value = project.value.pnpConvention
+  }
 })
 
 async function handleImport(newFiles: GerberFile[], sourceName: string) {
+  // Clear any cached parse trees so re-importing the same filenames works correctly.
+  const canvas = boardCanvasRef.value
+  const prevFileNames = layers.value.map(l => l.file.fileName)
+  if (canvas) {
+    for (const name of prevFileNames) canvas.invalidateCache(name)
+  }
+
+  // Replace the current board import (instead of appending).
+  // Appending multiple unrelated imports can create huge unified bounds and make auto-fit look broken.
+  await clearFiles(projectId, 1)
   await addFiles(projectId, 1, newFiles)
   if (sourceName && !hasBeenRenamed.value && project.value?.name?.match(/^View Project /)) {
     await renameProject(projectId, sourceName)
@@ -572,8 +606,19 @@ async function handleImport(newFiles: GerberFile[], sourceName: string) {
       type,
     }
   })
-  layers.value = sortLayersByPcbOrder([...layers.value, ...newLayers])
+  layers.value = sortLayersByPcbOrder(newLayers)
+  applyFilterVisibility(activeFilter.value)
   applyDefaultCropToOutline()
+
+  if (canvas) {
+    for (const f of newFiles) canvas.invalidateCache(f.fileName)
+  }
+
+  // Reset PnP origin (it is board-specific) and force re-fit.
+  pnp.resetOrigin()
+  await updateProjectOrigin(projectId, null, null)
+  canvasInteraction.resetView()
+
   // Invalidate PnP cache for newly imported files
   pnp.invalidateCache()
 }

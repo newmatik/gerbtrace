@@ -1,0 +1,21 @@
+{
+  "name": "SO-6",
+  "body": {
+    "length": 3,
+    "width": 3
+  },
+  "type": "TwoSymmetricLeadGroups",
+  "twoSymmetric": {
+    "numberOfLeads": 6,
+    "widthOverLeads": 3,
+    "leadPitch": 1,
+    "leadWidth": 0.5,
+    "leadLength": 0.5
+  },
+  "aliases": [
+    "SO6",
+    "SOIC-6",
+    "SOIC6",
+    "SO-06"
+  ]
+}

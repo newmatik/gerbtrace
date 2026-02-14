@@ -1,0 +1,19 @@
+{
+  "name": "LED-2220",
+  "type": "Chip",
+  "aliases": [
+    "2220 LED",
+    "LED 2220",
+    "LED2220",
+    "CHIP-LED2220"
+  ],
+  "body": {
+    "length": 5.7,
+    "width": 5
+  },
+  "chip": {
+    "chipLength": 5.7,
+    "leadWidth": 5,
+    "leadLength": 0.7
+  }
+}

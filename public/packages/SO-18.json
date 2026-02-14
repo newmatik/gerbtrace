@@ -1,0 +1,20 @@
+{
+  "name": "SO-18",
+  "type": "TwoSymmetricLeadGroups",
+  "aliases": [
+    "SOIC-18",
+    "SOIC18",
+    "SO18"
+  ],
+  "body": {
+    "length": 11.96,
+    "width": 3.9
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 18,
+    "widthOverLeads": 6,
+    "leadPitch": 1.27,
+    "leadWidth": 0.4,
+    "leadLength": 0.6
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "SO-28",
+  "body": {
+    "length": 18.1,
+    "width": 7.4
+  },
+  "type": "TwoSymmetricLeadGroups",
+  "twoSymmetric": {
+    "numberOfLeads": 28,
+    "widthOverLeads": 10.3,
+    "leadPitch": 1.27,
+    "leadWidth": 1.45,
+    "leadLength": 0.4
+  },
+  "aliases": [
+    "SO28",
+    "SOIC-28",
+    "SOIC28"
+  ]
+}

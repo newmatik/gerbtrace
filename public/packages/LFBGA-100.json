@@ -1,0 +1,19 @@
+{
+  "name": "LFBGA-100",
+  "type": "BGA",
+  "aliases": [
+    "LFBGA100"
+  ],
+  "body": {
+    "length": 9.2,
+    "width": 9.2
+  },
+  "bga": {
+    "leadsPerRow": 10,
+    "leadsPerColumn": 10,
+    "leadPitch": 0.8,
+    "leadDiameter": 0.35,
+    "leadsPerRowInHole": 0,
+    "leadsPerColumnInHole": 0
+  }
+}

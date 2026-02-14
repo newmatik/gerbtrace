@@ -1,0 +1,18 @@
+{
+  "name": "LQFP-80",
+  "type": "FourSymmetricLeadGroups",
+  "aliases": [
+    "LQFP80"
+  ],
+  "body": {
+    "length": 12,
+    "width": 12
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 80,
+    "widthOverLeads": 15.2,
+    "leadPitch": 0.5,
+    "leadWidth": 0.25,
+    "leadLength": 0.8
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "LFBGA-144",
+  "type": "BGA",
+  "aliases": [
+    "LFBGA144"
+  ],
+  "body": {
+    "length": 10.8,
+    "width": 10.8
+  },
+  "bga": {
+    "leadsPerRow": 12,
+    "leadsPerColumn": 12,
+    "leadPitch": 0.8,
+    "leadDiameter": 0.35,
+    "leadsPerRowInHole": 0,
+    "leadsPerColumnInHole": 0
+  }
+}

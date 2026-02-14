@@ -1,0 +1,15 @@
+{
+  "name": "TO-277",
+  "type": "Outline",
+  "aliases": [
+    "TO-277A"
+  ],
+  "body": {
+    "length": 6.5,
+    "width": 5
+  },
+  "outline": {
+    "length": 6.5,
+    "width": 5
+  }
+}

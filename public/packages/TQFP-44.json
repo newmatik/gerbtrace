@@ -1,0 +1,18 @@
+{
+  "name": "TQFP-44",
+  "type": "FourSymmetricLeadGroups",
+  "aliases": [
+    "TQFP44"
+  ],
+  "body": {
+    "length": 10,
+    "width": 10
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 44,
+    "widthOverLeads": 13.2,
+    "leadPitch": 0.8,
+    "leadWidth": 0.3,
+    "leadLength": 0.8
+  }
+}

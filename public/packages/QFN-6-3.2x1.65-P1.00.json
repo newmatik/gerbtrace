@@ -1,0 +1,18 @@
+{
+  "name": "QFN-6-3.2x1.65-P1.00",
+  "body": {
+    "length": 3.2,
+    "width": 1.65
+  },
+  "type": "TwoSymmetricLeadGroups",
+  "twoSymmetric": {
+    "numberOfLeads": 6,
+    "widthOverLeads": 3.2,
+    "leadPitch": 1,
+    "leadWidth": 0.6,
+    "leadLength": 0.5
+  },
+  "aliases": [
+    "QFN6"
+  ]
+}

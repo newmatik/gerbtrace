@@ -1,0 +1,20 @@
+{
+  "name": "SO-22",
+  "type": "TwoSymmetricLeadGroups",
+  "body": {
+    "length": 12,
+    "width": 7.5
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 22,
+    "widthOverLeads": 10.3,
+    "leadPitch": 1.27,
+    "leadWidth": 0.4,
+    "leadLength": 0.6
+  },
+  "aliases": [
+    "SO22",
+    "SOIC-22",
+    "SOIC22"
+  ]
+}

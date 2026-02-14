@@ -1,0 +1,19 @@
+{
+  "name": "QFN-32-5x5-P0.50",
+  "type": "FourSymmetricLeadGroups",
+  "aliases": [
+    "QFN-32",
+    "QFN32"
+  ],
+  "body": {
+    "length": 5,
+    "width": 5
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 32,
+    "widthOverLeads": 7,
+    "leadPitch": 0.5,
+    "leadWidth": 0.35,
+    "leadLength": 0.25
+  }
+}

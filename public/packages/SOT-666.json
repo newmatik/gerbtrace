@@ -1,0 +1,20 @@
+{
+  "name": "SOT-666",
+  "type": "TwoSymmetricLeadGroups",
+  "body": {
+    "length": 1.6,
+    "width": 1.6
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 6,
+    "widthOverLeads": 2.2,
+    "leadPitch": 0.5,
+    "leadWidth": 0.3,
+    "leadLength": 0.2
+  },
+  "aliases": [
+    "SC-75",
+    "SOT666",
+    "SC-70-6"
+  ]
+}

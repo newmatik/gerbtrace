@@ -1,0 +1,14 @@
+{
+  "name": "SOT-89",
+  "type": "ThreePole",
+  "body": {
+    "length": 4.5,
+    "width": 2.5
+  },
+  "threePole": {
+    "widthOverLeads": 3.6,
+    "ccDistance": 3,
+    "leadWidth": 0.35,
+    "leadLength": 0.35
+  }
+}

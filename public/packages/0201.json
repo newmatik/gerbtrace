@@ -1,0 +1,19 @@
+{
+  "name": "0201",
+  "type": "Chip",
+  "aliases": [
+    "C0201",
+    "R0201",
+    "L0201",
+    "CHIP-0201"
+  ],
+  "body": {
+    "length": 0.6,
+    "width": 0.3
+  },
+  "chip": {
+    "chipLength": 0.6,
+    "leadWidth": 0.3,
+    "leadLength": 0.12
+  }
+}

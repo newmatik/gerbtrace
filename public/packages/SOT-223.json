@@ -1,0 +1,17 @@
+{
+  "name": "SOT-223",
+  "type": "ThreePole",
+  "aliases": [
+    "SOT223"
+  ],
+  "body": {
+    "length": 6.5,
+    "width": 3.5
+  },
+  "threePole": {
+    "widthOverLeads": 7,
+    "ccDistance": 2.3,
+    "leadWidth": 0.7,
+    "leadLength": 0.95
+  }
+}

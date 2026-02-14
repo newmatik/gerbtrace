@@ -1,0 +1,16 @@
+{
+  "name": "BGA96",
+  "body": {
+    "length": 14,
+    "width": 10
+  },
+  "type": "BGA",
+  "bga": {
+    "leadsPerRow": 3,
+    "leadsPerColumn": 32,
+    "leadPitch": 0.8,
+    "leadDiameter": 0.44,
+    "leadsPerRowInHole": 0,
+    "leadsPerColumnInHole": 0
+  }
+}

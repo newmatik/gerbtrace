@@ -1,0 +1,16 @@
+{
+  "name": "7050",
+  "type": "Outline",
+  "body": {
+    "length": 7,
+    "width": 5
+  },
+  "outline": {
+    "length": 7,
+    "width": 5
+  },
+  "aliases": [
+    "OSC-7050",
+    "XTAL-7050"
+  ]
+}

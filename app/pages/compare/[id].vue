@@ -132,7 +132,7 @@ const modeOptions: { label: string; value: ComparisonMode; icon: string }[] = [
 
 const route = useRoute()
 const projectId = Number(route.params.id)
-const { getProject, getFiles, addFiles, renameProject } = useProject()
+const { getProject, getFiles, addFiles, clearFiles, renameProject } = useProject()
 const { autoMatch } = useLayerMatching()
 const canvasInteraction = useCanvasInteraction()
 const { backgroundColor } = useBackgroundColor()
@@ -205,12 +205,19 @@ onMounted(async () => {
 })
 
 async function handleImport(packet: number, newFiles: GerberFile[], sourceName: string) {
+  // Replace the packet contents (instead of appending) to avoid stacking
+  // multiple imports and breaking auto-fit/bounds.
+  await clearFiles(projectId, packet)
   await addFiles(projectId, packet, newFiles)
   if (packet === 1) {
-    filesA.value = [...filesA.value, ...newFiles]
+    filesA.value = [...newFiles]
   } else {
-    filesB.value = [...filesB.value, ...newFiles]
+    filesB.value = [...newFiles]
   }
+
+  // Force an auto-fit after import.
+  canvasInteraction.resetView()
+
   // Auto-name from imported files if not manually renamed
   if (sourceName && !hasBeenRenamed.value && project.value?.name?.match(/^Compare Project /)) {
     sourceNames.value[packet - 1] = sourceName
@@ -220,8 +227,11 @@ async function handleImport(packet: number, newFiles: GerberFile[], sourceName: 
       project.value = await getProject(projectId)
     }
   }
+  selectedMatch.value = 0
   if (filesA.value.length && filesB.value.length) {
     matches.value = autoMatch(filesA.value, filesB.value)
+  } else {
+    matches.value = []
   }
 }
 

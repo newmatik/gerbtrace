@@ -1,0 +1,20 @@
+{
+  "name": "SO-12",
+  "type": "TwoSymmetricLeadGroups",
+  "body": {
+    "length": 5,
+    "width": 3.9
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 12,
+    "widthOverLeads": 6,
+    "leadPitch": 1.27,
+    "leadWidth": 0.4,
+    "leadLength": 0.6
+  },
+  "aliases": [
+    "SO12",
+    "SOIC-12",
+    "SOIC12"
+  ]
+}

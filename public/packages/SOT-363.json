@@ -1,0 +1,15 @@
+{
+  "name": "SOT-363",
+  "body": {
+    "length": 2,
+    "width": 1.25
+  },
+  "type": "TwoSymmetricLeadGroups",
+  "twoSymmetric": {
+    "numberOfLeads": 6,
+    "widthOverLeads": 1.6,
+    "leadPitch": 0.65,
+    "leadWidth": 0.35,
+    "leadLength": 0.2
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "uBGA-64",
+  "type": "BGA",
+  "aliases": [
+    "uBGA64"
+  ],
+  "body": {
+    "length": 5.5,
+    "width": 5.5
+  },
+  "bga": {
+    "leadsPerRow": 8,
+    "leadsPerColumn": 8,
+    "leadPitch": 0.5,
+    "leadDiameter": 0.27,
+    "leadsPerRowInHole": 0,
+    "leadsPerColumnInHole": 0
+  }
+}

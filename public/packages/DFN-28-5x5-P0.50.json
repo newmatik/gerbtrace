@@ -1,0 +1,19 @@
+{
+  "name": "DFN-28-5x5-P0.50",
+  "type": "TwoSymmetricLeadGroups",
+  "aliases": [
+    "DFN-28",
+    "DFN28"
+  ],
+  "body": {
+    "length": 5,
+    "width": 5
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 28,
+    "widthOverLeads": 4,
+    "leadPitch": 0.5,
+    "leadWidth": 0.35,
+    "leadLength": 0.25
+  }
+}

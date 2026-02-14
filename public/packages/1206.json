@@ -1,0 +1,19 @@
+{
+  "name": "1206",
+  "type": "Chip",
+  "aliases": [
+    "C1206",
+    "R1206",
+    "L1206",
+    "CHIP-1206"
+  ],
+  "body": {
+    "length": 3.2,
+    "width": 1.6
+  },
+  "chip": {
+    "chipLength": 3.2,
+    "leadWidth": 1.6,
+    "leadLength": 0.4
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "SO-8",
+  "body": {
+    "length": 4.9,
+    "width": 3.9
+  },
+  "type": "TwoSymmetricLeadGroups",
+  "twoSymmetric": {
+    "numberOfLeads": 8,
+    "widthOverLeads": 5.9,
+    "leadPitch": 1.27,
+    "leadWidth": 1.05,
+    "leadLength": 0.4
+  },
+  "aliases": [
+    "SO8",
+    "SOIC-8",
+    "SOIC8",
+    "SO-08"
+  ]
+}

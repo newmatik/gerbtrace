@@ -1,0 +1,20 @@
+{
+  "name": "SO-16",
+  "body": {
+    "length": 10.4,
+    "width": 3.7
+  },
+  "type": "TwoSymmetricLeadGroups",
+  "twoSymmetric": {
+    "numberOfLeads": 16,
+    "widthOverLeads": 6,
+    "leadPitch": 1.27,
+    "leadWidth": 1.15,
+    "leadLength": 0.4
+  },
+  "aliases": [
+    "SO16",
+    "SOIC-16",
+    "SOIC16"
+  ]
+}
