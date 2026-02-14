@@ -1,0 +1,51 @@
+---
+description: Package orientation convention — Mycronic/TPSys baseline with unified PnP standard conversion
+globs: app/utils/package-types.ts,public/packages/**,app/components/viewer/BoardCanvas.vue,app/composables/usePackageLibrary.ts
+alwaysApply: false
+---
+
+# Package Orientation Convention — Mycronic/TPSys Baseline (Single Source of Truth)
+
+This project stores **all package definitions** in **Mycronic / MYDATA TPSys** 0° orientation.
+
+**Golden reference:** MYCenter screenshots of common packages at 0/90/180/270°.
+
+## What “Mycronic 0°” means here
+
+- **Chip (two-terminal)**: body vertical, **pad/terminal 1 at TOP**
+- **Multi-pin (3+ pins)**: **pin 1 / A1 at UPPER-LEFT**, numbering CCW
+
+## PnP convention conversion (display-only)
+
+The convention selector does **not** modify imported PnP data. It only changes how we
+convert PnP rotations into our baseline for rendering.
+
+We convert any imported rotation into **degrees CCW (top view)**:
+
+`rotationCCW = direction * pnpRotation + offsetDeg`
+
+### Rotation direction
+
+- **Mycronic PnP**: CW-positive → `direction = -1`
+- **IPC-7351 PnP**: CCW-positive → `direction = +1`
+- **IEC 61188-7 PnP**: CCW-positive → `direction = +1`
+
+### Offsets (to align 0° with the Mycronic baseline)
+
+Offsets are configured per **package type** in one authoritative place:
+
+- `app/utils/pnp-conventions.ts` (`PNP_CONVENTIONS[convention].offsetDegByType`)
+
+## Where this lives
+
+- `app/utils/pnp-conventions.ts` (authoritative config: conventions, CW/CCW, offsets)
+- `app/utils/package-types.ts`
+  - `computeFootprint()` emits Mycronic/TPSys 0° geometry
+  - `getConventionRotationTransform()` defines direction + offset
+- `app/components/viewer/BoardCanvas.vue`
+  - applies the transform before drawing
+
+## Reference docs
+
+- `public/packages/README.md` (authoritative guide)
+- `public/packages/TPSYS-FORMAT.md` (TPSys `pck.pck` deep reference)
