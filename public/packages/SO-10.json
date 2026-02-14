@@ -1,0 +1,20 @@
+{
+  "name": "SO-10",
+  "type": "TwoSymmetricLeadGroups",
+  "body": {
+    "length": 4.9,
+    "width": 3.9
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 10,
+    "widthOverLeads": 6,
+    "leadPitch": 1.27,
+    "leadWidth": 0.4,
+    "leadLength": 0.6
+  },
+  "aliases": [
+    "SO10",
+    "SOIC-10",
+    "SOIC10"
+  ]
+}

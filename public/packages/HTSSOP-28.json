@@ -1,0 +1,15 @@
+{
+  "name": "HTSSOP-28",
+  "type": "TwoSymmetricLeadGroups",
+  "body": {
+    "length": 9.85,
+    "width": 6.1
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 28,
+    "widthOverLeads": 8.4,
+    "leadPitch": 0.65,
+    "leadWidth": 0.35,
+    "leadLength": 0.7
+  }
+}

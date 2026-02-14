@@ -1,0 +1,20 @@
+{
+  "name": "LED-01005",
+  "type": "Chip",
+  "aliases": [
+    "01005 LED",
+    "LED 01005",
+    "LED01005",
+    "CHIP-LED01005",
+    "CHIP-LED1005"
+  ],
+  "body": {
+    "length": 0.4,
+    "width": 0.2
+  },
+  "chip": {
+    "chipLength": 0.4,
+    "leadWidth": 0.2,
+    "leadLength": 0.08
+  }
+}

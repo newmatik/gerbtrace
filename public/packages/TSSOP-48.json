@@ -1,0 +1,18 @@
+{
+  "name": "TSSOP-48",
+  "type": "TwoSymmetricLeadGroups",
+  "aliases": [
+    "TSSOP48"
+  ],
+  "body": {
+    "length": 16.35,
+    "width": 7.8
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 48,
+    "widthOverLeads": 9.4,
+    "leadPitch": 0.65,
+    "leadWidth": 0.3,
+    "leadLength": 0.5
+  }
+}

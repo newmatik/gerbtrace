@@ -96,17 +96,25 @@ export function getColorForType(type: string): string {
 export function detectLayerType(fileName: string): string {
   const lower = fileName.toLowerCase()
   const ext = lower.slice(lower.lastIndexOf('.'))
-  if (LAYER_TYPE_MAP[ext]) return LAYER_TYPE_MAP[ext]
 
-  // Try content-based keywords
+  // Return immediately for unambiguous extensions (skip 'Unknown' mapped ones like .gbr)
+  const extType = LAYER_TYPE_MAP[ext]
+  if (extType && extType !== 'Unknown') return extType
+
+  // Try filename-based keyword matching (works for descriptive names like copper_top.gbr)
   if (/top.*copper|copper.*top|f\.cu/i.test(lower)) return 'Top Copper'
   if (/bottom.*copper|copper.*bottom|b\.cu/i.test(lower)) return 'Bottom Copper'
-  if (/top.*mask|mask.*top/i.test(lower)) return 'Top Solder Mask'
-  if (/bottom.*mask|mask.*bottom/i.test(lower)) return 'Bottom Solder Mask'
+  if (/top.*mask|mask.*top|soldermask.*top|top.*soldermask/i.test(lower)) return 'Top Solder Mask'
+  if (/bottom.*mask|mask.*bottom|soldermask.*bottom|bottom.*soldermask/i.test(lower)) return 'Bottom Solder Mask'
   if (/top.*silk|silk.*top/i.test(lower)) return 'Top Silkscreen'
   if (/bottom.*silk|silk.*bottom/i.test(lower)) return 'Bottom Silkscreen'
-  if (/outline|edge|board/i.test(lower)) return 'Outline'
+  if (/top.*paste|paste.*top|solderpaste.*top|top.*solderpaste/i.test(lower)) return 'Top Paste'
+  if (/bottom.*paste|paste.*bottom|solderpaste.*bottom|bottom.*solderpaste/i.test(lower)) return 'Bottom Paste'
+  if (/outline|edge|board|profile|contour/i.test(lower)) return 'Outline'
   if (/drill|drl/i.test(lower)) return 'Drill'
+
+  // Fall back to extension-based type (e.g. 'Unknown' for .gbr/.ger/.pho/.art)
+  if (extType) return extType
 
   return 'Unknown'
 }
@@ -177,7 +185,10 @@ export function isGerberFile(fileName: string): boolean {
   const lower = fileName.toLowerCase()
   // Skip common non-gerber files
   if (lower.endsWith('.json') || lower.endsWith('.txt') || lower.endsWith('.md') || lower.endsWith('.csv')) return false
+  if (lower.endsWith('.gbrjob')) return false
   if (lower === 'license' || lower === 'readme') return false
+  // Skip macOS resource fork files (._filename)
+  if (fileName.startsWith('._')) return false
 
   const ext = lower.slice(lower.lastIndexOf('.'))
   const gerberExts = [

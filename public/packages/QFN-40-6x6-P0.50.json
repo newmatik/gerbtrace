@@ -1,0 +1,19 @@
+{
+  "name": "QFN-40-6x6-P0.50",
+  "type": "FourSymmetricLeadGroups",
+  "aliases": [
+    "QFN-40",
+    "QFN40"
+  ],
+  "body": {
+    "length": 6,
+    "width": 6
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 40,
+    "widthOverLeads": 8,
+    "leadPitch": 0.5,
+    "leadWidth": 0.35,
+    "leadLength": 0.25
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "2010",
+  "type": "Chip",
+  "aliases": [
+    "C2010",
+    "R2010",
+    "L2010",
+    "CHIP-2010"
+  ],
+  "body": {
+    "length": 5,
+    "width": 2.5
+  },
+  "chip": {
+    "chipLength": 5,
+    "leadWidth": 2.5,
+    "leadLength": 0.6
+  }
+}

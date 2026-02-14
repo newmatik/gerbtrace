@@ -35,6 +35,7 @@ async function handleFiles(rawFiles: File[]) {
       const zip = await JSZip.loadAsync(buffer)
       for (const [name, entry] of Object.entries(zip.files)) {
         if (entry.dir) continue
+        if (name.startsWith('__MACOSX/')) continue
         const fileName = name.includes('/') ? name.split('/').pop()! : name
         if (!isImportableFile(fileName)) continue
         const content = await entry.async('text')

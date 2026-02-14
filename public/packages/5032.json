@@ -1,0 +1,16 @@
+{
+  "name": "5032",
+  "type": "Outline",
+  "body": {
+    "length": 5,
+    "width": 3.2
+  },
+  "outline": {
+    "length": 5,
+    "width": 3.2
+  },
+  "aliases": [
+    "OSC-5032",
+    "XTAL-5032"
+  ]
+}

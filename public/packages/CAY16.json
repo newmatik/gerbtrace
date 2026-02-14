@@ -1,0 +1,15 @@
+{
+  "name": "CAY16",
+  "type": "TwoSymmetricLeadGroups",
+  "body": {
+    "length": 3.2,
+    "width": 1.6
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 8,
+    "widthOverLeads": 1.6,
+    "leadPitch": 0.8,
+    "leadWidth": 0.3,
+    "leadLength": 0.3
+  }
+}

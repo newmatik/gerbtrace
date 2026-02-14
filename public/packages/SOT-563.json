@@ -1,0 +1,20 @@
+{
+  "name": "SOT-563",
+  "type": "TwoSymmetricLeadGroups",
+  "body": {
+    "length": 1.6,
+    "width": 1.6
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 6,
+    "widthOverLeads": 2.2,
+    "leadPitch": 0.5,
+    "leadWidth": 0.3,
+    "leadLength": 0.2
+  },
+  "aliases": [
+    "SC-74A",
+    "SOT563",
+    "TSOT-563"
+  ]
+}

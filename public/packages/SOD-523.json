@@ -1,0 +1,13 @@
+{
+  "name": "SOD-523",
+  "body": {
+    "length": 1.2,
+    "width": 0.7
+  },
+  "type": "Chip",
+  "chip": {
+    "chipLength": 1.2,
+    "leadWidth": 0.7,
+    "leadLength": 0.6
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "LQFP208-0.5",
+  "body": {
+    "length": 27.95,
+    "width": 27.95
+  },
+  "type": "FourSymmetricLeadGroups",
+  "fourSymmetric": {
+    "numberOfLeads": 208,
+    "widthOverLeads": 29.95,
+    "leadPitch": 0.5,
+    "leadWidth": 1,
+    "leadLength": 0.2
+  }
+}

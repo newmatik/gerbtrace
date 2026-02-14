@@ -1,0 +1,18 @@
+{
+  "name": "QSOP-16",
+  "type": "TwoSymmetricLeadGroups",
+  "body": {
+    "length": 4.9,
+    "width": 3.9
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 16,
+    "widthOverLeads": 5.5,
+    "leadPitch": 0.635,
+    "leadWidth": 0.28,
+    "leadLength": 0.45
+  },
+  "aliases": [
+    "QSOP16"
+  ]
+}

@@ -1,6 +1,7 @@
 import type { LayerInfo } from '~/utils/gerber-helpers'
 import { isPnPLayer } from '~/utils/gerber-helpers'
 import { parsePnPFile, isFiducial, type PnPComponent } from '~/utils/pnp-parser'
+import type { PnPConvention } from '~/utils/pnp-conventions'
 
 export interface AlignPoint {
   x: number
@@ -100,6 +101,10 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
   function selectComponent(designator: string | null) {
     selectedDesignator.value = designator
   }
+
+  // ── PnP convention (orientation standard) ──
+  // Default to Mycronic since our package footprints are defined in Mycronic convention
+  const convention = ref<PnPConvention>('mycronic')
 
   // ── Origin offset ──
   // The origin maps PnP (0,0) to a point in Gerber coordinate space.
@@ -221,6 +226,8 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
     selectedComponent,
     selectComponent,
     invalidateCache,
+    // Convention
+    convention,
     // Origin
     originX,
     originY,

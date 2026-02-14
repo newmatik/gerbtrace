@@ -1,0 +1,19 @@
+{
+  "name": "LED-2010",
+  "type": "Chip",
+  "aliases": [
+    "2010 LED",
+    "LED 2010",
+    "LED2010",
+    "CHIP-LED2010"
+  ],
+  "body": {
+    "length": 5,
+    "width": 2.5
+  },
+  "chip": {
+    "chipLength": 5,
+    "leadWidth": 2.5,
+    "leadLength": 0.6
+  }
+}

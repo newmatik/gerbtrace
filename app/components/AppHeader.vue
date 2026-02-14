@@ -14,6 +14,14 @@
 
     <div class="flex-1" />
     <UButton
+      to="/packages"
+      size="xs"
+      color="neutral"
+      variant="ghost"
+      icon="i-lucide-package"
+      title="Package Manager"
+    />
+    <UButton
       size="xs"
       color="neutral"
       variant="ghost"

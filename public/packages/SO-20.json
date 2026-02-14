@@ -1,0 +1,20 @@
+{
+  "name": "SO-20",
+  "type": "TwoSymmetricLeadGroups",
+  "aliases": [
+    "SOIC-20",
+    "SOIC20",
+    "SO20"
+  ],
+  "body": {
+    "length": 13.43,
+    "width": 7.5
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 20,
+    "widthOverLeads": 9.6,
+    "leadPitch": 1.27,
+    "leadWidth": 0.4,
+    "leadLength": 0.6
+  }
+}

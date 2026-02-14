@@ -1,0 +1,19 @@
+{
+  "name": "QFN-72-10x10-P0.50",
+  "type": "FourSymmetricLeadGroups",
+  "aliases": [
+    "QFN-72",
+    "QFN72"
+  ],
+  "body": {
+    "length": 10,
+    "width": 10
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 72,
+    "widthOverLeads": 12,
+    "leadPitch": 0.5,
+    "leadWidth": 0.35,
+    "leadLength": 0.25
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "SO-24",
+  "body": {
+    "length": 15.4,
+    "width": 7.5
+  },
+  "type": "TwoSymmetricLeadGroups",
+  "twoSymmetric": {
+    "numberOfLeads": 24,
+    "widthOverLeads": 10.3,
+    "leadPitch": 1.27,
+    "leadWidth": 1.4,
+    "leadLength": 0.4
+  },
+  "aliases": [
+    "SO24",
+    "SOIC-24",
+    "SOIC24"
+  ]
+}

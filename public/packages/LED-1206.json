@@ -1,0 +1,19 @@
+{
+  "name": "LED-1206",
+  "type": "Chip",
+  "aliases": [
+    "1206 LED",
+    "LED 1206",
+    "LED1206",
+    "CHIP-LED1206"
+  ],
+  "body": {
+    "length": 3.2,
+    "width": 1.6
+  },
+  "chip": {
+    "chipLength": 3.2,
+    "leadWidth": 1.6,
+    "leadLength": 0.4
+  }
+}

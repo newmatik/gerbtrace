@@ -1,0 +1,19 @@
+{
+  "name": "WLCSP-36",
+  "type": "BGA",
+  "aliases": [
+    "WLCSP36"
+  ],
+  "body": {
+    "length": 4,
+    "width": 4
+  },
+  "bga": {
+    "leadsPerRow": 6,
+    "leadsPerColumn": 6,
+    "leadPitch": 0.4,
+    "leadDiameter": 0.25,
+    "leadsPerRowInHole": 0,
+    "leadsPerColumnInHole": 0
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "SO-4",
+  "body": {
+    "length": 1.7,
+    "width": 7.05
+  },
+  "type": "TwoSymmetricLeadGroups",
+  "twoSymmetric": {
+    "numberOfLeads": 4,
+    "widthOverLeads": 5,
+    "leadPitch": 1.27,
+    "leadWidth": 2,
+    "leadLength": 0.4
+  },
+  "aliases": [
+    "SO4",
+    "SOIC-4",
+    "SOIC4",
+    "SO-04"
+  ]
+}

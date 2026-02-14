@@ -1,0 +1,16 @@
+{
+  "name": "2016",
+  "type": "Outline",
+  "body": {
+    "length": 2,
+    "width": 1.6
+  },
+  "outline": {
+    "length": 2,
+    "width": 1.6
+  },
+  "aliases": [
+    "OSC-2016",
+    "XTAL-2016"
+  ]
+}

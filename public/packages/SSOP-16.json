@@ -1,0 +1,18 @@
+{
+  "name": "SSOP-16",
+  "type": "TwoSymmetricLeadGroups",
+  "body": {
+    "length": 6.2,
+    "width": 5.3
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 16,
+    "widthOverLeads": 6.9,
+    "leadPitch": 0.635,
+    "leadWidth": 0.3,
+    "leadLength": 0.5
+  },
+  "aliases": [
+    "SSOP16"
+  ]
+}

@@ -1,5 +1,6 @@
 import Dexie from 'dexie'
 import type { GerberFile } from '~/utils/gerber-helpers'
+import type { PnPConvention } from '~/utils/pnp-conventions'
 
 interface ProjectRecord {
   id?: number
@@ -11,6 +12,8 @@ interface ProjectRecord {
   pnpOriginX?: number | null
   /** PnP origin Y in Gerber coordinate units */
   pnpOriginY?: number | null
+  /** PnP orientation convention (null = default 'mycronic') */
+  pnpConvention?: PnPConvention | null
 }
 
 interface FileRecord {
@@ -39,6 +42,11 @@ class GerbtraceDB extends Dexie {
     })
     // v3: add pnpOriginX/pnpOriginY to projects (non-indexed, just stored)
     this.version(3).stores({
+      projects: '++id, name, mode, createdAt, updatedAt',
+      files: '++id, projectId, packet, fileName',
+    })
+    // v4: add pnpConvention to projects (non-indexed, just stored)
+    this.version(4).stores({
       projects: '++id, name, mode, createdAt, updatedAt',
       files: '++id, projectId, packet, fileName',
     })
@@ -132,6 +140,10 @@ export function useProject() {
     await db.projects.update(id, { pnpOriginX: originX, pnpOriginY: originY, updatedAt: new Date() })
   }
 
+  async function updateProjectConvention(id: number, convention: PnPConvention) {
+    await db.projects.update(id, { pnpConvention: convention, updatedAt: new Date() })
+  }
+
   async function clearFiles(projectId: number, packet: number) {
     await db.files
       .where('projectId').equals(projectId)
@@ -157,5 +169,6 @@ export function useProject() {
     updateFileContent,
     updateFileLayerType,
     updateProjectOrigin,
+    updateProjectConvention,
   }
 }

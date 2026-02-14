@@ -1,0 +1,19 @@
+{
+  "name": "BGA-484",
+  "type": "BGA",
+  "aliases": [
+    "BGA484"
+  ],
+  "body": {
+    "length": 23,
+    "width": 23
+  },
+  "bga": {
+    "leadsPerRow": 22,
+    "leadsPerColumn": 22,
+    "leadPitch": 1,
+    "leadDiameter": 0.45,
+    "leadsPerRowInHole": 0,
+    "leadsPerColumnInHole": 0
+  }
+}

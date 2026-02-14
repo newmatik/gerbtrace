@@ -1,0 +1,19 @@
+{
+  "name": "LED-2920",
+  "type": "Chip",
+  "aliases": [
+    "2920 LED",
+    "LED 2920",
+    "LED2920",
+    "CHIP-LED2920"
+  ],
+  "body": {
+    "length": 7.3,
+    "width": 5
+  },
+  "chip": {
+    "chipLength": 7.3,
+    "leadWidth": 5,
+    "leadLength": 0.8
+  }
+}

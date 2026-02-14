@@ -1,0 +1,13 @@
+{
+  "name": "SOD-123",
+  "body": {
+    "length": 3.65,
+    "width": 0.6
+  },
+  "type": "Chip",
+  "chip": {
+    "chipLength": 3.65,
+    "leadWidth": 0.6,
+    "leadLength": 0.6
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "name": "QFN-8-2.5x2.5-P0.70",
+  "body": {
+    "length": 2.5,
+    "width": 2.5
+  },
+  "type": "TwoSymmetricLeadGroups",
+  "twoSymmetric": {
+    "numberOfLeads": 8,
+    "widthOverLeads": 3,
+    "leadPitch": 0.7,
+    "leadWidth": 1,
+    "leadLength": 0.5
+  },
+  "aliases": [
+    "QFN8"
+  ]
+}

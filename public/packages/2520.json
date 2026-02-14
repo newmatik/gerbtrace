@@ -1,0 +1,16 @@
+{
+  "name": "2520",
+  "type": "Outline",
+  "body": {
+    "length": 2.5,
+    "width": 2
+  },
+  "outline": {
+    "length": 2.5,
+    "width": 2
+  },
+  "aliases": [
+    "OSC-2520",
+    "XTAL-2520"
+  ]
+}

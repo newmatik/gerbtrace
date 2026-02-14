@@ -1,0 +1,20 @@
+{
+  "name": "SOT-23",
+  "type": "ThreePole",
+  "aliases": [
+    "SOT23",
+    "SOT-23-B1JEDEC",
+    "SOT-23-E1JEDEC",
+    "SOT23-DBV"
+  ],
+  "body": {
+    "length": 2.9,
+    "width": 1.3
+  },
+  "threePole": {
+    "widthOverLeads": 2.4,
+    "ccDistance": 1.9,
+    "leadWidth": 0.4,
+    "leadLength": 0.4
+  }
+}

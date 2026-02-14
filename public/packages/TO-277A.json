@@ -1,0 +1,12 @@
+{
+  "name": "TO-277A",
+  "body": {
+    "length": 6.5,
+    "width": 4.6
+  },
+  "type": "Outline",
+  "outline": {
+    "length": 6.5,
+    "width": 4.6
+  }
+}

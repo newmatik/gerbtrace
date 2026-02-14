@@ -1,0 +1,20 @@
+{
+  "name": "SO-14",
+  "type": "TwoSymmetricLeadGroups",
+  "aliases": [
+    "SOIC-14",
+    "SOIC14",
+    "SO14"
+  ],
+  "body": {
+    "length": 9.42,
+    "width": 3.9
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 14,
+    "widthOverLeads": 6,
+    "leadPitch": 1.27,
+    "leadWidth": 0.4,
+    "leadLength": 0.6
+  }
+}

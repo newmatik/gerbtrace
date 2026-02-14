@@ -1,0 +1,17 @@
+{
+  "name": "SOT-883",
+  "type": "ThreePole",
+  "body": {
+    "length": 1,
+    "width": 0.6
+  },
+  "threePole": {
+    "widthOverLeads": 1.4,
+    "ccDistance": 0.65,
+    "leadWidth": 0.2,
+    "leadLength": 0.2
+  },
+  "aliases": [
+    "XDFN-3"
+  ]
+}

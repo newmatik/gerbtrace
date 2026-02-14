@@ -1,0 +1,20 @@
+{
+  "name": "SO-32",
+  "type": "TwoSymmetricLeadGroups",
+  "aliases": [
+    "SOIC-32",
+    "SOIC32",
+    "SO32"
+  ],
+  "body": {
+    "length": 21.05,
+    "width": 7.5
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 32,
+    "widthOverLeads": 9.6,
+    "leadPitch": 1.27,
+    "leadWidth": 0.4,
+    "leadLength": 0.6
+  }
+}

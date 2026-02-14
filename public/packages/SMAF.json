@@ -1,0 +1,17 @@
+{
+  "name": "SMAF",
+  "type": "Chip",
+  "aliases": [
+    "SMA-F",
+    "DO-219AB"
+  ],
+  "body": {
+    "length": 3.5,
+    "width": 1.8
+  },
+  "chip": {
+    "chipLength": 3.5,
+    "leadWidth": 1.8,
+    "leadLength": 0.3
+  }
+}

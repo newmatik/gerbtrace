@@ -1,0 +1,13 @@
+{
+  "name": "DO-213AA",
+  "type": "Chip",
+  "body": {
+    "length": 4.3,
+    "width": 2
+  },
+  "chip": {
+    "chipLength": 4.3,
+    "leadWidth": 2,
+    "leadLength": 0.3
+  }
+}

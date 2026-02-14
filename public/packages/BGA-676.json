@@ -1,0 +1,19 @@
+{
+  "name": "BGA-676",
+  "type": "BGA",
+  "aliases": [
+    "BGA676"
+  ],
+  "body": {
+    "length": 27,
+    "width": 27
+  },
+  "bga": {
+    "leadsPerRow": 26,
+    "leadsPerColumn": 26,
+    "leadPitch": 1,
+    "leadDiameter": 0.45,
+    "leadsPerRowInHole": 0,
+    "leadsPerColumnInHole": 0
+  }
+}
