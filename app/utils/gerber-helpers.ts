@@ -67,11 +67,14 @@ const LAYER_COLOR_MAP: Record<string, string> = {
   'Outline': '#00FFCC',
   'Keep-Out': '#FF6B35',
   'Drill': '#00E676',
+  'PnP Top': '#FF69B4',
+  'PnP Bottom': '#DDA0DD',
 }
 
 /** All assignable layer types in PCB stack order */
 export const ALL_LAYER_TYPES: string[] = [
   'Drill',
+  'PnP Top',
   'Top Silkscreen',
   'Top Paste',
   'Top Solder Mask',
@@ -80,6 +83,7 @@ export const ALL_LAYER_TYPES: string[] = [
   'Bottom Solder Mask',
   'Bottom Paste',
   'Bottom Silkscreen',
+  'PnP Bottom',
   'Outline',
   'Keep-Out',
   'Unknown',
@@ -118,17 +122,19 @@ export function getDefaultLayerColor(fileName: string): string {
  */
 const LAYER_SORT_ORDER: Record<string, number> = {
   'Drill': 0,
-  'Top Silkscreen': 1,
-  'Top Paste': 2,
-  'Top Solder Mask': 3,
-  'Top Copper': 4,
-  'Bottom Copper': 5,
-  'Bottom Solder Mask': 6,
-  'Bottom Paste': 7,
-  'Bottom Silkscreen': 8,
-  'Outline': 9,
-  'Keep-Out': 10,
-  'Unknown': 11,
+  'PnP Top': 1,
+  'Top Silkscreen': 2,
+  'Top Paste': 3,
+  'Top Solder Mask': 4,
+  'Top Copper': 5,
+  'Bottom Copper': 6,
+  'Bottom Solder Mask': 7,
+  'Bottom Paste': 8,
+  'Bottom Silkscreen': 9,
+  'PnP Bottom': 10,
+  'Outline': 11,
+  'Keep-Out': 12,
+  'Unknown': 13,
 }
 
 export function getLayerSortOrder(type: string): number {
@@ -141,8 +147,8 @@ export function sortLayersByPcbOrder(layers: LayerInfo[]): LayerInfo[] {
 
 export type LayerFilter = 'all' | 'top' | 'bot'
 
-const TOP_LAYER_TYPES = new Set(['Top Silkscreen', 'Top Paste', 'Top Solder Mask', 'Top Copper'])
-const BOT_LAYER_TYPES = new Set(['Bottom Silkscreen', 'Bottom Paste', 'Bottom Solder Mask', 'Bottom Copper'])
+const TOP_LAYER_TYPES = new Set(['Top Silkscreen', 'Top Paste', 'Top Solder Mask', 'Top Copper', 'PnP Top'])
+const BOT_LAYER_TYPES = new Set(['Bottom Silkscreen', 'Bottom Paste', 'Bottom Solder Mask', 'Bottom Copper', 'PnP Bottom'])
 const SHARED_LAYER_TYPES = new Set(['Outline', 'Keep-Out', 'Drill'])
 
 export function isTopLayer(type: string): boolean {
@@ -191,4 +197,40 @@ export function isGerberFile(fileName: string): boolean {
   if (/^(drill|drills|outline)$/i.test(fileName)) return true
 
   return false
+}
+
+// ── Pick & Place file detection ──
+
+const PNP_EXTENSIONS = new Set(['.txt', '.csv', '.xy', '.pos'])
+const PNP_NAME_PATTERNS = /(?:pnp|pick[_\-\s]?(?:and[_\-\s]?)?place|pos(?:ition)?|centroid|cpl)/i
+
+/**
+ * Detect whether a file is a Pick & Place file based on its name.
+ * PnP files are typically .txt/.csv/.xy/.pos with keywords like "pnp", "pos", "pick" in the name.
+ */
+export function isPnPFile(fileName: string): boolean {
+  const lower = fileName.toLowerCase()
+  const ext = lower.slice(lower.lastIndexOf('.'))
+  if (!PNP_EXTENSIONS.has(ext)) return false
+  return PNP_NAME_PATTERNS.test(lower)
+}
+
+/**
+ * Detect which PCB side a PnP file belongs to from its filename.
+ * Defaults to 'top' if no side indicator is found.
+ */
+export function detectPnPSide(fileName: string): 'PnP Top' | 'PnP Bottom' {
+  const lower = fileName.toLowerCase()
+  if (/bot(tom)?/i.test(lower)) return 'PnP Bottom'
+  return 'PnP Top'
+}
+
+/** Check if a layer type is a Pick & Place layer */
+export function isPnPLayer(type: string): boolean {
+  return type === 'PnP Top' || type === 'PnP Bottom'
+}
+
+/** Check if a file is importable (Gerber or PnP) */
+export function isImportableFile(fileName: string): boolean {
+  return isGerberFile(fileName) || isPnPFile(fileName)
 }

@@ -1,6 +1,6 @@
 import JSZip from 'jszip'
 import type { GerberFile } from '~/utils/gerber-helpers'
-import { isGerberFile } from '~/utils/gerber-helpers'
+import { isImportableFile, isPnPFile, detectPnPSide } from '~/utils/gerber-helpers'
 
 export function useSampleProject() {
   const { createNewProject, addFiles } = useProject()
@@ -15,9 +15,10 @@ export function useSampleProject() {
       if (entry.dir) continue
       // Strip directory prefix if present
       const fileName = name.includes('/') ? name.split('/').pop()! : name
-      if (!isGerberFile(fileName)) continue
+      if (!isImportableFile(fileName)) continue
       const content = await entry.async('text')
-      files.push({ fileName, content })
+      const layerType = isPnPFile(fileName) ? detectPnPSide(fileName) : undefined
+      files.push({ fileName, content, layerType })
     }
 
     return files

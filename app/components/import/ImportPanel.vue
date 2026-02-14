@@ -8,7 +8,7 @@
 <script setup lang="ts">
 import JSZip from 'jszip'
 import type { GerberFile } from '~/utils/gerber-helpers'
-import { isGerberFile } from '~/utils/gerber-helpers'
+import { isGerberFile, isPnPFile, detectPnPSide, isImportableFile } from '~/utils/gerber-helpers'
 
 const props = defineProps<{
   packet: number
@@ -25,7 +25,7 @@ function deriveSourceName(file: File): string {
 }
 
 async function handleFiles(rawFiles: File[]) {
-  const gerberFiles: GerberFile[] = []
+  const importedFiles: GerberFile[] = []
   let sourceName = ''
 
   for (const file of rawFiles) {
@@ -36,19 +36,21 @@ async function handleFiles(rawFiles: File[]) {
       for (const [name, entry] of Object.entries(zip.files)) {
         if (entry.dir) continue
         const fileName = name.includes('/') ? name.split('/').pop()! : name
-        if (!isGerberFile(fileName)) continue
+        if (!isImportableFile(fileName)) continue
         const content = await entry.async('text')
-        gerberFiles.push({ fileName, content })
+        const layerType = isPnPFile(fileName) ? detectPnPSide(fileName) : undefined
+        importedFiles.push({ fileName, content, layerType })
       }
-    } else if (isGerberFile(file.name)) {
+    } else if (isImportableFile(file.name)) {
       if (!sourceName) sourceName = deriveSourceName(file)
       const content = await file.text()
-      gerberFiles.push({ fileName: file.name, content })
+      const layerType = isPnPFile(file.name) ? detectPnPSide(file.name) : undefined
+      importedFiles.push({ fileName: file.name, content, layerType })
     }
   }
 
-  if (gerberFiles.length) {
-    emit('import', gerberFiles, sourceName)
+  if (importedFiles.length) {
+    emit('import', importedFiles, sourceName)
   }
 }
 </script>

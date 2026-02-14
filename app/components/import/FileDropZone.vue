@@ -10,12 +10,12 @@
     @click="openFilePicker"
   >
     <UIcon name="i-lucide-upload" class="text-xl text-neutral-400 mb-1" />
-    <p class="text-xs text-neutral-500">Drop ZIP or Gerber files</p>
+    <p class="text-xs text-neutral-500">Drop ZIP, Gerber, or Pick &amp; Place files</p>
     <input
       ref="fileInput"
       type="file"
       multiple
-      accept=".zip,.gtl,.gbl,.gts,.gbs,.gto,.gbo,.gtp,.gbp,.gm1,.gm2,.gm3,.gko,.gbr,.ger,.pho,.cmp,.sol,.stc,.sts,.plc,.pls,.crc,.crs,.drl,.drd,.xln,.exc,.ncd,.art"
+      accept=".zip,.gtl,.gbl,.gts,.gbs,.gto,.gbo,.gtp,.gbp,.gm1,.gm2,.gm3,.gko,.gbr,.ger,.pho,.cmp,.sol,.stc,.sts,.plc,.pls,.crc,.crs,.drl,.drd,.xln,.exc,.ncd,.art,.txt,.csv,.xy,.pos"
       class="hidden"
       @change="handleInputChange"
     />
