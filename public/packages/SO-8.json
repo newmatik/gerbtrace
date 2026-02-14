@@ -9,13 +9,14 @@
     "numberOfLeads": 8,
     "widthOverLeads": 5.9,
     "leadPitch": 1.27,
-    "leadWidth": 1.05,
+    "leadWidth": 0.4,
     "leadLength": 0.4
   },
   "aliases": [
+    "SO-08",
+    "SO08",
     "SO8",
     "SOIC-8",
-    "SOIC8",
-    "SO-08"
+    "SOIC8"
   ]
 }

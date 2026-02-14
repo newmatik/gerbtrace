@@ -9,5 +9,8 @@
     "chipLength": 1.2,
     "leadWidth": 0.7,
     "leadLength": 0.6
-  }
+  },
+  "aliases": [
+    "SOD523"
+  ]
 }

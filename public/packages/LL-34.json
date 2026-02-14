@@ -9,5 +9,8 @@
     "chipLength": 3.4,
     "leadWidth": 1.4,
     "leadLength": 0.3
-  }
+  },
+  "aliases": [
+    "LL34"
+  ]
 }

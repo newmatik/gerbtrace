@@ -2,9 +2,9 @@
   "name": "SO-14",
   "type": "TwoSymmetricLeadGroups",
   "aliases": [
+    "SO14",
     "SOIC-14",
-    "SOIC14",
-    "SO14"
+    "SOIC14"
   ],
   "body": {
     "length": 9.42,

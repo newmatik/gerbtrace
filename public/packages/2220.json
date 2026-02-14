@@ -3,9 +3,11 @@
   "type": "Chip",
   "aliases": [
     "C2220",
-    "R2220",
+    "CAP2220",
+    "CHIP-2220",
     "L2220",
-    "CHIP-2220"
+    "R2220",
+    "RES2220"
   ],
   "body": {
     "length": 5.7,

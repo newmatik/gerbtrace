@@ -11,5 +11,8 @@
     "leadPitch": 0.65,
     "leadWidth": 0.3,
     "leadLength": 0.25
-  }
+  },
+  "aliases": [
+    "SC88"
+  ]
 }

@@ -239,6 +239,7 @@
           :align-mode="pnp.alignMode.value"
           :align-click-a="pnp.alignClickA.value"
           :match-package="pkgLib.matchPackage"
+          :package-library-version="packageLibraryVersion"
           :show-packages="showPackages"
           :pnp-convention="pnp.convention.value"
           @pnp-click="pnp.selectComponent($event)"
@@ -431,6 +432,7 @@ const hasOutline = computed(() => layers.value.some(l => l.type === 'Outline'))
 const pnp = usePickAndPlace(layers)
 const pkgLib = usePackageLibrary()
 const showPackages = ref(true)
+const packageLibraryVersion = computed(() => pkgLib.lookupMap.value.size)
 
 // Load package library on mount (non-blocking)
 onMounted(() => { pkgLib.loadPackages() })

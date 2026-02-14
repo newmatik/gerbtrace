@@ -61,6 +61,8 @@ const props = defineProps<{
   alignClickA?: AlignPoint | null
   /** Package lookup function — returns definition for a package name */
   matchPackage?: (name: string) => PackageDefinition | undefined
+  /** Reactive package-library version token to trigger redraw when package data loads */
+  packageLibraryVersion?: number
   /** Whether to render package footprints */
   showPackages?: boolean
   /** PnP orientation convention used in the PnP file */
@@ -388,7 +390,7 @@ const PNP_DOT_RADIUS = 3
 const PNP_HIT_RADIUS = 8
 /** Highlight ring colour for the selected component */
 const PNP_HIGHLIGHT_COLOR = '#00FFFF'
-/** Default PnP dot color */
+/** Default PnP dot color (shown when no package footprint is rendered) */
 const PNP_DOT_COLOR = '#FF69B4'
 
 /**
@@ -558,7 +560,7 @@ function drawPackageFootprints(
 // ── Package footprint colors ──
 const PKG_BODY_FILL = 'rgba(50, 50, 50, 0.85)'
 const PKG_BODY_STROKE = 'rgba(80, 80, 80, 0.9)'
-const PKG_PAD_FILL = 'rgba(180, 180, 180, 0.8)'
+const PKG_PAD_FILL = 'rgba(205, 205, 205, 0.9)'
 const PKG_PIN1_FILL = 'rgba(255, 60, 60, 0.95)'
 const PKG_BODY_FILL_SEL = 'rgba(0, 180, 180, 0.7)'
 const PKG_BODY_STROKE_SEL = 'rgba(0, 255, 255, 0.9)'
@@ -1051,7 +1053,7 @@ function draw() {
 
 // Watch for layer or transform changes and redraw
 watch(
-  () => [props.layers, props.allLayers, props.interaction.transform.value, props.mirrored, props.cropToOutline, props.outlineLayer, props.viewMode, props.preset, bgColor.value, appSettings.gridEnabled, appSettings.gridSpacingMm, props.pnpComponents, props.selectedPnpDesignator, props.pnpOriginX, props.pnpOriginY, props.alignMode, props.alignClickA, originCursorGerber.value, props.showPackages, props.pnpConvention],
+  () => [props.layers, props.allLayers, props.interaction.transform.value, props.mirrored, props.cropToOutline, props.outlineLayer, props.viewMode, props.preset, bgColor.value, appSettings.gridEnabled, appSettings.gridSpacingMm, props.pnpComponents, props.selectedPnpDesignator, props.pnpOriginX, props.pnpOriginY, props.alignMode, props.alignClickA, originCursorGerber.value, props.showPackages, props.pnpConvention, props.matchPackage, props.packageLibraryVersion],
   () => draw(),
   { deep: true },
 )

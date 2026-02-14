@@ -1,0 +1,30 @@
+---
+description: Enforce TPSys-only package types (no invented types)
+alwaysApply: true
+---
+
+# Package types: TPSys-only (hard rule)
+
+## Core rule
+
+- **Never invent new package types** for rendering or JSON schemas.
+- **Only use TPSys package types** (e.g. `PT_TWO_POLE`, `PT_THREE_POLE`, `PT_TWO_SYM`, `PT_FOUR_SYM`, `PT_TWO_PLUS_TWO`, `PT_BGA`, `PT_GENERIC_BGA`, `PT_OUTLINE`, `PT_GENERIC`, `PT_FOUR_ON_TWO`, etc.).
+
+## Implications
+
+- If a package cannot be represented by the current simplified parametric models, do **not** add a custom type like `ThreePlusTab` / `SOT223` / etc.
+- Instead, represent it using the appropriate TPSys type (most often **`PT_GENERIC`**) and **store/render from the TPSys lead-group data** (P051 + matching P055).
+
+## Examples
+
+- **SOT-223** (3 leads + tab):
+  - ✅ Use `PT_GENERIC` with two lead groups (3 + 1) from TPSys `P051` and pad sizes from `P055`.
+  - ❌ Do not model it as `ThreePole` (2+1) and do not introduce a new “3+tab” type.
+
+## Safety / data quality
+
+- TPSys exports can contain noisy variants. When updating packages from TPSys data:
+  - Prefer exact matches over variants.
+  - Reject mismatched lead-counts and suspicious/placeholder pad data.
+  - Do not apply updates based on a single dubious record.
+

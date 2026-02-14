@@ -96,7 +96,7 @@ export function parseDrillSource(source: string): GerberAST {
       // Tool definition: T{num}C{diameter}
       const toolMatch = line.match(/^T(\d+)(?:C([\d.]+))?/)
       if (toolMatch) {
-        const code = `T${parseInt(toolMatch[1])}`
+        const code = `T${Number.parseInt(toolMatch[1] ?? '0', 10)}`
         const diameter = toolMatch[2] ? parseFloat(toolMatch[2]) : 0
         if (diameter > 0) {
           children.push({
@@ -121,7 +121,7 @@ export function parseDrillSource(source: string): GerberAST {
     // Tool change: T{num}
     const toolChange = line.match(/^T(\d+)$/)
     if (toolChange) {
-      currentTool = `T${parseInt(toolChange[1])}`
+      currentTool = `T${Number.parseInt(toolChange[1] ?? '0', 10)}`
       children.push({ type: 'toolChange', code: currentTool, sourceStart: lineStart, sourceEnd: lineEnd })
       continue
     }
@@ -129,7 +129,7 @@ export function parseDrillSource(source: string): GerberAST {
     // Coordinate line: X...Y... (drill hit)
     const coordMatch = line.match(/^([XY].+)$/)
     if (coordMatch) {
-      const coords = parseDrillCoords(coordMatch[1])
+      const coords = parseDrillCoords(coordMatch[1] ?? '')
       children.push({ type: 'graphic', graphic: 'shape', coordinates: coords, sourceStart: lineStart, sourceEnd: lineEnd })
       continue
     }
@@ -161,7 +161,7 @@ export function parseDrillSource(source: string): GerberAST {
     }
 
     // Repeat hole patterns (R) - simplified, ignore
-    if (line.startsWith('R') && /^\d/.test(line[1])) continue
+    if (line.startsWith('R') && /^\d/.test(line.charAt(1))) continue
   }
 
   // Ensure format defaults
@@ -182,7 +182,7 @@ export function parseDrillSource(source: string): GerberAST {
   function detectFormatFromComment(comment: string) {
     const fmtMatch = FORMAT_COMMENT_RE.exec(comment)
     if (fmtMatch) {
-      format = [parseInt(fmtMatch[1]), parseInt(fmtMatch[2])]
+      format = [Number.parseInt(fmtMatch[1] ?? '0', 10), Number.parseInt(fmtMatch[2] ?? '0', 10)]
     }
     if (SUPPRESS_TRAILING_RE.test(comment)) {
       zeroSuppression = 'trailing'
@@ -213,7 +213,11 @@ function parseDrillCoords(str: string): Record<string, string> {
   const re = /([XYxy])([+-]?\d*\.?\d+)/g
   let m: RegExpExecArray | null
   while ((m = re.exec(str)) !== null) {
-    result[m[1].toLowerCase()] = m[2]
+    const axis = m[1]?.toLowerCase()
+    const value = m[2]
+    if (axis && value !== undefined) {
+      result[axis] = value
+    }
   }
   return result
 }

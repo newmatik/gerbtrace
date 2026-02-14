@@ -11,6 +11,7 @@ export type PackageTypeKey =
   | 'FourSymmetricLeadGroups'
   | 'BGA'
   | 'Outline'
+  | 'PT_GENERIC'
 
 export interface PnPConventionConfig {
   /** Label shown in the UI selector */
@@ -47,6 +48,7 @@ export const PNP_CONVENTIONS: Record<PnPConvention, PnPConventionConfig> = {
       FourSymmetricLeadGroups: 0,
       BGA: 0,
       Outline: 0,
+      PT_GENERIC: 0,
     },
   },
   ipc7351: {
@@ -62,6 +64,7 @@ export const PNP_CONVENTIONS: Record<PnPConvention, PnPConventionConfig> = {
       FourSymmetricLeadGroups: 0,
       BGA: 0,
       Outline: 0,
+      PT_GENERIC: 0,
     },
   },
   iec61188: {
@@ -81,6 +84,7 @@ export const PNP_CONVENTIONS: Record<PnPConvention, PnPConventionConfig> = {
       // BGA: same as IPC
       BGA: 0,
       Outline: 0,
+      PT_GENERIC: 90,
     },
   },
 }

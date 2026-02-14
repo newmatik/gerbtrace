@@ -9,10 +9,14 @@
     "numberOfLeads": 6,
     "widthOverLeads": 2,
     "leadPitch": 0.5,
-    "leadWidth": 0.7,
+    "leadWidth": 0.25,
     "leadLength": 0.25
   },
   "aliases": [
-    "DFN6"
+    "DFN-06-1x1.4-P0.50",
+    "DFN06-1x1.4-P0.50",
+    "DFN061x1.4P0.50",
+    "DFN6-1x1.4-P0.50",
+    "DFN61x1.4P0.50"
   ]
 }

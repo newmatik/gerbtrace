@@ -188,6 +188,32 @@ export interface OutlineParams {
   width: number
 }
 
+/**
+ * TPSys PT_GENERIC lead group definition (in mm / millidegrees).
+ * This is used to render packages that can't be expressed by the simplified
+ * parametric schemas above (e.g. SOT-223: 3 leads + tab).
+ */
+export interface TpsysGenericLeadGroup {
+  /** Lead shape from TPSys P051 (we currently render gullwing-like as rectangles) */
+  shape: 'GULLWING' | 'FLAT' | 'J_LEAD'
+  /** Number of leads in this group */
+  numLeads: number
+  /** Distance from component center to the lead row center (signed), in mm */
+  distFromCenter: number
+  /** Half-span across the leads in this group (signed), in mm */
+  ccHalf: number
+  /** Group angle in TPSys millidegrees (0/90000/180000/-90000) */
+  angleMilliDeg: number
+  /** Pad length in protrusion direction (TPSys P055 padW), in mm */
+  padLength: number
+  /** Pad width along pitch direction (TPSys P055 padL), in mm */
+  padWidth: number
+}
+
+export interface TpsysGenericParams {
+  leadGroups: TpsysGenericLeadGroup[]
+}
+
 // ── Package definition (the JSON schema) ──
 
 export interface PackageBody {
@@ -209,6 +235,7 @@ export interface TwoSymmetricPackage extends PackageBase { type: 'TwoSymmetricLe
 export interface FourSymmetricPackage extends PackageBase { type: 'FourSymmetricLeadGroups'; fourSymmetric: FourSymmetricParams }
 export interface BgaPackage extends PackageBase { type: 'BGA'; bga: BgaParams }
 export interface OutlinePackage extends PackageBase { type: 'Outline'; outline: OutlineParams }
+export interface TpsysGenericPackage extends PackageBase { type: 'PT_GENERIC'; generic: TpsysGenericParams }
 
 export type PackageDefinition =
   | ChipPackage
@@ -217,6 +244,7 @@ export type PackageDefinition =
   | FourSymmetricPackage
   | BgaPackage
   | OutlinePackage
+  | TpsysGenericPackage
 
 // ── Geometry computation ──
 
@@ -232,6 +260,7 @@ export function computeFootprint(pkg: PackageDefinition): FootprintShape[] {
     case 'FourSymmetricLeadGroups': return computeFourSymmetric(pkg)
     case 'BGA': return computeBga(pkg)
     case 'Outline': return computeOutline(pkg)
+    case 'PT_GENERIC': return computeTpsysGeneric(pkg)
   }
 }
 
@@ -410,4 +439,64 @@ function computeOutline(pkg: OutlinePackage): FootprintShape[] {
   return [
     { kind: 'rect', cx: 0, cy: 0, w: width, h: length, role: 'body' },
   ]
+}
+
+// ── TPSys PT_GENERIC: render from lead groups ──
+// This follows TPSys semantics (P051 + P055) as stored in `pkg.generic.leadGroups`.
+function computeTpsysGeneric(pkg: TpsysGenericPackage): FootprintShape[] {
+  const shapes: FootprintShape[] = []
+  const { length: bodyL, width: bodyW } = pkg.body
+  shapes.push({ kind: 'rect', cx: 0, cy: 0, w: bodyW, h: bodyL, role: 'body' })
+
+  const groups = pkg.generic.leadGroups ?? []
+  if (!Array.isArray(groups) || groups.length === 0) return shapes
+
+  const normAngle = (md: number) => {
+    const a = ((md % 360000) + 360000) % 360000
+    // normalize -90000 → 270000
+    return a
+  }
+
+  // Generate pads per group. We mark the first pad we emit as pin1 for visibility.
+  let emittedAny = false
+  for (const g of groups) {
+    if (!g || !Number.isFinite(g.numLeads) || g.numLeads <= 0) continue
+    const n = Math.round(g.numLeads)
+    const a = normAngle(g.angleMilliDeg)
+
+    const padL = g.padLength
+    const padW = g.padWidth
+    if (![padL, padW, g.distFromCenter, g.ccHalf].every(Number.isFinite)) continue
+
+    const axisHalf = Math.abs(g.ccHalf)
+    const positions: number[] = []
+    if (n === 1) {
+      positions.push(0)
+    } else {
+      const pitch = (2 * axisHalf) / (n - 1)
+      for (let i = 0; i < n; i++) {
+        positions.push(axisHalf - i * pitch)
+      }
+    }
+
+    const protrudeX = a === 0 || a === 180000
+    const protrudeY = a === 90000 || a === 270000
+    if (!(protrudeX || protrudeY)) continue
+
+    for (let i = 0; i < positions.length; i++) {
+      const p = positions[i]!
+      const role: RectShape['role'] = !emittedAny ? 'pin1' : 'pad'
+      emittedAny = true
+
+      if (protrudeX) {
+        // Leads on left/right → row center is at X = distFromCenter, spread in Y
+        shapes.push({ kind: 'rect', cx: g.distFromCenter, cy: p, w: padL, h: padW, role })
+      } else {
+        // Leads on top/bottom → row center is at Y = distFromCenter, spread in X
+        shapes.push({ kind: 'rect', cx: p, cy: g.distFromCenter, w: padW, h: padL, role })
+      }
+    }
+  }
+
+  return shapes
 }

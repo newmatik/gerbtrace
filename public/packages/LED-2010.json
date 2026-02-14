@@ -3,9 +3,9 @@
   "type": "Chip",
   "aliases": [
     "2010 LED",
+    "CHIP-LED2010",
     "LED 2010",
-    "LED2010",
-    "CHIP-LED2010"
+    "LED2010"
   ],
   "body": {
     "length": 5,

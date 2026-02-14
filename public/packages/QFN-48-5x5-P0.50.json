@@ -13,6 +13,7 @@
     "leadLength": 0.25
   },
   "aliases": [
-    "QFN48"
+    "QFN48-5x5-P0.50",
+    "QFN485x5P0.50"
   ]
 }

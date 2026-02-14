@@ -3,9 +3,11 @@
   "type": "Chip",
   "aliases": [
     "C2512",
-    "R2512",
+    "CAP2512",
+    "CHIP-2512",
     "L2512",
-    "CHIP-2512"
+    "R2512",
+    "RES2512"
   ],
   "body": {
     "length": 6.3,

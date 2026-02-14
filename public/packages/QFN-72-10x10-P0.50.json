@@ -3,7 +3,9 @@
   "type": "FourSymmetricLeadGroups",
   "aliases": [
     "QFN-72",
-    "QFN72"
+    "QFN72",
+    "QFN72-10x10-P0.50",
+    "QFN7210x10P0.50"
   ],
   "body": {
     "length": 10,

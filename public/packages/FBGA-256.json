@@ -9,10 +9,10 @@
     "width": 14
   },
   "bga": {
-    "leadsPerRow": 16,
-    "leadsPerColumn": 16,
+    "leadsPerRow": 17,
+    "leadsPerColumn": 31,
     "leadPitch": 0.8,
-    "leadDiameter": 0.35,
+    "leadDiameter": 0.5,
     "leadsPerRowInHole": 0,
     "leadsPerColumnInHole": 0
   }
