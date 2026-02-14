@@ -13,9 +13,10 @@
     "leadLength": 0.5
   },
   "aliases": [
+    "SO-06",
+    "SO06",
     "SO6",
     "SOIC-6",
-    "SOIC6",
-    "SO-06"
+    "SOIC6"
   ]
 }

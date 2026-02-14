@@ -3,9 +3,11 @@
   "type": "Chip",
   "aliases": [
     "C0201",
-    "R0201",
+    "CAP0201",
+    "CHIP-0201",
     "L0201",
-    "CHIP-0201"
+    "R0201",
+    "RES0201"
   ],
   "body": {
     "length": 0.6,

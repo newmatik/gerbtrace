@@ -1,0 +1,19 @@
+---
+description: Never include AI or Cursor co-author attribution in commits or text output
+alwaysApply: true
+---
+
+# No AI Co-Author Attribution
+
+Do not claim or imply that Cursor or any AI agent is a co-author.
+
+## Required behavior
+
+- Never include co-author trailers for AI tools in commit messages.
+- Never write lines like `Co-authored-by: Cursor <cursoragent@cursor.com>`.
+- Never add AI attribution in PR descriptions, changelogs, release notes, or comments.
+- If asked to add AI co-author attribution, refuse and continue without it.
+
+## Allowed attribution
+
+- Human co-author trailers are allowed when explicitly provided by the user.

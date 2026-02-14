@@ -4,11 +4,13 @@
   "aliases": [
     "C0603",
     "C0603-ROUND",
-    "R0603",
-    "R0603-ROUND",
+    "CAP0603",
+    "CHIP-0603",
     "CT/CN0603",
     "L0603",
-    "CHIP-0603"
+    "R0603",
+    "R0603-ROUND",
+    "RES0603"
   ],
   "body": {
     "length": 1.6,

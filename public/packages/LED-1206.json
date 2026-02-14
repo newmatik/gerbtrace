@@ -3,9 +3,9 @@
   "type": "Chip",
   "aliases": [
     "1206 LED",
+    "CHIP-LED1206",
     "LED 1206",
-    "LED1206",
-    "CHIP-LED1206"
+    "LED1206"
   ],
   "body": {
     "length": 3.2,

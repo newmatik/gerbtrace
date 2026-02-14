@@ -2,10 +2,9 @@
   "name": "SOT-23",
   "type": "ThreePole",
   "aliases": [
-    "SOT23",
     "SOT-23-B1JEDEC",
     "SOT-23-E1JEDEC",
-    "SOT23-DBV"
+    "SOT23"
   ],
   "body": {
     "length": 2.9,

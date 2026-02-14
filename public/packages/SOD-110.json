@@ -9,5 +9,8 @@
     "chipLength": 4.5,
     "leadWidth": 2,
     "leadLength": 0.3
-  }
+  },
+  "aliases": [
+    "SOD110"
+  ]
 }

@@ -2,9 +2,9 @@
   "name": "SOIC-16W",
   "type": "TwoSymmetricLeadGroups",
   "aliases": [
-    "SOIC16W",
     "SO-16W",
-    "SO16W"
+    "SO16W",
+    "SOIC16W"
   ],
   "body": {
     "length": 10.69,

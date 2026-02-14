@@ -9,13 +9,14 @@
     "numberOfLeads": 4,
     "widthOverLeads": 5,
     "leadPitch": 1.27,
-    "leadWidth": 2,
+    "leadWidth": 0.4,
     "leadLength": 0.4
   },
   "aliases": [
+    "SO-04",
+    "SO04",
     "SO4",
     "SOIC-4",
-    "SOIC4",
-    "SO-04"
+    "SOIC4"
   ]
 }

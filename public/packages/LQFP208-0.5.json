@@ -9,7 +9,10 @@
     "numberOfLeads": 208,
     "widthOverLeads": 29.95,
     "leadPitch": 0.5,
-    "leadWidth": 1,
+    "leadWidth": 0.22,
     "leadLength": 0.2
-  }
+  },
+  "aliases": [
+    "LQFP2080.5"
+  ]
 }

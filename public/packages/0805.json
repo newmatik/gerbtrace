@@ -3,10 +3,11 @@
   "type": "Chip",
   "aliases": [
     "C0805",
-    "R0805",
-    "CHIP-LED0805",
+    "CAP0805",
+    "CHIP-0805",
     "L0805",
-    "CHIP-0805"
+    "R0805",
+    "RES0805"
   ],
   "body": {
     "length": 2,

@@ -3,9 +3,11 @@
   "type": "Chip",
   "aliases": [
     "C1210",
-    "R1210",
+    "CAP1210",
+    "CHIP-1210",
     "L1210",
-    "CHIP-1210"
+    "R1210",
+    "RES1210"
   ],
   "body": {
     "length": 3.2,

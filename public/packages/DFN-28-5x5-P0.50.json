@@ -3,7 +3,9 @@
   "type": "TwoSymmetricLeadGroups",
   "aliases": [
     "DFN-28",
-    "DFN28"
+    "DFN28",
+    "DFN28-5x5-P0.50",
+    "DFN285x5P0.50"
   ],
   "body": {
     "length": 5,

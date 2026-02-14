@@ -9,5 +9,8 @@
     "chipLength": 3.65,
     "leadWidth": 0.6,
     "leadLength": 0.6
-  }
+  },
+  "aliases": [
+    "SOD123"
+  ]
 }

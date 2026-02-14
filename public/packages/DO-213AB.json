@@ -9,5 +9,8 @@
     "chipLength": 6.5,
     "leadWidth": 2.5,
     "leadLength": 0.3
-  }
+  },
+  "aliases": [
+    "DO213AB"
+  ]
 }

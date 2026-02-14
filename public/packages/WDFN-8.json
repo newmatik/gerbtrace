@@ -11,5 +11,10 @@
     "leadPitch": 0.62,
     "leadWidth": 0.45,
     "leadLength": 0.05
-  }
+  },
+  "aliases": [
+    "WDFN-08",
+    "WDFN08",
+    "WDFN8"
+  ]
 }

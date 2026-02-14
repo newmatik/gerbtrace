@@ -9,10 +9,11 @@
     "numberOfLeads": 20,
     "widthOverLeads": 5,
     "leadPitch": 0.5,
-    "leadWidth": 0.95,
+    "leadWidth": 0.27,
     "leadLength": 0.25
   },
   "aliases": [
-    "QFN20"
+    "QFN20-5x5-P0.50",
+    "QFN205x5P0.50"
   ]
 }

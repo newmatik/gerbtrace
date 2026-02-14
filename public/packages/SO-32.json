@@ -2,9 +2,9 @@
   "name": "SO-32",
   "type": "TwoSymmetricLeadGroups",
   "aliases": [
+    "SO32",
     "SOIC-32",
-    "SOIC32",
-    "SO32"
+    "SOIC32"
   ],
   "body": {
     "length": 21.05,

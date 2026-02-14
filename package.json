@@ -1,17 +1,20 @@
 {
   "name": "gerbtrace",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "private": true,
   "description": "Gerbtrace — View and compare Gerber PCB files in the browser",
   "author": "Newmatik GmbH",
   "license": "BUSL-1.1",
   "type": "module",
   "scripts": {
-    "dev": "nuxt dev",
+    "packages:manifest": "node scripts/build-packages-manifest.mjs",
+    "packages:check": "node scripts/check-packages.mjs",
+    "precommit": "npm run packages:manifest && npm run packages:check",
+    "dev": "npm run precommit && nuxt dev",
     "build": "nuxt build",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare",
+    "postinstall": "nuxt prepare && simple-git-hooks",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build"
@@ -32,7 +35,11 @@
     "playwright": "^1.58.2",
     "png-to-ico": "^3.0.1",
     "sharp": "^0.34.5",
+    "simple-git-hooks": "^2.13.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "npm run precommit"
   }
 }

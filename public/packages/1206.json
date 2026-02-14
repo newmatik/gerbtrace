@@ -3,9 +3,11 @@
   "type": "Chip",
   "aliases": [
     "C1206",
-    "R1206",
+    "CAP1206",
+    "CHIP-1206",
     "L1206",
-    "CHIP-1206"
+    "R1206",
+    "RES1206"
   ],
   "body": {
     "length": 3.2,

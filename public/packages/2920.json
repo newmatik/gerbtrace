@@ -3,9 +3,11 @@
   "type": "Chip",
   "aliases": [
     "C2920",
-    "R2920",
+    "CAP2920",
+    "CHIP-2920",
     "L2920",
-    "CHIP-2920"
+    "R2920",
+    "RES2920"
   ],
   "body": {
     "length": 7.3,

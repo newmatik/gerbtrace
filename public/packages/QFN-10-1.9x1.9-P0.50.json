@@ -13,6 +13,9 @@
     "leadLength": 0.25
   },
   "aliases": [
-    "QFN10"
+    "QFN-10",
+    "QFN10",
+    "QFN10-1.9x1.9-P0.50",
+    "QFN101.9x1.9P0.50"
   ]
 }

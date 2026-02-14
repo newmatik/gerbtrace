@@ -3,10 +3,10 @@
   "type": "Chip",
   "aliases": [
     "0603 LED",
-    "LED 0603",
-    "LED0603",
     "CHIP-LED0603",
-    "CHIP-LED603"
+    "CHIP-LED603",
+    "LED 0603",
+    "LED0603"
   ],
   "body": {
     "length": 1.6,

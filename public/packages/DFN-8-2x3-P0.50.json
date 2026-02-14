@@ -13,7 +13,12 @@
     "leadLength": 0.25
   },
   "aliases": [
+    "DFN-08-2x3-P0.50",
     "DFN-8-2x3",
+    "DFN08-2x3-P0.50",
+    "DFN082x3P0.50",
+    "DFN8-2x3-P0.50",
+    "DFN82x3P0.50",
     "XDFN-8-2x3"
   ]
 }
