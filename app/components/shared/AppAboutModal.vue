@@ -64,12 +64,23 @@
           <UButton
             size="xs"
             variant="soft"
-            icon="i-lucide-refresh-cw"
+            icon="i-lucide-rotate-cw"
             :loading="updaterStatus.checking || updaterStatus.downloading"
             @click="handleUpdateCheck"
           >
             {{ updateButtonLabel }}
           </UButton>
+          <div class="mt-1 space-y-0.5">
+            <p
+              v-if="!updaterStatus.checking && !updaterStatus.downloading && updaterStatus.lastResult === 'up_to_date'"
+              class="text-[11px] text-neutral-500 dark:text-neutral-400"
+            >
+              You’re up to date.
+            </p>
+            <p v-if="updaterStatus.lastCheckedAt" class="text-[11px] text-neutral-400 dark:text-neutral-500">
+              Last checked: {{ formatLastChecked(updaterStatus.lastCheckedAt) }}
+            </p>
+          </div>
           <p v-if="updaterStatus.error" class="text-[11px] text-red-500 mt-1">
             {{ updaterStatus.error }}
           </p>
@@ -91,6 +102,14 @@ const updateButtonLabel = computed(() => {
   if (updaterStatus.available) return `Update to v${updaterStatus.version}`
   return 'Check for updates'
 })
+
+function formatLastChecked(ts: number) {
+  try {
+    return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(ts))
+  } catch {
+    return new Date(ts).toLocaleString()
+  }
+}
 
 async function handleUpdateCheck() {
   if (updaterStatus.available) {

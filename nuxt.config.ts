@@ -4,7 +4,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      appVersion: '1.0.6',
+      appVersion: '1.0.7',
       supabaseUrl: process.env.SUPABASE_URL || 'http://localhost:54321',
       supabaseAnonKey: process.env.SUPABASE_ANON_KEY || '',
     },

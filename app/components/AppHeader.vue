@@ -75,12 +75,13 @@
 
 <script setup lang="ts">
 import { useColorMode } from '#imports'
+import { isTauri as coreIsTauri } from '@tauri-apps/api/core'
 
 const router = useRouter()
 const colorMode = useColorMode()
 const isDark = computed(() => colorMode.value === 'dark')
 
-const isTauri = import.meta.client && !!(window as any).__TAURI_INTERNALS__
+const isTauri = import.meta.client && coreIsTauri()
 const { isAuthenticated, signOut } = useAuth()
 const { profile } = useCurrentUser()
 const { teams, currentTeam, hasTeam, isAdmin, switchTeam } = useTeam()

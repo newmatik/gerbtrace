@@ -588,7 +588,7 @@ function drawPackageFootprints(
     // Convert PnP file rotation into our baseline (degrees CCW, top view)
     // - IPC / IEC: typically CCW-positive
     // - Mycronic: CW-positive
-    const { direction, offsetDeg } = getConventionRotationTransform(pkg, props.pnpConvention ?? 'mycronic')
+    const { direction, offsetDeg } = getConventionRotationTransform(pkg, props.pnpConvention ?? 'iec61188')
     const adjustedRotationCCW = direction * comp.rotation + offsetDeg
 
     // Rotation in radians (we keep adjustedRotationCCW in CCW degrees; canvas rotate is visually CW)
@@ -824,7 +824,7 @@ function hitTestPnP(
       const pkg = pkgName ? props.matchPackage(pkgName) : undefined
       if (pkg) {
         // Convert PnP file rotation into our baseline (degrees CCW, top view)
-        const { direction, offsetDeg } = getConventionRotationTransform(pkg, props.pnpConvention ?? 'mycronic')
+        const { direction, offsetDeg } = getConventionRotationTransform(pkg, props.pnpConvention ?? 'iec61188')
         const adjustedRotationCCW = direction * comp.rotation + offsetDeg
         const rotRad = (-adjustedRotationCCW * Math.PI) / 180
         const effectiveRot = mirrored ? -rotRad : rotRad

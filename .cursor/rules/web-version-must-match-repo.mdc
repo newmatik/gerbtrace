@@ -1,0 +1,24 @@
+---
+description: Prevent web app footer version drift vs repo/app config
+alwaysApply: true
+---
+
+# Web version must match repo
+
+Gerbtrace displays its web version from `nuxt.config.ts` (`runtimeConfig.public.appVersion`). This value must stay aligned with the repository version and the deployed artifact.
+
+## When bumping a release version
+
+- Update **both**:
+  - `package.json` `version`
+  - `nuxt.config.ts` `runtimeConfig.public.appVersion`
+- Ensure the web deploy workflow ran for the commit containing the bump (`.github/workflows/deploy.yml`).
+
+## If production shows an old version
+
+Do **not** assume the repo is wrong—first confirm what is deployed:
+
+- Fetch `https://www.gerbtrace.com/index.html` and read `window.__NUXT__.config.public.appVersion`.
+- If it’s old, the Spaces bucket contains an older build (or the CDN cache is stale).
+  - Flush the CDN (`doctl compute cdn list` → `doctl compute cdn flush <cdn-id> --files '*'`).
+  - If still old after a flush, redeploy the web artifact (run the web deploy workflow on `main` for the version-bump commit).

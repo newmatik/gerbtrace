@@ -22,6 +22,6 @@ For every release, keep web version display, desktop metadata, and updater signi
 
 ## Release verification gates
 
-- After merge to `main`, verify GitHub Pages deploy succeeds and footer version matches release.
+- After merge to `main`, verify the **DigitalOcean Spaces** web deploy (`.github/workflows/deploy.yml`) succeeds and the footer version matches the release.
 - After tag push, verify `build-desktop.yml` succeeds for both `macos-latest` and `windows-latest`.
 - If desktop build fails with `incorrect updater private key password`, rotate/update secrets before re-running.
