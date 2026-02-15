@@ -18,5 +18,83 @@
     "SO8",
     "SOIC-8",
     "SOIC8"
+  ],
+  "height": {
+    "nominal": 6.28,
+    "max": 6.594,
+    "min": 5.966
+  },
+  "searchArea": {
+    "x": 15.633,
+    "y": 15.633
+  },
+  "machine": {
+    "mountTools": [
+      "A23"
+    ],
+    "pickWaitTime": 100,
+    "placeWaitTime": 100,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "low",
+      "y": "low",
+      "tape": "low",
+      "theta": "low",
+      "z": "low",
+      "hydraTheta": "low",
+      "hydraZ": "lowest"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false
+  },
+  "variations": [
+    {
+      "id": "hydra",
+      "label": "Hydra",
+      "machine": {
+        "centering": [
+          {
+            "method": "optical",
+            "tools": [
+              "Z_TOOL",
+              "HYDRA_TOOL"
+            ]
+          }
+        ],
+        "visionModes": [
+          "linescan",
+          "hydra"
+        ]
+      }
+    },
+    {
+      "id": "slow",
+      "label": "Slow (no Hydra)",
+      "machine": {
+        "centering": [
+          {
+            "method": "optical",
+            "tools": [
+              "Z_TOOL"
+            ]
+          }
+        ]
+      }
+    }
   ]
 }

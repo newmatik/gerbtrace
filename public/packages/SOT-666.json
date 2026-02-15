@@ -16,5 +16,80 @@
     "SC-70-6",
     "SC-75",
     "SOT666"
+  ],
+  "height": {
+    "nominal": 0.6,
+    "max": 0.66,
+    "min": 0.54
+  },
+  "searchArea": {
+    "x": 1.216,
+    "y": 1.621
+  },
+  "machine": {
+    "mountTools": [
+      "A12"
+    ],
+    "hydraTools": [
+      "H06"
+    ],
+    "pickWaitTime": 100,
+    "placeWaitTime": 100,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "low",
+      "y": "high",
+      "tape": "highest",
+      "theta": "high",
+      "z": "highest",
+      "hydraTheta": "low",
+      "hydraZ": "lowest"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL",
+          "HYDRA_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false,
+    "markingPositions": [
+      {
+        "x": 1,
+        "y": 0,
+        "dotType": "DOT0.8mm"
+      },
+      {
+        "x": -1,
+        "y": 0,
+        "dotType": "DOT0.8mm"
+      }
+    ]
+  },
+  "variations": [
+    {
+      "id": "slow",
+      "label": "Slow (no Hydra)",
+      "machine": {
+        "centering": [
+          {
+            "method": "optical",
+            "tools": [
+              "Z_TOOL"
+            ]
+          }
+        ]
+      }
+    }
   ]
 }

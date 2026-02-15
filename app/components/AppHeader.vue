@@ -13,14 +13,32 @@
     <slot />
 
     <div class="flex-1" />
-    <UButton
-      to="/packages"
-      size="xs"
-      color="neutral"
-      variant="ghost"
-      icon="i-lucide-package"
-      title="Package Manager"
-    />
+
+    <!-- Team selector (when user has teams) -->
+    <UDropdownMenu v-if="isAuthenticated && hasTeam" :items="teamSelectorItems">
+      <UButton
+        size="xs"
+        color="neutral"
+        variant="ghost"
+        class="max-w-[160px]"
+      >
+        <span class="truncate text-xs font-medium">{{ currentTeam?.name ?? 'Select Team' }}</span>
+        <UIcon name="i-lucide-chevron-down" class="text-xs shrink-0" />
+      </UButton>
+    </UDropdownMenu>
+
+    <!-- Settings / Packages dropdown -->
+    <UDropdownMenu :items="settingsMenuItems">
+      <UButton
+        size="xs"
+        color="neutral"
+        variant="ghost"
+        icon="i-lucide-settings"
+        title="Settings & Packages"
+      />
+    </UDropdownMenu>
+
+    <!-- Theme toggle -->
     <UButton
       size="xs"
       color="neutral"
@@ -29,16 +47,108 @@
       title="Toggle color mode"
       @click="toggleColorMode"
     />
+
+    <!-- User menu or Sign In -->
+    <UDropdownMenu v-if="isAuthenticated" :items="userMenuItems">
+      <UButton
+        size="xs"
+        color="neutral"
+        variant="ghost"
+        class="rounded-full"
+      >
+        <div class="size-5 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
+          {{ userInitials }}
+        </div>
+      </UButton>
+    </UDropdownMenu>
+    <UButton
+      v-else
+      to="/auth/login"
+      size="xs"
+      variant="ghost"
+      icon="i-lucide-log-in"
+    >
+      Sign In
+    </UButton>
   </header>
 </template>
 
 <script setup lang="ts">
 import { useColorMode } from '#imports'
 
+const router = useRouter()
 const colorMode = useColorMode()
 const isDark = computed(() => colorMode.value === 'dark')
 
 const isTauri = import.meta.client && !!(window as any).__TAURI_INTERNALS__
+const { isAuthenticated, signOut } = useAuth()
+const { profile } = useCurrentUser()
+const { teams, currentTeam, hasTeam, isAdmin, switchTeam } = useTeam()
+
+const userInitials = computed(() => {
+  const name = profile.value?.name ?? profile.value?.email ?? ''
+  return name.split(' ').map((p: string) => p[0]).join('').toUpperCase().slice(0, 2) || '?'
+})
+
+// Team selector dropdown items
+const teamSelectorItems = computed(() => {
+  const items = teams.value.map(t => ({
+    label: t.name,
+    icon: t.id === currentTeam.value?.id ? 'i-lucide-check' : undefined,
+    onSelect: () => switchTeam(t.id),
+  }))
+  return [
+    items,
+    [{ label: 'Create Team', icon: 'i-lucide-plus', onSelect: () => router.push('/team/create') }],
+  ]
+})
+
+// Settings menu items (packages, team settings)
+const settingsMenuItems = computed(() => {
+  const items: any[][] = [
+    [
+      { label: 'Local Packages', icon: 'i-lucide-package', onSelect: () => router.push('/packages') },
+    ],
+  ]
+
+  if (isAuthenticated.value && hasTeam.value) {
+    items[0]!.push({
+      label: 'Team Packages',
+      icon: 'i-lucide-package-check',
+      onSelect: () => router.push('/team/packages'),
+    })
+  }
+
+  if (isAdmin.value) {
+    items.push([
+      { label: 'Team Settings', icon: 'i-lucide-settings-2', onSelect: () => router.push('/team/settings') },
+      { label: 'Team Members', icon: 'i-lucide-users', onSelect: () => router.push('/team/members') },
+    ])
+  }
+
+  return items
+})
+
+// User menu items
+const userMenuItems = computed(() => [
+  [
+    {
+      label: profile.value?.name ?? profile.value?.email ?? 'Account',
+      icon: 'i-lucide-user',
+      type: 'label' as const,
+    },
+  ],
+  [
+    {
+      label: 'Sign Out',
+      icon: 'i-lucide-log-out',
+      onSelect: async () => {
+        await signOut()
+        router.replace('/')
+      },
+    },
+  ],
+])
 
 // Sync native window titlebar theme with web app color mode
 async function syncWindowTheme(dark: boolean) {
@@ -51,7 +161,6 @@ async function syncWindowTheme(dark: boolean) {
   }
 }
 
-// Sync on initial load and whenever color mode changes
 watch(isDark, (dark) => syncWindowTheme(dark), { immediate: true })
 
 function toggleColorMode() {

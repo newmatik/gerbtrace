@@ -14,5 +14,52 @@
   },
   "aliases": [
     "SSOP24"
-  ]
+  ],
+  "height": {
+    "nominal": 0.95,
+    "max": 0.998,
+    "min": 0.902
+  },
+  "searchArea": {
+    "x": 9.315,
+    "y": 8.783
+  },
+  "machine": {
+    "mountTools": [
+      "A23"
+    ],
+    "hydraTools": [
+      "H03"
+    ],
+    "pickWaitTime": 100,
+    "placeWaitTime": 100,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "highest",
+      "y": "highest",
+      "tape": "highest",
+      "theta": "highest",
+      "z": "highest",
+      "hydraTheta": "highest",
+      "hydraZ": "lowest"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL",
+          "HYDRA_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false
+  }
 }

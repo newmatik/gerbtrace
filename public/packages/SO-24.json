@@ -16,5 +16,78 @@
     "SO24",
     "SOIC-24",
     "SOIC24"
-  ]
+  ],
+  "height": {
+    "nominal": 2.5,
+    "max": 2.65,
+    "min": 2.35
+  },
+  "searchArea": {
+    "x": 10.4,
+    "y": 10.325
+  },
+  "machine": {
+    "mountTools": [
+      "A24"
+    ],
+    "hydraTools": [
+      "H05"
+    ],
+    "pickWaitTime": 100,
+    "placeWaitTime": 100,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "lowest",
+      "y": "lowest",
+      "tape": "lowest",
+      "theta": "lowest",
+      "z": "lowest",
+      "hydraTheta": "lowest",
+      "hydraZ": "lowest"
+    },
+    "centering": [
+      {
+        "method": "mechanical",
+        "mechanical": {
+          "angle": 90000,
+          "position": "POS_UPPER",
+          "force": "HIGH_FORCE"
+        },
+        "jaw": {
+          "nominal": 10.4,
+          "max": 11.8,
+          "min": 9.4
+        }
+      },
+      {
+        "method": "mechanical",
+        "mechanical": {
+          "angle": 0,
+          "position": "POS_UPPER",
+          "force": "HIGH_FORCE"
+        },
+        "jaw": {
+          "nominal": 10.325,
+          "max": 10.725,
+          "min": 9.5
+        }
+      },
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL",
+          "HYDRA_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false
+  }
 }

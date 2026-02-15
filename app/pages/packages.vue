@@ -79,6 +79,15 @@
                   Export JSON
                 </UButton>
                 <UButton
+                  size="xs"
+                  variant="outline"
+                  color="neutral"
+                  icon="i-lucide-file-output"
+                  @click="exportPck"
+                >
+                  Export .pck
+                </UButton>
+                <UButton
                   v-if="selectedItem?.source === 'custom'"
                   size="xs"
                   variant="outline"
@@ -140,6 +149,7 @@
 <script setup lang="ts">
 import type { PackageDefinition } from '~/utils/package-types'
 import type { PackageListItem } from '~/components/packages/PackageList.vue'
+import { serializeToPck } from '~/utils/pck-serializer'
 
 const { packages: builtinPackages, loadPackages, loaded: builtinLoaded } = usePackageLibrary()
 const { packages: customRecords, customDefinitions, addPackage, updatePackage, removePackage, loaded: customLoaded } = useCustomPackages()
@@ -250,6 +260,20 @@ function exportJson() {
   const a = document.createElement('a')
   a.href = url
   a.download = `${pkg.name.replace(/[^a-zA-Z0-9-_]/g, '_')}.json`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+// Export .pck
+function exportPck() {
+  const pkg = currentPkg.value
+  if (!pkg) return
+  const pckText = serializeToPck(pkg)
+  const blob = new Blob([pckText], { type: 'text/plain' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${pkg.name.replace(/[^a-zA-Z0-9-_]/g, '_')}.pck`
   a.click()
   URL.revokeObjectURL(url)
 }

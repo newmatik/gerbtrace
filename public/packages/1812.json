@@ -17,5 +17,256 @@
     "chipLength": 4.6,
     "leadWidth": 3,
     "leadLength": 0.5
-  }
+  },
+  "height": {
+    "nominal": 2.1,
+    "max": 2.205,
+    "min": 1.995
+  },
+  "searchArea": {
+    "x": 4.57,
+    "y": 3.162
+  },
+  "machine": {
+    "mountTools": [
+      "A14"
+    ],
+    "pickWaitTime": 100,
+    "placeWaitTime": 100,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "highest",
+      "y": "highest",
+      "tape": "highest",
+      "theta": "highest",
+      "z": "highest",
+      "hydraTheta": "highest",
+      "hydraZ": "lowest"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false,
+    "markingPositions": [
+      {
+        "x": 0,
+        "y": 0,
+        "dotType": "DOT1.5mm"
+      }
+    ]
+  },
+  "variations": [
+    {
+      "id": "09",
+      "label": "H0.9",
+      "height": {
+        "nominal": 0.9,
+        "max": 0.945,
+        "min": 0.855
+      }
+    },
+    {
+      "id": "09",
+      "label": "H0.9",
+      "height": {
+        "nominal": 0.9,
+        "max": 0.945,
+        "min": 0.855
+      }
+    },
+    {
+      "id": "09",
+      "label": "H0.9",
+      "height": {
+        "nominal": 0.9,
+        "max": 0.945,
+        "min": 0.855
+      }
+    },
+    {
+      "id": "09",
+      "label": "H0.9",
+      "height": {
+        "nominal": 0.9,
+        "max": 0.945,
+        "min": 0.855
+      }
+    },
+    {
+      "id": "11",
+      "label": "H1.1",
+      "height": {
+        "nominal": 1.1,
+        "max": 1.2,
+        "min": 1
+      }
+    },
+    {
+      "id": "13",
+      "label": "H1.3",
+      "height": {
+        "nominal": 1.3,
+        "max": 1.365,
+        "min": 1.235
+      }
+    },
+    {
+      "id": "14",
+      "label": "H1.4",
+      "height": {
+        "nominal": 1.44,
+        "max": 1.512,
+        "min": 1.368
+      }
+    },
+    {
+      "id": "15",
+      "label": "H1.5",
+      "height": {
+        "nominal": 1.5,
+        "max": 1.7,
+        "min": 1.3
+      }
+    },
+    {
+      "id": "15",
+      "label": "H1.5",
+      "height": {
+        "nominal": 1.5,
+        "max": 1.575,
+        "min": 1.425
+      }
+    },
+    {
+      "id": "16",
+      "label": "H1.6",
+      "height": {
+        "nominal": 1.6,
+        "max": 1.68,
+        "min": 1.52
+      }
+    },
+    {
+      "id": "17",
+      "label": "H1.7",
+      "height": {
+        "nominal": 1.7,
+        "max": 1.785,
+        "min": 1.615
+      }
+    },
+    {
+      "id": "18",
+      "label": "H1.9",
+      "height": {
+        "nominal": 1.9,
+        "max": 1.995,
+        "min": 1.805
+      }
+    },
+    {
+      "id": "20",
+      "label": "H2.0",
+      "height": {
+        "nominal": 2,
+        "max": 2.1,
+        "min": 1.9
+      }
+    },
+    {
+      "id": "24",
+      "label": "H2.4",
+      "height": {
+        "nominal": 2.4,
+        "max": 2.5,
+        "min": 2.3
+      }
+    },
+    {
+      "id": "slow",
+      "label": "Slow (no Hydra)",
+      "height": {
+        "nominal": 2.5,
+        "max": 2.625,
+        "min": 2.375
+      },
+      "machine": {
+        "centering": [
+          {
+            "method": "optical",
+            "tools": [
+              "Z_TOOL"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "25",
+      "label": "H2.5",
+      "height": {
+        "nominal": 2.5,
+        "max": 2.625,
+        "min": 2.375
+      }
+    },
+    {
+      "id": "26",
+      "label": "H2.6",
+      "height": {
+        "nominal": 2.6,
+        "max": 2.73,
+        "min": 2.47
+      }
+    },
+    {
+      "id": "28",
+      "label": "H2.8",
+      "height": {
+        "nominal": 2.8,
+        "max": 2.94,
+        "min": 2.66
+      }
+    },
+    {
+      "id": "30",
+      "label": "H3.0",
+      "height": {
+        "nominal": 3,
+        "max": 3.15,
+        "min": 2.85
+      }
+    },
+    {
+      "id": "32",
+      "label": "H3.2",
+      "height": {
+        "nominal": 3.2,
+        "max": 3.5,
+        "min": 2.9
+      }
+    },
+    {
+      "id": "34",
+      "label": "H3.4",
+      "height": {
+        "nominal": 3.4,
+        "max": 3.9,
+        "min": 2.9
+      }
+    }
+  ]
 }

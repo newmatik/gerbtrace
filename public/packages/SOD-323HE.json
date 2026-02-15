@@ -21,7 +21,7 @@
         "distFromCenter": 0.65,
         "ccHalf": 0,
         "angleMilliDeg": 90000,
-        "padLength": 2.0,
+        "padLength": 2,
         "padWidth": 1.1
       },
       {
@@ -34,5 +34,48 @@
         "padWidth": 1.1
       }
     ]
+  },
+  "height": {
+    "nominal": 0.95,
+    "max": 1.05,
+    "min": 0.85
+  },
+  "searchArea": {
+    "x": 2.472,
+    "y": 0.97
+  },
+  "machine": {
+    "mountTools": [
+      "A12"
+    ],
+    "pickWaitTime": 100,
+    "placeWaitTime": 100,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "high",
+      "y": "high",
+      "tape": "high",
+      "theta": "high",
+      "z": "high",
+      "hydraTheta": "high",
+      "hydraZ": "high"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false
   }
 }

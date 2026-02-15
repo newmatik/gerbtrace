@@ -13,5 +13,59 @@
     "chipLength": 3.5,
     "leadWidth": 1.8,
     "leadLength": 0.3
+  },
+  "height": {
+    "nominal": 0.98,
+    "max": 1.029,
+    "min": 0.931
+  },
+  "searchArea": {
+    "x": 3.783,
+    "y": 1.8
+  },
+  "machine": {
+    "mountTools": [
+      "A13"
+    ],
+    "hydraTools": [
+      "H04"
+    ],
+    "pickWaitTime": 100,
+    "placeWaitTime": 100,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "high",
+      "y": "high",
+      "tape": "high",
+      "theta": "high",
+      "z": "high",
+      "hydraTheta": "high",
+      "hydraZ": "high"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL",
+          "HYDRA_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false,
+    "markingPositions": [
+      {
+        "x": 0,
+        "y": 0,
+        "dotType": "DOT2.2mm"
+      }
+    ]
   }
 }

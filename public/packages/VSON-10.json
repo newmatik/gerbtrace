@@ -14,5 +14,48 @@
   },
   "aliases": [
     "VSON10"
-  ]
+  ],
+  "height": {
+    "nominal": 1,
+    "max": 1.1,
+    "min": 0.9
+  },
+  "searchArea": {
+    "x": 3.473,
+    "y": 3.974
+  },
+  "machine": {
+    "mountTools": [
+      "A14"
+    ],
+    "pickWaitTime": 50,
+    "placeWaitTime": 50,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "high",
+      "y": "high",
+      "tape": "high",
+      "theta": "high",
+      "z": "high",
+      "hydraTheta": "high",
+      "hydraZ": "high"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false
+  }
 }

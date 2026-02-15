@@ -12,5 +12,71 @@
   "outline": {
     "length": 10.2,
     "width": 9.2
-  }
+  },
+  "height": {
+    "nominal": 4.65,
+    "max": 4.883,
+    "min": 4.417
+  },
+  "searchArea": {
+    "x": 15.277,
+    "y": 17.718
+  },
+  "machine": {
+    "mountTools": [
+      "A24"
+    ],
+    "pickWaitTime": 120,
+    "placeWaitTime": 120,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "low",
+      "y": "highest",
+      "tape": "highest",
+      "theta": "highest",
+      "z": "highest",
+      "hydraTheta": "low",
+      "hydraZ": "lowest"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false,
+    "markingPositions": [
+      {
+        "x": 1,
+        "y": 0,
+        "dotType": "DOT0.8mm"
+      },
+      {
+        "x": -1,
+        "y": 0,
+        "dotType": "DOT0.8mm"
+      }
+    ]
+  },
+  "variations": [
+    {
+      "id": "11",
+      "label": "H6.0",
+      "height": {
+        "nominal": 6,
+        "max": 6.3,
+        "min": 5.7
+      }
+    }
+  ]
 }

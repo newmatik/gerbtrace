@@ -12,5 +12,54 @@
   },
   "aliases": [
     "DO213AA"
-  ]
+  ],
+  "height": {
+    "nominal": 1.4,
+    "max": 1.47,
+    "min": 1.33
+  },
+  "searchArea": {
+    "x": 3.5,
+    "y": 1.6
+  },
+  "machine": {
+    "mountTools": [
+      "A34"
+    ],
+    "hydraTools": [
+      "H04"
+    ],
+    "pickWaitTime": 120,
+    "placeWaitTime": 120,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "low",
+      "y": "highest",
+      "tape": "highest",
+      "theta": "highest",
+      "z": "highest",
+      "hydraTheta": "lowest",
+      "hydraZ": "low"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL",
+          "HYDRA_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "standard",
+      "linescan",
+      "hydra"
+    ],
+    "coplanarityCheck": false
+  }
 }

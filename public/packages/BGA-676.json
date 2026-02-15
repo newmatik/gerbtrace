@@ -15,5 +15,50 @@
     "leadDiameter": 0.45,
     "leadsPerRowInHole": 0,
     "leadsPerColumnInHole": 0
+  },
+  "height": {
+    "nominal": 2.3,
+    "max": 2.415,
+    "min": 2.185
+  },
+  "searchArea": {
+    "x": 27.16,
+    "y": 27.16
+  },
+  "machine": {
+    "mountTools": [
+      "A24"
+    ],
+    "pickWaitTime": 300,
+    "placeWaitTime": 300,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "lowest",
+      "y": "highest",
+      "tape": "high",
+      "theta": "highest",
+      "z": "high",
+      "hydraTheta": "lowest",
+      "hydraZ": "high"
+    },
+    "hydraFinePitch": true,
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "standard",
+      "linescan"
+    ],
+    "coplanarityCheck": false
   }
 }

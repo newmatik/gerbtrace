@@ -16,5 +16,75 @@
     "SO28",
     "SOIC-28",
     "SOIC28"
-  ]
+  ],
+  "height": {
+    "nominal": 2.4,
+    "max": 2.52,
+    "min": 2.28
+  },
+  "searchArea": {
+    "x": 18.25,
+    "y": 11.92
+  },
+  "machine": {
+    "mountTools": [
+      "A24"
+    ],
+    "pickWaitTime": 200,
+    "placeWaitTime": 50,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "high",
+      "y": "high",
+      "tape": "high",
+      "theta": "highest",
+      "z": "low",
+      "hydraTheta": "low",
+      "hydraZ": "high"
+    },
+    "centering": [
+      {
+        "method": "mechanical",
+        "mechanical": {
+          "angle": 90000,
+          "position": "POS_MIDDLE",
+          "force": "HIGH_FORCE"
+        },
+        "jaw": {
+          "nominal": 18.25,
+          "max": 18.75,
+          "min": 17.75
+        }
+      },
+      {
+        "method": "mechanical",
+        "mechanical": {
+          "angle": 0,
+          "position": "POS_MIDDLE",
+          "force": "HIGH_FORCE"
+        },
+        "jaw": {
+          "nominal": 11.92,
+          "max": 12.7,
+          "min": 11.42
+        }
+      },
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "standard",
+      "linescan"
+    ],
+    "coplanarityCheck": false
+  }
 }

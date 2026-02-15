@@ -13,5 +13,107 @@
   },
   "aliases": [
     "SOT323"
+  ],
+  "height": {
+    "nominal": 0.9,
+    "max": 1.1,
+    "min": 0.7
+  },
+  "searchArea": {
+    "x": 1.597,
+    "y": 2.066
+  },
+  "machine": {
+    "mountTools": [
+      "A12"
+    ],
+    "pickWaitTime": 30,
+    "placeWaitTime": 30,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "high",
+      "y": "high",
+      "tape": "high",
+      "theta": "high",
+      "z": "high",
+      "hydraTheta": "high",
+      "hydraZ": "high"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false,
+    "markingPositions": [
+      {
+        "x": 1,
+        "y": 0,
+        "dotType": "DOT0.8mm"
+      },
+      {
+        "x": -1,
+        "y": 0,
+        "dotType": "DOT0.8mm"
+      }
+    ]
+  },
+  "variations": [
+    {
+      "id": "hydra",
+      "label": "Hydra",
+      "machine": {
+        "centering": [
+          {
+            "method": "mechanical",
+            "mechanical": {
+              "angle": 90000,
+              "position": "POS_UPPER",
+              "force": "MIDDLE_FORCE"
+            },
+            "jaw": {
+              "nominal": 2,
+              "max": 2.6,
+              "min": 1.5
+            }
+          },
+          {
+            "method": "mechanical",
+            "mechanical": {
+              "angle": 0,
+              "position": "POS_UPPER",
+              "force": "MIDDLE_FORCE"
+            },
+            "jaw": {
+              "nominal": 2.1,
+              "max": 2.6,
+              "min": 1.6
+            }
+          },
+          {
+            "method": "optical",
+            "tools": [
+              "Z_TOOL",
+              "HYDRA_TOOL"
+            ]
+          }
+        ],
+        "visionModes": [
+          "linescan",
+          "hydra"
+        ]
+      }
+    }
   ]
 }
