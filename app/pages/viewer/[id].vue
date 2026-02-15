@@ -110,25 +110,50 @@
         <RealisticControls
           :selected-preset="selectedPreset"
           @select-preset="selectedPreset = $event"
-          @export-png="handleExportPng"
-          @export-svg="handleExportSvg"
         />
       </template>
 
-      <!-- Download Gerber -->
-      <template v-if="layers.length > 0">
+      <!-- Downloads: Image / Gerber / PnP (same muted style, no divider between) -->
+      <template v-if="viewMode === 'realistic' || layers.length > 0 || pnp.hasPnP.value">
         <div class="w-px h-5 bg-neutral-200 dark:bg-neutral-700/80" />
-        <UButton
-          size="xs"
-          color="neutral"
-          variant="ghost"
-          icon="i-lucide-download"
-          :class="[tbBtnBase, tbBtnIdle]"
-          title="Download Gerber files as ZIP"
-          @click="handleDownloadGerber"
-        >
-          <span>Gerber</span>
-        </UButton>
+        <div class="flex items-center rounded-lg p-0.5 gap-0.5 bg-neutral-100/90 border border-neutral-200 dark:bg-neutral-900/70 dark:border-neutral-700">
+          <UButton
+            v-if="viewMode === 'realistic'"
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-download"
+            :class="[tbBtnBase, tbBtnIdle]"
+            title="Download image (PNG/SVG)"
+            @click="showImageExport = true"
+          >
+            <span>Image</span>
+          </UButton>
+          <UButton
+            v-if="layers.length > 0"
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-download"
+            :class="[tbBtnBase, tbBtnIdle]"
+            title="Download Gerber files as ZIP"
+            @click="handleDownloadGerber"
+          >
+            <span>Gerber</span>
+          </UButton>
+          <UButton
+            v-if="pnp.hasPnP.value"
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-download"
+            :class="[tbBtnBase, tbBtnIdle]"
+            title="Export Pick &amp; Place data"
+            @click="showPnPExport = true"
+          >
+            <span>PnP</span>
+          </UButton>
+        </div>
       </template>
     </AppHeader>
 
@@ -183,7 +208,7 @@
         <!-- Components view -->
         <ComponentPanel
           v-else
-          :all-components="pnp.allComponents.value"
+          :all-components="pnp.activeComponents.value"
           :filtered-components="pnp.filteredComponents.value"
           :selected-designator="pnp.selectedDesignator.value"
           :search-query="pnp.searchQuery.value"
@@ -193,9 +218,15 @@
           :origin-y="pnp.originY.value"
           :show-packages="showPackages"
           :pnp-convention="pnp.convention.value"
+          :package-options="packageOptions"
           @update:search-query="pnp.searchQuery.value = $event"
           @update:show-packages="showPackages = $event"
           @update:pnp-convention="updateConvention"
+          @update:rotation="pnp.setRotationOverride($event.key, $event.rotation)"
+          @reset:rotation="pnp.resetRotationOverride($event.key)"
+          @toggle:dnp="pnp.toggleDnp($event)"
+          @update:package-mapping="pnp.setCadPackageMapping($event.cadPackage, $event.packageName)"
+          @update:polarized="pnp.setPolarizedOverride($event.key, $event.polarized)"
           @select="pnp.selectComponent($event)"
           @start-set-origin="startSetOrigin"
           @start-component-align="startComponentAlign"
@@ -264,6 +295,22 @@
 
     <!-- Settings modal -->
     <AppSettingsModal v-model:open="showSettings" />
+
+    <!-- PnP export modal -->
+    <PnPExportModal
+      v-model:open="showPnPExport"
+      :default-convention="pnp.convention.value"
+      :components="pnp.allComponents.value"
+      :project-name="project?.name || 'Untitled'"
+      @export="handleExportPnP"
+    />
+
+    <!-- Image export modal -->
+    <ImageExportModal
+      v-model:open="showImageExport"
+      :has-pn-p="pnp.hasPnP.value"
+      @export="handleExportImage"
+    />
   </div>
 </template>
 
@@ -274,13 +321,16 @@ import { sortLayersByPcbOrder, isTopLayer, isBottomLayer, isSharedLayer, getColo
 import type { ViewMode } from '~/components/viewer/BoardCanvas.vue'
 import { getPresetById, type PcbPreset } from '~/utils/pcb-presets'
 import type { PnPConvention } from '~/utils/pnp-conventions'
+import type { PnPExportFormat, PnPExportSideMode } from '~/utils/pnp-export'
+import { generatePnPExport, getPnPExportExtension, getPnPExportMimeType } from '~/utils/pnp-export'
 import { exportRealisticSvg } from '../../../lib/renderer/svg-exporter'
+import * as SvgExporter from '../../../lib/renderer/svg-exporter'
 import { removeSourceRanges } from '@lib/gerber/editor'
 import JSZip from 'jszip'
 
 const route = useRoute()
 const projectId = Number(route.params.id)
-const { getProject, getFiles, addFiles, clearFiles, renameProject, updateFileLayerType, updateFileContent, updateProjectOrigin, updateProjectConvention } = useProject()
+const { getProject, getFiles, addFiles, upsertFiles, clearFiles, renameProject, updateFileLayerType, updateFileContent, updateProjectOrigin, updateProjectConvention, updateProjectRotationOverrides, updateProjectDnp, updateProjectCadPackageMap, updateProjectPolarizedOverrides } = useProject()
 const canvasInteraction = useCanvasInteraction()
 const measureTool = useMeasureTool()
 const infoTool = useInfoTool()
@@ -424,6 +474,8 @@ const selectedPreset = computed({
 })
 const boardCanvasRef = ref<any>(null)
 const showSettings = ref(false)
+const showPnPExport = ref(false)
+const showImageExport = ref(false)
 
 const outlineLayer = computed(() => layers.value.find(l => l.type === 'Outline') || undefined)
 const hasOutline = computed(() => layers.value.some(l => l.type === 'Outline'))
@@ -433,9 +485,17 @@ const pnp = usePickAndPlace(layers)
 const pkgLib = usePackageLibrary()
 const showPackages = ref(true)
 const packageLibraryVersion = computed(() => pkgLib.lookupMap.value.size)
+const packageOptions = computed(() => pkgLib.allPackages.value.map(p => p.name).sort((a, b) => a.localeCompare(b)))
 
 // Load package library on mount (non-blocking)
 onMounted(() => { pkgLib.loadPackages() })
+
+// Let the PnP composable use the package library for matching
+watch(
+  () => pkgLib.lookupMap.value.size,
+  () => { pnp.setPackageMatcher(pkgLib.matchPackage) },
+  { immediate: true },
+)
 
 // Auto-switch to Components tab when PnP layers appear for the first time
 watch(pnp.hasPnP, (has) => {
@@ -444,10 +504,37 @@ watch(pnp.hasPnP, (has) => {
   }
 })
 
+// Sync toolbar's All/Top/Bot filter with PnP side filter
+watch(activeFilter, (filter) => {
+  if (filter === 'top') pnp.activeSideFilter.value = 'top'
+  else if (filter === 'bot') pnp.activeSideFilter.value = 'bottom'
+  else pnp.activeSideFilter.value = 'all'
+}, { immediate: true })
+
 // Persist PnP origin to database when it changes
 watch([pnp.originX, pnp.originY], ([ox, oy]) => {
   updateProjectOrigin(projectId, ox, oy)
 })
+
+// Persist per-component PnP rotation overrides to database
+watch(pnp.rotationOverridesRecord, (overrides) => {
+  updateProjectRotationOverrides(projectId, overrides)
+}, { deep: true })
+
+// Persist DNP component keys to database
+watch(pnp.dnpRecord, (keys) => {
+  updateProjectDnp(projectId, keys)
+}, { deep: true })
+
+// Persist CAD package -> library package mapping
+watch(pnp.cadPackageMapRecord, (map) => {
+  updateProjectCadPackageMap(projectId, map)
+}, { deep: true })
+
+// Persist polarized overrides
+watch(pnp.polarizedOverridesRecord, (overrides) => {
+  updateProjectPolarizedOverrides(projectId, overrides)
+}, { deep: true })
 
 // Update PnP convention and persist
 function updateConvention(convention: PnPConvention) {
@@ -526,6 +613,11 @@ const renderLayers = computed(() => {
 /** Apply layer visibility based on filter choice (without changing mirrored). */
 function applyFilterVisibility(filter: LayerFilter) {
   for (const layer of layers.value) {
+    // Unmatched layers stay hidden regardless of filter (user must assign a type first)
+    if (layer.type === 'Unmatched') {
+      layer.visible = false
+      continue
+    }
     if (filter === 'all') {
       layer.visible = true
     } else if (filter === 'top') {
@@ -556,7 +648,7 @@ onMounted(async () => {
     const type = f.layerType || detectLayerType(f.fileName)
     return {
       file: f,
-      visible: true,
+      visible: type !== 'Unmatched',
       color: getColorForType(type),
       type,
     }
@@ -581,47 +673,69 @@ onMounted(async () => {
   if (project.value?.pnpConvention) {
     pnp.convention.value = project.value.pnpConvention
   }
+
+  // Restore persisted per-component PnP rotation overrides
+  pnp.setRotationOverrides(project.value?.pnpRotationOverrides)
+
+  // Restore persisted DNP state
+  pnp.setDnpKeys(project.value?.pnpDnpComponents)
+
+  // Restore persisted CAD package mapping
+  pnp.setCadPackageMap(project.value?.pnpCadPackageMap)
+
+  // Restore persisted polarized overrides
+  pnp.setPolarizedOverrides(project.value?.pnpPolarizedOverrides)
 })
 
 async function handleImport(newFiles: GerberFile[], sourceName: string) {
-  // Clear any cached parse trees so re-importing the same filenames works correctly.
   const canvas = boardCanvasRef.value
-  const prevFileNames = layers.value.map(l => l.file.fileName)
-  if (canvas) {
-    for (const name of prevFileNames) canvas.invalidateCache(name)
-  }
+  const hadExistingFiles = layers.value.length > 0
+  const newFileNames = new Set(newFiles.map(f => f.fileName))
 
-  // Replace the current board import (instead of appending).
-  // Appending multiple unrelated imports can create huge unified bounds and make auto-fit look broken.
-  await clearFiles(projectId, 1)
-  await addFiles(projectId, 1, newFiles)
-  if (sourceName && !hasBeenRenamed.value && project.value?.name?.match(/^View Project /)) {
-    await renameProject(projectId, sourceName)
-    project.value = await getProject(projectId)
-  }
-  const newLayers = newFiles.map(f => {
-    const type = f.layerType || detectLayerType(f.fileName)
-    return {
-      file: f,
-      visible: true,
-      color: getColorForType(type),
-      type,
-    }
-  })
-  layers.value = sortLayersByPcbOrder(newLayers)
-  applyFilterVisibility(activeFilter.value)
-  applyDefaultCropToOutline()
-
+  // Invalidate cache for files being overwritten or newly added
   if (canvas) {
     for (const f of newFiles) canvas.invalidateCache(f.fileName)
   }
 
-  // Reset PnP origin (it is board-specific) and force re-fit.
-  pnp.resetOrigin()
-  await updateProjectOrigin(projectId, null, null)
+  // Merge into the database: overwrite same-name files, keep the rest
+  await upsertFiles(projectId, 1, newFiles)
+
+  // Auto-rename only on first import into a default-named project
+  if (!hadExistingFiles && sourceName && !hasBeenRenamed.value && project.value?.name?.match(/^View Project /)) {
+    await renameProject(projectId, sourceName)
+    project.value = await getProject(projectId)
+  }
+
+  // Build layer entries for the incoming files
+  const incomingLayers = newFiles.map(f => {
+    const type = f.layerType || detectLayerType(f.fileName)
+    return {
+      file: f,
+      visible: type !== 'Unmatched',
+      color: getColorForType(type),
+      type,
+    }
+  })
+
+  // Merge: keep existing layers that aren't overwritten, then add/replace with incoming
+  const keptLayers = layers.value.filter(l => !newFileNames.has(l.file.fileName))
+  layers.value = sortLayersByPcbOrder([...keptLayers, ...incomingLayers])
+  applyFilterVisibility(activeFilter.value)
+  applyDefaultCropToOutline()
+
+  // Only reset PnP state on first import (empty project), not on additive imports
+  if (!hadExistingFiles) {
+    pnp.resetOrigin()
+    pnp.resetAllRotationOverrides()
+    pnp.resetAllDnp()
+    await updateProjectOrigin(projectId, null, null)
+    await updateProjectRotationOverrides(projectId, {})
+    await updateProjectDnp(projectId, [])
+  }
+
   canvasInteraction.resetView()
 
-  // Invalidate PnP cache for newly imported files
+  // Invalidate PnP cache so newly imported PnP files get picked up
   pnp.invalidateCache()
 }
 
@@ -735,6 +849,122 @@ function handleExportSvg() {
   const svgString = exportRealisticSvg(realisticLayers, selectedPreset.value, side)
   const blob = new Blob([svgString], { type: 'image/svg+xml' })
   triggerDownload(blob, `${project.value?.name || 'pcb'}-${side}.svg`)
+}
+
+async function handleExportImage(options: { format: 'png' | 'svg'; componentsMode: 'none' | 'with' | 'both'; sideMode: 'top' | 'bottom' | 'both' }) {
+  const canvas = boardCanvasRef.value
+  if (!canvas) return
+
+  const projectName = project.value?.name || 'pcb'
+  const sides: Array<'top' | 'bottom'> = options.sideMode === 'both' ? ['top', 'bottom'] : [options.sideMode]
+
+  // If no PnP exists, treat as "none" regardless of selection
+  const canRenderComponents = pnp.hasPnP.value
+  const variants: boolean[] =
+    (options.componentsMode === 'both' && canRenderComponents) ? [false, true]
+      : (options.componentsMode === 'with' && canRenderComponents) ? [true]
+        : [false]
+
+  const fileCount = sides.length * variants.length
+  const ext = options.format === 'png' ? '.png' : '.svg'
+
+  const buildComponentsForSide = (side: 'top' | 'bottom') => {
+    if (!canRenderComponents) return []
+    const list = pnp.allComponents.value
+      .filter(c => !c.dnp)
+      .filter(c => c.side === side)
+    return list
+  }
+
+  const renderOne = async (side: 'top' | 'bottom', withComponents: boolean): Promise<Blob | null> => {
+    if (options.format === 'png') {
+      const comps = withComponents ? buildComponentsForSide(side) : []
+      const blob = await canvas.exportPngForSide(side, { includeComponents: withComponents, components: comps, includePackages: showPackages.value })
+      return blob
+    }
+
+    // SVG
+    const realisticLayers = canvas.getRealisticLayersForExport(side)
+    if (!withComponents) {
+      const svgString = exportRealisticSvg(realisticLayers, selectedPreset.value, side)
+      return new Blob([svgString], { type: 'image/svg+xml' })
+    }
+
+    const comps = buildComponentsForSide(side)
+    const svgString = (SvgExporter as any).exportRealisticSvgWithComponents(realisticLayers, selectedPreset.value, side, {
+      components: comps,
+      pnpOriginX: pnp.originX.value,
+      pnpOriginY: pnp.originY.value,
+      matchPackage: pkgLib.matchPackage,
+      showPackages: showPackages.value,
+      pnpConvention: pnp.convention.value,
+    })
+    return new Blob([svgString], { type: 'image/svg+xml' })
+  }
+
+  const fileNameFor = (side: 'top' | 'bottom', withComponents: boolean) => {
+    const sideSuffix = `-${side}`
+    const compSuffix = variants.length === 1
+      ? ''
+      : (withComponents ? '-with-components' : '-no-components')
+    return `${projectName}${sideSuffix}${compSuffix}${ext}`
+  }
+
+  if (fileCount === 1) {
+    const blob = await renderOne(sides[0]!, variants[0]!)
+    if (!blob) return
+    triggerDownload(blob, fileNameFor(sides[0]!, variants[0]!))
+    return
+  }
+
+  const zip = new JSZip()
+  for (const side of sides) {
+    for (const withComponents of variants) {
+      const blob = await renderOne(side, withComponents)
+      if (!blob) continue
+      zip.file(fileNameFor(side, withComponents), blob)
+    }
+  }
+  const zipBlob = await zip.generateAsync({ type: 'blob' })
+  triggerDownload(zipBlob, `${projectName}-images.zip`)
+}
+
+async function handleExportPnP(options: { convention: PnPConvention; format: PnPExportFormat; sideMode: PnPExportSideMode; excludeDnp: boolean }) {
+  const allComps = pnp.allComponents.value
+  const name = project.value?.name || 'pnp'
+
+  const buildExport = (components: typeof allComps) =>
+    generatePnPExport({
+      projectName: project.value?.name || 'Untitled',
+      inputConvention: pnp.convention.value,
+      outputConvention: options.convention,
+      format: options.format,
+      components,
+      matchPackage: pkgLib.matchPackage,
+      excludeDnp: options.excludeDnp,
+    })
+
+  const mimeType = getPnPExportMimeType(options.format)
+  const ext = getPnPExportExtension(options.format)
+
+  if (options.sideMode === 'separate') {
+    // Export as ZIP with separate top and bottom files
+    const topComps = allComps.filter(c => c.side === 'top')
+    const botComps = allComps.filter(c => c.side === 'bottom')
+    const zip = new JSZip()
+    if (topComps.length > 0) zip.file(`${name}-top${ext}`, buildExport(topComps))
+    if (botComps.length > 0) zip.file(`${name}-bottom${ext}`, buildExport(botComps))
+    const blob = await zip.generateAsync({ type: 'blob' })
+    triggerDownload(blob, `${name}-pick-and-place.zip`)
+  } else {
+    let components = allComps
+    if (options.sideMode === 'top') components = allComps.filter(c => c.side === 'top')
+    else if (options.sideMode === 'bottom') components = allComps.filter(c => c.side === 'bottom')
+    const content = buildExport(components)
+    const sideSuffix = options.sideMode === 'top' ? '-top' : options.sideMode === 'bottom' ? '-bottom' : ''
+    const blob = new Blob([content], { type: mimeType })
+    triggerDownload(blob, `${name}-pick-and-place${sideSuffix}${ext}`)
+  }
 }
 
 function triggerDownload(blob: Blob, fileName: string) {

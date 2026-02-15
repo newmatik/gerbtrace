@@ -1,0 +1,27 @@
+---
+description: Keep release version fields and updater signing configuration consistent for web and desktop releases
+alwaysApply: true
+---
+
+# Release Version And Signing Consistency
+
+For every release, keep web version display, desktop metadata, and updater signing aligned.
+
+## Required version bump files
+
+- Update `package.json` version.
+- Update `src-tauri/tauri.conf.json` version.
+- Update `src-tauri/Cargo.toml` version.
+- Update `nuxt.config.ts` `runtimeConfig.public.appVersion`.
+
+## Required signing checks
+
+- `src-tauri/tauri.conf.json` `plugins.updater.pubkey` must match the private signing key used in CI.
+- CI secrets `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` must be a valid pair.
+- Never commit private keys, passwords, `.p8`, `.p12`, or secret values.
+
+## Release verification gates
+
+- After merge to `main`, verify GitHub Pages deploy succeeds and footer version matches release.
+- After tag push, verify `build-desktop.yml` succeeds for both `macos-latest` and `windows-latest`.
+- If desktop build fails with `incorrect updater private key password`, rotate/update secrets before re-running.

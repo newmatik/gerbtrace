@@ -15,7 +15,7 @@
       ref="fileInput"
       type="file"
       multiple
-      accept=".zip,.gtl,.gbl,.gts,.gbs,.gto,.gbo,.gtp,.gbp,.gm1,.gm2,.gm3,.gko,.gbr,.ger,.pho,.cmp,.sol,.stc,.sts,.plc,.pls,.crc,.crs,.drl,.drd,.xln,.exc,.ncd,.art,.txt,.csv,.xy,.pos"
+      accept=".zip,.gtl,.gbl,.gts,.gbs,.gto,.gbo,.gtp,.gbp,.gm,.gm1,.gm2,.gm3,.gko,.gd1,.gd2,.gg1,.gg2,.g1,.g2,.g3,.g4,.gp1,.gp2,.in1,.in2,.in3,.in4,.gbr,.ger,.pho,.cmp,.sol,.stc,.sts,.plc,.pls,.crc,.crs,.drl,.drd,.xln,.exc,.ncd,.art,.txt,.csv,.xy,.pos"
       class="hidden"
       @change="handleInputChange"
     />

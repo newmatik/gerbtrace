@@ -45,9 +45,18 @@
       />
     </button>
     <span class="truncate flex-1">{{ layer.file.fileName }}</span>
+    <UIcon
+      v-if="layer.type === 'Unmatched'"
+      name="i-lucide-circle-help"
+      class="text-amber-400 shrink-0"
+      title="Unmatched file — select a layer type to render"
+    />
     <select
       :value="layer.type"
-      class="text-[10px] bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded px-1 py-0.5 text-neutral-600 dark:text-neutral-400 cursor-pointer outline-none hover:border-neutral-400 dark:hover:border-neutral-500 transition-colors appearance-none shrink-0 max-w-[5.5rem]"
+      class="text-[10px] border rounded px-1 py-0.5 cursor-pointer outline-none transition-colors appearance-none shrink-0 max-w-[5.5rem]"
+      :class="layer.type === 'Unmatched'
+        ? 'bg-amber-50 dark:bg-amber-900/30 border-amber-300 dark:border-amber-600 text-amber-700 dark:text-amber-300'
+        : 'bg-neutral-100 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:border-neutral-400 dark:hover:border-neutral-500'"
       @click.stop
       @pointerdown.stop
       @change="(e) => $emit('typeChange', (e.target as HTMLSelectElement).value)"

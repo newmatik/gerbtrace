@@ -1,0 +1,38 @@
+{
+  "name": "XTAL-2016-4",
+  "type": "PT_GENERIC",
+  "aliases": [
+    "FA-128",
+    "FA128",
+    "Crystal_SMD_2016-4Pin_2.0x1.6mm",
+    "SMD2016-4",
+    "SMD2016/4",
+    "4-SMD (2x1,6)",
+    "4-SMD (2x1.6)",
+    "4-SMD (2.0x1.6)"
+  ],
+  "body": {
+    "length": 2,
+    "width": 1.6
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "numLeads": 2,
+        "distFromCenter": 0.55,
+        "ccHalf": 0.7,
+        "padWidth": 0.9,
+        "padLength": 0.8,
+        "angleMilliDeg": 90000
+      },
+      {
+        "numLeads": 2,
+        "distFromCenter": -0.55,
+        "ccHalf": 0.7,
+        "padWidth": 0.9,
+        "padLength": 0.8,
+        "angleMilliDeg": 270000
+      }
+    ]
+  }
+}

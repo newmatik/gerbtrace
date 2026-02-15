@@ -121,17 +121,36 @@ The parser pipeline converts raw Gerber text into a typed AST, which the plotter
 
 Releases follow a tag-based workflow:
 
-1. Update the version in `package.json`, `src-tauri/tauri.conf.json`, and `src-tauri/Cargo.toml`
+1. Update the version in:
+   - `package.json`
+   - `src-tauri/tauri.conf.json`
+   - `src-tauri/Cargo.toml`
+   - `nuxt.config.ts` (`runtimeConfig.public.appVersion`, used by the web footer)
 2. Commit the version bump
 3. Create and push a version tag:
    ```bash
    git tag v1.x.x
    git push origin v1.x.x
    ```
-4. GitHub Actions automatically builds macOS and Windows installers and creates a draft GitHub Release
+4. GitHub Actions automatically builds macOS and Windows installers and creates a GitHub Release
 5. Review the draft release, add release notes, and publish
 
 **Web deployment** happens automatically on every push to `main` via GitHub Pages.
+
+### Updater signing (critical)
+
+- The updater public key in `src-tauri/tauri.conf.json` (`plugins.updater.pubkey`) must match the private key configured in GitHub secrets.
+- Required secrets:
+  - `TAURI_SIGNING_PRIVATE_KEY`
+  - `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`
+- Use `scripts/setup-github-secrets.sh` to set secrets from a local key file. The password is read from the `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` environment variable.
+- If desktop builds fail with `incorrect updater private key password`, update/rotate the keypair and secrets, then rerun the workflow.
+
+### Release verification checklist
+
+- Verify `deploy.yml` succeeded after merge to `main`.
+- Confirm the web footer version matches the release version.
+- Verify `build-desktop.yml` succeeded for both `macos-latest` and `windows-latest`.
 
 ## CI/CD
 

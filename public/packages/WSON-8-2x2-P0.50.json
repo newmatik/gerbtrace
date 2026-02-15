@@ -1,0 +1,23 @@
+{
+  "name": "WSON-8-2x2-P0.50",
+  "type": "TwoSymmetricLeadGroups",
+  "aliases": [
+    "WSON-8",
+    "WSON8",
+    "WSON8+1",
+    "WSON-8+1",
+    "WSON8+1 (2x2)",
+    "WSON-8+1 (2x2)"
+  ],
+  "body": {
+    "length": 2,
+    "width": 2
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 8,
+    "widthOverLeads": 2.4,
+    "leadPitch": 0.5,
+    "leadWidth": 0.25,
+    "leadLength": 0.3
+  }
+}

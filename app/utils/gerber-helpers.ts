@@ -32,7 +32,25 @@ const LAYER_TYPE_MAP: Record<string, string> = {
   '.gm1': 'Outline',
   '.gm2': 'Outline',
   '.gm3': 'Outline',
+  '.gm7': 'Outline',
+  '.gm': 'Outline',
   '.gko': 'Keep-Out',
+  // Altium drawing / guide layers (Gerber-format, generic)
+  '.gd1': 'Unmatched',
+  '.gd2': 'Unmatched',
+  '.gg1': 'Unmatched',
+  '.gg2': 'Unmatched',
+  // Inner / mid layers (Altium, KiCad, Protel)
+  '.g1': 'Inner Layer',
+  '.g2': 'Inner Layer',
+  '.g3': 'Inner Layer',
+  '.g4': 'Inner Layer',
+  '.gp1': 'Inner Layer',
+  '.gp2': 'Inner Layer',
+  '.in1': 'Inner Layer',
+  '.in2': 'Inner Layer',
+  '.in3': 'Inner Layer',
+  '.in4': 'Inner Layer',
   // Protel / Altium / Eagle naming
   '.cmp': 'Top Copper',
   '.sol': 'Bottom Copper',
@@ -49,10 +67,10 @@ const LAYER_TYPE_MAP: Record<string, string> = {
   '.exc': 'Drill',
   '.ncd': 'Drill',
   // Generic Gerber
-  '.gbr': 'Unknown',
-  '.ger': 'Unknown',
-  '.pho': 'Unknown',
-  '.art': 'Unknown',
+  '.gbr': 'Unmatched',
+  '.ger': 'Unmatched',
+  '.pho': 'Unmatched',
+  '.art': 'Unmatched',
 }
 
 const LAYER_COLOR_MAP: Record<string, string> = {
@@ -66,27 +84,32 @@ const LAYER_COLOR_MAP: Record<string, string> = {
   'Bottom Paste': '#FFA500',
   'Outline': '#00FFCC',
   'Keep-Out': '#FF6B35',
+  'Inner Layer': '#536DFE',
   'Drill': '#00E676',
   'PnP Top': '#FF69B4',
   'PnP Bottom': '#DDA0DD',
+  'PnP Top + Bot': '#FF85C8',
+  'Unmatched': '#666666',
 }
 
-/** All assignable layer types in PCB stack order */
+/** All assignable layer types (PnP types grouped together) */
 export const ALL_LAYER_TYPES: string[] = [
   'Drill',
-  'PnP Top',
   'Top Silkscreen',
   'Top Paste',
   'Top Solder Mask',
   'Top Copper',
+  'Inner Layer',
   'Bottom Copper',
   'Bottom Solder Mask',
   'Bottom Paste',
   'Bottom Silkscreen',
-  'PnP Bottom',
   'Outline',
   'Keep-Out',
-  'Unknown',
+  'PnP Top',
+  'PnP Bottom',
+  'PnP Top + Bot',
+  'Unmatched',
 ]
 
 export function getColorForType(type: string): string {
@@ -97,9 +120,9 @@ export function detectLayerType(fileName: string): string {
   const lower = fileName.toLowerCase()
   const ext = lower.slice(lower.lastIndexOf('.'))
 
-  // Return immediately for unambiguous extensions (skip 'Unknown' mapped ones like .gbr)
+  // Return immediately for unambiguous extensions (skip 'Unmatched' mapped ones like .gbr)
   const extType = LAYER_TYPE_MAP[ext]
-  if (extType && extType !== 'Unknown') return extType
+  if (extType && extType !== 'Unmatched') return extType
 
   // Try filename-based keyword matching (works for descriptive names like copper_top.gbr)
   if (/top.*copper|copper.*top|f\.cu/i.test(lower)) return 'Top Copper'
@@ -111,12 +134,13 @@ export function detectLayerType(fileName: string): string {
   if (/top.*paste|paste.*top|solderpaste.*top|top.*solderpaste/i.test(lower)) return 'Top Paste'
   if (/bottom.*paste|paste.*bottom|solderpaste.*bottom|bottom.*solderpaste/i.test(lower)) return 'Bottom Paste'
   if (/outline|edge|board|profile|contour/i.test(lower)) return 'Outline'
-  if (/drill|drl/i.test(lower)) return 'Drill'
+  if (/drill|drl|holes/i.test(lower)) return 'Drill'
+  if (/inner|internal|mid.*layer|layer.*mid/i.test(lower)) return 'Inner Layer'
 
-  // Fall back to extension-based type (e.g. 'Unknown' for .gbr/.ger/.pho/.art)
+  // Fall back to extension-based type (e.g. 'Unmatched' for .gbr/.ger/.pho/.art)
   if (extType) return extType
 
-  return 'Unknown'
+  return 'Unmatched'
 }
 
 export function getDefaultLayerColor(fileName: string): string {
@@ -131,18 +155,20 @@ export function getDefaultLayerColor(fileName: string): string {
 const LAYER_SORT_ORDER: Record<string, number> = {
   'Drill': 0,
   'PnP Top': 1,
-  'Top Silkscreen': 2,
-  'Top Paste': 3,
-  'Top Solder Mask': 4,
-  'Top Copper': 5,
-  'Bottom Copper': 6,
-  'Bottom Solder Mask': 7,
-  'Bottom Paste': 8,
-  'Bottom Silkscreen': 9,
-  'PnP Bottom': 10,
-  'Outline': 11,
-  'Keep-Out': 12,
-  'Unknown': 13,
+  'PnP Top + Bot': 2,
+  'Top Silkscreen': 3,
+  'Top Paste': 4,
+  'Top Solder Mask': 5,
+  'Top Copper': 6,
+  'Inner Layer': 7,
+  'Bottom Copper': 8,
+  'Bottom Solder Mask': 9,
+  'Bottom Paste': 10,
+  'Bottom Silkscreen': 11,
+  'PnP Bottom': 12,
+  'Outline': 13,
+  'Keep-Out': 14,
+  'Unmatched': 15,
 }
 
 export function getLayerSortOrder(type: string): number {
@@ -157,7 +183,7 @@ export type LayerFilter = 'all' | 'top' | 'bot'
 
 const TOP_LAYER_TYPES = new Set(['Top Silkscreen', 'Top Paste', 'Top Solder Mask', 'Top Copper', 'PnP Top'])
 const BOT_LAYER_TYPES = new Set(['Bottom Silkscreen', 'Bottom Paste', 'Bottom Solder Mask', 'Bottom Copper', 'PnP Bottom'])
-const SHARED_LAYER_TYPES = new Set(['Outline', 'Keep-Out', 'Drill'])
+const SHARED_LAYER_TYPES = new Set(['Outline', 'Keep-Out', 'Drill', 'PnP Top + Bot'])
 
 export function isTopLayer(type: string): boolean {
   return TOP_LAYER_TYPES.has(type)
@@ -184,7 +210,7 @@ export function normalizeLayerName(fileName: string): string {
 export function isGerberFile(fileName: string): boolean {
   const lower = fileName.toLowerCase()
   // Skip common non-gerber files
-  if (lower.endsWith('.json') || lower.endsWith('.txt') || lower.endsWith('.md') || lower.endsWith('.csv')) return false
+  if (lower.endsWith('.json') || lower.endsWith('.md') || lower.endsWith('.csv')) return false
   if (lower.endsWith('.gbrjob')) return false
   if (lower === 'license' || lower === 'readme') return false
   // Skip macOS resource fork files (._filename)
@@ -194,7 +220,12 @@ export function isGerberFile(fileName: string): boolean {
   const gerberExts = [
     // KiCad / modern
     '.gtl', '.gbl', '.gts', '.gbs', '.gto', '.gbo', '.gtp', '.gbp',
-    '.gm1', '.gm2', '.gm3', '.gko', '.gbr', '.ger', '.pho',
+    '.gm1', '.gm2', '.gm3', '.gm7', '.gm', '.gko', '.gbr', '.ger', '.pho',
+    // Altium drawing / guide / inner layers
+    '.gd1', '.gd2', '.gg1', '.gg2',
+    '.g1', '.g2', '.g3', '.g4',
+    '.gp1', '.gp2',
+    '.in1', '.in2', '.in3', '.in4',
     // Protel / Altium / Eagle
     '.cmp', '.sol', '.stc', '.sts', '.plc', '.pls', '.crc', '.crs',
     // Drill
@@ -206,6 +237,9 @@ export function isGerberFile(fileName: string): boolean {
 
   // Check if the file has no standard extension but named 'drills' etc.
   if (/^(drill|drills|outline)$/i.test(fileName)) return true
+
+  // .txt files with drill-related keywords (e.g. RoundHoles.TXT, SlotHoles.TXT)
+  if (ext === '.txt' && /holes|drill/i.test(lower)) return true
 
   return false
 }
@@ -238,10 +272,30 @@ export function detectPnPSide(fileName: string): 'PnP Top' | 'PnP Bottom' {
 
 /** Check if a layer type is a Pick & Place layer */
 export function isPnPLayer(type: string): boolean {
-  return type === 'PnP Top' || type === 'PnP Bottom'
+  return type === 'PnP Top' || type === 'PnP Bottom' || type === 'PnP Top + Bot'
 }
 
 /** Check if a file is importable (Gerber or PnP) */
 export function isImportableFile(fileName: string): boolean {
   return isGerberFile(fileName) || isPnPFile(fileName)
 }
+
+// ── Layer grouping ──
+
+export type LayerGroupKey = 'gerber' | 'drill' | 'pnp' | 'unknown'
+
+export function getLayerGroup(type: string): LayerGroupKey {
+  if (type === 'Drill') return 'drill'
+  if (type === 'PnP Top' || type === 'PnP Bottom' || type === 'PnP Top + Bot') return 'pnp'
+  if (type === 'Unmatched') return 'unknown'
+  return 'gerber'
+}
+
+export const LAYER_GROUP_LABELS: Record<LayerGroupKey, string> = {
+  gerber: 'Gerber Files',
+  drill: 'Drill Files',
+  pnp: 'Pick and Place',
+  unknown: 'Unknown',
+}
+
+export const LAYER_GROUP_ORDER: LayerGroupKey[] = ['gerber', 'drill', 'pnp', 'unknown']

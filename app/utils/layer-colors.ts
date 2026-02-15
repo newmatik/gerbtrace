@@ -10,5 +10,5 @@ export const DEFAULT_LAYER_COLORS: Record<string, string> = {
   'Outline': '#00FFCC',
   'Keep-Out': '#FF6B35',
   'Drill': '#00E676',
-  'Unknown': '#FF80AB',
+  'Unmatched': '#FF80AB',
 }

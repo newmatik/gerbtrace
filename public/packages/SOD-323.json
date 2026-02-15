@@ -1,14 +1,14 @@
 {
   "name": "SOD-323",
   "body": {
-    "length": 2.45,
-    "width": 0.35
+    "length": 1.25,
+    "width": 1.7
   },
   "type": "Chip",
   "chip": {
-    "chipLength": 2.45,
+    "chipLength": 2.2,
     "leadWidth": 0.35,
-    "leadLength": 0.4
+    "leadLength": 0.7
   },
   "aliases": [
     "SOD323"

@@ -576,6 +576,20 @@ function createSegment(
     }
   }
 
+  // In multi-quadrant mode, when start ≈ end the Gerber spec defines a full
+  // 360° circle.  Without this adjustment startAngle == endAngle and
+  // ctx.arc() would draw nothing (zero sweep).
+  if (quadrant === 'multi') {
+    const dist = Math.sqrt((end[0] - start[0]) ** 2 + (end[1] - start[1]) ** 2)
+    if (dist < radius * 1e-4) {
+      if (counterclockwise) {
+        endAngle = startAngle + TWO_PI
+      } else {
+        endAngle = startAngle - TWO_PI
+      }
+    }
+  }
+
   return {
     type: 'arc',
     start, end,

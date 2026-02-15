@@ -1,6 +1,25 @@
 import JSZip from 'jszip'
 import type { GerberFile } from '~/utils/gerber-helpers'
-import { isImportableFile, isPnPFile, detectPnPSide } from '~/utils/gerber-helpers'
+import { isPnPFile, detectPnPSide, detectLayerType } from '~/utils/gerber-helpers'
+import { parsePnPFile } from '~/utils/pnp-parser'
+
+/** Files inside ZIPs that should always be skipped (system junk). */
+const SKIP_FILENAMES = new Set(['.ds_store', 'thumbs.db', 'desktop.ini'])
+
+/**
+ * Detect the PnP layer type for a file by parsing its content to check
+ * which sides are present. Returns 'PnP Top + Bot' for combined files,
+ * or 'PnP Top' / 'PnP Bottom' for single-side files.
+ */
+function detectPnPLayerType(fileName: string, content: string): string {
+  const components = parsePnPFile(content, 'top')
+  const hasTop = components.some(c => c.side === 'top')
+  const hasBot = components.some(c => c.side === 'bottom')
+
+  if (hasTop && hasBot) return 'PnP Top + Bot'
+  if (hasBot) return 'PnP Bottom'
+  return detectPnPSide(fileName)
+}
 
 export function useSampleProject() {
   const { createNewProject, addFiles } = useProject()
@@ -16,10 +35,15 @@ export function useSampleProject() {
       if (name.startsWith('__MACOSX/')) continue
       // Strip directory prefix if present
       const fileName = name.includes('/') ? name.split('/').pop()! : name
-      if (!isImportableFile(fileName)) continue
+      if (SKIP_FILENAMES.has(fileName.toLowerCase()) || fileName.startsWith('._')) continue
       const content = await entry.async('text')
-      const layerType = isPnPFile(fileName) ? detectPnPSide(fileName) : undefined
-      files.push({ fileName, content, layerType })
+      if (isPnPFile(fileName)) {
+        const layerType = detectPnPLayerType(fileName, content)
+        files.push({ fileName, content, layerType })
+      } else {
+        const layerType = detectLayerType(fileName)
+        files.push({ fileName, content, layerType })
+      }
     }
 
     return files

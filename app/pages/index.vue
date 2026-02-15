@@ -162,6 +162,8 @@
 </template>
 
 <script setup lang="ts">
+import { useColorMode } from '#imports'
+
 const router = useRouter()
 const colorMode = useColorMode()
 const isDark = computed(() => colorMode.value === 'dark')
