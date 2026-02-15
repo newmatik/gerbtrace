@@ -8,7 +8,7 @@
 <script setup lang="ts">
 import JSZip from 'jszip'
 import type { GerberFile } from '~/utils/gerber-helpers'
-import { isPnPFile, detectPnPSide, isImportableFile, detectLayerType, looksLikeGerberContent } from '~/utils/gerber-helpers'
+import { isPnPFile, detectPnPSide, isImportableFile, detectLayerType, sniffContentType } from '~/utils/gerber-helpers'
 import { parsePnPFile } from '~/utils/pnp-parser'
 
 /** Files inside ZIPs that should always be skipped (system junk). */
@@ -81,10 +81,12 @@ async function handleFiles(rawFiles: File[]) {
             importedFiles.push({ fileName, content, layerType })
           }
         } else {
-          // Some CAM tools export extensionless Gerber files — fall back to content sniffing
+          // Some CAM tools export extensionless Gerber/drill files — fall back to content sniffing
           const content = await entry.async('text')
-          if (looksLikeGerberContent(content)) {
-            importedFiles.push({ fileName, content })
+          const sniffed = sniffContentType(content)
+          if (sniffed) {
+            const layerType = sniffed === 'drill' ? 'Drill' : undefined
+            importedFiles.push({ fileName, content, layerType })
           }
         }
       }

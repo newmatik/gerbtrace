@@ -281,18 +281,24 @@ export function isImportableFile(fileName: string): boolean {
 }
 
 /**
- * Content-based Gerber detection for files whose names lack a recognizable extension.
- * Some CAM tools export extensionless files (e.g. "l1", "m2", "out") inside ZIPs.
+ * Content-sniff for extensionless Gerber or Excellon drill files.
+ * Returns `'gerber'` for RS-274X, `'drill'` for Excellon, or `null` if unrecognised.
+ * Some CAM tools export extensionless files (e.g. "l1", "m2", "drl") inside ZIPs.
  */
-export function looksLikeGerberContent(content: string): boolean {
+export function sniffContentType(content: string): 'gerber' | 'drill' | null {
   const head = content.slice(0, 512)
   // RS-274X format specification (%FSLAX24Y24*% etc.) — mandatory in every Gerber file
-  if (/%FS[LT][AI]X\d+Y\d+/.test(head)) return true
+  if (/%FS[LT][AI]X\d+Y\d+/.test(head)) return 'gerber'
   // Unit mode (%MOIN*% / %MOMM*%)
-  if (/%MO(IN|MM)\*%/.test(head)) return true
-  // G04 comment — very common opening line
-  if (/^G04\s/m.test(head)) return true
-  return false
+  if (/%MO(IN|MM)\*%/.test(head)) return 'gerber'
+  // G04 comment — very common Gerber opening line
+  if (/^G04\s/m.test(head)) return 'gerber'
+  // Excellon header start (M48) — mandatory in every Excellon drill file
+  if (/^M48\b/m.test(head)) return 'drill'
+  // Excellon end-of-header (M95) or tool definitions (T01C0.025 etc.)
+  if (/^M95\b/m.test(head)) return 'drill'
+  if (/^T\d+C[\d.]+/m.test(head)) return 'drill'
+  return null
 }
 
 // ── Layer grouping ──
