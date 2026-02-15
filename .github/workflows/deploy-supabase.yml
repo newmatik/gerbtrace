@@ -77,11 +77,11 @@ jobs:
               # If the droplet was provisioned manually already, the initial schema migration will fail noisily.
               # Detect an existing baseline schema and record the migration without reapplying it.
               if [ "$name" = "20260215000000_initial_schema.sql" ]; then
-                has_profiles="$(docker compose exec -T db psql -U postgres -d postgres -tAc \"select to_regclass('public.profiles') is not null\")"
-                if [ \"$has_profiles\" = \"t\" ]; then
-                  echo \"Baseline schema present; recording $name without applying\"
-                  docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 \\
-                    -c \"insert into public.schema_migrations(name) values ('${name}') on conflict (name) do nothing;\"
+                has_profiles="$(docker compose exec -T db psql -U postgres -d postgres -tAc "select to_regclass('public.profiles') is not null")"
+                if [ "$has_profiles" = "t" ]; then
+                  echo "Baseline schema present; recording $name without applying"
+                  docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
+                    -c "insert into public.schema_migrations(name) values ('${name}') on conflict (name) do nothing;"
                   continue
                 fi
               fi
