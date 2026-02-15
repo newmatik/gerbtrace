@@ -12,5 +12,68 @@
   },
   "aliases": [
     "SOD123"
+  ],
+  "height": {
+    "nominal": 1.23,
+    "max": 1.291,
+    "min": 1.169
+  },
+  "searchArea": {
+    "x": 3.596,
+    "y": 0.969
+  },
+  "machine": {
+    "mountTools": [
+      "A13"
+    ],
+    "hydraTools": [
+      "H02"
+    ],
+    "pickWaitTime": 100,
+    "placeWaitTime": 100,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "highest",
+      "y": "highest",
+      "tape": "highest",
+      "theta": "highest",
+      "z": "highest",
+      "hydraTheta": "highest",
+      "hydraZ": "high"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL",
+          "HYDRA_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false
+  },
+  "variations": [
+    {
+      "id": "slow",
+      "label": "Slow (no Hydra)",
+      "machine": {
+        "centering": [
+          {
+            "method": "optical",
+            "tools": [
+              "Z_TOOL"
+            ]
+          }
+        ]
+      }
+    }
   ]
 }

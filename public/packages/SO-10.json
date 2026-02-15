@@ -16,5 +16,55 @@
     "SO10",
     "SOIC-10",
     "SOIC10"
-  ]
+  ],
+  "height": {
+    "nominal": 3.5,
+    "max": 3.675,
+    "min": 3.325
+  },
+  "searchArea": {
+    "x": 15.629,
+    "y": 15.629
+  },
+  "machine": {
+    "mountTools": [
+      "A23"
+    ],
+    "pickWaitTime": 50,
+    "placeWaitTime": 50,
+    "zMountForce": null,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "highest",
+      "y": "highest",
+      "tape": "highest",
+      "theta": "highest",
+      "z": "high",
+      "hydraTheta": "highest",
+      "hydraZ": "high"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false,
+    "markingPositions": [
+      {
+        "x": 0,
+        "y": 0,
+        "dotType": "DOT0.5mm"
+      }
+    ]
+  }
 }

@@ -17,5 +17,93 @@
     "R3225",
     "RES3225",
     "XTAL-3225"
-  ]
+  ],
+  "variations": [
+    {
+      "id": "35",
+      "label": "H3.5",
+      "height": {
+        "nominal": 3.5,
+        "max": 3.675,
+        "min": 3.325
+      }
+    }
+  ],
+  "height": {
+    "nominal": 3.5,
+    "max": 3.675,
+    "min": 3.325
+  },
+  "searchArea": {
+    "x": 8,
+    "y": 6.35
+  },
+  "machine": {
+    "mountTools": [
+      "A23"
+    ],
+    "pickWaitTime": 5,
+    "placeWaitTime": 2,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "high",
+      "y": "highest",
+      "tape": "high",
+      "theta": "highest",
+      "z": "highest",
+      "hydraTheta": "highest",
+      "hydraZ": "high"
+    },
+    "centering": [
+      {
+        "method": "mechanical",
+        "mechanical": {
+          "angle": 90000,
+          "position": "POS_UPPER",
+          "force": "HIGH_FORCE"
+        },
+        "jaw": {
+          "nominal": 8,
+          "max": 8.4,
+          "min": 7.6
+        }
+      },
+      {
+        "method": "mechanical",
+        "mechanical": {
+          "angle": 0,
+          "position": "POS_UPPER",
+          "force": "HIGH_FORCE"
+        },
+        "jaw": {
+          "nominal": 6.35,
+          "max": 6.65,
+          "min": 6.05
+        }
+      },
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan",
+      "hydra"
+    ],
+    "coplanarityCheck": false,
+    "markingPositions": [
+      {
+        "x": 0,
+        "y": 0,
+        "dotType": "DOT1.5mm"
+      }
+    ]
+  }
 }

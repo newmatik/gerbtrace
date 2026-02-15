@@ -14,5 +14,57 @@
   },
   "aliases": [
     "LQFP2080.5"
-  ]
+  ],
+  "height": {
+    "nominal": 3.4,
+    "max": 3.57,
+    "min": 3.23
+  },
+  "searchArea": {
+    "x": 31.2,
+    "y": 31.2
+  },
+  "machine": {
+    "mountTools": [
+      "C23"
+    ],
+    "pickWaitTime": 200,
+    "placeWaitTime": 300,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "lowest",
+      "y": "low",
+      "tape": "low",
+      "theta": "high",
+      "z": "low",
+      "hydraTheta": "lowest",
+      "hydraZ": "high"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "standard",
+      "linescan",
+      "hydra"
+    ],
+    "coplanarityCheck": false,
+    "markingPositions": [
+      {
+        "x": 0,
+        "y": 0,
+        "dotType": "DOT0.5mm"
+      }
+    ]
+  }
 }

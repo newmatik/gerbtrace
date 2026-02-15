@@ -1,9 +1,12 @@
 export default defineNuxtConfig({
   ssr: false,
+  devtools: { enabled: false },
 
   runtimeConfig: {
     public: {
-      appVersion: '1.0.5',
+      appVersion: '1.0.6',
+      supabaseUrl: process.env.SUPABASE_URL || 'http://localhost:54321',
+      supabaseAnonKey: process.env.SUPABASE_ANON_KEY || '',
     },
   },
 

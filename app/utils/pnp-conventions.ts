@@ -9,6 +9,8 @@ export type PackageTypeKey =
   | 'ThreePole'
   | 'TwoSymmetricLeadGroups'
   | 'FourSymmetricLeadGroups'
+  | 'TwoPlusTwo'
+  | 'FourOnTwo'
   | 'BGA'
   | 'Outline'
   | 'PT_GENERIC'
@@ -46,6 +48,8 @@ export const PNP_CONVENTIONS: Record<PnPConvention, PnPConventionConfig> = {
       ThreePole: 0,
       TwoSymmetricLeadGroups: 0,
       FourSymmetricLeadGroups: 0,
+      TwoPlusTwo: 0,
+      FourOnTwo: 0,
       BGA: 0,
       Outline: 0,
       PT_GENERIC: 0,
@@ -62,6 +66,8 @@ export const PNP_CONVENTIONS: Record<PnPConvention, PnPConventionConfig> = {
       ThreePole: 0,
       TwoSymmetricLeadGroups: 0,
       FourSymmetricLeadGroups: 0,
+      TwoPlusTwo: 0,
+      FourOnTwo: 0,
       BGA: 0,
       Outline: 0,
       PT_GENERIC: 0,
@@ -80,6 +86,8 @@ export const PNP_CONVENTIONS: Record<PnPConvention, PnPConventionConfig> = {
       ThreePole: 90,
       TwoSymmetricLeadGroups: 90,
       FourSymmetricLeadGroups: 90,
+      TwoPlusTwo: 90,
+      FourOnTwo: 90,
 
       // BGA: same as IPC
       BGA: 0,

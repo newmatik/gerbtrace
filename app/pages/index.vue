@@ -35,10 +35,103 @@
           </div>
         </div>
 
+        <!-- ── Team Projects (when logged in with team) ────────────────── -->
+        <section v-if="isAuthenticated && hasTeam" class="mb-10">
+          <div class="flex items-end justify-between gap-4 mb-3">
+            <div>
+              <h2 class="text-xs font-semibold text-neutral-400 uppercase tracking-wide">
+                {{ currentTeam?.name ?? 'Team' }} Projects
+              </h2>
+              <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                {{ teamProjects.length }} project{{ teamProjects.length === 1 ? '' : 's' }}
+              </p>
+            </div>
+            <div class="flex items-center gap-2">
+              <UButton
+                v-if="isEditor"
+                size="sm"
+                icon="i-lucide-plus"
+                @click="createTeamProject('viewer')"
+              >
+                New Team Project
+              </UButton>
+            </div>
+          </div>
+
+          <div v-if="teamProjectsLoading" class="text-center py-6 text-sm text-neutral-400">
+            Loading team projects...
+          </div>
+
+          <div v-else-if="teamProjects.length" class="space-y-2">
+            <div
+              v-for="project in teamProjects"
+              :key="project.id"
+              class="group flex items-center gap-3 px-4 py-3 rounded-lg border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors cursor-pointer"
+              @click="openTeamProject(project)"
+            >
+              <UIcon
+                :name="project.mode === 'viewer' ? 'i-lucide-eye' : 'i-lucide-columns-2'"
+                class="text-lg text-neutral-400 shrink-0"
+              />
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-medium truncate">{{ project.name }}</div>
+                <div class="text-xs text-neutral-400 mt-0.5">
+                  Updated {{ formatDate(project.updated_at) }}
+                </div>
+              </div>
+              <UBadge
+                :color="project.status === 'approved' ? 'success' : 'warning'"
+                size="xs"
+                variant="subtle"
+              >
+                <UIcon
+                  v-if="project.status === 'approved'"
+                  name="i-lucide-lock"
+                  class="text-xs mr-0.5"
+                />
+                {{ project.status === 'approved' ? 'Approved' : 'Draft' }}
+              </UBadge>
+              <UBadge size="xs" variant="subtle" color="neutral">
+                {{ project.mode }}
+              </UBadge>
+              <UButton
+                v-if="isAdmin"
+                size="xs"
+                variant="ghost"
+                color="error"
+                icon="i-lucide-trash-2"
+                class="opacity-0 group-hover:opacity-100 transition-opacity"
+                @click.stop="confirmDeleteTeamProject(project)"
+              />
+            </div>
+          </div>
+
+          <div v-else class="rounded-lg border border-dashed border-neutral-200 dark:border-neutral-800 p-8 text-center text-sm text-neutral-500 dark:text-neutral-400">
+            No team projects yet. Create one to start collaborating.
+          </div>
+        </section>
+
+        <!-- ── Create/Join Team prompt (logged in, no team) ────────────── -->
+        <section v-if="isAuthenticated && !hasTeam && teamsLoaded" class="mb-10">
+          <div class="rounded-lg border border-dashed border-primary/30 bg-primary/5 p-6 text-center">
+            <UIcon name="i-lucide-users" class="text-2xl text-primary mb-2" />
+            <h3 class="text-sm font-semibold mb-1">Collaborate with your team</h3>
+            <p class="text-xs text-neutral-500 dark:text-neutral-400 mb-3">
+              Create a team to share projects and packages with colleagues.
+            </p>
+            <UButton size="sm" to="/team/create" icon="i-lucide-plus">
+              Create a Team
+            </UButton>
+          </div>
+        </section>
+
+        <!-- ── Personal Projects (local) ───────────────────────────────── -->
         <section class="mb-10">
           <div class="flex items-end justify-between gap-4 mb-3">
             <div>
-              <h2 class="text-xs font-semibold text-neutral-400 uppercase tracking-wide">Your Projects</h2>
+              <h2 class="text-xs font-semibold text-neutral-400 uppercase tracking-wide">
+                {{ isAuthenticated ? 'Personal Projects' : 'Your Projects' }}
+              </h2>
               <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
                 {{ filteredProjects.length }} project{{ filteredProjects.length === 1 ? '' : 's' }}
               </p>
@@ -129,6 +222,39 @@
 
     <AppAboutModal v-model:open="aboutOpen" />
 
+    <!-- Team project delete confirmation modal -->
+    <UModal v-model:open="teamDeleteModalOpen">
+      <template #content>
+        <div class="p-5 space-y-4">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h3 class="text-sm font-semibold text-neutral-900 dark:text-white">Delete team project?</h3>
+              <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                This will permanently remove the project and all its files for the entire team.
+              </p>
+            </div>
+            <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-x" @click="teamDeleteModalOpen = false" />
+          </div>
+
+          <div v-if="teamProjectToDelete" class="rounded-md border border-neutral-200 dark:border-neutral-800 p-3">
+            <div class="text-sm font-medium text-neutral-900 dark:text-white">{{ teamProjectToDelete.name }}</div>
+            <div class="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+              {{ teamProjectToDelete.mode === 'viewer' ? 'Viewer' : 'Compare' }} •
+              {{ teamProjectToDelete.status === 'approved' ? 'Approved' : 'Draft' }} •
+              Updated {{ formatDate(teamProjectToDelete.updated_at) }}
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-2 pt-2">
+            <UButton size="sm" variant="outline" color="neutral" @click="teamDeleteModalOpen = false">Cancel</UButton>
+            <UButton size="sm" color="error" icon="i-lucide-trash-2" :loading="teamDeleteLoading" @click="performDeleteTeamProject">
+              Delete
+            </UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
     <UModal v-model:open="deleteModalOpen">
       <template #content>
         <div class="p-5 space-y-4">
@@ -174,6 +300,11 @@ const isTauri = import.meta.client && !!(window as any).__TAURI_INTERNALS__
 const appVersion = useRuntimeConfig().public.appVersion as string
 const aboutOpen = ref(false)
 
+// Auth and team state
+const { isAuthenticated } = useAuth()
+const { currentTeam, hasTeam, isEditor, isAdmin, teamsLoaded } = useTeam()
+const { projects: teamProjects, projectsLoading: teamProjectsLoading, createProject: createTeamProjectFn, deleteProject: deleteTeamProjectFn } = useTeamProjects()
+
 const query = ref('')
 const modeFilter = ref<'all' | 'viewer' | 'compare'>('all')
 const modeOptions = [
@@ -199,9 +330,20 @@ async function createProject(mode: 'viewer' | 'compare') {
   openProject(project)
 }
 
+async function createTeamProject(mode: 'viewer' | 'compare') {
+  const { project } = await createTeamProjectFn(mode)
+  if (project) {
+    router.push(`/${mode}/team-${project.id}`)
+  }
+}
+
 function openProject(project: { id?: number; mode: string }) {
   if (!project.id) return
   router.push(`/${project.mode}/${project.id}`)
+}
+
+function openTeamProject(project: { id: string; mode: string }) {
+  router.push(`/${project.mode}/team-${project.id}`)
 }
 
 function confirmDelete(project: any) {
@@ -217,6 +359,31 @@ async function performDelete() {
   projectToDelete.value = null
 }
 
+// Team project deletion
+const teamDeleteModalOpen = ref(false)
+const teamProjectToDelete = ref<any>(null)
+const teamDeleteLoading = ref(false)
+
+function confirmDeleteTeamProject(project: any) {
+  teamProjectToDelete.value = project
+  teamDeleteModalOpen.value = true
+}
+
+async function performDeleteTeamProject() {
+  const p = teamProjectToDelete.value
+  if (!p?.id) return
+  teamDeleteLoading.value = true
+  try {
+    const { error } = await deleteTeamProjectFn(p.id)
+    if (!error) {
+      teamDeleteModalOpen.value = false
+      teamProjectToDelete.value = null
+    }
+  } finally {
+    teamDeleteLoading.value = false
+  }
+}
+
 async function loadSample(mode: 'viewer' | 'compare') {
   const project = await loadSampleProject(mode)
   if (project?.id) {
@@ -224,7 +391,7 @@ async function loadSample(mode: 'viewer' | 'compare') {
   }
 }
 
-function formatDate(date: Date): string {
+function formatDate(date: Date | string): string {
   return new Date(date).toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',

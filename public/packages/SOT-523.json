@@ -13,5 +13,70 @@
   },
   "aliases": [
     "SOT523"
+  ],
+  "height": {
+    "nominal": 0.8,
+    "max": 0.84,
+    "min": 0.76
+  },
+  "searchArea": {
+    "x": 1.216,
+    "y": 1.621
+  },
+  "machine": {
+    "mountTools": [
+      "A12"
+    ],
+    "pickWaitTime": 100,
+    "placeWaitTime": 100,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "low",
+      "y": "highest",
+      "tape": "highest",
+      "theta": "highest",
+      "z": "highest",
+      "hydraTheta": "low",
+      "hydraZ": "high"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan",
+      "hydra"
+    ],
+    "coplanarityCheck": false
+  },
+  "variations": [
+    {
+      "id": "hydra",
+      "label": "Hydra",
+      "machine": {
+        "centering": [
+          {
+            "method": "optical",
+            "tools": [
+              "Z_TOOL",
+              "HYDRA_TOOL"
+            ]
+          }
+        ],
+        "visionModes": [
+          "linescan",
+          "hydra"
+        ]
+      }
+    }
   ]
 }

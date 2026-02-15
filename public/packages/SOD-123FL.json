@@ -12,5 +12,51 @@
   },
   "aliases": [
     "SOD123FL"
-  ]
+  ],
+  "height": {
+    "nominal": 0.95,
+    "max": 1.15,
+    "min": 0.75
+  },
+  "searchArea": {
+    "x": 3.6,
+    "y": 1.65
+  },
+  "machine": {
+    "mountTools": [
+      "A13"
+    ],
+    "hydraTools": [
+      "H04"
+    ],
+    "pickWaitTime": 50,
+    "placeWaitTime": 50,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "highest",
+      "y": "highest",
+      "tape": "highest",
+      "theta": "highest",
+      "z": "highest",
+      "hydraTheta": "highest",
+      "hydraZ": "highest"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false
+  }
 }

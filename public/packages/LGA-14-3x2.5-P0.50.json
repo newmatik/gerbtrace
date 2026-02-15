@@ -50,5 +50,56 @@
         "padWidth": 0.4
       }
     ]
+  },
+  "height": {
+    "nominal": 1,
+    "max": 1.15,
+    "min": 0.85
+  },
+  "searchArea": {
+    "x": 4.22,
+    "y": 5.97
+  },
+  "machine": {
+    "mountTools": [
+      "A12"
+    ],
+    "pickWaitTime": 200,
+    "placeWaitTime": 200,
+    "zMountForce": null,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "highest",
+      "y": "highest",
+      "tape": "highest",
+      "theta": "highest",
+      "z": "high",
+      "hydraTheta": "highest",
+      "hydraZ": "high"
+    },
+    "hydraFinePitch": true,
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false,
+    "markingPositions": [
+      {
+        "x": 0,
+        "y": 0,
+        "dotType": "DOT0.5mm"
+      }
+    ]
   }
 }

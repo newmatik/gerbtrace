@@ -118,6 +118,8 @@ function typeLabel(type: string): string {
     ThreePole: 'SOT',
     TwoSymmetricLeadGroups: 'SO/SSOP',
     FourSymmetricLeadGroups: 'QFP/QFN',
+    TwoPlusTwo: '2+2',
+    FourOnTwo: '4-on-2',
     BGA: 'BGA',
     Outline: 'Outline',
   }
@@ -134,6 +136,10 @@ function packageTpsysTypes(type: string): string[] {
       return ['PT_TWO_SYM']
     case 'FourSymmetricLeadGroups':
       return ['PT_FOUR_SYM']
+    case 'TwoPlusTwo':
+      return ['PT_TWO_PLUS_TWO']
+    case 'FourOnTwo':
+      return ['PT_FOUR_ON_TWO']
     case 'BGA':
       // We currently use one BGA runtime model for both TPSys BGA classes.
       return ['PT_BGA', 'PT_GENERIC_BGA']
