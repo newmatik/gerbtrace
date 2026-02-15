@@ -92,7 +92,7 @@ jobs:
               docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=0 < "$f" >"$tmp" 2>&1
 
               if grep -q "ERROR:" "$tmp"; then
-                bad="$(grep "ERROR:" "$tmp" | grep -Evi \"already exists|duplicate key|already defined|already present|policy .* already exists\" || true)"
+                bad="$(grep "ERROR:" "$tmp" | grep -Evi "already exists|duplicate key|already defined|already present|policy .* already exists" || true)"
                 if [ -n "$bad" ]; then
                   echo "$bad" >&2
                   rm -f "$tmp"
