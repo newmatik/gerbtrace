@@ -11,7 +11,7 @@
 
 import type { GerberAST, ASTNode, Format, ZeroSuppression, UnitsType } from './types'
 
-const FORMAT_COMMENT_RE = /FORMAT[=:\s]*\{?(\d)[:\.](\d)/i
+const FORMAT_COMMENT_RE = /(?:^|[^A-Z])(?:FILE_)?FORMAT[=:\s]*\{?(\d)[:\.](\d)/i
 const EXCELLON_FORMAT_RE = /(?:INCH|METRIC)\s*,\s*(?:TZ|LZ)(?:\s*,\s*([0-9]+)\.([0-9]+))?/i
 const SUPPRESS_TRAILING_RE = /suppress\s*trail/i
 const SUPPRESS_LEADING_RE = /(suppress\s*lead|keep\s*zeros)/i
@@ -26,6 +26,7 @@ export function parseDrillSource(source: string): GerberAST {
   let format: Format | undefined
   let zeroSuppression: ZeroSuppression | undefined
   let currentTool: string | undefined
+  let routingEnabled = false
 
   /** Current character offset in the source string */
   let offset = 0
@@ -93,11 +94,16 @@ export function parseDrillSource(source: string): GerberAST {
         continue
       }
 
-      // Tool definition: T{num}C{diameter}
-      const toolMatch = line.match(/^T(\d+)(?:C([\d.]+))?/)
-      if (toolMatch) {
-        const code = `T${Number.parseInt(toolMatch[1] ?? '0', 10)}`
-        const diameter = toolMatch[2] ? parseFloat(toolMatch[2]) : 0
+      // Tool definition (common Excellon variants):
+      // - T01C0.3000
+      // - T01F00S00C0.3000
+      // - T1C0.3
+      // - T1
+      const toolNumMatch = /^T(\d+)/i.exec(line)
+      if (toolNumMatch) {
+        const code = `T${Number.parseInt(toolNumMatch[1] ?? '0', 10)}`
+        const cMatch = /C([\d.]+)/i.exec(line)
+        const diameter = cMatch?.[1] ? parseFloat(cMatch[1]) : 0
         if (diameter > 0) {
           children.push({
             type: 'toolDef',
@@ -126,15 +132,42 @@ export function parseDrillSource(source: string): GerberAST {
       continue
     }
 
-    // Coordinate line: X...Y... (drill hit)
-    const coordMatch = line.match(/^([XY].+)$/)
-    if (coordMatch) {
-      const coords = parseDrillCoords(coordMatch[1] ?? '')
-      children.push({ type: 'graphic', graphic: 'shape', coordinates: coords, sourceStart: lineStart, sourceEnd: lineEnd })
+    // Routing enable/disable (common Excellon)
+    if (line === 'M15') { routingEnabled = true; continue }
+    if (line === 'M16' || line === 'M17') { routingEnabled = false; continue }
+
+    // Routing move/line (common Excellon)
+    // - G00X...Y...   rapid move (tool up)
+    // - G0X...Y...    rapid move (tool up)
+    // - G01X...Y...   route line (tool down)
+    // - G1X...Y...    route line (tool down)
+    // These are used in Altium "SlotHoles" drill files.
+    const uline = line.toUpperCase()
+    if (uline.startsWith('G00') || /^G0(?=[XY])/.test(uline)) {
+      const payload = uline.startsWith('G00') ? line.slice(3) : line.slice(2)
+      const coords = parseDrillCoords(payload)
+      children.push({ type: 'graphic', graphic: 'move', coordinates: coords, sourceStart: lineStart, sourceEnd: lineEnd })
+      continue
+    }
+    if (uline.startsWith('G01') || /^G1(?=[XY])/.test(uline)) {
+      const payload = uline.startsWith('G01') ? line.slice(3) : line.slice(2)
+      const coords = parseDrillCoords(payload)
+      children.push({ type: 'graphic', graphic: 'segment', coordinates: coords, sourceStart: lineStart, sourceEnd: lineEnd })
       continue
     }
 
-    // Routing / slot: G85X...Y...
+    // Coordinate-only line:
+    // - In round-hole drill files: drill hit (shape)
+    // - In routing blocks: route segment
+    const coordMatch = line.match(/^([XY].+)$/i)
+    if (coordMatch) {
+      const coords = parseDrillCoords(coordMatch[1] ?? '')
+      const graphic = routingEnabled ? 'segment' : 'shape'
+      children.push({ type: 'graphic', graphic, coordinates: coords, sourceStart: lineStart, sourceEnd: lineEnd })
+      continue
+    }
+
+    // Legacy routing / slot: G85X...Y...
     if (line.startsWith('G85')) {
       // Slot from current position to X...Y...
       const slotCoords = parseDrillCoords(line.slice(3))

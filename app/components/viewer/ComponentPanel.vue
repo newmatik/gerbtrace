@@ -28,6 +28,9 @@
       <div class="flex items-center gap-2 shrink-0">
         <span class="text-[10px] text-neutral-400">
           {{ filteredComponents.length }}/{{ allComponents.length }}
+          <span v-if="dnpCount > 0" class="text-orange-400 ml-0.5" :title="`${dnpCount} DNP`">
+            ({{ dnpCount }} DNP)
+          </span>
         </span>
         <button
           class="text-[10px] px-1 py-0.5 rounded transition-colors flex items-center gap-0.5"
@@ -115,14 +118,24 @@
 
     <!-- Table header -->
     <div
-      class="grid grid-cols-[minmax(0,1fr)_3.2rem_3.2rem_2.6rem_minmax(0,1fr)_minmax(0,1fr)] gap-px px-3 py-1 text-[10px] font-medium text-neutral-400 uppercase tracking-wider border-b border-neutral-200 dark:border-neutral-700 shrink-0"
+      class="grid grid-cols-[1rem_3.6rem_3.2rem_3.2rem_auto_2.4rem_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.6fr)] gap-x-2 px-3 py-1 text-[10px] font-medium text-neutral-400 uppercase tracking-wider border-b border-neutral-200 dark:border-neutral-700 shrink-0"
     >
-      <span>Ref</span>
-      <span>X</span>
-      <span>Y</span>
-      <span>Rot</span>
-      <span>Value</span>
-      <span>Package</span>
+      <!-- DNP indicator header (non-sortable) -->
+      <span class="flex items-center justify-center" title="DNP indicator"></span>
+      <button
+        v-for="col in sortColumns"
+        :key="col.key"
+        class="flex items-center gap-0.5 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors text-left"
+        :class="{ 'text-neutral-600 dark:text-neutral-200': sortKey === col.key }"
+        @click="toggleSort(col.key)"
+      >
+        <span>{{ col.label }}</span>
+        <UIcon
+          v-if="sortKey === col.key"
+          :name="sortAsc ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+          class="text-[9px] shrink-0"
+        />
+      </button>
     </div>
 
     <!-- Component rows -->
@@ -131,16 +144,32 @@
         {{ allComponents.length === 0 ? 'No components loaded' : 'No matches' }}
       </div>
       <div
-        v-for="(comp, index) in filteredComponents"
+        v-for="(comp, index) in sortedComponents"
         :key="comp.designator + '-' + comp.side"
         :ref="(el) => setRowRef(comp.designator, el as HTMLElement | null)"
-        class="grid grid-cols-[minmax(0,1fr)_3.2rem_3.2rem_2.6rem_minmax(0,1fr)_minmax(0,1fr)] gap-px px-3 py-1 text-[11px] cursor-pointer transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 border-b border-neutral-100 dark:border-neutral-800/50"
+        class="grid grid-cols-[1rem_3.6rem_3.2rem_3.2rem_auto_2.4rem_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.6fr)] gap-x-2 px-3 py-1 text-[11px] cursor-pointer transition-colors border-b border-neutral-100 dark:border-neutral-800/50"
         :class="{
-          'bg-cyan-50 dark:bg-cyan-900/20 hover:bg-cyan-100 dark:hover:bg-cyan-900/30': selectedDesignator === comp.designator,
+          'bg-cyan-50 dark:bg-cyan-900/20 hover:bg-cyan-100 dark:hover:bg-cyan-900/30': selectedDesignator === comp.designator && !comp.dnp,
+          'hover:bg-neutral-100 dark:hover:bg-neutral-800': selectedDesignator !== comp.designator && !comp.dnp,
+          'opacity-40': comp.dnp,
         }"
         @click="onRowClick(comp.designator)"
       >
-        <span class="font-medium truncate" :title="comp.designator">
+        <!-- DNP toggle / indicator -->
+        <button
+          class="flex items-center justify-center shrink-0 transition-colors"
+          :title="comp.dnp ? 'Remove DNP mark' : 'Mark as Do Not Populate'"
+          @click.stop="emit('toggle:dnp', comp.key)"
+        >
+          <span
+            class="h-2.5 w-2.5 rounded-full"
+            :class="comp.dnp
+              ? 'bg-red-500'
+              : 'bg-transparent border border-neutral-300/70 dark:border-neutral-700/70'"
+          />
+        </button>
+
+        <span class="font-medium truncate" :title="comp.designator" :class="{ 'line-through': comp.dnp }">
           {{ comp.designator }}
           <span
             v-if="showSideIndicator"
@@ -149,23 +178,82 @@
         </span>
         <span class="text-neutral-500 tabular-nums">{{ comp.x.toFixed(2) }}</span>
         <span class="text-neutral-500 tabular-nums">{{ comp.y.toFixed(2) }}</span>
-        <span class="text-neutral-500 tabular-nums">{{ comp.rotation.toFixed(0) }}</span>
+        <div class="flex items-center gap-0.5" @click.stop>
+          <input
+            type="number"
+            step="0.1"
+            :value="formatRotation(comp.rotation)"
+            class="rotation-input w-8 min-w-0 rounded px-1 py-0.5 tabular-nums outline-none border bg-transparent transition-colors"
+            :class="comp.rotationOverridden
+              ? 'text-amber-600 dark:text-amber-300 border-transparent focus:border-amber-300/70 dark:focus:border-amber-500/50 focus:bg-amber-50/60 dark:focus:bg-amber-500/10'
+              : 'text-neutral-500 border-transparent focus:border-neutral-300 dark:focus:border-neutral-600 focus:bg-neutral-50 dark:focus:bg-neutral-800/70'"
+            :title="comp.rotationOverridden
+              ? `Original: ${formatRotation(comp.originalRotation)}°`
+              : 'Rotation (deg)'"
+            @mousedown.stop
+            @keydown.enter.prevent="commitRotation(comp, $event)"
+            @blur="commitRotation(comp, $event)"
+          />
+          <button
+            v-if="selectedDesignator === comp.designator"
+            class="shrink-0 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
+            title="Rotate 90° CCW"
+            @mousedown.stop
+            @click.stop="rotateCCW(comp)"
+          >
+            <UIcon name="i-lucide-rotate-ccw" class="text-[10px]" />
+          </button>
+          <button
+            v-if="comp.rotationOverridden"
+            class="shrink-0 text-amber-600/90 dark:text-amber-300/90 hover:text-red-500 transition-colors"
+            title="Reset to original rotation"
+            @mousedown.stop
+            @click.stop="emit('reset:rotation', { key: comp.key })"
+          >
+            <UIcon name="i-lucide-undo-2" class="text-[10px]" />
+          </button>
+        </div>
+        <!-- Polarized toggle -->
+        <div class="flex items-center justify-center" @click.stop>
+          <input
+            type="checkbox"
+            class="h-3 w-3 rounded border-neutral-300 dark:border-neutral-600 text-primary focus:ring-primary/50 cursor-pointer"
+            :checked="comp.polarized"
+            :title="comp.polarized ? 'Polarized (pin 1 marked)' : 'Not polarized (no pin 1 marker)'"
+            @change="emit('update:polarized', { key: comp.key, polarized: ($event.target as HTMLInputElement).checked })"
+          />
+        </div>
         <span class="truncate text-neutral-500" :title="comp.value">{{ comp.value || '—' }}</span>
-        <span class="truncate text-neutral-500" :title="comp.package">{{ comp.package || '—' }}</span>
+        <!-- CAD Package (customer footprint name) -->
+        <span class="truncate text-neutral-500" :title="comp.cadPackage">{{ comp.cadPackage || '—' }}</span>
+        <!-- Package (our matched package) -->
+        <select
+          class="text-[11px] bg-transparent border border-transparent hover:border-neutral-200 dark:hover:border-neutral-700 rounded px-1 py-0.5 outline-none text-neutral-600 dark:text-neutral-300 cursor-pointer"
+          :class="comp.packageMapped ? 'text-blue-700 dark:text-blue-300' : ''"
+          :value="comp.matchedPackage"
+          title="Matched package (library)"
+          @mousedown.stop
+          @change="emit('update:packageMapping', { cadPackage: comp.cadPackage, packageName: ($event.target as HTMLSelectElement).value || null })"
+        >
+          <option value="">—</option>
+          <option v-for="p in packageOptions" :key="p" :value="p">
+            {{ p }}
+          </option>
+        </select>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { PnPComponent } from '~/utils/pnp-parser'
+import type { EditablePnPComponent } from '~/composables/usePickAndPlace'
 import type { AlignMode } from '~/composables/usePickAndPlace'
 import type { PnPConvention } from '~/utils/pnp-conventions'
 import { PNP_CONVENTION_LABELS } from '~/utils/pnp-conventions'
 
 const props = defineProps<{
-  allComponents: PnPComponent[]
-  filteredComponents: PnPComponent[]
+  allComponents: EditablePnPComponent[]
+  filteredComponents: EditablePnPComponent[]
   selectedDesignator: string | null
   searchQuery: string
   alignMode: AlignMode
@@ -174,6 +262,7 @@ const props = defineProps<{
   originY: number | null
   showPackages: boolean
   pnpConvention: PnPConvention
+  packageOptions: string[]
 }>()
 
 const emit = defineEmits<{
@@ -184,9 +273,107 @@ const emit = defineEmits<{
   startSetOrigin: []
   startComponentAlign: []
   resetOrigin: []
+  'update:rotation': [payload: { key: string; rotation: number }]
+  'reset:rotation': [payload: { key: string }]
+  'toggle:dnp': [key: string]
+  'update:packageMapping': [payload: { cadPackage: string; packageName: string | null }]
+  'update:polarized': [payload: { key: string; polarized: boolean }]
 }>()
 
 const conventionOptions = Object.entries(PNP_CONVENTION_LABELS) as [PnPConvention, string][]
+
+// DNP count
+const dnpCount = computed(() => props.allComponents.filter(c => c.dnp).length)
+
+// --- Sorting ---
+type SortKey = 'ref' | 'x' | 'y' | 'rot' | 'pol' | 'value' | 'cadPackage' | 'package'
+
+const sortColumns: { key: SortKey; label: string }[] = [
+  { key: 'ref', label: 'Ref' },
+  { key: 'x', label: 'X' },
+  { key: 'y', label: 'Y' },
+  { key: 'rot', label: 'Rot' },
+  { key: 'pol', label: 'Pol' },
+  { key: 'value', label: 'Value' },
+  { key: 'cadPackage', label: 'CAD Pkg' },
+  { key: 'package', label: 'Package' },
+]
+
+const sortKey = ref<SortKey | null>(null)
+const sortAsc = ref(true)
+
+function toggleSort(key: SortKey) {
+  if (sortKey.value === key) {
+    if (sortAsc.value) {
+      sortAsc.value = false
+    } else {
+      // Third click resets to unsorted
+      sortKey.value = null
+      sortAsc.value = true
+    }
+  } else {
+    sortKey.value = key
+    sortAsc.value = true
+  }
+}
+
+/** Natural-order compare for designator strings (e.g. C1, C2, C10). */
+function naturalCompare(a: string, b: string): number {
+  const re = /(\d+)|(\D+)/g
+  const aParts = a.match(re) || []
+  const bParts = b.match(re) || []
+  for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+    const ap = aParts[i] ?? ''
+    const bp = bParts[i] ?? ''
+    const an = Number(ap)
+    const bn = Number(bp)
+    if (!isNaN(an) && !isNaN(bn)) {
+      if (an !== bn) return an - bn
+    } else {
+      const cmp = ap.localeCompare(bp)
+      if (cmp !== 0) return cmp
+    }
+  }
+  return 0
+}
+
+const sortedComponents = computed(() => {
+  const list = props.filteredComponents
+  const key = sortKey.value
+  if (!key) return list
+
+  const dir = sortAsc.value ? 1 : -1
+  return [...list].sort((a, b) => {
+    let cmp = 0
+    switch (key) {
+      case 'ref':
+        cmp = naturalCompare(a.designator, b.designator)
+        break
+      case 'x':
+        cmp = a.x - b.x
+        break
+      case 'y':
+        cmp = a.y - b.y
+        break
+      case 'rot':
+        cmp = a.rotation - b.rotation
+        break
+      case 'pol':
+        cmp = (a.polarized ? 1 : 0) - (b.polarized ? 1 : 0)
+        break
+      case 'value':
+        cmp = (a.value || '').localeCompare(b.value || '')
+        break
+      case 'cadPackage':
+        cmp = (a.cadPackage || '').localeCompare(b.cadPackage || '')
+        break
+      case 'package':
+        cmp = (a.matchedPackage || '').localeCompare(b.matchedPackage || '')
+        break
+    }
+    return cmp * dir
+  })
+})
 
 const searchQuery = computed({
   get: () => props.searchQuery,
@@ -229,6 +416,37 @@ function onRowClick(designator: string) {
   emit('select', props.selectedDesignator === designator ? null : designator)
 }
 
+function formatRotation(rotation: number): string {
+  if (Number.isInteger(rotation)) return rotation.toString()
+  return rotation.toFixed(2).replace(/\.?0+$/, '')
+}
+
+/** Normalise any rotation value into the 0–359 range. */
+function normaliseRotation(deg: number): number {
+  return ((deg % 360) + 360) % 360
+}
+
+function commitRotation(comp: EditablePnPComponent, event: Event) {
+  const input = event.target as HTMLInputElement | null
+  if (!input) return
+  const raw = input.value.trim()
+  if (!raw) {
+    input.value = formatRotation(comp.rotation)
+    return
+  }
+  const next = Number(raw)
+  if (!Number.isFinite(next)) {
+    input.value = formatRotation(comp.rotation)
+    return
+  }
+  emit('update:rotation', { key: comp.key, rotation: normaliseRotation(next) })
+}
+
+/** Rotate 90° counter-clockwise: 0 → 270 → 180 → 90 → 0 … */
+function rotateCCW(comp: EditablePnPComponent) {
+  emit('update:rotation', { key: comp.key, rotation: normaliseRotation(comp.rotation - 90) })
+}
+
 // Auto-scroll to selected component when it changes from canvas click
 watch(
   () => props.selectedDesignator,
@@ -243,3 +461,15 @@ watch(
   },
 )
 </script>
+
+<style scoped>
+.rotation-input {
+  appearance: textfield;
+}
+
+.rotation-input::-webkit-outer-spin-button,
+.rotation-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+</style>

@@ -29,16 +29,25 @@ echo ""
 echo "Setting TAURI_SIGNING_PRIVATE_KEY..."
 gh secret set TAURI_SIGNING_PRIVATE_KEY --repo "$REPO" < "$KEY_PATH"
 
-# Set empty password (key was generated without a password)
+# Set password from env (empty is allowed)
+# Usage:
+#   TAURI_SIGNING_PRIVATE_KEY_PASSWORD='your-password' bash scripts/setup-github-secrets.sh
+# If unset, defaults to empty string.
+PASSWORD_VALUE="${TAURI_SIGNING_PRIVATE_KEY_PASSWORD-}"
+
 echo "Setting TAURI_SIGNING_PRIVATE_KEY_PASSWORD..."
-echo -n "" | gh secret set TAURI_SIGNING_PRIVATE_KEY_PASSWORD --repo "$REPO"
+printf "%s" "$PASSWORD_VALUE" | gh secret set TAURI_SIGNING_PRIVATE_KEY_PASSWORD --repo "$REPO"
 
 echo ""
 echo "GitHub secrets configured successfully!"
 echo ""
 echo "Secrets set:"
 echo "  - TAURI_SIGNING_PRIVATE_KEY (from $KEY_PATH)"
-echo "  - TAURI_SIGNING_PRIVATE_KEY_PASSWORD (empty)"
+if [ -n "$PASSWORD_VALUE" ]; then
+  echo "  - TAURI_SIGNING_PRIVATE_KEY_PASSWORD (set from env)"
+else
+  echo "  - TAURI_SIGNING_PRIVATE_KEY_PASSWORD (empty)"
+fi
 echo ""
 echo "The public key is already configured in src-tauri/tauri.conf.json."
 echo "Push a version tag (e.g., git tag v1.0.0 && git push origin v1.0.0)"

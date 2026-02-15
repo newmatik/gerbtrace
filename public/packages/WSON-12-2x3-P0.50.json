@@ -1,0 +1,23 @@
+{
+  "name": "WSON-12-2x3-P0.50",
+  "type": "TwoSymmetricLeadGroups",
+  "aliases": [
+    "WSON-12",
+    "WSON12",
+    "WSON-12plus1",
+    "WSON12+1",
+    "WSON-12+1",
+    "WSON-12-EP(2x3)"
+  ],
+  "body": {
+    "length": 3,
+    "width": 2
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 12,
+    "widthOverLeads": 2.6,
+    "leadPitch": 0.5,
+    "leadWidth": 0.25,
+    "leadLength": 0.3
+  }
+}

@@ -8,7 +8,40 @@
 <script setup lang="ts">
 import JSZip from 'jszip'
 import type { GerberFile } from '~/utils/gerber-helpers'
-import { isGerberFile, isPnPFile, detectPnPSide, isImportableFile } from '~/utils/gerber-helpers'
+import { isPnPFile, detectPnPSide, isImportableFile, detectLayerType } from '~/utils/gerber-helpers'
+import { parsePnPFile } from '~/utils/pnp-parser'
+
+/** Files inside ZIPs that should always be skipped (system junk). */
+const SKIP_FILENAMES = new Set(['.ds_store', 'thumbs.db', 'desktop.ini'])
+/** Non-importable drill report sidecars (Altium) that look like "Drill" by name. */
+const SKIP_ZIP_EXTENSIONS = new Set(['.drr', '.ldp'])
+
+function shouldSkipZipEntry(fileName: string): boolean {
+  const lower = fileName.toLowerCase()
+  if (SKIP_FILENAMES.has(lower)) return true
+  // macOS resource fork files
+  if (fileName.startsWith('._')) return true
+  // Skip known non-layer sidecars (drill reports, layer-pairs export, etc.)
+  const dot = lower.lastIndexOf('.')
+  const ext = dot >= 0 ? lower.slice(dot) : ''
+  if (SKIP_ZIP_EXTENSIONS.has(ext)) return true
+  return false
+}
+
+/**
+ * Detect the PnP layer type for a file by parsing its content to check
+ * which sides are present. Returns 'PnP Top + Bot' for combined files,
+ * or 'PnP Top' / 'PnP Bottom' for single-side files.
+ */
+function detectPnPLayerType(fileName: string, content: string): string {
+  const components = parsePnPFile(content, 'top')
+  const hasTop = components.some(c => c.side === 'top')
+  const hasBot = components.some(c => c.side === 'bottom')
+
+  if (hasTop && hasBot) return 'PnP Top + Bot'
+  if (hasBot) return 'PnP Bottom'
+  return detectPnPSide(fileName)
+}
 
 const props = defineProps<{
   packet: number
@@ -37,16 +70,27 @@ async function handleFiles(rawFiles: File[]) {
         if (entry.dir) continue
         if (name.startsWith('__MACOSX/')) continue
         const fileName = name.includes('/') ? name.split('/').pop()! : name
+        if (shouldSkipZipEntry(fileName)) continue
+        // ZIPs often include extra reports/sidecars — only import files we support.
         if (!isImportableFile(fileName)) continue
         const content = await entry.async('text')
-        const layerType = isPnPFile(fileName) ? detectPnPSide(fileName) : undefined
-        importedFiles.push({ fileName, content, layerType })
+        if (isPnPFile(fileName)) {
+          const layerType = detectPnPLayerType(fileName, content)
+          importedFiles.push({ fileName, content, layerType })
+        } else {
+          const layerType = detectLayerType(fileName)
+          importedFiles.push({ fileName, content, layerType })
+        }
       }
     } else if (isImportableFile(file.name)) {
       if (!sourceName) sourceName = deriveSourceName(file)
       const content = await file.text()
-      const layerType = isPnPFile(file.name) ? detectPnPSide(file.name) : undefined
-      importedFiles.push({ fileName: file.name, content, layerType })
+      if (isPnPFile(file.name)) {
+        const layerType = detectPnPLayerType(file.name, content)
+        importedFiles.push({ fileName: file.name, content, layerType })
+      } else {
+        importedFiles.push({ fileName: file.name, content })
+      }
     }
   }
 

@@ -53,7 +53,7 @@ export function useLayerMatching() {
     // Layer type match
     const typeA = detectLayerType(a.fileName)
     const typeB = detectLayerType(b.fileName)
-    if (typeA !== 'Unknown' && typeA === typeB) return 40
+    if (typeA !== 'Unmatched' && typeA === typeB) return 40
 
     return 0
   }

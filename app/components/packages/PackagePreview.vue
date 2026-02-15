@@ -14,6 +14,7 @@
 </template>
 
 <script setup lang="ts">
+import { useColorMode } from '#imports'
 import type { PackageDefinition, FootprintShape } from '~/utils/package-types'
 import { computeFootprint } from '~/utils/package-types'
 

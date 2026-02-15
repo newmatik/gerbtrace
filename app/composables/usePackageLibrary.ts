@@ -121,9 +121,113 @@ function normaliseCandidates(name: string): string[] {
   const base = normalise(name)
   const candidates: string[] = [base]
 
+  const push = (v: string) => {
+    const s = v.trim()
+    if (s) candidates.push(s)
+  }
+
+  // IPC-style SMD passive footprint names (Altium/IPC-7351):
+  // - CAPC2012X14N, RESC1608X55L, LEDM1608X09N_...
+  // Convert metric size codes to our canonical imperial package names.
+  // (Only apply deterministic, widely standardised mappings.)
+  {
+    const m = base.match(/^(capc|resc|ledm)(\d{4})/i)
+    const metric = m?.[2]
+    if (metric) {
+      const METRIC_TO_IMPERIAL: Record<string, string> = {
+        '1005': '0402',
+        '1608': '0603',
+        '2012': '0805',
+        '3216': '1206',
+        '3225': '1210',
+        '4532': '1812',
+      }
+      const imperial = METRIC_TO_IMPERIAL[metric]
+      if (imperial) {
+        push(imperial)
+        if (m?.[1]?.toLowerCase() === 'ledm') {
+          push(`led-${imperial}`)
+        }
+      }
+    }
+  }
+
+  // Common package-without-dash forms: SOD523 -> SOD-523, SOT23 -> SOT-23
+  {
+    const m = base.match(/^(sod|sot|qfn|dfn|wson|xson)(\d{2,})$/)
+    if (m?.[1] && m?.[2]) {
+      push(`${m[1]}-${m[2]}`)
+    }
+  }
+
+  // Altium TSOT-6 is typically the SOT-23-6 family.
+  if (/^tsot-?6$/i.test(base)) {
+    push('sot-23-6')
+    push('sot23-6')
+  }
+
+  // DPAK… (IPC) should match our DPAK package name
+  if (/^dpak/i.test(base)) {
+    push('dpak')
+  }
+
+  // Strip anything after the first " (" or whitespace (common: "UMT3 (SOT-323)")
+  {
+    const beforeParen = base.split('(')[0]!.trim()
+    if (beforeParen && beforeParen !== base) push(beforeParen)
+    const beforeSpace = base.split(/\s+/)[0]!.trim()
+    if (beforeSpace && beforeSpace !== base) push(beforeSpace)
+  }
+
+  // Split common multi-name separators: "X2SON / DQN" → ["x2son", "dqn"]
+  if (base.includes('/')) {
+    for (const part of base.split('/')) push(part)
+  }
+
+  // Also try the content inside parentheses: "UMT3 (SOT-323)" → "sot-323"
+  for (const m of base.matchAll(/\(([^)]+)\)/g)) {
+    push(m[1] ?? '')
+  }
+
+  // Separator normalisation variants
+  const noSpaces = base.replace(/\s+/g, '')
+  if (noSpaces !== base) push(noSpaces)
+  const underscoresToHyphen = base.replace(/_/g, '-')
+  if (underscoresToHyphen !== base) push(underscoresToHyphen)
+  const compact = base.replace(/[\s_-]+/g, '')
+  if (compact !== base) push(compact)
+  const noHyphen = base.replace(/-/g, '')
+  if (noHyphen !== base) push(noHyphen)
+  const noUnderscore = base.replace(/_/g, '')
+  if (noUnderscore !== base) push(noUnderscore)
+
   // KiCad-style: prefer the footprint name before param suffixes
   if (base.includes('_')) {
     candidates.push(base.split('_')[0]!)
+  }
+
+  // Common passive prefixes used by ERPs / BOM exports: C_0603 / R0402 / J_0603 / F_0603
+  {
+    const m = base.match(/^(?:[crljf])_?(\d{4})$/)
+    if (m?.[1]) {
+      push(m[1])
+    }
+  }
+
+  // Common leading designator-ish prefixes: D_SOD-523, T_SOT-323
+  {
+    const m = base.match(/^[dt]_?((?:sod|sot)[-_ ]?\d+[a-z0-9]*)$/)
+    if (m?.[1]) {
+      const k = m[1].replace(/[\s_]+/g, '-')
+      push(k)
+      push(k.replace(/-/g, ''))
+    }
+  }
+
+  // Variant-ish suffixes that often shouldn't affect matching: SOD-323HE → SOD-323
+  {
+    const m = base.match(/^(sod-\d+)[a-z]+$/)
+    if (m?.[1]) push(m[1])
   }
 
   // Eagle-style transistor pinout suffixes (SOT23-BCE, SOT23-CBE, etc.)
