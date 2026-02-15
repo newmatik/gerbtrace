@@ -107,12 +107,16 @@ jobs:
             done
 
             # Sync edge functions into the self-hosted volume.
+            echo "Syncing edge functions..."
             mkdir -p "$FUNCTIONS_DST"
             rm -rf "$FUNCTIONS_DST"/*
             cp -R "$DEPLOY_DIR"/supabase/functions/* "$FUNCTIONS_DST"/
 
             # Restart edge runtime so it picks up updated functions.
-            if docker compose ps --services | grep -qx edge-runtime; then
+            echo "Restarting edge functions runtime..."
+            if docker compose ps --services | grep -qx functions; then
+              docker compose restart functions
+            elif docker compose ps --services | grep -qx edge-runtime; then
               docker compose restart edge-runtime
             else
               echo "edge-runtime service not found; restarting all services" >&2
