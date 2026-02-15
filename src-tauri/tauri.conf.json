@@ -28,7 +28,7 @@
       "endpoints": [
         "https://github.com/newmatik/gerbtrace/releases/latest/download/latest.json"
       ],
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDE0MkM2M0RCOERBMDA4QkEKUldTNkNLQ04yMk1zRk5YaGdtS0VqWkRzSnM4Q24zbDNKdWZuODg2RWxsVGlaNTJJYkJoSklPcDMK"
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDAwRDE3N0FGMzRGMDBFQjcKUldTM0R2QTByM2ZSQUhPNnBGbGdxdXhVZFRuS3o2TDQ3eFlIVnVQYThQUy94UTEzdXhsU1UxVy8K"
     }
   },
   "bundle": {
