@@ -75,21 +75,21 @@ jobs:
               fi
 
               echo "Applying migration: $name"
-              set +e
-              output="$(docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 < "$f" 2>&1)"
-              status=$?
-              set -e
-
-              if [ $status -ne 0 ]; then
+              tmp="$(mktemp)"
+              if docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 < "$f" >"$tmp" 2>&1; then
+                true
+              else
                 # If the schema was already provisioned manually on the droplet, rerunning the initial migrations
                 # can fail with "already exists". Treat those as already-applied and continue.
-                if echo "$output" | grep -Eqi "already exists|duplicate key|already defined|already present|policy .* already exists"; then
+                if grep -Eqi "already exists|duplicate key|already defined|already present|policy .* already exists" "$tmp"; then
                   echo "Migration $name appears already applied (got existing-object error). Marking as applied."
                 else
-                  echo "$output" >&2
+                  cat "$tmp" >&2
+                  rm -f "$tmp"
                   exit 1
                 fi
               fi
+              rm -f "$tmp"
 
               docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
                 -c "insert into public.schema_migrations(name) values ('${name}') on conflict (name) do nothing;"
