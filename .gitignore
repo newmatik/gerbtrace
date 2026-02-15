@@ -37,3 +37,4 @@ src-tauri/.tauri-private-key.pub
 dist/
 
 .local
+public/mycenter-packages/
