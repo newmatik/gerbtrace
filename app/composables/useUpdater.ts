@@ -6,6 +6,8 @@
  * In the browser, all methods are no-ops.
  */
 
+import { isTauri as coreIsTauri } from '@tauri-apps/api/core'
+
 export interface UpdateStatus {
   checking: boolean
   available: boolean
@@ -13,6 +15,8 @@ export interface UpdateStatus {
   version: string | null
   notes: string | null
   error: string | null
+  lastCheckedAt: number | null
+  lastResult: 'update_available' | 'up_to_date' | 'error' | null
 }
 
 const status = reactive<UpdateStatus>({
@@ -22,12 +26,15 @@ const status = reactive<UpdateStatus>({
   version: null,
   notes: null,
   error: null,
+  lastCheckedAt: null,
+  lastResult: null,
 })
 
 /** Toggled to true when the native menu triggers a check, so the UI can open the About modal. */
 const menuTriggered = ref(false)
 
-const isTauri = typeof window !== 'undefined' && !!(window as any).__TAURI_INTERNALS__
+// Prefer official Tauri API detection (works reliably across platforms/builds).
+const isTauri = typeof window !== 'undefined' && coreIsTauri()
 
 let listenerInitialised = false
 let startupCheckTriggered = false
@@ -77,16 +84,20 @@ async function checkForUpdate() {
       status.notes = update.body ?? null
       pendingUpdate = update
       promptDismissed.value = false
+      status.lastResult = 'update_available'
     } else {
       status.available = false
       status.version = null
       status.notes = null
+      status.lastResult = 'up_to_date'
     }
   } catch (err: any) {
     status.error = toUpdaterErrorMessage(err, 'Failed to check for updates')
     console.warn('[updater] Check failed:', err)
+    status.lastResult = 'error'
   } finally {
     status.checking = false
+    status.lastCheckedAt = Date.now()
   }
 }
 

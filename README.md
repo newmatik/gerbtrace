@@ -106,11 +106,51 @@ npm run generate
 
 ## Architecture
 
+Gerbtrace is built as a **static Nuxt SPA** (web) and a **Tauri desktop app** that bundles the same frontend. Collaboration features are backed by a **self-hosted Supabase** instance.
+
+### High-level components
+
+```mermaid
+flowchart TD
+  Browser[Browser_SPA] -->|HTTP| WebStatic[StaticHosting_DO_Spaces]
+  Browser -->|HTTPS| Api[Supabase_API_api.gerbtrace.com]
+  Browser -->|WSS| Realtime[Supabase_Realtime]
+
+  Desktop[Tauri_Desktop] -->|loads| Frontend[Nuxt_Static_Frontend]
+  Desktop -->|HTTPS/WSS| Api
+  Desktop -->|updates| GithubReleases[GitHub_Releases_Updater]
+
+  Api --> Db[(Postgres)]
+  Api --> Storage[Storage]
+  Api --> Edge[Edge_Functions]
+  Realtime --> Db
 ```
-Gerber/Drill text → Tokenizer → Parser → AST → Plotter → ImageTree → Canvas 2D Renderer
+
+### Gerber rendering pipeline
+
+```mermaid
+flowchart LR
+  GerberText[Gerber_Drill_Text] --> Tokenizer
+  Tokenizer --> Parser
+  Parser --> AST
+  AST --> Plotter
+  Plotter --> ImageTree
+  ImageTree --> Canvas2D[Canvas_2D_Renderer]
 ```
 
 The parser pipeline converts raw Gerber text into a typed AST, which the plotter transforms into an `ImageTree` of drawing primitives. The Canvas 2D renderer draws these primitives to an HTML5 Canvas element.
+
+### Packages + TPSys model
+
+Built-in packages live in [`public/packages/`](public/packages/) (JSON). Team packages are stored in Supabase (`team_packages.data` as JSONB) and merged into the in-app package library. Export to `.pck` uses the TPSys serializer in [`app/utils/pck-serializer.ts`](app/utils/pck-serializer.ts).
+
+### Collaboration + sync
+
+- **Auth**: Supabase Auth (GitHub OAuth and email/password flows).
+- **Teams / projects**: stored in Postgres and shared via Realtime subscriptions.
+- **Presence**: tracked via Realtime channels.
+- **Files**: stored in Supabase Storage; metadata is tracked in Postgres.
+For deployment details (web, desktop release, and the droplet API), see [`DEPLOY.md`](DEPLOY.md).
 
 ## Supported Formats
 
@@ -135,7 +175,8 @@ Releases follow a tag-based workflow:
 4. GitHub Actions automatically builds macOS and Windows installers and creates a GitHub Release
 5. Review the draft release, add release notes, and publish
 
-**Web deployment** happens automatically on every push to `main` via GitHub Pages.
+**Web deployment** happens automatically on every push to `main` via DigitalOcean Spaces (see `deploy.yml`).
+**API deployment** (Supabase migrations + edge functions to the droplet) happens automatically on every push to `main` that changes `supabase/**` (see `deploy-supabase.yml`).
 
 ### Updater signing (critical)
 
@@ -157,7 +198,8 @@ Releases follow a tag-based workflow:
 | Workflow | Trigger | Action |
 |---|---|---|
 | `ci.yml` | Pull request to `main` | Type check + build verification |
-| `deploy.yml` | Push to `main` | Deploy web app to GitHub Pages (gerbtrace.com) |
+| `deploy.yml` | Push to `main` | Deploy web app to DigitalOcean Spaces (gerbtrace.com) |
+| `deploy-supabase.yml` | Push to `main` on `supabase/**` changes | Deploy Supabase migrations + edge functions to droplet |
 | `build-desktop.yml` | Tag push (`v*`) | Build macOS/Windows apps + create GitHub Release |
 
 ## Sample Data

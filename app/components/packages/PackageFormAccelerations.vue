@@ -35,7 +35,7 @@
         <div v-for="axis in axisOptions" :key="axis.key">
           <label class="mb-0.5 block text-[11px] text-neutral-400">{{ axis.label }}</label>
           <USelect
-            :model-value="accels[axis.key] ?? ''"
+            :model-value="accels[axis.key] ?? DEFAULT_VALUE"
             size="sm"
             :items="accLevelItems"
             value-key="value"
@@ -155,8 +155,12 @@ const axisOptions: Array<{ key: AccAxisKey; label: string }> = [
   { key: 'hydraZ', label: 'HYDRA Z' },
 ]
 
+// Reka UI <SelectItem> forbids empty-string values, but we still need a
+// "(default)" option to clear a previously-set acceleration.
+const DEFAULT_VALUE = '__default__'
+
 const accLevelItems = [
-  { label: '(default)', value: '' },
+  { label: '(default)', value: DEFAULT_VALUE },
   { label: 'Lowest', value: 'lowest' },
   { label: 'Low', value: 'low' },
   { label: 'High', value: 'high' },
@@ -169,7 +173,7 @@ function updateMachine(overrides: Partial<MachineSettings>) {
 
 function updateAccel(key: AccAxisKey, val: string) {
   const current = { ...(form.value.machine?.accelerations ?? {}) }
-  if (val) {
+  if (val && val !== DEFAULT_VALUE) {
     current[key] = val as AccLevel
   } else {
     delete current[key]
