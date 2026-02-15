@@ -1,26 +1,47 @@
-name: Deploy to GitHub Pages
+name: Deploy Web to DigitalOcean Spaces
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - 'supabase/**'
+      - 'src-tauri/**'
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+
       - run: npm ci
-      - run: npx nuxt generate
-      - uses: actions/upload-pages-artifact@v3
+
+      - name: Generate static site
+        run: npx nuxt generate
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+
+      - name: Deploy to DigitalOcean Spaces
+        uses: BetaHuhn/do-spaces-action@v2
         with:
-          path: .output/public
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          access_key: ${{ secrets.DO_SPACES_ACCESS_KEY }}
+          secret_key: ${{ secrets.DO_SPACES_SECRET_KEY }}
+          space_name: ${{ secrets.DO_SPACES_BUCKET }}
+          space_region: ${{ secrets.DO_SPACES_REGION }}
+          source: .output/public
+          out_dir: /
+
+      - name: Purge CDN cache
+        env:
+          DO_API_TOKEN: ${{ secrets.DO_API_TOKEN }}
+          DO_CDN_ENDPOINT_ID: ${{ secrets.DO_CDN_ENDPOINT_ID }}
+        if: env.DO_API_TOKEN != ''
+        run: |
+          curl -s -X DELETE \
+            -H "Authorization: Bearer ${DO_API_TOKEN}" \
+            "https://api.digitalocean.com/v2/cdn/endpoints/${DO_CDN_ENDPOINT_ID}/cache" \
+            -H "Content-Type: application/json" \
+            -d '{"files": ["*"]}' || true

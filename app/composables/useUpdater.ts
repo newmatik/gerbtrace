@@ -11,6 +11,7 @@ export interface UpdateStatus {
   available: boolean
   downloading: boolean
   version: string | null
+  notes: string | null
   error: string | null
 }
 
@@ -19,6 +20,7 @@ const status = reactive<UpdateStatus>({
   available: false,
   downloading: false,
   version: null,
+  notes: null,
   error: null,
 })
 
@@ -28,6 +30,19 @@ const menuTriggered = ref(false)
 const isTauri = typeof window !== 'undefined' && !!(window as any).__TAURI_INTERNALS__
 
 let listenerInitialised = false
+let startupCheckTriggered = false
+const promptDismissed = ref(false)
+let pendingUpdate: import('@tauri-apps/plugin-updater').Update | null = null
+
+function toUpdaterErrorMessage(err: unknown, fallback: string) {
+  const message = (err as any)?.message || fallback
+  if (typeof message !== 'string') return fallback
+  const lowered = message.toLowerCase()
+  if (lowered.includes('signature')) {
+    return 'Update signature verification failed. Please reinstall from the latest release once.'
+  }
+  return message
+}
 
 async function initMenuListener() {
   if (!isTauri || listenerInitialised) return
@@ -53,16 +68,22 @@ async function checkForUpdate() {
   try {
     const { check } = await import('@tauri-apps/plugin-updater')
     const update = await check()
+    await pendingUpdate?.close()
+    pendingUpdate = null
 
     if (update) {
       status.available = true
       status.version = update.version
+      status.notes = update.body ?? null
+      pendingUpdate = update
+      promptDismissed.value = false
     } else {
       status.available = false
       status.version = null
+      status.notes = null
     }
   } catch (err: any) {
-    status.error = err?.message || 'Failed to check for updates'
+    status.error = toUpdaterErrorMessage(err, 'Failed to check for updates')
     console.warn('[updater] Check failed:', err)
   } finally {
     status.checking = false
@@ -76,20 +97,35 @@ async function downloadAndInstall() {
   status.error = null
 
   try {
-    const { check } = await import('@tauri-apps/plugin-updater')
-    const update = await check()
-
-    if (update) {
-      await update.downloadAndInstall()
-      const { relaunch } = await import('@tauri-apps/plugin-process')
-      await relaunch()
+    if (!pendingUpdate) {
+      await checkForUpdate()
     }
+
+    if (!pendingUpdate) {
+      status.error = 'Update metadata expired. Please check for updates again.'
+      return
+    }
+
+    await pendingUpdate.download()
+    await pendingUpdate.install()
+    const { relaunch } = await import('@tauri-apps/plugin-process')
+    await relaunch()
   } catch (err: any) {
-    status.error = err?.message || 'Failed to install update'
+    status.error = toUpdaterErrorMessage(err, 'Failed to install update')
     console.error('[updater] Install failed:', err)
   } finally {
     status.downloading = false
   }
+}
+
+function dismissUpdatePrompt() {
+  promptDismissed.value = true
+}
+
+function checkForUpdateOnStartup() {
+  if (!isTauri || startupCheckTriggered) return
+  startupCheckTriggered = true
+  void checkForUpdate()
 }
 
 export function useUpdater() {
@@ -99,8 +135,11 @@ export function useUpdater() {
   return {
     status: readonly(status),
     menuTriggered,
+    promptDismissed: readonly(promptDismissed),
     isTauri,
     checkForUpdate,
+    checkForUpdateOnStartup,
     downloadAndInstall,
+    dismissUpdatePrompt,
   }
 }

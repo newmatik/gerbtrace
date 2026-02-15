@@ -118,6 +118,117 @@ export interface RoundedRectShape {
 
 export type FootprintShape = RectShape | CircleShape | RoundedRectShape
 
+// ── Machine settings interfaces (MYCenter tabs) ──
+
+export type AccLevel = 'lowest' | 'low' | 'high' | 'highest'
+
+export interface MachineFlags {
+  pickPositionFeedback?: boolean
+  holdDuringXMove?: boolean
+  vacuumTest?: boolean
+  hydraHoverPick?: boolean
+  hydraExtensiveReject?: boolean
+}
+
+export interface CenteringPhase {
+  method: 'optical' | 'mechanical' | 'dip'
+  // --- Optical phase fields (P064-O) ---
+  tools?: string[]
+  coarseSearchMethod?: string
+  usableCameras?: string[]
+  presentationAngle?: string
+  unusableCameras?: string[]
+  illumination?: {
+    zIllumination?: string
+    darkField?: number
+    ambientLight?: number
+    frontLight?: number
+  }
+  // --- Mechanical phase fields (P062-M + P063) ---
+  mechanical?: {
+    angle: number
+    position: string
+    force: string
+  }
+  jaw?: { nominal: number; max: number; min: number }
+  // --- Dip phase fields ---
+  dip?: {
+    cavityId?: string
+    angle?: number
+  }
+}
+
+export interface GlueConfig {
+  mode: string
+  matching?: string
+  positions?: Array<{ x: number; y: number; param1: number; param2: number }>
+}
+
+export interface MarkingPosition {
+  x: number
+  y: number
+  dotType: string
+}
+
+export interface MachineSettings {
+  // --- General tab fields (P022 + P032) ---
+  mountTools?: string[]
+  hydraTools?: string[]
+  toolTopOffset?: number
+  pickWaitTime?: number
+  placeWaitTime?: number
+  zMountForce?: number
+  zMountForceLow?: boolean
+  flags?: MachineFlags
+
+  // --- Accelerations tab fields (P03) ---
+  mountPrecision?: 'low' | 'normal' | 'high'
+  hydraFinePitch?: boolean
+  accelerations?: {
+    x?: AccLevel
+    y?: AccLevel
+    tape?: AccLevel
+    theta?: AccLevel
+    z?: AccLevel
+    hydraTheta?: AccLevel
+    hydraZ?: AccLevel
+  }
+  motionPicking?: { downSpeed?: number; downSpeedAuto?: boolean }
+  motionPlacing?: {
+    upDistance?: number
+    upSpeed?: number
+    downSpeed?: number
+    downSpeedAuto?: boolean
+  }
+
+  // --- Index marks tab fields ---
+  indexMark?: {
+    type?: string
+    offset?: { x: number; y: number }
+    size?: number
+    minCorrelation?: number
+  }
+
+  // --- Centering phases tab fields (P061 + P062-M + P063 + P064-O) ---
+  centering?: CenteringPhase[]
+
+  // --- Glue dots tab fields (P08/P083/P084 + P09) ---
+  glue?: GlueConfig
+  markingPositions?: MarkingPosition[]
+
+  // --- Vision fields (shown in centering tab) ---
+  visionLighting?: { brightness: string; modes: string[] }
+  visionModes?: string[]
+  coplanarityCheck?: boolean
+}
+
+export interface PackageVariation {
+  id: string
+  label?: string
+  height?: { nominal: number; min: number; max: number }
+  machine?: Partial<MachineSettings>
+}
+
 // ── Package type parameter interfaces ──
 
 export interface ChipParams {
@@ -214,6 +325,40 @@ export interface TpsysGenericParams {
   leadGroups: TpsysGenericLeadGroup[]
 }
 
+/**
+ * PT_TWO_PLUS_TWO: asymmetric quad — different lead counts on long vs short sides.
+ * TPSys manual section 6.6.7.
+ */
+export interface TwoPlusTwoParams {
+  /** Leads per long side (left/right) */
+  leadsLong: number
+  /** Leads per short side (top/bottom) */
+  leadsShort: number
+  /** Tip-to-tip span across left-right sides */
+  widthOverLeadsX: number
+  /** Tip-to-tip span across top-bottom sides */
+  widthOverLeadsY: number
+  leadPitch: number
+  leadWidth: number
+  leadLength: number
+}
+
+/**
+ * PT_FOUR_ON_TWO: 4 lead groups arranged on 2 sides with a gap between groups.
+ * TPSys manual section 6.6.8.
+ */
+export interface FourOnTwoParams {
+  /** Leads per group (4 groups total, 2 per side) */
+  leadsPerGroup: number
+  /** Tip-to-tip span across left-right sides */
+  widthOverLeads: number
+  leadPitch: number
+  leadWidth: number
+  leadLength: number
+  /** C-C distance between last lead of group 1 and first of group 2 on same side */
+  groupGap: number
+}
+
 // ── Package definition (the JSON schema) ──
 
 export interface PackageBody {
@@ -223,16 +368,29 @@ export interface PackageBody {
   width: number
 }
 
-interface PackageBase {
+export interface PackageBase {
   name: string
   aliases?: string[]
   body: PackageBody
+
+  // Physical properties (from P01, P011)
+  height?: { nominal: number; min: number; max: number }
+  searchArea?: { x: number; y: number }
+  centerOffset?: { x: number; y: number }
+
+  // Machine settings
+  machine?: MachineSettings
+
+  // Variations (height / centering overrides)
+  variations?: PackageVariation[]
 }
 
 export interface ChipPackage extends PackageBase { type: 'Chip'; chip: ChipParams }
 export interface ThreePolePackage extends PackageBase { type: 'ThreePole'; threePole: ThreePoleParams }
 export interface TwoSymmetricPackage extends PackageBase { type: 'TwoSymmetricLeadGroups'; twoSymmetric: TwoSymmetricParams }
 export interface FourSymmetricPackage extends PackageBase { type: 'FourSymmetricLeadGroups'; fourSymmetric: FourSymmetricParams }
+export interface TwoPlusTwoPackage extends PackageBase { type: 'TwoPlusTwo'; twoPlusTwo: TwoPlusTwoParams }
+export interface FourOnTwoPackage extends PackageBase { type: 'FourOnTwo'; fourOnTwo: FourOnTwoParams }
 export interface BgaPackage extends PackageBase { type: 'BGA'; bga: BgaParams }
 export interface OutlinePackage extends PackageBase { type: 'Outline'; outline: OutlineParams }
 export interface TpsysGenericPackage extends PackageBase { type: 'PT_GENERIC'; generic: TpsysGenericParams }
@@ -242,6 +400,8 @@ export type PackageDefinition =
   | ThreePolePackage
   | TwoSymmetricPackage
   | FourSymmetricPackage
+  | TwoPlusTwoPackage
+  | FourOnTwoPackage
   | BgaPackage
   | OutlinePackage
   | TpsysGenericPackage
@@ -258,6 +418,8 @@ export function computeFootprint(pkg: PackageDefinition): FootprintShape[] {
     case 'ThreePole': return computeThreePole(pkg)
     case 'TwoSymmetricLeadGroups': return computeTwoSymmetric(pkg)
     case 'FourSymmetricLeadGroups': return computeFourSymmetric(pkg)
+    case 'TwoPlusTwo': return computeTwoPlusTwo(pkg)
+    case 'FourOnTwo': return computeFourOnTwo(pkg)
     case 'BGA': return computeBga(pkg)
     case 'Outline': return computeOutline(pkg)
     case 'PT_GENERIC': return computeTpsysGeneric(pkg)
@@ -389,6 +551,101 @@ function computeFourSymmetric(pkg: FourSymmetricPackage): FootprintShape[] {
   return shapes
 }
 
+// ── TwoPlusTwo: asymmetric quad — different lead counts on long vs short sides ──
+// Left/right sides have leadsLong leads, top/bottom have leadsShort leads.
+// Pin 1 at upper-left, numbering goes CCW (left-bottom-right-top).
+
+function computeTwoPlusTwo(pkg: TwoPlusTwoPackage): FootprintShape[] {
+  const { leadsLong, leadsShort, widthOverLeadsX, widthOverLeadsY, leadPitch, leadWidth, leadLength } = pkg.twoPlusTwo
+  const { length: bodyL, width: bodyW } = pkg.body
+  const shapes: FootprintShape[] = []
+
+  shapes.push({ kind: 'rect', cx: 0, cy: 0, w: bodyW, h: bodyL, role: 'body' })
+
+  const tipX = widthOverLeadsX / 2
+  const tipY = widthOverLeadsY / 2
+
+  // Left side leads (leadsLong count, along Y)
+  const spanLong = (leadsLong - 1) * leadPitch
+  const topLong = spanLong / 2
+  for (let i = 0; i < leadsLong; i++) {
+    const y = topLong - i * leadPitch
+    shapes.push({
+      kind: 'rect',
+      cx: -(tipX - leadLength / 2),
+      cy: y,
+      w: leadLength,
+      h: leadWidth,
+      role: i === 0 ? 'pin1' : 'pad',
+    })
+  }
+
+  // Bottom side leads (leadsShort count, along X)
+  const spanShort = (leadsShort - 1) * leadPitch
+  const leftShort = -spanShort / 2
+  for (let i = 0; i < leadsShort; i++) {
+    const x = leftShort + i * leadPitch
+    shapes.push({ kind: 'rect', cx: x, cy: -(tipY - leadLength / 2), w: leadWidth, h: leadLength, role: 'pad' })
+  }
+
+  // Right side leads (leadsLong count, along Y, bottom to top)
+  for (let i = 0; i < leadsLong; i++) {
+    const y = -topLong + i * leadPitch
+    shapes.push({ kind: 'rect', cx: tipX - leadLength / 2, cy: y, w: leadLength, h: leadWidth, role: 'pad' })
+  }
+
+  // Top side leads (leadsShort count, along X, right to left)
+  for (let i = 0; i < leadsShort; i++) {
+    const x = spanShort / 2 - i * leadPitch
+    shapes.push({ kind: 'rect', cx: x, cy: tipY - leadLength / 2, w: leadWidth, h: leadLength, role: 'pad' })
+  }
+
+  return shapes
+}
+
+// ── FourOnTwo: 4 lead groups on 2 sides, with gap between groups per side ──
+// Left and right sides each have 2 groups separated by a gap.
+
+function computeFourOnTwo(pkg: FourOnTwoPackage): FootprintShape[] {
+  const { leadsPerGroup, widthOverLeads, leadPitch, leadWidth, leadLength, groupGap } = pkg.fourOnTwo
+  const { length: bodyL, width: bodyW } = pkg.body
+  const shapes: FootprintShape[] = []
+
+  shapes.push({ kind: 'rect', cx: 0, cy: 0, w: bodyW, h: bodyL, role: 'body' })
+
+  const tipX = widthOverLeads / 2
+  // Total span of one group
+  const groupSpan = (leadsPerGroup - 1) * leadPitch
+  // Distance from center to middle of gap
+  const halfGap = groupGap / 2
+
+  // Upper group center Y, lower group center Y
+  const upperGroupCenter = halfGap + groupSpan / 2
+  const lowerGroupCenter = -(halfGap + groupSpan / 2)
+
+  let first = true
+  for (const side of [-1, 1] as const) {
+    const cx = side * (tipX - leadLength / 2)
+    for (const groupCenterY of [upperGroupCenter, lowerGroupCenter]) {
+      const topY = groupCenterY + groupSpan / 2
+      for (let i = 0; i < leadsPerGroup; i++) {
+        const y = topY - i * leadPitch
+        shapes.push({
+          kind: 'rect',
+          cx,
+          cy: y,
+          w: leadLength,
+          h: leadWidth,
+          role: first ? 'pin1' : 'pad',
+        })
+        first = false
+      }
+    }
+  }
+
+  return shapes
+}
+
 // ── BGA: ball grid array ──
 // Internal: computed at IPC 0° then post-rotated 90° CCW → Mycronic 0°.
 // IPC 0°: body.width along X, body.length along Y. Pin A1 at upper-left.
@@ -468,7 +725,14 @@ function computeTpsysGeneric(pkg: TpsysGenericPackage): FootprintShape[] {
     const padW = g.padWidth
     if (![padL, padW, g.distFromCenter, g.ccHalf].every(Number.isFinite)) continue
 
-    const axisHalf = Math.abs(g.ccHalf)
+    const protrudeX = a === 0 || a === 180000
+    const protrudeY = a === 90000 || a === 270000
+    if (!(protrudeX || protrudeY)) continue
+
+    // For left/right (angle 0/180000): distFromCenter = X row position, ccHalf = Y half-span
+    // For top/bottom (angle 90000/270000): distFromCenter = X half-span, ccHalf = Y row position
+    // This is how TPSys stores the parameters — they swap meaning based on orientation.
+    const axisHalf = protrudeX ? Math.abs(g.ccHalf) : Math.abs(g.distFromCenter)
     const positions: number[] = []
     if (n === 1) {
       positions.push(0)
@@ -479,10 +743,6 @@ function computeTpsysGeneric(pkg: TpsysGenericPackage): FootprintShape[] {
       }
     }
 
-    const protrudeX = a === 0 || a === 180000
-    const protrudeY = a === 90000 || a === 270000
-    if (!(protrudeX || protrudeY)) continue
-
     for (let i = 0; i < positions.length; i++) {
       const p = positions[i]!
       const role: RectShape['role'] = !emittedAny ? 'pin1' : 'pad'
@@ -492,8 +752,8 @@ function computeTpsysGeneric(pkg: TpsysGenericPackage): FootprintShape[] {
         // Leads on left/right → row center is at X = distFromCenter, spread in Y
         shapes.push({ kind: 'rect', cx: g.distFromCenter, cy: p, w: padL, h: padW, role })
       } else {
-        // Leads on top/bottom → row center is at Y = distFromCenter, spread in X
-        shapes.push({ kind: 'rect', cx: p, cy: g.distFromCenter, w: padW, h: padL, role })
+        // Leads on top/bottom → spread in X, row center at Y = ccHalf
+        shapes.push({ kind: 'rect', cx: p, cy: g.ccHalf, w: padW, h: padL, role })
       }
     }
   }

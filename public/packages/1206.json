@@ -17,5 +17,337 @@
     "chipLength": 3.2,
     "leadWidth": 1.6,
     "leadLength": 0.4
-  }
+  },
+  "height": {
+    "nominal": 0.6,
+    "max": 0.63,
+    "min": 0.57
+  },
+  "searchArea": {
+    "x": 1.502,
+    "y": 3.161
+  },
+  "machine": {
+    "mountTools": [
+      "A13"
+    ],
+    "hydraTools": [
+      "H04"
+    ],
+    "pickWaitTime": 30,
+    "placeWaitTime": 30,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "highest",
+      "y": "highest",
+      "tape": "highest",
+      "theta": "highest",
+      "z": "highest",
+      "hydraTheta": "highest",
+      "hydraZ": "highest"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL",
+          "HYDRA_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan",
+      "hydra"
+    ],
+    "coplanarityCheck": false
+  },
+  "variations": [
+    {
+      "id": "03",
+      "label": "H0.3",
+      "height": {
+        "nominal": 0.3,
+        "max": 0.315,
+        "min": 0.285
+      }
+    },
+    {
+      "id": "04",
+      "label": "H0.4",
+      "height": {
+        "nominal": 0.4,
+        "max": 0.48,
+        "min": 0.32
+      }
+    },
+    {
+      "id": "05",
+      "label": "H0.5",
+      "height": {
+        "nominal": 0.5,
+        "max": 0.8,
+        "min": 0.2
+      }
+    },
+    {
+      "id": "06",
+      "label": "H0.6",
+      "height": {
+        "nominal": 0.6,
+        "max": 0.66,
+        "min": 0.54
+      }
+    },
+    {
+      "id": "slow",
+      "label": "Slow (no Hydra)",
+      "height": {
+        "nominal": 0.6,
+        "max": 0.66,
+        "min": 0.54
+      },
+      "machine": {
+        "centering": [
+          {
+            "method": "mechanical",
+            "mechanical": {
+              "angle": 90000,
+              "position": "POS_UPPER",
+              "force": "MIDDLE_FORCE"
+            },
+            "jaw": {
+              "nominal": 3.2,
+              "max": 3.8,
+              "min": 1.4
+            }
+          },
+          {
+            "method": "mechanical",
+            "mechanical": {
+              "angle": 0,
+              "position": "POS_UPPER",
+              "force": "MIDDLE_FORCE"
+            },
+            "jaw": {
+              "nominal": 1.6,
+              "max": 2.2,
+              "min": 1.2
+            }
+          },
+          {
+            "method": "optical",
+            "tools": [
+              "Z_TOOL"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "06",
+      "label": "H0.6",
+      "height": {
+        "nominal": 0.6,
+        "max": 0.66,
+        "min": 0.54
+      }
+    },
+    {
+      "id": "07",
+      "label": "H0.7",
+      "height": {
+        "nominal": 0.7,
+        "max": 0.78,
+        "min": 0.62
+      }
+    },
+    {
+      "id": "08",
+      "label": "H0.8",
+      "height": {
+        "nominal": 0.8,
+        "max": 1,
+        "min": 0.6
+      }
+    },
+    {
+      "id": "08",
+      "label": "H0.8",
+      "height": {
+        "nominal": 0.8,
+        "max": 1,
+        "min": 0.6
+      }
+    },
+    {
+      "id": "09",
+      "label": "H0.9",
+      "height": {
+        "nominal": 0.9,
+        "max": 0.98,
+        "min": 0.82
+      }
+    },
+    {
+      "id": "10",
+      "label": "H1.0",
+      "height": {
+        "nominal": 1,
+        "max": 1.05,
+        "min": 0.95
+      }
+    },
+    {
+      "id": "11",
+      "label": "H1.1",
+      "height": {
+        "nominal": 1.1,
+        "max": 1.2,
+        "min": 1
+      }
+    },
+    {
+      "id": "12",
+      "label": "H1.2",
+      "height": {
+        "nominal": 1.2,
+        "max": 1.28,
+        "min": 1.12
+      }
+    },
+    {
+      "id": "slow",
+      "label": "Slow (no Hydra)",
+      "height": {
+        "nominal": 1.2,
+        "max": 1.28,
+        "min": 1.12
+      },
+      "machine": {
+        "centering": [
+          {
+            "method": "optical",
+            "tools": [
+              "Z_TOOL"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "12",
+      "label": "H1.2",
+      "height": {
+        "nominal": 1.2,
+        "max": 1.28,
+        "min": 1.12
+      }
+    },
+    {
+      "id": "13",
+      "label": "H1.3",
+      "height": {
+        "nominal": 1.3,
+        "max": 1.4,
+        "min": 1.2
+      }
+    },
+    {
+      "id": "14",
+      "label": "H1.4",
+      "height": {
+        "nominal": 1.4,
+        "max": 1.6,
+        "min": 1.2
+      }
+    },
+    {
+      "id": "slow",
+      "label": "Slow (no Hydra)",
+      "height": {
+        "nominal": 1.4,
+        "max": 1.6,
+        "min": 1.2
+      },
+      "machine": {
+        "centering": [
+          {
+            "method": "optical",
+            "tools": [
+              "Z_TOOL"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "14",
+      "label": "H1.4",
+      "height": {
+        "nominal": 1.4,
+        "max": 1.6,
+        "min": 1.2
+      }
+    },
+    {
+      "id": "15",
+      "label": "H1.5",
+      "height": {
+        "nominal": 1.5,
+        "max": 1.7,
+        "min": 1.3
+      }
+    },
+    {
+      "id": "slow",
+      "label": "Slow (no Hydra)",
+      "height": {
+        "nominal": 1.6,
+        "max": 2.1,
+        "min": 1.1
+      },
+      "machine": {
+        "centering": [
+          {
+            "method": "optical",
+            "tools": [
+              "Z_TOOL"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "16",
+      "label": "H1.6",
+      "height": {
+        "nominal": 1.6,
+        "max": 2.1,
+        "min": 1.1
+      }
+    },
+    {
+      "id": "17",
+      "label": "H1.7",
+      "height": {
+        "nominal": 1.7,
+        "max": 1.79,
+        "min": 1.61
+      }
+    },
+    {
+      "id": "19",
+      "label": "H1.8",
+      "height": {
+        "nominal": 1.84,
+        "max": 1.932,
+        "min": 1.748
+      }
+    }
+  ]
 }

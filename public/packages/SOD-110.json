@@ -12,5 +12,48 @@
   },
   "aliases": [
     "SOD110"
-  ]
+  ],
+  "height": {
+    "nominal": 0.9,
+    "max": 0.945,
+    "min": 0.855
+  },
+  "searchArea": {
+    "x": 0.282,
+    "y": 2.536
+  },
+  "machine": {
+    "mountTools": [
+      "A12"
+    ],
+    "pickWaitTime": 100,
+    "placeWaitTime": 100,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "highest",
+      "y": "high",
+      "tape": "highest",
+      "theta": "high",
+      "z": "highest",
+      "hydraTheta": "highest",
+      "hydraZ": "high"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false
+  }
 }

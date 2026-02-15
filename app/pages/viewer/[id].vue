@@ -155,6 +155,73 @@
           </UButton>
         </div>
       </template>
+
+      <!-- Team project: Approval badge + Revert button -->
+      <template v-if="isTeamProject">
+        <div class="w-px h-5 bg-neutral-200 dark:bg-neutral-700/80" />
+        <UBadge
+          v-if="isApproved"
+          color="success"
+          size="xs"
+          variant="subtle"
+          class="gap-1"
+        >
+          <UIcon name="i-lucide-lock" class="text-xs" />
+          Approved
+        </UBadge>
+        <UBadge
+          v-else
+          color="warning"
+          size="xs"
+          variant="subtle"
+        >
+          Draft
+        </UBadge>
+        <UButton
+          v-if="isApproved && isTeamAdmin"
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-lock-open"
+          title="Revert to Draft"
+          @click="handleRevertToDraft"
+        >
+          Revert to Draft
+        </UButton>
+        <UButton
+          v-if="!isApproved && isTeamAdmin"
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-check-circle"
+          title="Approve project"
+          @click="handleApproveProject"
+        >
+          Approve
+        </UButton>
+      </template>
+
+      <!-- Team project: Presence avatars -->
+      <template v-if="isTeamProject && presentUsers.length > 0">
+        <div class="w-px h-5 bg-neutral-200 dark:bg-neutral-700/80" />
+        <div class="flex items-center -space-x-1">
+          <div
+            v-for="u in presentUsers.slice(0, 5)"
+            :key="u.userId"
+            class="size-5 rounded-full border-2 border-white dark:border-neutral-900 flex items-center justify-center text-[8px] font-bold"
+            :class="u.mode === 'editing' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' : 'bg-neutral-100 text-neutral-500 dark:bg-neutral-700 dark:text-neutral-300'"
+            :title="`${u.name} (${u.role}, ${u.mode})`"
+          >
+            {{ u.name.split(' ').map((p: string) => p[0]).join('').toUpperCase().slice(0, 2) }}
+          </div>
+          <div
+            v-if="presentUsers.length > 5"
+            class="size-5 rounded-full border-2 border-white dark:border-neutral-900 bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center text-[8px] font-medium text-neutral-500 dark:text-neutral-400"
+          >
+            +{{ presentUsers.length - 5 }}
+          </div>
+        </div>
+      </template>
     </AppHeader>
 
     <div class="flex-1 flex overflow-hidden">
@@ -329,8 +396,31 @@ import { removeSourceRanges } from '@lib/gerber/editor'
 import JSZip from 'jszip'
 
 const route = useRoute()
-const projectId = Number(route.params.id)
+const rawId = route.params.id as string
+const isTeamProject = rawId.startsWith('team-')
+const projectId = isTeamProject ? 0 : Number(rawId) // local projects use numeric IDs
+const teamProjectId = isTeamProject ? rawId.replace('team-', '') : null
 const { getProject, getFiles, addFiles, upsertFiles, clearFiles, renameProject, updateFileLayerType, updateFileContent, updateProjectOrigin, updateProjectConvention, updateProjectRotationOverrides, updateProjectDnp, updateProjectCadPackageMap, updateProjectPolarizedOverrides } = useProject()
+
+// ── Team project support ──
+const teamProjectIdRef = ref(teamProjectId)
+const { currentTeamRole, isAdmin: isTeamAdmin } = useTeam()
+const { presentUsers } = isTeamProject ? usePresence(teamProjectIdRef) : { presentUsers: ref([]) }
+const projectSync = isTeamProject ? useProjectSync(teamProjectIdRef) : null
+
+/** Whether this is an approved (frozen) team project */
+const isApproved = computed(() => {
+  if (!isTeamProject) return false
+  return projectSync?.project.value?.status === 'approved'
+})
+
+/** Whether the current user can edit this project */
+const canEdit = computed(() => {
+  if (!isTeamProject) return true // local projects are always editable
+  if (isApproved.value) return false // approved = frozen
+  // Viewers can't edit, editors and admins can
+  return currentTeamRole.value === 'editor' || currentTeamRole.value === 'admin'
+})
 const canvasInteraction = useCanvasInteraction()
 const measureTool = useMeasureTool()
 const infoTool = useInfoTool()
@@ -511,35 +601,72 @@ watch(activeFilter, (filter) => {
   else pnp.activeSideFilter.value = 'all'
 }, { immediate: true })
 
+// ── Persist PnP data to local DB or Supabase ──────────────────────────
+
+function persistToProject(updates: Record<string, any>) {
+  if (isTeamProject && teamProjectId) {
+    // Map camelCase keys to snake_case for Supabase
+    const mapped: Record<string, any> = {}
+    for (const [k, v] of Object.entries(updates)) {
+      mapped[k.replace(/[A-Z]/g, m => '_' + m.toLowerCase())] = v
+    }
+    updateTeamProject(teamProjectId, mapped)
+  }
+}
+
 // Persist PnP origin to database when it changes
 watch([pnp.originX, pnp.originY], ([ox, oy]) => {
-  updateProjectOrigin(projectId, ox, oy)
+  if (isTeamProject) {
+    persistToProject({ pnpOriginX: ox, pnpOriginY: oy })
+  } else {
+    updateProjectOrigin(projectId, ox, oy)
+  }
 })
 
 // Persist per-component PnP rotation overrides to database
 watch(pnp.rotationOverridesRecord, (overrides) => {
-  updateProjectRotationOverrides(projectId, overrides)
+  if (isTeamProject) {
+    persistToProject({ pnpRotationOverrides: overrides })
+  } else {
+    updateProjectRotationOverrides(projectId, overrides)
+  }
 }, { deep: true })
 
 // Persist DNP component keys to database
 watch(pnp.dnpRecord, (keys) => {
-  updateProjectDnp(projectId, keys)
+  if (isTeamProject) {
+    persistToProject({ pnpDnpComponents: keys })
+  } else {
+    updateProjectDnp(projectId, keys)
+  }
 }, { deep: true })
 
 // Persist CAD package -> library package mapping
 watch(pnp.cadPackageMapRecord, (map) => {
-  updateProjectCadPackageMap(projectId, map)
+  if (isTeamProject) {
+    persistToProject({ pnpCadPackageMap: map })
+  } else {
+    updateProjectCadPackageMap(projectId, map)
+  }
 }, { deep: true })
 
 // Persist polarized overrides
 watch(pnp.polarizedOverridesRecord, (overrides) => {
-  updateProjectPolarizedOverrides(projectId, overrides)
+  if (isTeamProject) {
+    persistToProject({ pnpPolarizedOverrides: overrides })
+  } else {
+    updateProjectPolarizedOverrides(projectId, overrides)
+  }
 }, { deep: true })
 
 // Update PnP convention and persist
 function updateConvention(convention: PnPConvention) {
   pnp.convention.value = convention
-  updateProjectConvention(projectId, convention)
+  if (isTeamProject) {
+    persistToProject({ pnpConvention: convention })
+  } else {
+    updateProjectConvention(projectId, convention)
+  }
 }
 
 const viewModeOptions: { label: string; value: ViewMode }[] = [
@@ -579,8 +706,13 @@ function startEditName() {
 async function commitName() {
   const trimmed = editableName.value.trim()
   if (trimmed && trimmed !== project.value?.name) {
-    await renameProject(projectId, trimmed)
-    project.value = await getProject(projectId)
+    if (isTeamProject && teamProjectId) {
+      await updateTeamProject(teamProjectId, { name: trimmed })
+    } else {
+      await renameProject(projectId, trimmed)
+      project.value = await getProject(projectId)
+    }
+    if (project.value) project.value.name = trimmed
     hasBeenRenamed.value = true
   }
   isEditingName.value = false
@@ -588,6 +720,21 @@ async function commitName() {
 
 function cancelEdit() {
   isEditingName.value = false
+}
+
+// ── Team project actions (approve / revert) ──
+const { getProject: getTeamProject, approveProject: doApprove, revertToDraft: doRevert, updateProject: updateTeamProject } = useTeamProjects()
+
+async function handleApproveProject() {
+  if (!teamProjectId) return
+  const { error } = await doApprove(teamProjectId)
+  if (error) console.warn('Failed to approve project:', error)
+}
+
+async function handleRevertToDraft() {
+  if (!teamProjectId) return
+  const { error } = await doRevert(teamProjectId)
+  if (error) console.warn('Failed to revert project:', error)
 }
 
 function setViewMode(mode: ViewMode) {
@@ -642,7 +789,26 @@ function applyDefaultCropToOutline() {
 }
 
 onMounted(async () => {
-  project.value = await getProject(projectId)
+  if (isTeamProject && teamProjectId) {
+    const tp = await getTeamProject(teamProjectId)
+    if (tp) {
+      // Map team project shape to the local project shape used by the template
+      project.value = {
+        id: tp.id,
+        name: tp.name,
+        mode: tp.mode,
+        pnpOriginX: tp.pnp_origin_x,
+        pnpOriginY: tp.pnp_origin_y,
+        pnpConvention: tp.pnp_convention,
+        pnpRotationOverrides: tp.pnp_rotation_overrides,
+        pnpDnpComponents: tp.pnp_dnp_components,
+        pnpCadPackageMap: tp.pnp_cad_package_map,
+        pnpPolarizedOverrides: tp.pnp_polarized_overrides,
+      }
+    }
+  } else {
+    project.value = await getProject(projectId)
+  }
   const storedFiles = await getFiles(projectId, 1)
   layers.value = sortLayersByPcbOrder(storedFiles.map(f => {
     const type = f.layerType || detectLayerType(f.fileName)
@@ -701,9 +867,15 @@ async function handleImport(newFiles: GerberFile[], sourceName: string) {
   await upsertFiles(projectId, 1, newFiles)
 
   // Auto-rename only on first import into a default-named project
-  if (!hadExistingFiles && sourceName && !hasBeenRenamed.value && project.value?.name?.match(/^View Project /)) {
-    await renameProject(projectId, sourceName)
-    project.value = await getProject(projectId)
+  const isDefaultName = project.value?.name?.match(/^(View Project |New Viewer Project|New Compare Project)/)
+  if (!hadExistingFiles && sourceName && !hasBeenRenamed.value && isDefaultName) {
+    if (isTeamProject && teamProjectId) {
+      await updateTeamProject(teamProjectId, { name: sourceName })
+    } else {
+      await renameProject(projectId, sourceName)
+      project.value = await getProject(projectId)
+    }
+    if (project.value) project.value.name = sourceName
   }
 
   // Build layer entries for the incoming files
@@ -728,9 +900,13 @@ async function handleImport(newFiles: GerberFile[], sourceName: string) {
     pnp.resetOrigin()
     pnp.resetAllRotationOverrides()
     pnp.resetAllDnp()
-    await updateProjectOrigin(projectId, null, null)
-    await updateProjectRotationOverrides(projectId, {})
-    await updateProjectDnp(projectId, [])
+    if (isTeamProject) {
+      persistToProject({ pnpOriginX: null, pnpOriginY: null, pnpRotationOverrides: {}, pnpDnpComponents: [] })
+    } else {
+      await updateProjectOrigin(projectId, null, null)
+      await updateProjectRotationOverrides(projectId, {})
+      await updateProjectDnp(projectId, [])
+    }
   }
 
   canvasInteraction.resetView()

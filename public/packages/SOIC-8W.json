@@ -16,5 +16,64 @@
     "leadPitch": 1.27,
     "leadWidth": 0.4,
     "leadLength": 0.6
-  }
+  },
+  "height": {
+    "nominal": 1.14,
+    "max": 1.197,
+    "min": 1.083
+  },
+  "searchArea": {
+    "x": 15.652,
+    "y": 15.652
+  },
+  "machine": {
+    "mountTools": [
+      "A14"
+    ],
+    "pickWaitTime": 70,
+    "placeWaitTime": 70,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "highest",
+      "y": "highest",
+      "tape": "highest",
+      "theta": "highest",
+      "z": "high",
+      "hydraTheta": "highest",
+      "hydraZ": "high"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false
+  },
+  "variations": [
+    {
+      "id": "slow",
+      "label": "Slow (no Hydra)",
+      "machine": {
+        "centering": [
+          {
+            "method": "optical",
+            "tools": [
+              "Z_TOOL"
+            ]
+          }
+        ]
+      }
+    }
+  ]
 }

@@ -16,5 +16,144 @@
     "SO16",
     "SOIC-16",
     "SOIC16"
+  ],
+  "height": {
+    "nominal": 5.8,
+    "max": 6.09,
+    "min": 5.51
+  },
+  "searchArea": {
+    "x": 25.4,
+    "y": 12.7
+  },
+  "machine": {
+    "mountTools": [
+      "A24"
+    ],
+    "pickWaitTime": 100,
+    "placeWaitTime": 100,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "lowest",
+      "y": "lowest",
+      "tape": "lowest",
+      "theta": "high",
+      "z": "lowest",
+      "hydraTheta": "lowest",
+      "hydraZ": "lowest"
+    },
+    "hydraFinePitch": true,
+    "centering": [
+      {
+        "method": "mechanical",
+        "mechanical": {
+          "angle": 0,
+          "position": "POS_MIDDLE",
+          "force": "LOW_FORCE"
+        },
+        "jaw": {
+          "nominal": 12.7,
+          "max": 13,
+          "min": 12.4
+        }
+      },
+      {
+        "method": "mechanical",
+        "mechanical": {
+          "angle": 90000,
+          "position": "POS_MIDDLE",
+          "force": "HIGH_FORCE"
+        },
+        "jaw": {
+          "nominal": 25.4,
+          "max": 25.8,
+          "min": 25.1
+        }
+      },
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "high res.",
+      "linescan"
+    ],
+    "coplanarityCheck": false,
+    "markingPositions": [
+      {
+        "x": 0,
+        "y": 0,
+        "dotType": "DOT0.5mm"
+      }
+    ]
+  },
+  "variations": [
+    {
+      "id": "hydra",
+      "label": "Hydra",
+      "machine": {
+        "centering": [
+          {
+            "method": "mechanical",
+            "mechanical": {
+              "angle": 90000,
+              "position": "POS_UPPER",
+              "force": "HIGH_FORCE"
+            },
+            "jaw": {
+              "nominal": 9.9,
+              "max": 11,
+              "min": 9.5
+            }
+          },
+          {
+            "method": "mechanical",
+            "mechanical": {
+              "angle": 0,
+              "position": "POS_UPPER",
+              "force": "HIGH_FORCE"
+            },
+            "jaw": {
+              "nominal": 6,
+              "max": 7.2,
+              "min": 5.6
+            }
+          },
+          {
+            "method": "optical",
+            "tools": [
+              "Z_TOOL",
+              "HYDRA_TOOL"
+            ]
+          }
+        ],
+        "visionModes": [
+          "linescan",
+          "hydra"
+        ]
+      }
+    },
+    {
+      "id": "slow",
+      "label": "Slow (no Hydra)",
+      "machine": {
+        "centering": [
+          {
+            "method": "optical",
+            "tools": [
+              "Z_TOOL"
+            ]
+          }
+        ]
+      }
+    }
   ]
 }

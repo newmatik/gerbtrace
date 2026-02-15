@@ -14,5 +14,49 @@
   },
   "aliases": [
     "PLCC44"
-  ]
+  ],
+  "height": {
+    "nominal": 4.4,
+    "max": 4.62,
+    "min": 4.18
+  },
+  "searchArea": {
+    "x": 17.45,
+    "y": 17.45
+  },
+  "machine": {
+    "mountTools": [
+      "A24"
+    ],
+    "pickWaitTime": 800,
+    "placeWaitTime": 250,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "lowest",
+      "y": "low",
+      "tape": "lowest",
+      "theta": "low",
+      "z": "high",
+      "hydraTheta": "low",
+      "hydraZ": "lowest"
+    },
+    "hydraFinePitch": true,
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false
+  }
 }

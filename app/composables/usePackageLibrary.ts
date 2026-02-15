@@ -10,17 +10,26 @@ import type { PackageDefinition } from '~/utils/package-types'
 export function usePackageLibrary() {
   const packages = ref<PackageDefinition[]>([])
   const customPackages = ref<PackageDefinition[]>([])
+  const teamPackages = ref<PackageDefinition[]>([])
   const loaded = ref(false)
   const loading = ref(false)
 
-  /** All packages: custom first (higher priority), then built-in */
-  const allPackages = computed(() => [...customPackages.value, ...packages.value])
+  /** All packages: local custom first (highest), then team, then built-in */
+  const allPackages = computed(() => [...customPackages.value, ...teamPackages.value, ...packages.value])
 
   /** Map from normalised package name -> PackageDefinition */
   const lookupMap = computed(() => {
     const map = new Map<string, PackageDefinition>()
-    // Built-in first, then custom overwrites (custom has higher priority)
+    // Built-in first, then team overwrites, then local custom overwrites (highest priority)
     for (const pkg of packages.value) {
+      map.set(normalise(pkg.name), pkg)
+      if (pkg.aliases) {
+        for (const alias of pkg.aliases) {
+          map.set(normalise(alias), pkg)
+        }
+      }
+    }
+    for (const pkg of teamPackages.value) {
       map.set(normalise(pkg.name), pkg)
       if (pkg.aliases) {
         for (const alias of pkg.aliases) {
@@ -52,6 +61,11 @@ export function usePackageLibrary() {
   /** Set custom packages (from IndexedDB) to be merged into the lookup */
   function setCustomPackages(pkgs: PackageDefinition[]) {
     customPackages.value = pkgs
+  }
+
+  /** Set team packages (from Supabase) to be merged into the lookup */
+  function setTeamPackages(pkgs: PackageDefinition[]) {
+    teamPackages.value = pkgs
   }
 
   /** Load all package JSONs from /packages/ directory */
@@ -93,12 +107,14 @@ export function usePackageLibrary() {
   return {
     packages,
     customPackages,
+    teamPackages,
     allPackages,
     loaded,
     loading,
     lookupMap,
     matchPackage,
     setCustomPackages,
+    setTeamPackages,
     loadPackages,
   }
 }
