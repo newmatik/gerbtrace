@@ -8,7 +8,7 @@
 <script setup lang="ts">
 import JSZip from 'jszip'
 import type { GerberFile } from '~/utils/gerber-helpers'
-import { isPnPFile, detectPnPSide, isImportableFile, detectLayerType } from '~/utils/gerber-helpers'
+import { isPnPFile, detectPnPSide, isImportableFile, detectLayerType, looksLikeGerberContent } from '~/utils/gerber-helpers'
 import { parsePnPFile } from '~/utils/pnp-parser'
 
 /** Files inside ZIPs that should always be skipped (system junk). */
@@ -71,15 +71,21 @@ async function handleFiles(rawFiles: File[]) {
         if (name.startsWith('__MACOSX/')) continue
         const fileName = name.includes('/') ? name.split('/').pop()! : name
         if (shouldSkipZipEntry(fileName)) continue
-        // ZIPs often include extra reports/sidecars — only import files we support.
-        if (!isImportableFile(fileName)) continue
-        const content = await entry.async('text')
-        if (isPnPFile(fileName)) {
-          const layerType = detectPnPLayerType(fileName, content)
-          importedFiles.push({ fileName, content, layerType })
+        if (isImportableFile(fileName)) {
+          const content = await entry.async('text')
+          if (isPnPFile(fileName)) {
+            const layerType = detectPnPLayerType(fileName, content)
+            importedFiles.push({ fileName, content, layerType })
+          } else {
+            const layerType = detectLayerType(fileName)
+            importedFiles.push({ fileName, content, layerType })
+          }
         } else {
-          const layerType = detectLayerType(fileName)
-          importedFiles.push({ fileName, content, layerType })
+          // Some CAM tools export extensionless Gerber files — fall back to content sniffing
+          const content = await entry.async('text')
+          if (looksLikeGerberContent(content)) {
+            importedFiles.push({ fileName, content })
+          }
         }
       }
     } else if (isImportableFile(file.name)) {

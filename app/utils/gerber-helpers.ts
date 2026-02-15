@@ -280,6 +280,21 @@ export function isImportableFile(fileName: string): boolean {
   return isGerberFile(fileName) || isPnPFile(fileName)
 }
 
+/**
+ * Content-based Gerber detection for files whose names lack a recognizable extension.
+ * Some CAM tools export extensionless files (e.g. "l1", "m2", "out") inside ZIPs.
+ */
+export function looksLikeGerberContent(content: string): boolean {
+  const head = content.slice(0, 512)
+  // RS-274X format specification (%FSLAX24Y24*% etc.) — mandatory in every Gerber file
+  if (/%FS[LT][AI]X\d+Y\d+/.test(head)) return true
+  // Unit mode (%MOIN*% / %MOMM*%)
+  if (/%MO(IN|MM)\*%/.test(head)) return true
+  // G04 comment — very common opening line
+  if (/^G04\s/m.test(head)) return true
+  return false
+}
+
 // ── Layer grouping ──
 
 export type LayerGroupKey = 'gerber' | 'drill' | 'pnp' | 'unknown'
