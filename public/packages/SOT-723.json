@@ -6,12 +6,13 @@
     "width": 0.8
   },
   "threePole": {
-    "widthOverLeads": 1.9,
-    "ccDistance": 1,
-    "leadWidth": 0.35,
-    "leadLength": 0.35
+    "widthOverLeads": 1.2,
+    "ccDistance": 0.8,
+    "leadWidth": 0.3,
+    "leadLength": 0.25
   },
   "aliases": [
-    "SOT723"
+    "SOT723",
+    "VMT3"
   ]
 }

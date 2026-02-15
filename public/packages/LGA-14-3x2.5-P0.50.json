@@ -1,0 +1,54 @@
+{
+  "name": "LGA-14-3x2.5-P0.50",
+  "type": "PT_GENERIC",
+  "aliases": [
+    "LGA-14",
+    "LGA14",
+    "LGA-14L",
+    "LGA-14L_3x2.5mm_P0.5mm"
+  ],
+  "body": {
+    "length": 2.5,
+    "width": 3
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "FLAT",
+        "numLeads": 4,
+        "distFromCenter": -1.1625,
+        "ccHalf": 0.75,
+        "angleMilliDeg": 180000,
+        "padLength": 0.625,
+        "padWidth": 0.4
+      },
+      {
+        "shape": "FLAT",
+        "numLeads": 4,
+        "distFromCenter": 1.1625,
+        "ccHalf": 0.75,
+        "angleMilliDeg": 0,
+        "padLength": 0.625,
+        "padWidth": 0.4
+      },
+      {
+        "shape": "FLAT",
+        "numLeads": 3,
+        "distFromCenter": 0.9125,
+        "ccHalf": 0.5,
+        "angleMilliDeg": 90000,
+        "padLength": 0.625,
+        "padWidth": 0.4
+      },
+      {
+        "shape": "FLAT",
+        "numLeads": 3,
+        "distFromCenter": -0.9125,
+        "ccHalf": 0.5,
+        "angleMilliDeg": 270000,
+        "padLength": 0.625,
+        "padWidth": 0.4
+      }
+    ]
+  }
+}

@@ -1,6 +1,6 @@
 {
   "name": "gerbtrace",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "private": true,
   "description": "Gerbtrace — View and compare Gerber PCB files in the browser",
   "author": "Newmatik GmbH",
@@ -9,10 +9,12 @@
   "scripts": {
     "packages:manifest": "node scripts/build-packages-manifest.mjs",
     "packages:check": "node scripts/check-packages.mjs",
+    "packages:extract-mycenter": "node scripts/extract-mycenter-packages.mjs",
     "precommit": "npm run packages:manifest && npm run packages:check",
     "dev": "npm run precommit && nuxt dev",
     "build": "nuxt build",
     "generate": "nuxt generate",
+    "tauri:prepare-frontend": "node scripts/prepare-tauri-frontend.mjs",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare && simple-git-hooks",
     "tauri": "tauri",

@@ -6,31 +6,49 @@
           No layers loaded
         </div>
         <div ref="listRef" class="space-y-0.5">
-          <div
-            v-for="(layer, index) in layers"
-            :key="layer.file.fileName"
-            :data-layer-index="index"
-            class="rounded transition-all duration-100"
-            :class="{
-              'opacity-30 scale-95': isDragging && dragFrom === index,
-              'cursor-grabbing': isDragging,
-              'cursor-pointer': !isDragging,
-            }"
-            :style="{ touchAction: 'none' }"
-            @pointerdown="onPointerDown(index, $event)"
-          >
-            <!-- Drop indicator line above this item -->
-            <div
-              v-if="showIndicatorAt === index"
-              class="h-0.5 bg-primary-400 rounded-full mb-0.5"
-            />
-            <LayerToggle
-              :layer="layer"
-              @toggle-visibility="$emit('toggleVisibility', index)"
-              @color-change="(color: string) => $emit('changeColor', index, color)"
-              @type-change="(type: string) => $emit('changeType', index, type)"
-            />
-          </div>
+          <template v-for="group in groups" :key="group.key">
+            <!-- Group header -->
+            <button
+              class="flex items-center gap-1.5 w-full px-2 py-1 mt-1 first:mt-0 text-[10px] font-semibold uppercase tracking-wider text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors rounded hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
+              @click="toggleGroup(group.key)"
+            >
+              <UIcon
+                :name="collapsed.has(group.key) ? 'i-lucide-chevron-right' : 'i-lucide-chevron-down'"
+                class="text-[10px] shrink-0"
+              />
+              <span>{{ group.label }}</span>
+              <span class="text-neutral-300 dark:text-neutral-600 font-normal">{{ group.layers.length }}</span>
+            </button>
+
+            <!-- Group layers (when not collapsed) -->
+            <template v-if="!collapsed.has(group.key)">
+              <div
+                v-for="entry in group.layers"
+                :key="entry.layer.file.fileName"
+                :data-layer-index="entry.flatIndex"
+                class="rounded transition-all duration-100"
+                :class="{
+                  'opacity-30 scale-95': isDragging && dragFrom === entry.flatIndex,
+                  'cursor-grabbing': isDragging,
+                  'cursor-pointer': !isDragging,
+                }"
+                :style="{ touchAction: 'none' }"
+                @pointerdown="onPointerDown(entry.flatIndex, $event)"
+              >
+                <!-- Drop indicator line above this item -->
+                <div
+                  v-if="showIndicatorAt === entry.flatIndex"
+                  class="h-0.5 bg-primary-400 rounded-full mb-0.5"
+                />
+                <LayerToggle
+                  :layer="entry.layer"
+                  @toggle-visibility="$emit('toggleVisibility', entry.flatIndex)"
+                  @color-change="(color: string) => $emit('changeColor', entry.flatIndex, color)"
+                  @type-change="(type: string) => $emit('changeType', entry.flatIndex, type)"
+                />
+              </div>
+            </template>
+          </template>
 
           <!-- Drop indicator at the very end of the list -->
           <div
@@ -45,6 +63,13 @@
 
 <script setup lang="ts">
 import type { LayerInfo } from '~/utils/gerber-helpers'
+import { getLayerGroup, LAYER_GROUP_ORDER, LAYER_GROUP_LABELS, type LayerGroupKey } from '~/utils/gerber-helpers'
+
+interface LayerGroupData {
+  key: LayerGroupKey
+  label: string
+  layers: { layer: LayerInfo; flatIndex: number }[]
+}
 
 const props = defineProps<{
   layers: LayerInfo[]
@@ -56,6 +81,40 @@ const emit = defineEmits<{
   changeType: [index: number, type: string]
   reorder: [fromIndex: number, toIndex: number]
 }>()
+
+// ── Collapsible groups ──
+
+const collapsed = ref(new Set<LayerGroupKey>())
+
+function toggleGroup(key: LayerGroupKey) {
+  const next = new Set(collapsed.value)
+  if (next.has(key)) {
+    next.delete(key)
+  } else {
+    next.add(key)
+  }
+  collapsed.value = next
+}
+
+const groups = computed<LayerGroupData[]>(() => {
+  const buckets = new Map<LayerGroupKey, { layer: LayerInfo; flatIndex: number }[]>()
+  for (const key of LAYER_GROUP_ORDER) {
+    buckets.set(key, [])
+  }
+
+  props.layers.forEach((layer, index) => {
+    const group = getLayerGroup(layer.type)
+    buckets.get(group)!.push({ layer, flatIndex: index })
+  })
+
+  return LAYER_GROUP_ORDER
+    .filter(key => (buckets.get(key)?.length ?? 0) > 0)
+    .map(key => ({
+      key,
+      label: LAYER_GROUP_LABELS[key],
+      layers: buckets.get(key)!,
+    }))
+})
 
 // --- Pointer-based drag-to-reorder ---
 

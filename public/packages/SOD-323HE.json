@@ -1,0 +1,38 @@
+{
+  "name": "SOD-323HE",
+  "type": "PT_GENERIC",
+  "aliases": [
+    "SOD323HE",
+    "SC-108B",
+    "SC108B",
+    "TUMD-2",
+    "TUMD2",
+    "TUMD2M"
+  ],
+  "body": {
+    "length": 1.9,
+    "width": 1.3
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "FLAT",
+        "numLeads": 1,
+        "distFromCenter": 0.65,
+        "ccHalf": 0,
+        "angleMilliDeg": 90000,
+        "padLength": 2.0,
+        "padWidth": 1.1
+      },
+      {
+        "shape": "FLAT",
+        "numLeads": 1,
+        "distFromCenter": -1.25,
+        "ccHalf": 0,
+        "angleMilliDeg": 270000,
+        "padLength": 0.8,
+        "padWidth": 1.1
+      }
+    ]
+  }
+}

@@ -18,34 +18,6 @@
         </UButton>
       </UDropdownMenu>
     </div>
-
-    <div class="w-px h-5 bg-neutral-200 dark:bg-neutral-700/80" />
-
-    <!-- Export buttons -->
-    <div class="flex items-center rounded-lg p-0.5 gap-0.5 bg-neutral-100/90 border border-neutral-200 dark:bg-neutral-900/70 dark:border-neutral-700">
-      <UButton
-        size="xs"
-        color="neutral"
-        variant="ghost"
-        icon="i-lucide-image"
-        :class="[rcBtnBase, rcBtnIdle]"
-        title="Download as PNG"
-        @click="$emit('exportPng')"
-      >
-        <span>PNG</span>
-      </UButton>
-      <UButton
-        size="xs"
-        color="neutral"
-        variant="ghost"
-        icon="i-lucide-file-code"
-        :class="[rcBtnBase, rcBtnIdle]"
-        title="Download as SVG"
-        @click="$emit('exportSvg')"
-      >
-        <span>SVG</span>
-      </UButton>
-    </div>
   </div>
 </template>
 
@@ -58,8 +30,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   selectPreset: [preset: PcbPreset]
-  exportPng: []
-  exportSvg: []
 }>()
 
 const presetMenuItems = computed(() => [

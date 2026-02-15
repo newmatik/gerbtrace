@@ -245,8 +245,14 @@ function drawSegments(ctx: CanvasRenderingContext2D, segments: PathSegment[]): v
       ctx.lineTo(seg.end[0], seg.end[1])
     } else {
       // Arc segment
+      // Gerber uses math convention (Y-up): CCW = increasing angles.
+      // Canvas ctx.arc() defines counterclockwise in screen coords (Y-down),
+      // where increasing angles go CW.  Since our CTM includes a Y-flip
+      // (scale(s, -s)), the visual direction is correct but the arc *selection*
+      // (short vs long arc) is determined before the CTM is applied.
+      // We must negate the flag so the correct arc (short/long) is chosen.
       const { center, radius, startAngle, endAngle, counterclockwise } = seg
-      ctx.arc(center[0], center[1], radius, startAngle, endAngle, counterclockwise)
+      ctx.arc(center[0], center[1], radius, startAngle, endAngle, !counterclockwise)
     }
   }
 }
@@ -254,7 +260,17 @@ function drawSegments(ctx: CanvasRenderingContext2D, segments: PathSegment[]): v
 /**
  * Render an outline ImageTree as a filled white mask on the given canvas.
  * Used for "crop to outline" — the filled interior becomes the clip region.
- * The outline's stroked paths are traced and filled (closed) rather than stroked.
+ *
+ * Strategy:
+ *   1. Collect all closed contours from path / region / shape graphics,
+ *      partitioned by polarity (dark vs erase).
+ *   2. Identify the outer board boundary (the dark contour with the largest
+ *      bounding-box area) and fill it as a solid white mask.
+ *   3. Erase all remaining dark contours (same-polarity cutouts) and all
+ *      erase-polarity contours using `destination-out`.
+ *
+ * Single-segment path graphics (some CAD tools emit D02 + D01 per edge) are
+ * chained by matching endpoints into closed contours before processing.
  */
 export function renderOutlineMask(
   outlineTree: ImageTree,
@@ -275,39 +291,188 @@ export function renderOutlineMask(
   ctx.translate(offsetX, offsetY)
   ctx.scale(scale, -scale)
 
-  ctx.fillStyle = '#ffffff'
-  ctx.beginPath()
+  // ── Collect contours, partitioned by polarity ──
+  const darkContours: PathSegment[][] = []
+  const eraseContours: PathSegment[][] = []
+  const darkLooseSegs: PathSegment[] = []
+  const eraseLooseSegs: PathSegment[] = []
+
+  type ShapeDrawFn = () => void
+  const darkShapes: ShapeDrawFn[] = []
+  const eraseShapes: ShapeDrawFn[] = []
 
   for (const graphic of outlineTree.children) {
-    if (graphic.type === 'path') {
-      drawSegments(ctx, graphic.segments)
-    } else if (graphic.type === 'region') {
-      drawSegments(ctx, graphic.segments)
+    const isErase = 'erase' in graphic && graphic.erase
+    const contours = isErase ? eraseContours : darkContours
+    const loose = isErase ? eraseLooseSegs : darkLooseSegs
+    const shapes = isErase ? eraseShapes : darkShapes
+
+    if (graphic.type === 'path' || graphic.type === 'region') {
+      const segs = graphic.segments
+      if (segs.length > 1) {
+        contours.push(segs)
+      } else if (segs.length === 1) {
+        loose.push(segs[0]!)
+      }
     } else if (graphic.type === 'shape') {
       if (graphic.shape.type === 'outline') {
-        drawSegments(ctx, graphic.shape.segments)
+        contours.push(graphic.shape.segments)
       } else if (graphic.shape.type === 'circle') {
         const s = graphic.shape
-        ctx.moveTo(s.cx + s.r, s.cy)
-        ctx.arc(s.cx, s.cy, s.r, 0, Math.PI * 2)
+        shapes.push(() => {
+          ctx.moveTo(s.cx + s.r, s.cy)
+          ctx.arc(s.cx, s.cy, s.r, 0, Math.PI * 2)
+        })
       } else if (graphic.shape.type === 'rect') {
         const s = graphic.shape
-        ctx.rect(s.x, s.y, s.w, s.h)
+        shapes.push(() => { ctx.rect(s.x, s.y, s.w, s.h) })
       } else if (graphic.shape.type === 'polygon') {
         const pts = graphic.shape.points
         if (pts.length >= 2) {
-          ctx.moveTo(pts[0]![0], pts[0]![1])
-          for (let i = 1; i < pts.length; i++) {
-            ctx.lineTo(pts[i]![0], pts[i]![1])
-          }
+          shapes.push(() => {
+            ctx.moveTo(pts[0]![0], pts[0]![1])
+            for (let k = 1; k < pts.length; k++) {
+              ctx.lineTo(pts[k]![0], pts[k]![1])
+            }
+          })
         }
       }
     }
   }
 
-  ctx.closePath()
-  ctx.fill('evenodd')
+  // Chain loose single-segment graphics into contours
+  for (const c of chainSegmentsIntoContours(darkLooseSegs)) darkContours.push(c)
+  for (const c of chainSegmentsIntoContours(eraseLooseSegs)) eraseContours.push(c)
+
+  // ── Identify the outer boundary (largest bounding-box area) ──
+  let outerIdx = 0
+  let outerArea = 0
+  for (let i = 0; i < darkContours.length; i++) {
+    const a = contourBBoxArea(darkContours[i]!)
+    if (a > outerArea) { outerArea = a; outerIdx = i }
+  }
+  // Also consider dark shapes — compare with largest contour
+  // (shapes are rare for boundaries, but handle for completeness)
+
+  // ── Phase 1: Fill the outer boundary ──
+  ctx.fillStyle = '#ffffff'
+  if (darkContours.length > 0) {
+    ctx.beginPath()
+    drawContour(ctx, darkContours[outerIdx]!)
+    ctx.fill()
+  } else if (darkShapes.length > 0) {
+    // Fallback: fill the first dark shape
+    ctx.beginPath()
+    darkShapes[0]!()
+    ctx.fill()
+  }
+
+  // ── Phase 2: Punch out all cutout contours ──
+  ctx.globalCompositeOperation = 'destination-out'
+  ctx.fillStyle = '#ffffff'
+
+  // Dark contours that are NOT the outer boundary → same-polarity cutouts
+  for (let i = 0; i < darkContours.length; i++) {
+    if (i === outerIdx) continue
+    ctx.beginPath()
+    drawContour(ctx, darkContours[i]!)
+    ctx.fill()
+  }
+  // Dark shapes that are NOT the outer boundary (if boundary was a contour)
+  if (darkContours.length > 0) {
+    for (const fn of darkShapes) {
+      ctx.beginPath()
+      fn()
+      ctx.fill()
+    }
+  }
+
+  // Erase-polarity contours and shapes → polarity-based cutouts
+  for (const contour of eraseContours) {
+    ctx.beginPath()
+    drawContour(ctx, contour)
+    ctx.fill()
+  }
+  for (const fn of eraseShapes) {
+    ctx.beginPath()
+    fn()
+    ctx.fill()
+  }
+
+  ctx.globalCompositeOperation = 'source-over'
   ctx.restore()
+}
+
+/** Compute the bounding-box area of a contour (for identifying the outer boundary). */
+function contourBBoxArea(segments: PathSegment[]): number {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+  for (const seg of segments) {
+    for (const pt of [seg.start, seg.end]) {
+      if (pt[0] < minX) minX = pt[0]
+      if (pt[1] < minY) minY = pt[1]
+      if (pt[0] > maxX) maxX = pt[0]
+      if (pt[1] > maxY) maxY = pt[1]
+    }
+  }
+  return (maxX - minX) * (maxY - minY)
+}
+
+/**
+ * Group an unordered list of segments into chains where each segment's end
+ * connects to the next segment's start (within tolerance).  Each resulting
+ * chain is a closed (or nearly-closed) contour suitable for filling.
+ */
+function chainSegmentsIntoContours(segments: PathSegment[]): PathSegment[][] {
+  if (segments.length === 0) return []
+
+  const EPS_SQ = 0.01 * 0.01 // 10 µm tolerance squared
+  const remaining = segments.slice() // mutable working copy
+  const contours: PathSegment[][] = []
+
+  while (remaining.length > 0) {
+    const chain: PathSegment[] = [remaining.splice(0, 1)[0]!]
+
+    // Extend the chain forward by matching end → start
+    let extended = true
+    while (extended) {
+      extended = false
+      const tail = chain[chain.length - 1]!.end
+
+      for (let i = 0; i < remaining.length; i++) {
+        const seg = remaining[i]!
+        const dx = seg.start[0] - tail[0]
+        const dy = seg.start[1] - tail[1]
+        if (dx * dx + dy * dy < EPS_SQ) {
+          chain.push(remaining.splice(i, 1)[0]!)
+          extended = true
+          break
+        }
+      }
+    }
+
+    contours.push(chain)
+  }
+
+  return contours
+}
+
+/**
+ * Draw a contour (array of chained segments) as a single Canvas sub-path.
+ * Handles full-circle arcs and applies the Y-flip arc direction correction.
+ */
+function drawContour(ctx: CanvasRenderingContext2D, segments: PathSegment[]): void {
+  if (segments.length === 0) return
+
+  ctx.moveTo(segments[0]!.start[0], segments[0]!.start[1])
+
+  for (const seg of segments) {
+    if (seg.type === 'line') {
+      ctx.lineTo(seg.end[0], seg.end[1])
+    } else {
+      // Arc — see drawSegments() for the !counterclockwise rationale
+      ctx.arc(seg.center[0], seg.center[1], seg.radius, seg.startAngle, seg.endAngle, !seg.counterclockwise)
+    }
+  }
 }
 
 function drawRoundRect(
