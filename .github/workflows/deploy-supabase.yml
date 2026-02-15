@@ -74,20 +74,31 @@ jobs:
                 continue
               fi
 
+              # If the droplet was provisioned manually already, the initial schema migration will fail noisily.
+              # Detect an existing baseline schema and record the migration without reapplying it.
+              if [ "$name" = "20260215000000_initial_schema.sql" ]; then
+                has_profiles="$(docker compose exec -T db psql -U postgres -d postgres -tAc \"select to_regclass('public.profiles') is not null\")"
+                if [ \"$has_profiles\" = \"t\" ]; then
+                  echo \"Baseline schema present; recording $name without applying\"
+                  docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 \\
+                    -c \"insert into public.schema_migrations(name) values ('${name}') on conflict (name) do nothing;\"
+                  continue
+                fi
+              fi
+
               echo "Applying migration: $name"
               tmp="$(mktemp)"
-              if docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 < "$f" >"$tmp" 2>&1; then
-                true
-              else
-                # If the schema was already provisioned manually on the droplet, rerunning the initial migrations
-                # can fail with "already exists". Treat those as already-applied and continue.
-                if grep -Eqi "already exists|duplicate key|already defined|already present|policy .* already exists" "$tmp"; then
-                  echo "Migration $name appears already applied (got existing-object error). Marking as applied."
-                else
-                  cat "$tmp" >&2
+              # Run with ON_ERROR_STOP=0 to keep a zero exit status (ssh-action stops on non-zero).
+              docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=0 < "$f" >"$tmp" 2>&1
+
+              if grep -q "ERROR:" "$tmp"; then
+                bad="$(grep "ERROR:" "$tmp" | grep -Evi \"already exists|duplicate key|already defined|already present|policy .* already exists\" || true)"
+                if [ -n "$bad" ]; then
+                  echo "$bad" >&2
                   rm -f "$tmp"
                   exit 1
                 fi
+                echo "Migration $name produced only existing-object errors; continuing."
               fi
               rm -f "$tmp"
 
