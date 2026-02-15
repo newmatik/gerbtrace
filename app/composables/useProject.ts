@@ -12,7 +12,7 @@ interface ProjectRecord {
   pnpOriginX?: number | null
   /** PnP origin Y in Gerber coordinate units */
   pnpOriginY?: number | null
-  /** PnP orientation convention (null = default 'mycronic') */
+  /** PnP orientation convention (null = default 'iec61188') */
   pnpConvention?: PnPConvention | null
   /** Per-component PnP rotation overrides keyed by stable component key */
   pnpRotationOverrides?: Record<string, number> | null

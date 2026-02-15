@@ -350,8 +350,8 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
   }
 
   // ── PnP convention (orientation standard) ──
-  // Default to Mycronic since our package footprints are defined in Mycronic convention
-  const convention = ref<PnPConvention>('mycronic')
+  // Default to IEC 61188-7 as the most common PnP convention
+  const convention = ref<PnPConvention>('iec61188')
 
   // ── Origin offset ──
   // The origin maps PnP (0,0) to a point in Gerber coordinate space.

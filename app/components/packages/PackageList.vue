@@ -20,6 +20,7 @@
           :items="tpsysTypeOptions"
           value-key="value"
           label-key="label"
+          :ui="{ content: 'min-w-fit', itemLabel: 'whitespace-nowrap' }"
         />
       </div>
     </div>
