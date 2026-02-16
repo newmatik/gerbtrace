@@ -116,6 +116,32 @@ export function getColorForType(type: string): string {
   return LAYER_COLOR_MAP[type] || '#FF80AB'
 }
 
+/**
+ * Return a version of the layer color darkened enough to be readable on a
+ * light background.  Colours whose relative luminance is above the threshold
+ * are shifted toward a darker variant of the same hue.
+ */
+export function getReadableColorForType(type: string, isDark: boolean): string {
+  const hex = getColorForType(type)
+  if (isDark) return hex
+
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+
+  // Relative luminance (sRGB approximation)
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  if (luminance <= 0.6) return hex
+
+  // Darken by mixing toward black; stronger for very bright colours
+  const factor = 0.45
+  const dr = Math.round(r * factor)
+  const dg = Math.round(g * factor)
+  const db = Math.round(b * factor)
+
+  return `#${dr.toString(16).padStart(2, '0')}${dg.toString(16).padStart(2, '0')}${db.toString(16).padStart(2, '0')}`
+}
+
 export function detectLayerType(fileName: string): string {
   const lower = fileName.toLowerCase()
   const ext = lower.slice(lower.lastIndexOf('.'))

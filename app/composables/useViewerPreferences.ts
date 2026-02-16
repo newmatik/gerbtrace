@@ -13,6 +13,7 @@ interface ViewerPrefs {
   cropToOutline: boolean
   mirrored: boolean
   presetId: string
+  boardRotation: number
 }
 
 const DEFAULTS: ViewerPrefs = {
@@ -22,6 +23,7 @@ const DEFAULTS: ViewerPrefs = {
   cropToOutline: false,
   mirrored: false,
   presetId: 'green-enig',
+  boardRotation: 0,
 }
 
 export function useViewerPreferences(projectId: number | string) {
@@ -44,6 +46,7 @@ export function useViewerPreferences(projectId: number | string) {
           cropToOutline: typeof p.cropToOutline === 'boolean' ? p.cropToOutline : DEFAULTS.cropToOutline,
           mirrored: typeof p.mirrored === 'boolean' ? p.mirrored : DEFAULTS.mirrored,
           presetId: typeof p.presetId === 'string' ? p.presetId : DEFAULTS.presetId,
+          boardRotation: typeof p.boardRotation === 'number' && isFinite(p.boardRotation) ? p.boardRotation : DEFAULTS.boardRotation,
           },
           hasStoredCropToOutline,
         }
@@ -65,11 +68,12 @@ export function useViewerPreferences(projectId: number | string) {
   const cropToOutline = ref(stored.prefs.cropToOutline)
   const mirrored = ref(stored.prefs.mirrored)
   const presetId = ref(stored.prefs.presetId)
+  const boardRotation = ref(stored.prefs.boardRotation)
   const hasStoredCropToOutline = ref(stored.hasStoredCropToOutline)
 
   // Auto-save whenever any preference changes
   watch(
-    [viewMode, activeFilter, activeMode, cropToOutline, mirrored, presetId],
+    [viewMode, activeFilter, activeMode, cropToOutline, mirrored, presetId, boardRotation],
     () => {
       save({
         viewMode: viewMode.value,
@@ -78,6 +82,7 @@ export function useViewerPreferences(projectId: number | string) {
         cropToOutline: cropToOutline.value,
         mirrored: mirrored.value,
         presetId: presetId.value,
+        boardRotation: boardRotation.value,
       })
     },
   )
@@ -90,5 +95,6 @@ export function useViewerPreferences(projectId: number | string) {
     hasStoredCropToOutline,
     mirrored,
     presetId,
+    boardRotation,
   }
 }

@@ -104,6 +104,78 @@
         </UButton>
       </template>
 
+      <!-- Board rotation -->
+      <template v-if="layers.length > 0">
+        <div class="w-px h-5 bg-neutral-200 dark:bg-neutral-700/80" />
+        <div class="flex items-center rounded-lg p-0.5 gap-0.5 bg-neutral-100/90 border border-neutral-200 dark:bg-neutral-900/70 dark:border-neutral-700">
+          <UButton
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-rotate-ccw"
+            :class="[tbBtnBase, tbBtnIdle]"
+            title="Rotate 90° counter-clockwise"
+            @click="rotateCCW()"
+          />
+          <UPopover :content="{ align: 'center', sideOffset: 8 }">
+            <button
+              class="text-[10px] font-mono px-1.5 py-0.5 rounded min-w-[2.5rem] text-center transition-colors cursor-pointer"
+              :class="boardRotation !== 0
+                ? 'text-blue-600 dark:text-blue-400 font-semibold'
+                : 'text-neutral-500 dark:text-neutral-400'"
+              :title="'Board rotation: ' + boardRotation + '°'"
+            >
+              {{ boardRotation }}°
+            </button>
+            <template #content>
+              <div class="p-3 w-48" @click.stop>
+                <p class="text-[10px] font-medium text-neutral-400 uppercase tracking-wider mb-2">Board Rotation</p>
+                <div class="flex items-center gap-1.5 mb-3">
+                  <input
+                    :value="boardRotation"
+                    type="number"
+                    step="1"
+                    class="w-full text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded px-2 py-1 outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
+                    @change="(e: Event) => setBoardRotation(Number((e.target as HTMLInputElement).value))"
+                    @keydown.enter="(e: Event) => { setBoardRotation(Number((e.target as HTMLInputElement).value)); (e.target as HTMLInputElement).blur() }"
+                  />
+                  <span class="text-xs text-neutral-400 shrink-0">deg</span>
+                </div>
+                <div class="grid grid-cols-4 gap-1 mb-3">
+                  <button
+                    v-for="angle in [0, 90, 180, 270]"
+                    :key="angle"
+                    class="text-[10px] font-medium px-1.5 py-1 rounded border transition-colors text-center"
+                    :class="boardRotation === angle
+                      ? 'border-blue-500/70 text-blue-700 bg-blue-50/90 dark:border-blue-400/70 dark:text-blue-200 dark:bg-blue-500/15'
+                      : 'border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:border-neutral-400 dark:hover:border-neutral-500 hover:bg-neutral-50 dark:hover:bg-neutral-800'"
+                    @click="setBoardRotation(angle)"
+                  >
+                    {{ angle }}°
+                  </button>
+                </div>
+                <button
+                  v-if="boardRotation !== 0"
+                  class="w-full text-[10px] font-medium px-2 py-1 rounded border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:border-red-400 hover:text-red-600 dark:hover:border-red-500 dark:hover:text-red-400 transition-colors"
+                  @click="setBoardRotation(0)"
+                >
+                  Reset to 0°
+                </button>
+              </div>
+            </template>
+          </UPopover>
+          <UButton
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-rotate-cw"
+            :class="[tbBtnBase, tbBtnIdle]"
+            title="Rotate 90° clockwise"
+            @click="rotateCW()"
+          />
+        </div>
+      </template>
+
       <!-- Realistic mode controls -->
       <template v-if="viewMode === 'realistic'">
         <div class="w-px h-5 bg-neutral-200 dark:bg-neutral-700/80" />
@@ -232,15 +304,21 @@
           <div class="p-4" :class="{ 'pt-2': pnp.hasPnP.value }">
             <ImportPanel
               :packet="1"
-              @import="handleImport"
+              @import="handleImportRequest"
             />
           </div>
           <LayerPanel
             :layers="layers"
+            :edited-layers="editedLayers"
             @toggle-visibility="toggleLayerVisibility"
+            @toggle-group-visibility="toggleGroupVisibility"
             @change-color="changeLayerColor"
             @change-type="changeLayerType"
             @reorder="reorderLayers"
+            @reset-layer="resetLayer"
+            @rename-layer="renameLayer"
+            @duplicate-layer="duplicateLayer"
+            @remove-layer="removeLayer"
           />
         </template>
 
@@ -273,6 +351,8 @@
           @start-set-origin="startSetOrigin"
           @start-component-align="startComponentAlign"
           @reset-origin="pnp.resetOrigin()"
+          @edit="openComponentEdit($event)"
+          @add-component="startAddComponent"
         />
       </aside>
 
@@ -316,7 +396,9 @@
           :package-library-version="packageLibraryVersion"
           :show-packages="showPackages"
           :pnp-convention="pnp.convention.value"
+          :board-rotation="boardRotation"
           @pnp-click="pnp.selectComponent($event)"
+          @pnp-dblclick="handlePnPDblClick"
           @align-click="handleAlignClick"
         />
         <MeasureOverlay
@@ -359,6 +441,7 @@
           :view-mode="viewMode"
           @open-settings="showSettings = true"
         />
+        <BoardExtents :dimensions="boardSizeMm ?? null" />
       </main>
     </div>
 
@@ -378,7 +461,34 @@
     <ImageExportModal
       v-model:open="showImageExport"
       :has-pn-p="pnp.hasPnP.value"
+      :board-size-mm="boardSizeMm"
       @export="handleExportImage"
+    />
+
+    <!-- Component edit modal -->
+    <ComponentEditModal
+      v-model:open="showComponentEdit"
+      :component="editingComponent"
+      :package-options="packageOptions"
+      @update:rotation="pnp.setRotationOverride($event.key, $event.rotation)"
+      @reset:rotation="pnp.resetRotationOverride($event.key)"
+      @toggle:dnp="pnp.toggleDnp($event)"
+      @update:polarized="pnp.setPolarizedOverride($event.key, $event.polarized)"
+      @update:package-mapping="pnp.setCadPackageMapping($event.cadPackage, $event.packageName)"
+      @update:note="pnp.setComponentNote($event.key, $event.note)"
+      @update:fields="pnp.setFieldOverride($event.key, $event)"
+      @update:manual-component="pnp.updateManualComponent($event.id, $event)"
+      @delete:manual-component="pnp.removeManualComponent($event)"
+    />
+
+    <!-- Overwrite confirmation modal -->
+    <OverwriteConfirmModal
+      v-model:open="showOverwriteModal"
+      :conflicts="conflictingFileNames"
+      :new-files="newImportFileNames"
+      :is-zip="pendingImport?.isZip ?? false"
+      @confirm="handleOverwriteConfirm"
+      @cancel="handleOverwriteCancel"
     />
   </div>
 </template>
@@ -402,7 +512,7 @@ const rawId = route.params.id as string
 const isTeamProject = rawId.startsWith('team-')
 const projectId = isTeamProject ? 0 : Number(rawId) // local projects use numeric IDs
 const teamProjectId = isTeamProject ? rawId.replace('team-', '') : null
-const { getProject, getFiles, addFiles, upsertFiles, clearFiles, renameProject, updateFileLayerType, updateFileContent, updateProjectOrigin, updateProjectConvention, updateProjectRotationOverrides, updateProjectDnp, updateProjectCadPackageMap, updateProjectPolarizedOverrides } = useProject()
+const { getProject, getFiles, addFiles, upsertFiles, clearFiles, renameFile, removeFile, getOriginalFiles, storeOriginalFiles, renameOriginalFile, removeOriginalFile, renameProject, updateFileLayerType, updateFileContent, updateProjectOrigin, updateProjectConvention, updateProjectRotationOverrides, updateProjectDnp, updateProjectCadPackageMap, updateProjectPolarizedOverrides, updateProjectComponentNotes, updateProjectFieldOverrides, updateProjectManualComponents } = useProject()
 
 // ── Team project support ──
 const teamProjectIdRef = ref(teamProjectId)
@@ -471,6 +581,7 @@ const activeFilter = prefs.activeFilter
 const cropToOutline = prefs.cropToOutline
 const hasStoredCropToOutline = prefs.hasStoredCropToOutline
 const mirrored = prefs.mirrored
+const boardRotation = prefs.boardRotation
 
 // ── Interaction mode management ──
 
@@ -553,6 +664,44 @@ function handleKeyDown(e: KeyboardEvent) {
   }
 }
 
+function openComponentEdit(component: import('~/composables/usePickAndPlace').EditablePnPComponent) {
+  editingComponent.value = component
+  showComponentEdit.value = true
+}
+
+function startAddComponent() {
+  // Generate a unique ID and an auto-incremented designator
+  const id = `mc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+  const existingDesignators = new Set(pnp.allComponents.value.map(c => c.designator))
+  let idx = 1
+  while (existingDesignators.has(`M${idx}`)) idx++
+  const designator = `M${idx}`
+
+  const side: 'top' | 'bottom' = pnp.activeSideFilter.value === 'bottom' ? 'bottom' : 'top'
+
+  const mc: import('~/composables/usePickAndPlace').ManualPnPComponent = {
+    id,
+    designator,
+    value: '',
+    package: '',
+    x: 0,
+    y: 0,
+    rotation: 0,
+    side,
+  }
+
+  // Switch to cursor mode for placement
+  if (activeMode.value !== 'cursor') {
+    setMode('cursor')
+  }
+  pnp.startPlacement(mc)
+}
+
+function handlePnPDblClick(designator: string) {
+  const comp = pnp.allComponents.value.find(c => c.designator === designator)
+  if (comp) openComponentEdit(comp)
+}
+
 function startSetOrigin() {
   // Switch to cursor mode to allow canvas clicking
   if (activeMode.value !== 'cursor') {
@@ -573,7 +722,16 @@ function startComponentAlign() {
 function handleAlignClick(x: number, y: number) {
   // Detect Gerber units from the board
   const units = detectGerberUnits()
-  pnp.handleAlignClick(x, y, units)
+  // Track if a placement was pending before the click
+  const wasPlacing = pnp.placingComponent.value
+  const completed = pnp.handleAlignClick(x, y, units)
+  // After a manual component placement completes, open the edit modal
+  if (completed && wasPlacing) {
+    nextTick(() => {
+      const placed = pnp.allComponents.value.find(c => c.designator === wasPlacing.designator)
+      if (placed) openComponentEdit(placed)
+    })
+  }
 }
 
 /** Detect the Gerber coordinate units from loaded layers */
@@ -593,6 +751,27 @@ function handleKeyUp(e: KeyboardEvent) {
 
 const project = ref<any>(null)
 const layers = ref<LayerInfo[]>([])
+
+// ── Original content tracking (for edit detection + reset) ──
+const originalContent = new Map<string, string>()
+
+const editedLayers = computed(() => {
+  const edited = new Set<string>()
+  for (const layer of layers.value) {
+    const orig = originalContent.get(layer.file.fileName)
+    if (orig !== undefined && orig !== layer.file.content) {
+      edited.add(layer.file.fileName)
+    }
+  }
+  return edited
+})
+
+// ── Overwrite confirmation state ──
+const showOverwriteModal = ref(false)
+const pendingImport = ref<{ files: GerberFile[]; sourceName: string; isZip: boolean } | null>(null)
+const conflictingFileNames = ref<string[]>([])
+const newImportFileNames = ref<string[]>([])
+
 const selectedPreset = computed({
   get: () => getPresetById(prefs.presetId.value),
   set: (p: PcbPreset) => { prefs.presetId.value = p.id },
@@ -601,6 +780,14 @@ const boardCanvasRef = ref<any>(null)
 const showSettings = ref(false)
 const showPnPExport = ref(false)
 const showImageExport = ref(false)
+const showComponentEdit = ref(false)
+const editingComponent = ref<import('~/composables/usePickAndPlace').EditablePnPComponent | null>(null)
+
+const boardSizeMm = computed<{ width: number; height: number } | undefined>(() => {
+  const canvas = boardCanvasRef.value
+  if (!canvas) return undefined
+  return canvas.boardDimensions ?? canvas.getExportDimensionsMm() ?? undefined
+})
 
 const downloadMenuItems = computed(() => {
   const items: { label: string; icon: string; onSelect: () => void }[] = []
@@ -708,6 +895,33 @@ watch(pnp.polarizedOverridesRecord, (overrides) => {
   }
 }, { deep: true })
 
+// Persist component notes
+watch(pnp.componentNotesRecord, (notes) => {
+  if (isTeamProject) {
+    persistToProject({ pnpComponentNotes: notes })
+  } else {
+    updateProjectComponentNotes(projectId, notes)
+  }
+}, { deep: true })
+
+// Persist field overrides
+watch(pnp.fieldOverridesRecord, (overrides) => {
+  if (isTeamProject) {
+    persistToProject({ pnpFieldOverrides: overrides })
+  } else {
+    updateProjectFieldOverrides(projectId, overrides)
+  }
+}, { deep: true })
+
+// Persist manual components
+watch(pnp.manualComponentsRecord, (components) => {
+  if (isTeamProject) {
+    persistToProject({ pnpManualComponents: components })
+  } else {
+    updateProjectManualComponents(projectId, components)
+  }
+}, { deep: true })
+
 // Update PnP convention and persist
 function updateConvention(convention: PnPConvention) {
   pnp.convention.value = convention
@@ -772,7 +986,7 @@ function cancelEdit() {
 }
 
 // ── Team project actions (approve / revert) ──
-const { getProject: getTeamProject, approveProject: doApprove, revertToDraft: doRevert, updateProject: updateTeamProject, getProjectFiles: getTeamFiles, downloadFile: downloadTeamFile, uploadFile: uploadTeamFile } = useTeamProjects()
+const { getProject: getTeamProject, approveProject: doApprove, revertToDraft: doRevert, updateProject: updateTeamProject, getProjectFiles: getTeamFiles, downloadFile: downloadTeamFile, uploadFile: uploadTeamFile, deleteFile: deleteTeamFile } = useTeamProjects()
 
 async function handleApproveProject() {
   if (!teamProjectId) return
@@ -830,6 +1044,25 @@ function setFilter(filter: LayerFilter) {
   mirrored.value = filter === 'bot'
 }
 
+// ── Board rotation ──
+
+function normalizeAngle(deg: number): number {
+  return ((deg % 360) + 360) % 360
+}
+
+function rotateCW(step = 90) {
+  setBoardRotation(boardRotation.value + step)
+}
+
+function rotateCCW(step = 90) {
+  setBoardRotation(boardRotation.value - step)
+}
+
+function setBoardRotation(deg: number) {
+  if (!isFinite(deg)) return
+  boardRotation.value = normalizeAngle(Math.round(deg * 100) / 100)
+}
+
 function applyDefaultCropToOutline() {
   if (!hasStoredCropToOutline.value && hasOutline.value) {
     cropToOutline.value = true
@@ -853,6 +1086,9 @@ onMounted(async () => {
         pnpDnpComponents: tp.pnp_dnp_components,
         pnpCadPackageMap: tp.pnp_cad_package_map,
         pnpPolarizedOverrides: tp.pnp_polarized_overrides,
+        pnpComponentNotes: tp.pnp_component_notes,
+        pnpFieldOverrides: tp.pnp_field_overrides,
+        pnpManualComponents: tp.pnp_manual_components,
       }
     }
   } else {
@@ -885,6 +1121,34 @@ onMounted(async () => {
     }
   }))
 
+  // Load persisted original content from DB (survives page reloads)
+  if (!isTeamProject) {
+    const storedOriginals = await getOriginalFiles(projectId, 1)
+    if (storedOriginals.size > 0) {
+      // Use stored originals for layers that have them
+      for (const layer of layers.value) {
+        const stored = storedOriginals.get(layer.file.fileName)
+        originalContent.set(layer.file.fileName, stored ?? layer.file.content)
+      }
+      // Store originals for any new layers not yet in the originals table
+      const newLayers = layers.value.filter(l => !storedOriginals.has(l.file.fileName))
+      if (newLayers.length > 0) {
+        await storeOriginalFiles(projectId, 1, newLayers.map(l => ({ fileName: l.file.fileName, content: l.file.content })))
+      }
+    } else {
+      // First load: store all current content as originals
+      for (const layer of layers.value) {
+        originalContent.set(layer.file.fileName, layer.file.content)
+      }
+      await storeOriginalFiles(projectId, 1, layers.value.map(l => ({ fileName: l.file.fileName, content: l.file.content })))
+    }
+  } else {
+    // Team projects: in-memory only (team sync handles version tracking)
+    for (const layer of layers.value) {
+      originalContent.set(layer.file.fileName, layer.file.content)
+    }
+  }
+
   // Restore persisted layer visibility (filter) without overriding persisted mirrored
   applyFilterVisibility(activeFilter.value)
   applyDefaultCropToOutline()
@@ -916,9 +1180,64 @@ onMounted(async () => {
 
   // Restore persisted polarized overrides
   pnp.setPolarizedOverrides(project.value?.pnpPolarizedOverrides)
+
+  // Restore persisted component notes
+  pnp.setComponentNotes(project.value?.pnpComponentNotes)
+
+  // Restore persisted field overrides
+  pnp.setFieldOverrides(project.value?.pnpFieldOverrides)
+
+  // Restore persisted manual components
+  pnp.setManualComponents(project.value?.pnpManualComponents)
 })
 
-async function handleImport(newFiles: GerberFile[], sourceName: string) {
+/**
+ * Entry point from ImportPanel: checks for conflicts and either imports
+ * directly or shows the overwrite confirmation modal.
+ */
+function handleImportRequest(newFiles: GerberFile[], sourceName: string, isZip: boolean) {
+  const existingNames = new Set(layers.value.map(l => l.file.fileName))
+  const conflicts = newFiles.filter(f => existingNames.has(f.fileName))
+  const freshFiles = newFiles.filter(f => !existingNames.has(f.fileName))
+
+  if (conflicts.length === 0) {
+    doImport(newFiles, sourceName)
+    return
+  }
+
+  // Store pending import and show confirmation modal
+  pendingImport.value = { files: newFiles, sourceName, isZip }
+  conflictingFileNames.value = conflicts.map(f => f.fileName)
+  newImportFileNames.value = freshFiles.map(f => f.fileName)
+  showOverwriteModal.value = true
+}
+
+async function handleOverwriteConfirm(selectedOverwrites: string[]) {
+  showOverwriteModal.value = false
+  if (!pendingImport.value) return
+
+  const { files, sourceName } = pendingImport.value
+  const overwriteSet = new Set(selectedOverwrites)
+  const existingNames = new Set(layers.value.map(l => l.file.fileName))
+
+  // Import: new files + user-confirmed overwrites
+  const filesToImport = files.filter(
+    f => !existingNames.has(f.fileName) || overwriteSet.has(f.fileName),
+  )
+
+  pendingImport.value = null
+  if (filesToImport.length > 0) {
+    await doImport(filesToImport, sourceName)
+  }
+}
+
+function handleOverwriteCancel() {
+  showOverwriteModal.value = false
+  pendingImport.value = null
+}
+
+/** Performs the actual import after any overwrite confirmation. */
+async function doImport(newFiles: GerberFile[], sourceName: string) {
   const canvas = boardCanvasRef.value
   const hadExistingFiles = layers.value.length > 0
   const newFileNames = new Set(newFiles.map(f => f.fileName))
@@ -931,9 +1250,14 @@ async function handleImport(newFiles: GerberFile[], sourceName: string) {
   // Merge into the database: overwrite same-name files, keep the rest
   if (isTeamProject && teamProjectId) {
     const teamId = currentTeamId.value || await waitForTeamId()
-    await Promise.all(
+    const uploadResults = await Promise.all(
       newFiles.map(f => uploadTeamFile(teamProjectId, teamId, 1, f.fileName, f.content, f.layerType)),
     )
+    for (const result of uploadResults) {
+      if (result.error) {
+        console.error('[doImport] Team file upload failed:', result.error.message ?? result.error)
+      }
+    }
   } else {
     await upsertFiles(projectId, 1, newFiles)
   }
@@ -967,6 +1291,14 @@ async function handleImport(newFiles: GerberFile[], sourceName: string) {
   applyFilterVisibility(activeFilter.value)
   applyDefaultCropToOutline()
 
+  // Update original content for imported files (overwrite = new baseline)
+  for (const f of newFiles) {
+    originalContent.set(f.fileName, f.content)
+  }
+  if (!isTeamProject) {
+    await storeOriginalFiles(projectId, 1, newFiles.map(f => ({ fileName: f.fileName, content: f.content })))
+  }
+
   // Only reset PnP state on first import (empty project), not on additive imports
   if (!hadExistingFiles) {
     pnp.resetOrigin()
@@ -990,6 +1322,14 @@ async function handleImport(newFiles: GerberFile[], sourceName: string) {
 function toggleLayerVisibility(index: number) {
   const layer = layers.value[index]
   if (layer) layer.visible = !layer.visible
+}
+
+function toggleGroupVisibility(indices: number[]) {
+  const groupLayers = indices.map(i => layers.value[i]).filter(Boolean)
+  const anyVisible = groupLayers.some(l => l.visible)
+  for (const layer of groupLayers) {
+    layer.visible = !anyVisible
+  }
 }
 
 function changeLayerColor(index: number, color: string) {
@@ -1018,6 +1358,156 @@ function reorderLayers(fromIndex: number, toIndex: number) {
   if (!moved) return
   arr.splice(toIndex, 0, moved)
   layers.value = arr
+}
+
+// ── Reset layer to original content ──
+
+async function resetLayer(index: number) {
+  const layer = layers.value[index]
+  if (!layer) return
+  const orig = originalContent.get(layer.file.fileName)
+  if (orig === undefined || orig === layer.file.content) return
+
+  // Restore in-memory content
+  layer.file.content = orig
+
+  // Persist restored content
+  if (isTeamProject && teamProjectId) {
+    const teamId = currentTeamId.value || await waitForTeamId()
+    await uploadTeamFile(teamProjectId, teamId, 1, layer.file.fileName, orig, layer.type)
+  } else {
+    await updateFileContent(projectId, 1, layer.file.fileName, orig)
+  }
+
+  // Invalidate cache so the restored content gets re-parsed
+  const canvas = boardCanvasRef.value
+  if (canvas) canvas.invalidateCache(layer.file.fileName)
+
+  // Force re-render
+  layers.value = [...layers.value]
+}
+
+// ── Rename layer ──
+
+async function renameLayer(index: number, newName: string) {
+  const layer = layers.value[index]
+  if (!layer) return
+  const oldName = layer.file.fileName
+
+  // Avoid no-op or name collision
+  if (oldName === newName) return
+  if (layers.value.some(l => l.file.fileName === newName)) return
+
+  // Update in-memory
+  layer.file.fileName = newName
+
+  // Migrate original content tracking (in-memory + DB)
+  const orig = originalContent.get(oldName)
+  if (orig !== undefined) {
+    originalContent.delete(oldName)
+    originalContent.set(newName, orig)
+  }
+  if (!isTeamProject) {
+    await renameOriginalFile(projectId, 1, oldName, newName)
+  }
+
+  // Persist to DB
+  if (isTeamProject && teamProjectId) {
+    const teamId = currentTeamId.value || await waitForTeamId()
+    // Team: upload under new name, delete old
+    await uploadTeamFile(teamProjectId, teamId, 1, newName, layer.file.content, layer.file.layerType)
+    const teamFiles = await getTeamFiles(teamProjectId, 1)
+    const oldRecord = teamFiles.find(tf => tf.file_name === oldName)
+    if (oldRecord) await deleteTeamFile(oldRecord.id, oldRecord.storage_path)
+  } else {
+    await renameFile(projectId, 1, oldName, newName)
+  }
+
+  // Invalidate canvas cache for old name and trigger re-render
+  const canvas = boardCanvasRef.value
+  if (canvas) {
+    canvas.invalidateCache(oldName)
+    canvas.invalidateCache(newName)
+  }
+  layers.value = [...layers.value]
+}
+
+// ── Duplicate layer ──
+
+async function duplicateLayer(index: number) {
+  const layer = layers.value[index]
+  if (!layer) return
+
+  // Generate a unique copy name
+  const baseName = layer.file.fileName
+  const dot = baseName.lastIndexOf('.')
+  const stem = dot > 0 ? baseName.slice(0, dot) : baseName
+  const ext = dot > 0 ? baseName.slice(dot) : ''
+  let copyName = `${stem} (copy)${ext}`
+  let counter = 2
+  while (layers.value.some(l => l.file.fileName === copyName)) {
+    copyName = `${stem} (copy ${counter})${ext}`
+    counter++
+  }
+
+  const newFile: GerberFile = {
+    fileName: copyName,
+    content: layer.file.content,
+    layerType: layer.file.layerType,
+  }
+
+  // Persist
+  if (isTeamProject && teamProjectId) {
+    const teamId = currentTeamId.value || await waitForTeamId()
+    await uploadTeamFile(teamProjectId, teamId, 1, copyName, newFile.content, newFile.layerType)
+  } else {
+    await addFiles(projectId, 1, [newFile])
+  }
+
+  // Add to layers
+  const newLayer: LayerInfo = {
+    file: newFile,
+    visible: layer.visible,
+    color: layer.color,
+    type: layer.type,
+  }
+  layers.value = sortLayersByPcbOrder([...layers.value, newLayer])
+  applyFilterVisibility(activeFilter.value)
+
+  // Track the duplicate's content as its original
+  originalContent.set(copyName, newFile.content)
+  if (!isTeamProject) {
+    await storeOriginalFiles(projectId, 1, [{ fileName: copyName, content: newFile.content }])
+  }
+}
+
+// ── Remove layer ──
+
+async function removeLayer(index: number) {
+  const layer = layers.value[index]
+  if (!layer) return
+
+  const fileName = layer.file.fileName
+
+  // Remove from DB
+  if (isTeamProject && teamProjectId) {
+    const teamFiles = await getTeamFiles(teamProjectId, 1)
+    const record = teamFiles.find(tf => tf.file_name === fileName)
+    if (record) await deleteTeamFile(record.id, record.storage_path)
+  } else {
+    await removeFile(projectId, 1, fileName)
+  }
+
+  // Remove from in-memory state + originals DB
+  layers.value = layers.value.filter(l => l.file.fileName !== fileName)
+  originalContent.delete(fileName)
+  if (!isTeamProject) {
+    await removeOriginalFile(projectId, 1, fileName)
+  }
+
+  // Invalidate canvas cache
+  const canvas = boardCanvasRef.value
+  if (canvas) canvas.invalidateCache(fileName)
 }
 
 // ── Delete handler ──
@@ -1153,7 +1643,8 @@ async function handleDownloadGerber() {
 async function handleExportPng() {
   const canvas = boardCanvasRef.value
   if (!canvas) return
-  const blob = await canvas.exportPng()
+  const { settings: _appSettings } = useAppSettings()
+  const blob = await canvas.exportPng(_appSettings.exportDpi)
   if (!blob) return
   triggerDownload(blob, `${project.value?.name || 'pcb'}-${mirrored.value ? 'bottom' : 'top'}.png`)
 }
@@ -1169,7 +1660,7 @@ function handleExportSvg() {
   triggerDownload(blob, `${project.value?.name || 'pcb'}-${side}.svg`)
 }
 
-async function handleExportImage(options: { format: 'png' | 'svg'; componentsMode: 'none' | 'with' | 'both'; sideMode: 'top' | 'bottom' | 'both' }) {
+async function handleExportImage(options: { format: 'png' | 'svg'; componentsMode: 'none' | 'with' | 'both'; sideMode: 'top' | 'bottom' | 'both'; dpi: number }) {
   const canvas = boardCanvasRef.value
   if (!canvas) return
 
@@ -1197,7 +1688,7 @@ async function handleExportImage(options: { format: 'png' | 'svg'; componentsMod
   const renderOne = async (side: 'top' | 'bottom', withComponents: boolean): Promise<Blob | null> => {
     if (options.format === 'png') {
       const comps = withComponents ? buildComponentsForSide(side) : []
-      const blob = await canvas.exportPngForSide(side, { includeComponents: withComponents, components: comps, includePackages: showPackages.value })
+      const blob = await canvas.exportPngForSide(side, { dpi: options.dpi, includeComponents: withComponents, components: comps, includePackages: showPackages.value })
       return blob
     }
 

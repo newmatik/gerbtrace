@@ -1,5 +1,37 @@
 use tauri::menu::{AboutMetadata, MenuBuilder, MenuItemBuilder, SubmenuBuilder};
-use tauri::Emitter;
+use tauri::{AppHandle, Emitter, Manager};
+
+use std::fs;
+use std::path::PathBuf;
+
+const POST_UPDATE_FILENAME: &str = "post_update_info.json";
+
+fn post_update_file(app: &AppHandle) -> Option<PathBuf> {
+  app.path().app_data_dir().ok().map(|d| d.join(POST_UPDATE_FILENAME))
+}
+
+/// Save post-update info to a file in the app data directory.
+/// Uses a synchronous file write so the data is guaranteed on disk
+/// before the updater replaces the app binary and relaunches.
+#[tauri::command]
+fn save_post_update_info(app: AppHandle, payload: String) -> Result<(), String> {
+  let path = post_update_file(&app).ok_or("Cannot resolve app data directory")?;
+  if let Some(parent) = path.parent() {
+    fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+  }
+  fs::write(&path, payload.as_bytes()).map_err(|e| e.to_string())?;
+  Ok(())
+}
+
+/// Read and delete the post-update info file.
+/// Returns the JSON string if the file existed, or null otherwise.
+#[tauri::command]
+fn consume_post_update_info(app: AppHandle) -> Option<String> {
+  let path = post_update_file(&app)?;
+  let data = fs::read_to_string(&path).ok()?;
+  let _ = fs::remove_file(&path);
+  Some(data)
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -7,6 +39,7 @@ pub fn run() {
     .plugin(tauri_plugin_process::init())
     .plugin(tauri_plugin_updater::Builder::new().build())
     .plugin(tauri_plugin_window_state::Builder::new().build())
+    .invoke_handler(tauri::generate_handler![save_post_update_info, consume_post_update_info])
     .setup(|app| {
       // Build native application menu with About metadata
       let about_metadata = AboutMetadata {

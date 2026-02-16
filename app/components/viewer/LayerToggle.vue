@@ -44,13 +44,43 @@
       :name="layer.visible ? 'i-lucide-eye' : 'i-lucide-eye-off'"
       />
     </button>
-    <span class="truncate flex-1">{{ layer.file.fileName }}</span>
+
+    <!-- Inline rename input -->
+    <input
+      v-if="isRenaming"
+      ref="renameInput"
+      v-model="renameDraft"
+      class="flex-1 min-w-0 text-xs bg-transparent border border-primary rounded px-1 py-0.5 outline-none"
+      @blur="commitRename"
+      @keydown.enter.prevent="commitRename"
+      @keydown.escape="cancelRename"
+      @pointerdown.stop
+      @click.stop
+    />
+    <span v-else class="truncate flex-1">{{ layer.file.fileName }}</span>
+
+    <UIcon
+      v-if="isEdited"
+      name="i-lucide-pencil"
+      class="text-amber-400 text-[11px] shrink-0"
+      title="Layer has been modified"
+    />
     <UIcon
       v-if="layer.type === 'Unmatched'"
       name="i-lucide-circle-help"
       class="text-amber-400 shrink-0"
       title="Unmatched file — select a layer type to render"
     />
+    <UDropdownMenu :items="menuGroups" :content="{ side: 'right', align: 'start', sideOffset: 4 }">
+      <button
+        class="shrink-0 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors cursor-pointer opacity-0 group-hover:opacity-100"
+        :class="{ '!opacity-100': isEdited }"
+        @pointerdown.stop
+        @click.stop
+      >
+        <UIcon name="i-lucide-ellipsis-vertical" class="text-sm" />
+      </button>
+    </UDropdownMenu>
     <select
       :value="layer.type"
       class="text-[10px] border rounded px-1 py-0.5 cursor-pointer outline-none transition-colors appearance-none shrink-0 max-w-[5.5rem]"
@@ -86,13 +116,72 @@ const PRESET_COLORS = [
 
 const props = defineProps<{
   layer: LayerInfo
+  isEdited?: boolean
 }>()
 
 const emit = defineEmits<{
   toggleVisibility: []
   colorChange: [color: string]
   typeChange: [type: string]
+  reset: []
+  rename: [newName: string]
+  duplicate: []
+  remove: []
 }>()
+
+// ── Inline rename ──
+
+const isRenaming = ref(false)
+const renameDraft = ref('')
+const renameInput = ref<HTMLInputElement | null>(null)
+
+function startRename() {
+  renameDraft.value = props.layer.file.fileName
+  isRenaming.value = true
+  nextTick(() => {
+    renameInput.value?.focus()
+    // Select up to the last dot (keep extension selected too for full control)
+    const dot = renameDraft.value.lastIndexOf('.')
+    renameInput.value?.setSelectionRange(0, dot > 0 ? dot : renameDraft.value.length)
+  })
+}
+
+function commitRename() {
+  isRenaming.value = false
+  const trimmed = renameDraft.value.trim()
+  if (trimmed && trimmed !== props.layer.file.fileName) {
+    emit('rename', trimmed)
+  }
+}
+
+function cancelRename() {
+  isRenaming.value = false
+}
+
+// ── Dropdown menu ──
+
+const menuGroups = computed(() => {
+  const primary: { label: string; icon: string; onSelect: () => void }[] = [
+    { label: 'Rename', icon: 'i-lucide-pencil', onSelect: () => startRename() },
+    { label: 'Duplicate', icon: 'i-lucide-copy', onSelect: () => emit('duplicate') },
+  ]
+
+  const danger: { label: string; icon: string; color?: string; onSelect: () => void }[] = [
+    { label: 'Remove', icon: 'i-lucide-trash-2', color: 'error' as any, onSelect: () => emit('remove') },
+  ]
+
+  if (props.isEdited) {
+    primary.push({
+      label: 'Reset to original',
+      icon: 'i-lucide-undo-2',
+      onSelect: () => emit('reset'),
+    })
+  }
+
+  return [primary, danger]
+})
+
+// ── Color picker ──
 
 const localColor = ref(props.layer.color)
 

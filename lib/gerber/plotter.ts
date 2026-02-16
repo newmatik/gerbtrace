@@ -233,7 +233,12 @@ function processGraphic(
     }
     state.position = [endX, endY]
   } else if (graphicType === 'move') {
-    flushPath(state, graphics)
+    // Only flush if the position actually changes.  Some CAD tools emit
+    // D02 without coordinates (pen-up at same position) which would
+    // otherwise fragment a continuous path into disconnected pieces.
+    if (endX !== startX || endY !== startY) {
+      flushPath(state, graphics)
+    }
     // Include move's source range in the next path's ranges
     if (sr) state.currentPathSourceRanges.push(sr)
     state.position = [endX, endY]
