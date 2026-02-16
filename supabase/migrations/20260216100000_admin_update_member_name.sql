@@ -6,6 +6,24 @@
 -- self-updates) after verifying the caller is a team admin.
 -- ============================================================================
 
+-- Adopt the function owner role so CREATE OR REPLACE succeeds on
+-- production droplets where the function was created by supabase_admin.
+do $$
+declare
+  v_owner text;
+begin
+  select r.rolname into v_owner
+    from pg_proc p
+    join pg_roles r on p.proowner = r.oid
+   where p.proname = 'admin_update_member_name'
+     and p.pronamespace = 'public'::regnamespace;
+
+  if v_owner is not null and v_owner <> current_user then
+    execute format('set role %I', v_owner);
+  end if;
+end;
+$$;
+
 create or replace function public.admin_update_member_name(
   p_team_id uuid,
   p_user_id uuid,
@@ -35,3 +53,5 @@ begin
   where id = p_user_id;
 end;
 $$;
+
+reset role;
