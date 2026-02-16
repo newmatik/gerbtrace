@@ -141,7 +141,7 @@
 import { EXPORT_DPI_PRESETS, useAppSettings } from '~/composables/useAppSettings'
 
 export type ImageExportFormat = 'png' | 'svg'
-export type ImageExportComponentsMode = 'none' | 'with' | 'both'
+export type ImageExportComponentsMode = 'none' | 'smd' | 'tht' | 'all' | 'both'
 export type ImageExportSideMode = 'top' | 'bottom' | 'both'
 
 const open = defineModel<boolean>('open', { default: false })
@@ -168,8 +168,10 @@ const dpiPresets = EXPORT_DPI_PRESETS
 
 const componentsOptions: { label: string; value: ImageExportComponentsMode; requiresPnP?: boolean }[] = [
   { label: 'No components', value: 'none' },
-  { label: 'With components', value: 'with', requiresPnP: true },
-  { label: 'Both (ZIP)', value: 'both', requiresPnP: true },
+  { label: 'SMD only', value: 'smd', requiresPnP: true },
+  { label: 'THT only', value: 'tht', requiresPnP: true },
+  { label: 'All components', value: 'all', requiresPnP: true },
+  { label: 'Both variants (ZIP)', value: 'both', requiresPnP: true },
 ]
 
 const sideOptions: { label: string; value: ImageExportSideMode }[] = [

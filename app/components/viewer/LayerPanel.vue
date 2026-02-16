@@ -23,6 +23,7 @@
                 <span class="text-neutral-300 dark:text-neutral-600 font-normal">{{ group.layers.length }}</span>
               </button>
               <button
+                v-if="group.key !== 'bom'"
                 class="shrink-0 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors cursor-pointer"
                 title="Toggle all layers in this section"
                 @click.stop="$emit('toggleGroupVisibility', group.layers.map(e => e.flatIndex))"
@@ -74,6 +75,47 @@
             v-if="showIndicatorAt === layers.length"
             class="h-0.5 bg-primary-400 rounded-full mt-0.5"
           />
+
+          <!-- Documents group -->
+          <template v-if="documents && documents.length > 0">
+            <div
+              class="flex items-center gap-1.5 w-full px-2 py-1 mt-1 text-[10px] font-semibold uppercase tracking-wider text-neutral-400 rounded"
+            >
+              <button
+                class="flex items-center gap-1.5 flex-1 min-w-0 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors cursor-pointer"
+                @click="toggleGroup('docs')"
+              >
+                <UIcon
+                  :name="collapsed.has('docs') ? 'i-lucide-chevron-right' : 'i-lucide-chevron-down'"
+                  class="text-[10px] shrink-0"
+                />
+                <span>{{ LAYER_GROUP_LABELS.docs }}</span>
+                <span class="text-neutral-300 dark:text-neutral-600 font-normal">{{ documents.length }}</span>
+              </button>
+            </div>
+            <template v-if="!collapsed.has('docs')">
+              <div
+                v-for="doc in documents"
+                :key="doc.id"
+                class="group flex items-center gap-1.5 px-2 py-1.5 rounded text-xs select-none transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer"
+                :class="selectedDocumentId === doc.id
+                  ? 'bg-blue-50/80 dark:bg-blue-500/10'
+                  : ''"
+                @click="emit('selectDocument', doc.id)"
+              >
+                <UIcon name="i-lucide-file-text" class="text-sm text-neutral-400 shrink-0 w-4 h-4" />
+                <span class="truncate flex-1" :class="selectedDocumentId === doc.id ? 'text-blue-700 dark:text-blue-300 font-medium' : ''">{{ doc.name }}</span>
+                <button
+                  class="shrink-0 text-neutral-400 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
+                  title="Remove document"
+                  @pointerdown.stop
+                  @click.stop="emit('removeDocument', doc.id)"
+                >
+                  <UIcon name="i-lucide-x" class="text-xs" />
+                </button>
+              </div>
+            </template>
+          </template>
         </div>
       </div>
     </div>
@@ -83,6 +125,7 @@
 <script setup lang="ts">
 import type { LayerInfo } from '~/utils/gerber-helpers'
 import { getLayerGroup, LAYER_GROUP_ORDER, LAYER_GROUP_LABELS, type LayerGroupKey } from '~/utils/gerber-helpers'
+import type { ProjectDocument } from '~/utils/document-types'
 
 interface LayerGroupData {
   key: LayerGroupKey
@@ -93,6 +136,8 @@ interface LayerGroupData {
 const props = defineProps<{
   layers: LayerInfo[]
   editedLayers?: Set<string>
+  documents?: ProjectDocument[]
+  selectedDocumentId?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -105,6 +150,8 @@ const emit = defineEmits<{
   renameLayer: [index: number, newName: string]
   duplicateLayer: [index: number]
   removeLayer: [index: number]
+  selectDocument: [id: string]
+  removeDocument: [id: string]
 }>()
 
 // ── Collapsible groups ──
@@ -128,7 +175,7 @@ const groups = computed<LayerGroupData[]>(() => {
   }
 
   props.layers.forEach((layer, index) => {
-    const group = getLayerGroup(layer.type)
+    const group = getLayerGroup(layer.type, layer.file.fileName)
     buckets.get(group)!.push({ layer, flatIndex: index })
   })
 

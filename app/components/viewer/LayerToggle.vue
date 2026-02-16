@@ -3,47 +3,54 @@
     class="group flex items-center gap-1.5 px-2 py-1.5 rounded text-xs select-none transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800"
     :class="{ 'opacity-40': !layer.visible }"
   >
-    <UPopover :content="{ side: 'right', align: 'start', sideOffset: 8 }" @pointerdown.stop>
-      <button
-        class="w-4 h-4 rounded-full shrink-0 cursor-pointer ring-1 ring-white/20 hover:ring-white/50 transition-shadow"
-        :class="{ 'border border-neutral-400': isWhiteLike(layer.color) }"
-        :style="{ backgroundColor: layer.color }"
-        @click.stop
-      />
+    <!-- Non-renderable layers (BOM, etc.): show file icon instead of color dot -->
+    <template v-if="isNonRenderableLayer(layer.type)">
+      <UIcon name="i-lucide-file-spreadsheet" class="text-sm text-neutral-400 shrink-0 w-4 h-4 flex items-center justify-center" />
+    </template>
+    <!-- Renderable layers: color dot + visibility toggle -->
+    <template v-else>
+      <UPopover :content="{ side: 'right', align: 'start', sideOffset: 8 }" @pointerdown.stop>
+        <button
+          class="w-4 h-4 rounded-full shrink-0 cursor-pointer ring-1 ring-white/20 hover:ring-white/50 transition-shadow"
+          :class="{ 'border border-neutral-400': isWhiteLike(layer.color) }"
+          :style="{ backgroundColor: layer.color }"
+          @click.stop
+        />
 
-      <template #content>
-        <div class="p-3 w-56" @click.stop>
-          <p class="text-[10px] font-medium text-neutral-400 uppercase tracking-wider mb-2">Presets</p>
-          <div class="grid grid-cols-8 gap-1.5 mb-3">
-            <button
-              v-for="preset in PRESET_COLORS"
-              :key="preset"
-              class="w-5 h-5 rounded-full cursor-pointer ring-1 ring-white/10 hover:ring-white/60 hover:scale-110 transition-all"
-              :class="{
-                'ring-2 ring-white!': layer.color.toLowerCase() === preset.toLowerCase(),
-                'border border-neutral-400': isWhiteLike(preset),
-              }"
-              :style="{ backgroundColor: preset }"
-              @click="selectColor(preset)"
-            />
+        <template #content>
+          <div class="p-3 w-56" @click.stop>
+            <p class="text-[10px] font-medium text-neutral-400 uppercase tracking-wider mb-2">Presets</p>
+            <div class="grid grid-cols-8 gap-1.5 mb-3">
+              <button
+                v-for="preset in PRESET_COLORS"
+                :key="preset"
+                class="w-5 h-5 rounded-full cursor-pointer ring-1 ring-white/10 hover:ring-white/60 hover:scale-110 transition-all"
+                :class="{
+                  'ring-2 ring-white!': layer.color.toLowerCase() === preset.toLowerCase(),
+                  'border border-neutral-400': isWhiteLike(preset),
+                }"
+                :style="{ backgroundColor: preset }"
+                @click="selectColor(preset)"
+              />
+            </div>
+            <USeparator class="mb-3" />
+            <p class="text-[10px] font-medium text-neutral-400 uppercase tracking-wider mb-2">Custom</p>
+            <UColorPicker v-model="localColor" size="xs" @update:model-value="onCustomColor" />
           </div>
-          <USeparator class="mb-3" />
-          <p class="text-[10px] font-medium text-neutral-400 uppercase tracking-wider mb-2">Custom</p>
-          <UColorPicker v-model="localColor" size="xs" @update:model-value="onCustomColor" />
-        </div>
-      </template>
-    </UPopover>
+        </template>
+      </UPopover>
 
-    <button
-      class="shrink-0 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors cursor-pointer"
-      title="Toggle layer visibility"
-      @pointerdown.stop
-      @click.stop="emit('toggleVisibility')"
-    >
-      <UIcon
-      :name="layer.visible ? 'i-lucide-eye' : 'i-lucide-eye-off'"
-      />
-    </button>
+      <button
+        class="shrink-0 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors cursor-pointer"
+        title="Toggle layer visibility"
+        @pointerdown.stop
+        @click.stop="emit('toggleVisibility')"
+      >
+        <UIcon
+        :name="layer.visible ? 'i-lucide-eye' : 'i-lucide-eye-off'"
+        />
+      </button>
+    </template>
 
     <!-- Inline rename input -->
     <input
@@ -82,6 +89,7 @@
       </button>
     </UDropdownMenu>
     <select
+      v-if="!isNonRenderableLayer(layer.type)"
       :value="layer.type"
       class="text-[10px] border rounded px-1 py-0.5 cursor-pointer outline-none transition-colors appearance-none shrink-0 max-w-[5.5rem]"
       :class="layer.type === 'Unmatched'
@@ -93,12 +101,16 @@
     >
       <option v-for="t in ALL_LAYER_TYPES" :key="t" :value="t">{{ t }}</option>
     </select>
+    <span
+      v-else
+      class="text-[10px] text-neutral-400 dark:text-neutral-500 shrink-0"
+    >{{ layer.type }}</span>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { LayerInfo } from '~/utils/gerber-helpers'
-import { ALL_LAYER_TYPES } from '~/utils/gerber-helpers'
+import { ALL_LAYER_TYPES, isNonRenderableLayer } from '~/utils/gerber-helpers'
 
 /**
  * Predefined colors chosen to be vibrant and legible on a black background.

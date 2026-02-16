@@ -274,10 +274,9 @@
         class="border-r border-neutral-200 dark:border-neutral-800 flex flex-col overflow-hidden shrink-0"
         :style="{ width: sidebarWidth + 'px' }"
       >
-        <!-- Sidebar tabs: Layers / Components (shown before everything) -->
+        <!-- Sidebar tabs: Files / SMD / THT / BOM / PCB / Pricing -->
         <div
-          v-if="pnp.hasPnP.value"
-          class="flex items-center gap-0.5 px-3 pt-3 pb-1"
+          class="flex items-center gap-0.5 px-3 pt-3 pb-1 flex-wrap"
         >
           <button
             class="text-[11px] font-medium px-2 py-0.5 rounded transition-colors"
@@ -286,30 +285,82 @@
               : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'"
             @click="sidebarTab = 'layers'"
           >
-            Layers
+            Files
+          </button>
+          <button
+            v-if="pnp.hasPnP.value"
+            class="text-[11px] font-medium px-2 py-0.5 rounded transition-colors"
+            :class="sidebarTab === 'smd'
+              ? 'bg-neutral-200/80 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100'
+              : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'"
+            @click="sidebarTab = 'smd'"
+          >
+            SMD
+          </button>
+          <button
+            v-if="pnp.hasPnP.value"
+            class="text-[11px] font-medium px-2 py-0.5 rounded transition-colors"
+            :class="sidebarTab === 'tht'
+              ? 'bg-neutral-200/80 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100'
+              : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'"
+            @click="sidebarTab = 'tht'"
+          >
+            THT
+          </button>
+          <button
+            v-if="bom.hasBom.value"
+            class="text-[11px] font-medium px-2 py-0.5 rounded transition-colors"
+            :class="sidebarTab === 'bom'
+              ? 'bg-neutral-200/80 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100'
+              : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'"
+            @click="sidebarTab = 'bom'"
+          >
+            BOM
           </button>
           <button
             class="text-[11px] font-medium px-2 py-0.5 rounded transition-colors"
-            :class="sidebarTab === 'components'
+            :class="sidebarTab === 'pcb'
               ? 'bg-neutral-200/80 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100'
               : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'"
-            @click="sidebarTab = 'components'"
+            @click="sidebarTab = 'pcb'"
           >
-            Components
+            PCB
+          </button>
+          <button
+            class="text-[11px] font-medium px-2 py-0.5 rounded transition-colors"
+            :class="sidebarTab === 'pricing'
+              ? 'bg-neutral-200/80 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100'
+              : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'"
+            @click="sidebarTab = 'pricing'"
+          >
+            Pricing
+          </button>
+          <button
+            v-if="hasDocuments"
+            class="text-[11px] font-medium px-2 py-0.5 rounded transition-colors"
+            :class="sidebarTab === 'docs'
+              ? 'bg-neutral-200/80 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100'
+              : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'"
+            @click="sidebarTab = 'docs'"
+          >
+            Docs
           </button>
         </div>
 
-        <!-- Layers view -->
-        <template v-if="sidebarTab === 'layers' || !pnp.hasPnP.value">
-          <div class="p-4" :class="{ 'pt-2': pnp.hasPnP.value }">
+        <!-- Files view (Gerber layers + Documents) -->
+        <template v-if="sidebarTab === 'layers'">
+          <div class="p-4 pt-2">
             <ImportPanel
               :packet="1"
               @import="handleImportRequest"
+              @documents="handleDocumentsAdd"
             />
           </div>
           <LayerPanel
             :layers="layers"
             :edited-layers="editedLayers"
+            :documents="documents"
+            :selected-document-id="selectedDocumentId"
             @toggle-visibility="toggleLayerVisibility"
             @toggle-group-visibility="toggleGroupVisibility"
             @change-color="changeLayerColor"
@@ -319,14 +370,16 @@
             @rename-layer="renameLayer"
             @duplicate-layer="duplicateLayer"
             @remove-layer="removeLayer"
+            @select-document="handleDocumentSelect"
+            @remove-document="handleDocumentRemove"
           />
         </template>
 
-        <!-- Components view -->
+        <!-- SMD Components view -->
         <ComponentPanel
-          v-else
-          :all-components="pnp.activeComponents.value"
-          :filtered-components="pnp.filteredComponents.value"
+          v-else-if="sidebarTab === 'smd'"
+          :all-components="pnp.smdActiveComponents.value"
+          :filtered-components="pnp.smdFilteredComponents.value"
           :selected-designator="pnp.selectedDesignator.value"
           :search-query="pnp.searchQuery.value"
           :active-filters="pnp.activeFilters.value"
@@ -345,14 +398,93 @@
           @toggle:dnp="pnp.toggleDnp($event)"
           @toggle:filter="pnp.toggleFilter($event)"
           @clear-filters="pnp.clearFilters()"
-          @update:package-mapping="pnp.setCadPackageMapping($event.cadPackage, $event.packageName)"
+          @update:package-mapping="handlePackageMapping($event)"
           @update:polarized="pnp.setPolarizedOverride($event.key, $event.polarized)"
           @select="pnp.selectComponent($event)"
           @start-set-origin="startSetOrigin"
           @start-component-align="startComponentAlign"
           @reset-origin="pnp.resetOrigin()"
           @edit="openComponentEdit($event)"
-          @add-component="startAddComponent"
+          @add-component="startAddComponent('smd')"
+        />
+
+        <!-- THT Components view -->
+        <ComponentPanel
+          v-else-if="sidebarTab === 'tht'"
+          :all-components="pnp.thtActiveComponents.value"
+          :filtered-components="pnp.thtFilteredComponents.value"
+          :selected-designator="pnp.selectedDesignator.value"
+          :search-query="pnp.searchQuery.value"
+          :active-filters="pnp.activeFilters.value"
+          :align-mode="pnp.alignMode.value"
+          :has-origin="pnp.hasOrigin.value"
+          :origin-x="pnp.originX.value"
+          :origin-y="pnp.originY.value"
+          :show-packages="showPackages"
+          :pnp-convention="pnp.convention.value"
+          :package-options="thtPackageOptions"
+          @update:search-query="pnp.searchQuery.value = $event"
+          @update:show-packages="showPackages = $event"
+          @update:pnp-convention="updateConvention"
+          @update:rotation="pnp.setRotationOverride($event.key, $event.rotation)"
+          @reset:rotation="pnp.resetRotationOverride($event.key)"
+          @toggle:dnp="pnp.toggleDnp($event)"
+          @toggle:filter="pnp.toggleFilter($event)"
+          @clear-filters="pnp.clearFilters()"
+          @update:package-mapping="handlePackageMapping($event)"
+          @update:polarized="pnp.setPolarizedOverride($event.key, $event.polarized)"
+          @select="pnp.selectComponent($event)"
+          @start-set-origin="startSetOrigin"
+          @start-component-align="startComponentAlign"
+          @reset-origin="pnp.resetOrigin()"
+          @edit="openComponentEdit($event)"
+          @add-component="startAddComponent('tht')"
+        />
+
+        <!-- BOM view -->
+        <BomPanel
+          v-else-if="sidebarTab === 'bom'"
+          :bom-lines="(bom.bomLines.value as BomLine[])"
+          :filtered-lines="(bom.filteredLines.value as BomLine[])"
+          :search-query="bom.searchQuery.value"
+          :pricing-cache="(bom.pricingCache.value as Record<string, any>)"
+          :has-credentials="elexess.hasCredentials.value"
+          :is-fetching-pricing="elexess.isFetching.value"
+          :pricing-queue="(elexess.pricingQueue.value as PricingQueueItem[])"
+          :board-quantity="bom.boardQuantity.value"
+          @update:search-query="bom.searchQuery.value = $event"
+          @update:board-quantity="bom.boardQuantity.value = $event"
+          @add-line="handleBomAddLine"
+          @update-line="(id, updates) => bom.updateLine(id, updates)"
+          @remove-line="bom.removeLine"
+          @add-manufacturer="(lineId, mfr) => bom.addManufacturer(lineId, mfr)"
+          @fetch-all-pricing="handleFetchAllPricing"
+          @fetch-single-pricing="handleFetchSinglePricing"
+        />
+
+        <!-- PCB parameters view -->
+        <PcbPanel
+          v-else-if="sidebarTab === 'pcb'"
+          :pcb-data="pcbData"
+          :board-size-mm="boardSizeMm"
+          :detected-layer-count="detectedLayerCount"
+          @update:pcb-data="handlePcbDataUpdate"
+        />
+
+        <!-- Pricing view -->
+        <PricingPanel
+          v-else-if="sidebarTab === 'pricing'"
+          :pcb-data="pcbData"
+        />
+
+        <!-- Docs view -->
+        <DocsPanel
+          v-else-if="sidebarTab === 'docs'"
+          :documents="documents"
+          :selected-id="selectedDocumentId"
+          @select="handleDocumentSelect"
+          @remove="handleDocumentRemove"
+          @update-type="handleDocumentTypeUpdate"
         />
       </aside>
 
@@ -363,85 +495,114 @@
         @mousedown="onSidebarDragStart"
       />
 
-      <!-- Canvas area -->
+      <!-- Main content area: Board canvas or Document viewer -->
       <main
         class="flex-1 relative outline-none"
         :class="{ 'select-none': sidebarDragging }"
-        :style="{ backgroundColor: canvasAreaBg }"
+        :style="{ backgroundColor: showDocumentViewer ? undefined : canvasAreaBg }"
         @keydown="handleKeyDown"
         @keyup="handleKeyUp"
         tabindex="0"
       >
-        <BoardCanvas
-          ref="boardCanvasRef"
-          :layers="renderLayers"
-          :all-layers="layers"
-          :interaction="canvasInteraction"
-          :mirrored="mirrored"
-          :active-filter="activeFilter"
-          :crop-to-outline="cropToOutline"
-          :outline-layer="outlineLayer"
-          :measure="measureTool"
-          :info="infoTool"
-          :delete-tool="deleteTool"
-          :view-mode="viewMode"
-          :preset="viewMode === 'realistic' ? selectedPreset : undefined"
-          :pnp-components="pnp.visibleComponents.value"
-          :selected-pnp-designator="pnp.selectedDesignator.value"
-          :pnp-origin-x="pnp.originX.value"
-          :pnp-origin-y="pnp.originY.value"
-          :align-mode="pnp.alignMode.value"
-          :align-click-a="pnp.alignClickA.value"
-          :match-package="pkgLib.matchPackage"
-          :package-library-version="packageLibraryVersion"
-          :show-packages="showPackages"
-          :pnp-convention="pnp.convention.value"
-          :board-rotation="boardRotation"
-          @pnp-click="pnp.selectComponent($event)"
-          @pnp-dblclick="handlePnPDblClick"
-          @align-click="handleAlignClick"
-        />
-        <MeasureOverlay
-          :measure="measureTool"
-          :transform="canvasInteraction.transform.value"
-        />
-        <InfoOverlay :info="infoTool" />
-        <DeleteOverlay
-          :delete-tool="deleteTool"
-          @confirm-delete="handleConfirmDelete"
-        />
-
-        <!-- Undo toast — shown briefly after a deletion -->
-        <Transition
-          enter-active-class="transition duration-200 ease-out"
-          enter-from-class="translate-y-2 opacity-0"
-          enter-to-class="translate-y-0 opacity-100"
-          leave-active-class="transition duration-150 ease-in"
-          leave-from-class="translate-y-0 opacity-100"
-          leave-to-class="translate-y-2 opacity-0"
+        <!-- Document PDF viewer (shown when a document is selected on the documents tab) -->
+        <div
+          v-if="showDocumentViewer"
+          class="absolute inset-0 flex flex-col bg-neutral-100 dark:bg-neutral-900"
         >
-          <div
-            v-if="undoToastVisible"
-            class="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3.5 py-2 rounded-lg bg-neutral-800/90 dark:bg-neutral-700/95 backdrop-blur-sm shadow-lg text-white text-xs"
-          >
-            <UIcon name="i-lucide-trash-2" class="text-red-400 text-sm shrink-0" />
-            <span>Deletion applied</span>
+          <div class="flex items-center gap-2 px-4 py-2 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shrink-0">
+            <UIcon name="i-lucide-file-text" class="text-sm text-blue-500 shrink-0" />
+            <span class="text-xs font-medium text-neutral-700 dark:text-neutral-200 truncate">{{ selectedDocument?.name }}</span>
+            <UBadge size="xs" variant="subtle" color="neutral" class="shrink-0">{{ selectedDocument?.type }}</UBadge>
+            <div class="flex-1" />
             <button
-              class="ml-1 px-2 py-0.5 rounded font-medium bg-white/15 hover:bg-white/25 transition-colors"
-              @click="handleUndo"
+              class="text-[11px] font-medium text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors flex items-center gap-1"
+              @click="selectedDocumentId = null"
             >
-              Undo
+              <UIcon name="i-lucide-arrow-left" class="text-xs" />
+              Back to Board
             </button>
-            <span class="text-[10px] text-neutral-400 ml-0.5">{{ isMac ? '⌘' : 'Ctrl+' }}Z</span>
           </div>
-        </Transition>
+          <iframe
+            :src="selectedDocument?.blobUrl + '#toolbar=0'"
+            class="flex-1 w-full border-0"
+            title="Document viewer"
+          />
+        </div>
 
-        <CanvasControls
-          :interaction="canvasInteraction"
-          :view-mode="viewMode"
-          @open-settings="showSettings = true"
-        />
-        <BoardExtents :dimensions="boardSizeMm ?? null" />
+        <!-- Board canvas (hidden when viewing a document) -->
+        <div v-show="!showDocumentViewer" class="absolute inset-0">
+          <BoardCanvas
+            ref="boardCanvasRef"
+            :layers="renderLayers"
+            :all-layers="layers"
+            :interaction="canvasInteraction"
+            :mirrored="mirrored"
+            :active-filter="activeFilter"
+            :crop-to-outline="cropToOutline"
+            :outline-layer="outlineLayer"
+            :measure="measureTool"
+            :info="infoTool"
+            :delete-tool="deleteTool"
+            :view-mode="viewMode"
+            :preset="viewMode === 'realistic' ? selectedPreset : undefined"
+            :pnp-components="pnp.visibleComponents.value"
+            :selected-pnp-designator="pnp.selectedDesignator.value"
+            :pnp-origin-x="pnp.originX.value"
+            :pnp-origin-y="pnp.originY.value"
+            :align-mode="pnp.alignMode.value"
+            :align-click-a="pnp.alignClickA.value"
+            :match-package="pkgLib.matchPackage"
+            :match-tht-package="thtPkgLib.matchThtPackage"
+            :package-library-version="packageLibraryVersion"
+            :show-packages="showPackages"
+            :pnp-convention="pnp.convention.value"
+            :board-rotation="boardRotation"
+            @pnp-click="pnp.selectComponent($event)"
+            @pnp-dblclick="handlePnPDblClick"
+            @align-click="handleAlignClick"
+          />
+          <MeasureOverlay
+            :measure="measureTool"
+            :transform="canvasInteraction.transform.value"
+          />
+          <InfoOverlay :info="infoTool" />
+          <DeleteOverlay
+            :delete-tool="deleteTool"
+            @confirm-delete="handleConfirmDelete"
+          />
+
+          <!-- Undo toast — shown briefly after a deletion -->
+          <Transition
+            enter-active-class="transition duration-200 ease-out"
+            enter-from-class="translate-y-2 opacity-0"
+            enter-to-class="translate-y-0 opacity-100"
+            leave-active-class="transition duration-150 ease-in"
+            leave-from-class="translate-y-0 opacity-100"
+            leave-to-class="translate-y-2 opacity-0"
+          >
+            <div
+              v-if="undoToastVisible"
+              class="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3.5 py-2 rounded-lg bg-neutral-800/90 dark:bg-neutral-700/95 backdrop-blur-sm shadow-lg text-white text-xs"
+            >
+              <UIcon name="i-lucide-trash-2" class="text-red-400 text-sm shrink-0" />
+              <span>Deletion applied</span>
+              <button
+                class="ml-1 px-2 py-0.5 rounded font-medium bg-white/15 hover:bg-white/25 transition-colors"
+                @click="handleUndo"
+              >
+                Undo
+              </button>
+              <span class="text-[10px] text-neutral-400 ml-0.5">{{ isMac ? '⌘' : 'Ctrl+' }}Z</span>
+            </div>
+          </Transition>
+
+          <CanvasControls
+            :interaction="canvasInteraction"
+            :view-mode="viewMode"
+            @open-settings="showSettings = true"
+          />
+          <BoardExtents :dimensions="boardSizeMm ?? null" />
+        </div>
       </main>
     </div>
 
@@ -454,6 +615,8 @@
       :default-convention="pnp.convention.value"
       :components="pnp.allComponents.value"
       :project-name="project?.name || 'Untitled'"
+      :has-smd="pnp.hasSmdPnP.value || pnp.smdActiveComponents.value.length > 0"
+      :has-tht="pnp.hasThtPnP.value || pnp.thtActiveComponents.value.length > 0"
       @export="handleExportPnP"
     />
 
@@ -469,16 +632,26 @@
     <ComponentEditModal
       v-model:open="showComponentEdit"
       :component="editingComponent"
-      :package-options="packageOptions"
+      :package-options="editingComponent?.componentType === 'tht' ? thtPackageOptions : packageOptions"
       @update:rotation="pnp.setRotationOverride($event.key, $event.rotation)"
       @reset:rotation="pnp.resetRotationOverride($event.key)"
       @toggle:dnp="pnp.toggleDnp($event)"
       @update:polarized="pnp.setPolarizedOverride($event.key, $event.polarized)"
-      @update:package-mapping="pnp.setCadPackageMapping($event.cadPackage, $event.packageName)"
+      @update:package-mapping="handlePackageMapping($event)"
       @update:note="pnp.setComponentNote($event.key, $event.note)"
       @update:fields="pnp.setFieldOverride($event.key, $event)"
       @update:manual-component="pnp.updateManualComponent($event.id, $event)"
       @delete:manual-component="pnp.removeManualComponent($event)"
+      @delete:component="pnp.deleteComponent($event)"
+    />
+
+    <!-- BOM field mapping modal -->
+    <BomFieldMappingModal
+      v-model:open="showBomFieldMapping"
+      :headers="[...(bom.pendingParseResult.value?.headers ?? [])]"
+      :rows="(bom.pendingParseResult.value?.rows ?? []).map(r => [...r])"
+      @confirm="handleBomFieldMappingConfirm"
+      @cancel="handleBomFieldMappingCancel"
     />
 
     <!-- Overwrite confirmation modal -->
@@ -497,6 +670,8 @@
 import type { GerberFile, LayerInfo, LayerFilter } from '~/utils/gerber-helpers'
 import type { SourceRange } from '@lib/gerber/types'
 import { sortLayersByPcbOrder, isTopLayer, isBottomLayer, isSharedLayer, getColorForType, isPnPLayer } from '~/utils/gerber-helpers'
+import type { BomLine, BomColumnMapping } from '~/utils/bom-types'
+import type { PricingQueueItem } from '~/composables/useElexessApi'
 import type { ViewMode } from '~/components/viewer/BoardCanvas.vue'
 import { getPresetById, type PcbPreset } from '~/utils/pcb-presets'
 import type { PnPConvention } from '~/utils/pnp-conventions'
@@ -512,7 +687,7 @@ const rawId = route.params.id as string
 const isTeamProject = rawId.startsWith('team-')
 const projectId = isTeamProject ? 0 : Number(rawId) // local projects use numeric IDs
 const teamProjectId = isTeamProject ? rawId.replace('team-', '') : null
-const { getProject, getFiles, addFiles, upsertFiles, clearFiles, renameFile, removeFile, getOriginalFiles, storeOriginalFiles, renameOriginalFile, removeOriginalFile, renameProject, updateFileLayerType, updateFileContent, updateProjectOrigin, updateProjectConvention, updateProjectRotationOverrides, updateProjectDnp, updateProjectCadPackageMap, updateProjectPolarizedOverrides, updateProjectComponentNotes, updateProjectFieldOverrides, updateProjectManualComponents } = useProject()
+const { getProject, getFiles, addFiles, upsertFiles, clearFiles, renameFile, removeFile, getOriginalFiles, storeOriginalFiles, renameOriginalFile, removeOriginalFile, renameProject, updateFileLayerType, updateFileContent, updateProjectOrigin, updateProjectConvention, updateProjectRotationOverrides, updateProjectDnp, updateProjectCadPackageMap, updateProjectPolarizedOverrides, updateProjectComponentNotes, updateProjectFieldOverrides, updateProjectManualComponents, updateProjectDeletedComponents, updateBomLines, updateBomPricingCache, updateBomBoardQuantity, updatePcbData, getDocuments, addDocument, removeDocument: removeDocumentFromDb, updateDocumentType: updateDocumentTypeInDb } = useProject()
 
 // ── Team project support ──
 const teamProjectIdRef = ref(teamProjectId)
@@ -560,8 +735,24 @@ const canvasAreaBg = computed(() =>
 )
 const { sidebarWidth, dragging: sidebarDragging, onDragStart: onSidebarDragStart } = useSidebarWidth()
 
-// ── Sidebar tab (Layers / Components) ──
-const sidebarTab = ref<'layers' | 'components'>('layers')
+// ── Sidebar tab (Files / SMD Components / THT Components / BOM / PCB / Pricing) ──
+type SidebarTab = 'layers' | 'smd' | 'tht' | 'bom' | 'pcb' | 'pricing' | 'docs'
+const VALID_TABS: SidebarTab[] = ['layers', 'smd', 'tht', 'bom', 'pcb', 'pricing', 'docs']
+
+const router = useRouter()
+const initialTab = (route.query.tab as string) || 'layers'
+const sidebarTab = ref<SidebarTab>(VALID_TABS.includes(initialTab as SidebarTab) ? initialTab as SidebarTab : 'layers')
+
+// Sync sidebar tab to URL query parameter
+watch(sidebarTab, (tab) => {
+  const query = { ...route.query }
+  if (tab === 'layers') {
+    delete query.tab
+  } else {
+    query.tab = tab
+  }
+  router.replace({ query })
+})
 
 // Toolbar button styling (outline + blue active border)
 const tbBtnBase =
@@ -664,18 +855,32 @@ function handleKeyDown(e: KeyboardEvent) {
   }
 }
 
+function handlePackageMapping(payload: { cadPackage: string; packageName: string | null; componentKey?: string; isManual?: boolean }) {
+  if (payload.isManual && payload.componentKey) {
+    // For manual components: update the package field directly on the ManualPnPComponent
+    const manualId = payload.componentKey.replace(/^manual\|/, '')
+    pnp.updateManualComponent(manualId, { package: payload.packageName ?? '' })
+  }
+  // Always update the cadPackageMap too — for parsed components this is the primary mechanism,
+  // for manual components it's a belt-and-suspenders so the mapping is visible if cadPackage is populated.
+  if (payload.cadPackage?.trim()) {
+    pnp.setCadPackageMapping(payload.cadPackage, payload.packageName)
+  }
+}
+
 function openComponentEdit(component: import('~/composables/usePickAndPlace').EditablePnPComponent) {
   editingComponent.value = component
   showComponentEdit.value = true
 }
 
-function startAddComponent() {
+function startAddComponent(componentType: import('~/composables/usePickAndPlace').ComponentType = 'smd') {
   // Generate a unique ID and an auto-incremented designator
   const id = `mc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
   const existingDesignators = new Set(pnp.allComponents.value.map(c => c.designator))
+  const prefix = componentType === 'tht' ? 'T' : 'M'
   let idx = 1
-  while (existingDesignators.has(`M${idx}`)) idx++
-  const designator = `M${idx}`
+  while (existingDesignators.has(`${prefix}${idx}`)) idx++
+  const designator = `${prefix}${idx}`
 
   const side: 'top' | 'bottom' = pnp.activeSideFilter.value === 'bottom' ? 'bottom' : 'top'
 
@@ -688,6 +893,7 @@ function startAddComponent() {
     y: 0,
     rotation: 0,
     side,
+    componentType,
   }
 
   // Switch to cursor mode for placement
@@ -752,6 +958,18 @@ function handleKeyUp(e: KeyboardEvent) {
 const project = ref<any>(null)
 const layers = ref<LayerInfo[]>([])
 
+// ── PCB parameters for pricing ──
+const pcbData = ref<{ sizeX?: number; sizeY?: number; layerCount?: number; surfaceFinish?: 'ENIG' | 'HAL'; copperWeight?: '1oz' | '2oz' } | null>(null)
+
+function handlePcbDataUpdate(data: typeof pcbData.value) {
+  pcbData.value = data
+  if (isTeamProject) {
+    persistToProject({ pcbData: data })
+  } else {
+    updatePcbData(projectId, data)
+  }
+}
+
 // ── Original content tracking (for edit detection + reset) ──
 const originalContent = new Map<string, string>()
 
@@ -789,6 +1007,13 @@ const boardSizeMm = computed<{ width: number; height: number } | undefined>(() =
   return canvas.boardDimensions ?? canvas.getExportDimensionsMm() ?? undefined
 })
 
+/** Count copper layers from loaded Gerber files to suggest PCB layer count */
+const detectedLayerCount = computed<number | null>(() => {
+  const copperTypes = new Set(['Top Copper', 'Bottom Copper', 'Inner Layer'])
+  const count = layers.value.filter(l => copperTypes.has(l.type)).length
+  return count > 0 ? count : null
+})
+
 const downloadMenuItems = computed(() => {
   const items: { label: string; icon: string; onSelect: () => void }[] = []
   if (viewMode.value === 'realistic') {
@@ -809,25 +1034,157 @@ const hasOutline = computed(() => layers.value.some(l => l.type === 'Outline'))
 // ── Pick & Place ──
 const pnp = usePickAndPlace(layers)
 const pkgLib = usePackageLibrary()
+const thtPkgLib = useThtPackageLibrary()
 const showPackages = ref(true)
-const packageLibraryVersion = computed(() => pkgLib.lookupMap.value.size)
+// Monotonic version counter — bumped whenever any package source changes.
+const _pkgLibVersion = ref(0)
+const packageLibraryVersion = computed(() => _pkgLibVersion.value)
 const packageOptions = computed(() => pkgLib.allPackages.value.map(p => p.name).sort((a, b) => a.localeCompare(b)))
+const thtPackageOptions = computed(() => thtPkgLib.allThtPackages.value.map(p => p.name).sort((a, b) => a.localeCompare(b)))
 
 // Load package library on mount (non-blocking)
 onMounted(() => { pkgLib.loadPackages() })
 
-// Let the PnP composable use the package library for matching
+// Merge local custom packages (IndexedDB) into the package libraries
+const { customDefinitions: localCustomPkgs } = useCustomPackages()
+const { customThtDefinitions: localCustomThtPkgs } = useCustomThtPackages()
+watch(localCustomPkgs, (pkgs) => { pkgLib.setCustomPackages(pkgs); _pkgLibVersion.value++ }, { immediate: true })
+watch(localCustomThtPkgs, (pkgs) => { thtPkgLib.setCustomPackages(pkgs); _pkgLibVersion.value++ }, { immediate: true })
+
+// Merge team packages (Supabase) into the package libraries
+const { teamPackageDefinitions: teamPkgDefs } = useTeamPackages()
+const { teamThtPackageDefinitions: teamThtPkgDefs } = useTeamThtPackages()
+watch(teamPkgDefs, (pkgs) => { pkgLib.setTeamPackages(pkgs); _pkgLibVersion.value++ }, { immediate: true, deep: true })
+watch(teamThtPkgDefs, (pkgs) => { thtPkgLib.setTeamPackages(pkgs); _pkgLibVersion.value++ }, { immediate: true, deep: true })
+
+// Let the PnP composable use the package libraries for matching
 watch(
   () => pkgLib.lookupMap.value.size,
   () => { pnp.setPackageMatcher(pkgLib.matchPackage) },
   { immediate: true },
 )
+watch(
+  () => thtPkgLib.lookupMap.value.size,
+  () => { pnp.setThtPackageMatcher(thtPkgLib.matchThtPackage) },
+  { immediate: true },
+)
 
-// Auto-switch to Components tab when PnP layers appear for the first time
-watch(pnp.hasPnP, (has) => {
-  if (has && sidebarTab.value === 'layers') {
-    sidebarTab.value = 'components'
+// ── Documents (PDF) ──
+import type { DocumentType, ProjectDocument } from '~/utils/document-types'
+
+const documentTypes: DocumentType[] = ['Schematics', 'Drawings', 'Datasheets', 'Instructions']
+
+const documents = ref<ProjectDocument[]>([])
+const selectedDocumentId = ref<string | null>(null)
+const hasDocuments = computed(() => documents.value.length > 0)
+const selectedDocument = computed(() => documents.value.find(d => d.id === selectedDocumentId.value) ?? null)
+const showDocumentViewer = computed(() => selectedDocument.value !== null)
+
+/** Try to guess document type from filename. */
+function guessDocumentType(fileName: string): DocumentType {
+  const lower = fileName.toLowerCase()
+  if (/schematic/i.test(lower)) return 'Schematics'
+  if (/drawing|drw|assy|assembly/i.test(lower)) return 'Drawings'
+  if (/datasheet|ds\b/i.test(lower)) return 'Datasheets'
+  if (/instruction|manual|guide/i.test(lower)) return 'Instructions'
+  return 'Drawings'
+}
+
+async function handleDocumentsAdd(files: File[]) {
+  let firstNewId: string | null = null
+  for (const file of files) {
+    const id = `doc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+    const docType = guessDocumentType(file.name)
+    const blobUrl = URL.createObjectURL(file)
+    const entry: ProjectDocument = { id, name: file.name, type: docType, blobUrl }
+    // Persist
+    if (isTeamProject && teamProjectId) {
+      const teamId = currentTeamId.value || await waitForTeamId()
+      const { doc } = await uploadTeamDocument(teamProjectId, teamId, file.name, file, docType)
+      if (doc) {
+        entry.dbId = doc.id
+        entry.storagePath = doc.storage_path
+      }
+    } else {
+      await addDocument(projectId, file.name, docType, file)
+    }
+    documents.value.push(entry)
+    if (!firstNewId) firstNewId = id
   }
+  // Switch to Docs tab and select the first new document
+  if (firstNewId) {
+    selectedDocumentId.value = firstNewId
+    sidebarTab.value = 'docs'
+  }
+}
+
+async function handleDocumentRemove(id: string) {
+  const idx = documents.value.findIndex(d => d.id === id)
+  if (idx < 0) return
+  const doc = documents.value[idx]
+  URL.revokeObjectURL(doc.blobUrl)
+  documents.value.splice(idx, 1)
+  if (selectedDocumentId.value === id) {
+    selectedDocumentId.value = documents.value.length > 0 ? documents.value[0].id : null
+  }
+  // Switch away from docs tab when all documents are removed
+  if (documents.value.length === 0 && sidebarTab.value === 'docs') {
+    sidebarTab.value = 'layers'
+  }
+  // Remove from storage
+  if (isTeamProject && doc.dbId && doc.storagePath) {
+    await deleteTeamDocument(doc.dbId, doc.storagePath)
+  } else if (!isTeamProject) {
+    await removeDocumentFromDb(projectId, doc.name)
+  }
+}
+
+function handleDocumentSelect(id: string) {
+  selectedDocumentId.value = id
+}
+
+function handleDocumentTypeUpdate(id: string, type: DocumentType) {
+  const doc = documents.value.find(d => d.id === id)
+  if (!doc) return
+  doc.type = type
+  if (isTeamProject && doc.dbId) {
+    updateTeamDocumentType(doc.dbId, type)
+  } else if (!isTeamProject) {
+    updateDocumentTypeInDb(projectId, doc.name, type)
+  }
+}
+
+// Clean up all blob URLs on unmount
+onUnmounted(() => {
+  for (const doc of documents.value) URL.revokeObjectURL(doc.blobUrl)
+})
+
+// ── BOM ──
+const bom = useBom(layers)
+const elexess = useElexessApi()
+
+const showBomFieldMapping = ref(false)
+
+// Auto-switch to SMD tab when PnP layers appear for the first time
+// (skip if the URL already specified a tab)
+const hadExplicitTab = !!route.query.tab
+
+watch(pnp.hasPnP, (has) => {
+  if (has && sidebarTab.value === 'layers' && !hadExplicitTab) {
+    sidebarTab.value = 'smd'
+  }
+})
+
+// Auto-switch to BOM tab when BOM data appears and no PnP
+watch(bom.hasBom, (has) => {
+  if (has && sidebarTab.value === 'layers' && !pnp.hasPnP.value && !hadExplicitTab) {
+    sidebarTab.value = 'bom'
+  }
+})
+
+// Show field mapping modal when needed
+watch(bom.needsFieldMapping, (needs) => {
+  if (needs) showBomFieldMapping.value = true
 })
 
 // Sync toolbar's All/Top/Bot filter with PnP side filter
@@ -922,6 +1279,75 @@ watch(pnp.manualComponentsRecord, (components) => {
   }
 }, { deep: true })
 
+// Persist deleted component keys to database
+watch(pnp.deletedKeysRecord, (keys) => {
+  if (isTeamProject) {
+    persistToProject({ pnpDeletedComponents: keys })
+  } else {
+    updateProjectDeletedComponents(projectId, keys)
+  }
+}, { deep: true })
+
+// ── Persist BOM data ──
+
+watch(bom.bomLinesRecord, (lines) => {
+  if (isTeamProject) {
+    persistToProject({ bomLines: lines })
+  } else {
+    updateBomLines(projectId, lines)
+  }
+}, { deep: true })
+
+watch(bom.pricingCacheRecord, (cache) => {
+  if (isTeamProject) {
+    persistToProject({ bomPricingCache: cache })
+  } else {
+    updateBomPricingCache(projectId, cache)
+  }
+}, { deep: true })
+
+watch(() => bom.boardQuantity.value, (qty) => {
+  if (isTeamProject) {
+    persistToProject({ bomBoardQuantity: qty })
+  } else {
+    updateBomBoardQuantity(projectId, qty)
+  }
+})
+
+// BOM pricing fetch handlers
+async function handleFetchAllPricing() {
+  const updatedCache = await elexess.fetchAllPricing(
+    bom.bomLines.value as BomLine[],
+    bom.pricingCache.value as Record<string, any>,
+  )
+  bom.updatePricingCache(updatedCache)
+}
+
+async function handleFetchSinglePricing(partNumber: string) {
+  const entry = await elexess.fetchSinglePricing(partNumber)
+  if (entry) {
+    bom.updateSinglePricing(partNumber, entry.data)
+  }
+}
+
+function handleBomAddLine(line?: Partial<BomLine>) {
+  if (line?.id) {
+    bom.updateLine(line.id, line)
+  } else {
+    bom.addLine(line)
+  }
+}
+
+function handleBomFieldMappingConfirm(mapping: BomColumnMapping) {
+  bom.applyFieldMapping(mapping)
+  showBomFieldMapping.value = false
+}
+
+function handleBomFieldMappingCancel() {
+  bom.cancelFieldMapping()
+  showBomFieldMapping.value = false
+}
+
 // Update PnP convention and persist
 function updateConvention(convention: PnPConvention) {
   pnp.convention.value = convention
@@ -986,7 +1412,7 @@ function cancelEdit() {
 }
 
 // ── Team project actions (approve / revert) ──
-const { getProject: getTeamProject, approveProject: doApprove, revertToDraft: doRevert, updateProject: updateTeamProject, getProjectFiles: getTeamFiles, downloadFile: downloadTeamFile, uploadFile: uploadTeamFile, deleteFile: deleteTeamFile } = useTeamProjects()
+const { getProject: getTeamProject, approveProject: doApprove, revertToDraft: doRevert, updateProject: updateTeamProject, getProjectFiles: getTeamFiles, downloadFile: downloadTeamFile, uploadFile: uploadTeamFile, deleteFile: deleteTeamFile, getProjectDocuments: getTeamDocuments, uploadDocument: uploadTeamDocument, downloadDocument: downloadTeamDocument, updateDocumentType: updateTeamDocumentType, deleteDocument: deleteTeamDocument } = useTeamProjects()
 
 async function handleApproveProject() {
   if (!teamProjectId) return
@@ -1089,6 +1515,11 @@ onMounted(async () => {
         pnpComponentNotes: tp.pnp_component_notes,
         pnpFieldOverrides: tp.pnp_field_overrides,
         pnpManualComponents: tp.pnp_manual_components,
+        pnpDeletedComponents: tp.pnp_deleted_components,
+        bomLines: tp.bom_lines,
+        bomPricingCache: tp.bom_pricing_cache,
+        bomBoardQuantity: tp.bom_board_quantity,
+        pcbData: tp.pcb_data,
       }
     }
   } else {
@@ -1189,6 +1620,36 @@ onMounted(async () => {
 
   // Restore persisted manual components
   pnp.setManualComponents(project.value?.pnpManualComponents)
+
+  // Restore persisted deleted component keys
+  pnp.setDeletedKeys(project.value?.pnpDeletedComponents)
+
+  // Restore persisted BOM data
+  bom.setBomLines(project.value?.bomLines)
+  bom.setPricingCache(project.value?.bomPricingCache)
+  bom.setBoardQuantity(project.value?.bomBoardQuantity)
+
+  // Restore persisted PCB data
+  pcbData.value = project.value?.pcbData ?? null
+
+  // Restore persisted documents (PDFs)
+  if (isTeamProject && teamProjectId) {
+    const teamDocs = await getTeamDocuments(teamProjectId)
+    for (const td of teamDocs) {
+      const blob = await downloadTeamDocument(td.storage_path)
+      if (!blob) continue
+      const id = `doc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+      const blobUrl = URL.createObjectURL(blob)
+      documents.value.push({ id, name: td.file_name, type: td.doc_type as DocumentType, blobUrl, dbId: td.id, storagePath: td.storage_path })
+    }
+  } else if (!isTeamProject) {
+    const storedDocs = await getDocuments(projectId)
+    for (const doc of storedDocs) {
+      const id = `doc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+      const blobUrl = URL.createObjectURL(doc.data)
+      documents.value.push({ id, name: doc.fileName, type: doc.docType, blobUrl })
+    }
+  }
 })
 
 /**
@@ -1662,9 +2123,11 @@ function handleExportSvg() {
   triggerDownload(blob, `${project.value?.name || 'pcb'}-${side}.svg`)
 }
 
-async function handleExportImage(options: { format: 'png' | 'svg'; componentsMode: 'none' | 'with' | 'both'; sideMode: 'top' | 'bottom' | 'both'; dpi: number }) {
+async function handleExportImage(options: { format: 'png' | 'svg'; componentsMode: 'none' | 'smd' | 'tht' | 'all' | 'both'; sideMode: 'top' | 'bottom' | 'both'; dpi: number }) {
   const canvas = boardCanvasRef.value
   if (!canvas) return
+  // Ensure SVG exporter uses fresh footprint shapes (not stale cached data)
+  ;(SvgExporter as any).clearFootprintCaches?.()
 
   const projectName = project.value?.name || 'pcb'
   const sides: Array<'top' | 'bottom'> = options.sideMode === 'both' ? ['top', 'bottom'] : [options.sideMode]
@@ -1673,7 +2136,7 @@ async function handleExportImage(options: { format: 'png' | 'svg'; componentsMod
   const canRenderComponents = pnp.hasPnP.value
   const variants: boolean[] =
     (options.componentsMode === 'both' && canRenderComponents) ? [false, true]
-      : (options.componentsMode === 'with' && canRenderComponents) ? [true]
+      : (options.componentsMode !== 'none' && canRenderComponents) ? [true]
         : [false]
 
   const fileCount = sides.length * variants.length
@@ -1681,9 +2144,16 @@ async function handleExportImage(options: { format: 'png' | 'svg'; componentsMod
 
   const buildComponentsForSide = (side: 'top' | 'bottom') => {
     if (!canRenderComponents) return []
-    const list = pnp.allComponents.value
+    let list = pnp.allComponents.value
       .filter(c => !c.dnp)
       .filter(c => c.side === side)
+    // Filter by component type based on export mode
+    if (options.componentsMode === 'smd') {
+      list = list.filter(c => c.componentType === 'smd')
+    } else if (options.componentsMode === 'tht') {
+      list = list.filter(c => c.componentType === 'tht')
+    }
+    // 'all' and 'both' include all component types
     return list
   }
 
@@ -1707,6 +2177,7 @@ async function handleExportImage(options: { format: 'png' | 'svg'; componentsMod
       pnpOriginX: pnp.originX.value,
       pnpOriginY: pnp.originY.value,
       matchPackage: pkgLib.matchPackage,
+      matchThtPackage: thtPkgLib.matchThtPackage,
       showPackages: showPackages.value,
       pnpConvention: pnp.convention.value,
     })
@@ -1740,7 +2211,7 @@ async function handleExportImage(options: { format: 'png' | 'svg'; componentsMod
   triggerDownload(zipBlob, `${projectName}-images.zip`)
 }
 
-async function handleExportPnP(options: { convention: PnPConvention; format: PnPExportFormat; sideMode: PnPExportSideMode; excludeDnp: boolean }) {
+async function handleExportPnP(options: { convention: PnPConvention; format: PnPExportFormat; sideMode: PnPExportSideMode; componentMode: string; excludeDnp: boolean }) {
   const allComps = pnp.allComponents.value
   const name = project.value?.name || 'pnp'
 
@@ -1758,23 +2229,59 @@ async function handleExportPnP(options: { convention: PnPConvention; format: PnP
   const mimeType = getPnPExportMimeType(options.format)
   const ext = getPnPExportExtension(options.format)
 
-  if (options.sideMode === 'separate') {
-    // Export as ZIP with separate top and bottom files
-    const topComps = allComps.filter(c => c.side === 'top')
-    const botComps = allComps.filter(c => c.side === 'bottom')
+  // Filter by component type
+  const filterByType = (comps: typeof allComps, type?: 'smd' | 'tht') => {
+    if (!type) return comps
+    return comps.filter(c => c.componentType === type)
+  }
+
+  // Build the list of file entries: { filename, components }
+  type FileEntry = { filename: string; components: typeof allComps }
+  const files: FileEntry[] = []
+
+  const componentTypes: Array<{ type?: 'smd' | 'tht'; suffix: string }> =
+    options.componentMode === 'separate'
+      ? [{ type: 'smd', suffix: '-smd' }, { type: 'tht', suffix: '-tht' }]
+      : options.componentMode === 'smd'
+        ? [{ type: 'smd', suffix: '' }]
+        : options.componentMode === 'tht'
+          ? [{ type: 'tht', suffix: '' }]
+          : [{ suffix: '' }] // 'all'
+
+  const sides: Array<{ side?: 'top' | 'bottom'; suffix: string }> =
+    options.sideMode === 'separate'
+      ? [{ side: 'top', suffix: '-top' }, { side: 'bottom', suffix: '-bottom' }]
+      : options.sideMode === 'top'
+        ? [{ side: 'top', suffix: '-top' }]
+        : options.sideMode === 'bottom'
+          ? [{ side: 'bottom', suffix: '-bottom' }]
+          : [{ suffix: '' }] // 'combined'
+
+  for (const ct of componentTypes) {
+    for (const sd of sides) {
+      let comps = filterByType(allComps, ct.type)
+      if (sd.side) comps = comps.filter(c => c.side === sd.side)
+      if (comps.length === 0) continue
+      files.push({
+        filename: `${name}-pick-and-place${ct.suffix}${sd.suffix}${ext}`,
+        components: comps,
+      })
+    }
+  }
+
+  if (files.length === 0) return
+
+  if (files.length === 1) {
+    const content = buildExport(files[0]!.components)
+    const blob = new Blob([content], { type: mimeType })
+    triggerDownload(blob, files[0]!.filename)
+  } else {
     const zip = new JSZip()
-    if (topComps.length > 0) zip.file(`${name}-top${ext}`, buildExport(topComps))
-    if (botComps.length > 0) zip.file(`${name}-bottom${ext}`, buildExport(botComps))
+    for (const f of files) {
+      zip.file(f.filename, buildExport(f.components))
+    }
     const blob = await zip.generateAsync({ type: 'blob' })
     triggerDownload(blob, `${name}-pick-and-place.zip`)
-  } else {
-    let components = allComps
-    if (options.sideMode === 'top') components = allComps.filter(c => c.side === 'top')
-    else if (options.sideMode === 'bottom') components = allComps.filter(c => c.side === 'bottom')
-    const content = buildExport(components)
-    const sideSuffix = options.sideMode === 'top' ? '-top' : options.sideMode === 'bottom' ? '-bottom' : ''
-    const blob = new Blob([content], { type: mimeType })
-    triggerDownload(blob, `${name}-pick-and-place${sideSuffix}${ext}`)
   }
 }
 

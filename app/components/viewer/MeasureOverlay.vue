@@ -58,14 +58,15 @@
       <g v-if="measure.liveDistanceMm.value != null" :transform="labelTransform">
         <rect
           :x="-labelWidth / 2 - 6"
-          y="-10"
+          y="-12"
           :width="labelWidth + 30"
-          height="20"
+          :height="formattedOffset ? 38 : 20"
           rx="4"
           fill="rgba(0,0,0,0.85)"
         />
         <text
           :x="6"
+          :y="formattedOffset ? -1 : 0"
           text-anchor="middle"
           dominant-baseline="central"
           fill="#ffcc00"
@@ -75,9 +76,24 @@
         >
           {{ formattedDistance }}
         </text>
+        <!-- X/Y offset line -->
+        <text
+          v-if="formattedOffset"
+          :x="6"
+          y="15"
+          text-anchor="middle"
+          dominant-baseline="central"
+          fill="#ffcc00"
+          font-size="11"
+          font-family="ui-monospace, monospace"
+          font-weight="400"
+          opacity="0.8"
+        >
+          {{ formattedOffset }}
+        </text>
         <!-- Copy button -->
         <g
-          :transform="`translate(${labelWidth / 2 + 14}, 0)`"
+          :transform="`translate(${labelWidth / 2 + 14}, ${formattedOffset ? 2 : 0})`"
           style="pointer-events: auto; cursor: pointer"
           @click.stop="copyDistance"
         >
@@ -128,8 +144,10 @@ const copied = ref(false)
 let copyTimeout: ReturnType<typeof setTimeout> | null = null
 
 function copyDistance() {
-  const text = formattedDistance.value
-  if (!text) return
+  const dist = formattedDistance.value
+  if (!dist) return
+  const offset = formattedOffset.value
+  const text = offset ? `${dist}\n${offset}` : dist
   navigator.clipboard.writeText(text).then(() => {
     copied.value = true
     if (copyTimeout) clearTimeout(copyTimeout)
@@ -161,22 +179,36 @@ const cursorScreen = computed(() => {
   return toScreen(c.x, c.y)
 })
 
-const formattedDistance = computed(() => {
-  const d = props.measure.liveDistanceMm.value
-  if (d == null) return ''
+function formatMm(d: number): string {
   if (d < 0.01) return `${(d * 1000).toFixed(1)} µm`
   if (d < 1) return `${(d * 1000).toFixed(0)} µm`
   return `${d.toFixed(3)} mm`
+}
+
+const formattedDistance = computed(() => {
+  const d = props.measure.liveDistanceMm.value
+  if (d == null) return ''
+  return formatMm(d)
+})
+
+const formattedOffset = computed(() => {
+  const ox = props.measure.liveOffsetXMm.value
+  const oy = props.measure.liveOffsetYMm.value
+  if (ox == null || oy == null) return ''
+  return `x ${formatMm(ox)}  y ${formatMm(oy)}`
 })
 
 const labelWidth = computed(() => {
-  return formattedDistance.value.length * 7.5
+  const distW = formattedDistance.value.length * 7.5
+  const offW = formattedOffset.value.length * 7.5
+  return Math.max(distW, offW)
 })
 
 const labelTransform = computed(() => {
   if (!startScreen.value || !endScreen.value) return ''
   const mx = (startScreen.value.sx + endScreen.value.sx) / 2
   const my = (startScreen.value.sy + endScreen.value.sy) / 2
-  return `translate(${mx}, ${my - 16})`
+  const offsetY = formattedOffset.value ? 22 : 16
+  return `translate(${mx}, ${my - offsetY})`
 })
 </script>

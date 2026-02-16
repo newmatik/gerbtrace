@@ -1,0 +1,51 @@
+---
+description: SSH access to the self-hosted Supabase droplet for migrations and admin tasks
+globs: supabase/migrations/**/*.sql
+alwaysApply: true
+---
+
+# Supabase Droplet SSH Access
+
+The production Supabase runs on a self-hosted DigitalOcean droplet. You have direct SSH access.
+
+## Connection details
+
+- **Host:** `root@gerbtrace.com`
+- **SSH flags:** `-o StrictHostKeyChecking=no` (host key already trusted)
+- **Supabase docker dir:** `/opt/supabase/docker`
+
+## Applying migrations
+
+After creating a new migration file, **always apply it immediately** to the production droplet. Do not wait for CI — the local dev server connects to production Supabase.
+
+```bash
+# 1. Apply the migration as supabase_admin
+ssh -o StrictHostKeyChecking=no root@gerbtrace.com \
+  "cd /opt/supabase/docker && docker compose exec -T db psql -U supabase_admin -d postgres" \
+  < supabase/migrations/<migration_file>.sql
+
+# 2. Record it so the deploy workflow skips it
+ssh -o StrictHostKeyChecking=no root@gerbtrace.com \
+  "cd /opt/supabase/docker && docker compose exec -T db psql -U postgres -d postgres \
+   -c \"INSERT INTO public.schema_migrations(name) VALUES ('<migration_file>.sql') ON CONFLICT (name) DO NOTHING;\""
+```
+
+## Other useful commands
+
+```bash
+# Check which migrations have been applied
+ssh root@gerbtrace.com "cd /opt/supabase/docker && docker compose exec -T db psql -U postgres -d postgres -c 'SELECT * FROM public.schema_migrations ORDER BY applied_at;'"
+
+# Run an ad-hoc query
+ssh root@gerbtrace.com "cd /opt/supabase/docker && docker compose exec -T db psql -U supabase_admin -d postgres -c 'SELECT count(*) FROM public.team_tht_packages;'"
+
+# Flush CDN cache
+doctl compute cdn list
+doctl compute cdn flush <cdn-id> --files '*'
+```
+
+## Important
+
+- Always use `supabase_admin` for DDL (CREATE TABLE, ALTER, etc.)
+- Use `postgres` for bookkeeping (`schema_migrations` inserts)
+- Follow the idempotency rules in `supabase-migration-safety.mdc`

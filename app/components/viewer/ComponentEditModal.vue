@@ -198,14 +198,12 @@
         <!-- Footer -->
         <div class="flex items-center justify-between pt-1">
           <button
-            v-if="component?.manual"
             class="text-xs text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 transition-colors flex items-center gap-1"
             @click="handleDelete"
           >
             <UIcon name="i-lucide-trash-2" class="text-xs" />
             Delete
           </button>
-          <span v-else />
           <UButton size="sm" color="primary" @click="save">
             Done
           </UButton>
@@ -230,11 +228,12 @@ const emit = defineEmits<{
   'reset:rotation': [payload: { key: string }]
   'toggle:dnp': [key: string]
   'update:polarized': [payload: { key: string; polarized: boolean }]
-  'update:packageMapping': [payload: { cadPackage: string; packageName: string | null }]
+  'update:packageMapping': [payload: { cadPackage: string; packageName: string | null; componentKey?: string; isManual?: boolean }]
   'update:note': [payload: { key: string; note: string }]
   'update:fields': [payload: { key: string; designator?: string; value?: string; x?: number; y?: number }]
   'update:manualComponent': [payload: { id: string; designator?: string; value?: string; package?: string; x?: number; y?: number; rotation?: number; side?: 'top' | 'bottom' }]
   'delete:manualComponent': [id: string]
+  'delete:component': [key: string]
 }>()
 
 const noteInput = ref<HTMLTextAreaElement | null>(null)
@@ -288,9 +287,13 @@ watch([open, () => props.component], ([isOpen, comp]) => {
 }, { immediate: true })
 
 function handleDelete() {
-  if (!props.component?.manual) return
-  const id = props.component.key.replace('manual|', '')
-  emit('delete:manualComponent', id)
+  if (!props.component) return
+  if (props.component.manual) {
+    const id = props.component.key.replace('manual|', '')
+    emit('delete:manualComponent', id)
+  } else {
+    emit('delete:component', props.component.key)
+  }
   open.value = false
 }
 
@@ -374,7 +377,7 @@ function save() {
 
     // Package mapping
     if (localPackage.value !== comp.matchedPackage) {
-      emit('update:packageMapping', { cadPackage: comp.cadPackage, packageName: localPackage.value || null })
+      emit('update:packageMapping', { cadPackage: comp.cadPackage, packageName: localPackage.value || null, componentKey: comp.key, isManual: comp.manual })
     }
   }
 
