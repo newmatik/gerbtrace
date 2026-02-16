@@ -47,6 +47,7 @@ export function useSupabase(): SupabaseClient {
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true,
+      flowType: 'implicit',
     },
   })
 

@@ -91,6 +91,12 @@ export function useAuth() {
     return { data, error }
   }
 
+  /** Update the current user's password (used after recovery flow) */
+  async function updatePassword(newPassword: string) {
+    const { data, error } = await supabase.auth.updateUser({ password: newPassword })
+    return { data, error }
+  }
+
   return {
     user: readonly(user),
     session: readonly(session),
@@ -102,5 +108,6 @@ export function useAuth() {
     signInWithGitHub,
     signOut,
     resetPassword,
+    updatePassword,
   }
 }

@@ -155,9 +155,28 @@ setup_supabase() {
   sed_env "GOTRUE_EXTERNAL_GITHUB_SECRET" ""
   sed_env "GOTRUE_EXTERNAL_GITHUB_REDIRECT_URI" "https://$DOMAIN/auth/v1/callback"
 
-  # Disable email confirmation for now (easier testing), enable later
+  # Email signup settings
   sed_env "ENABLE_EMAIL_AUTOCONFIRM" "true"
   sed_env "ENABLE_EMAIL_SIGNUP" "true"
+
+  # OTP / magic link token lifetime (seconds). Default is 3600 (1 hour).
+  # Increase if email delivery is slow.
+  sed_env "GOTRUE_MAILER_OTP_EXP" "3600"
+
+  # Rate limit: max emails per hour (default 30). Increase for active teams.
+  sed_env "GOTRUE_RATE_LIMIT_EMAIL_SENT" "100"
+
+  # SMTP — REQUIRED for production email delivery.
+  # Without these, GoTrue falls back to the built-in InBucket (dev only).
+  # Uncomment and fill in after initial setup, then restart:
+  #   docker compose restart gotrue
+  #
+  # sed_env "GOTRUE_SMTP_HOST" "smtp.resend.com"
+  # sed_env "GOTRUE_SMTP_PORT" "465"
+  # sed_env "GOTRUE_SMTP_USER" "resend"
+  # sed_env "GOTRUE_SMTP_PASS" "<your-resend-api-key>"
+  # sed_env "GOTRUE_SMTP_ADMIN_EMAIL" "noreply@gerbtrace.com"
+  # sed_env "GOTRUE_SMTP_SENDER_NAME" "Gerbtrace"
 
   # Studio / Dashboard
   sed_env "STUDIO_PORT" "3100"
@@ -322,7 +341,9 @@ print_summary() {
   echo "       -f supabase/migrations/20260215000002_functions.sql \\"
   echo "       -f supabase/seed.sql"
   echo "  4. Set GitHub OAuth credentials in $SUPABASE_DIR/docker/.env"
-  echo "  5. Set SMTP credentials for email in $SUPABASE_DIR/docker/.env"
+  echo "  5. CRITICAL: Set SMTP credentials in $SUPABASE_DIR/docker/.env"
+  echo "     (GOTRUE_SMTP_HOST, _PORT, _USER, _PASS, _ADMIN_EMAIL, _SENDER_NAME)"
+  echo "     Then restart GoTrue: cd $SUPABASE_DIR/docker && docker compose restart gotrue"
   echo "  6. Add GitHub Actions secrets (see summary above)"
   echo
   echo "============================================================"
