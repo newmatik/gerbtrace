@@ -1,6 +1,9 @@
 import Dexie from 'dexie'
 import type { GerberFile } from '~/utils/gerber-helpers'
 import type { PnPConvention } from '~/utils/pnp-conventions'
+import type { BomLine, BomPricingCache } from '~/utils/bom-types'
+import type { SurfaceFinish, CopperWeight } from '~/utils/pcb-pricing'
+import type { DocumentType } from '~/utils/document-types'
 
 interface ProjectRecord {
   id?: number
@@ -27,7 +30,23 @@ interface ProjectRecord {
   /** Per-component field overrides (designator, value, x, y) */
   pnpFieldOverrides?: Record<string, { designator?: string; value?: string; x?: number; y?: number }> | null
   /** User-added manual components */
-  pnpManualComponents?: { id: string; designator: string; value: string; package: string; x: number; y: number; rotation: number; side: 'top' | 'bottom' }[] | null
+  pnpManualComponents?: { id: string; designator: string; value: string; package: string; x: number; y: number; rotation: number; side: 'top' | 'bottom'; componentType?: 'smd' | 'tht' }[] | null
+  /** Component keys deleted by the user (parsed components removed from view) */
+  pnpDeletedComponents?: string[] | null
+  /** BOM line items */
+  bomLines?: BomLine[] | null
+  /** Cached Elexess pricing data keyed by manufacturer part number */
+  bomPricingCache?: BomPricingCache | null
+  /** Board quantity for BOM pricing calculation */
+  bomBoardQuantity?: number | null
+  /** PCB board parameters for pricing estimation */
+  pcbData?: {
+    sizeX?: number            // mm
+    sizeY?: number            // mm
+    layerCount?: number       // 1, 2, 4, 6, 8, 10
+    surfaceFinish?: SurfaceFinish
+    copperWeight?: CopperWeight
+  } | null
 }
 
 interface FileRecord {
@@ -47,10 +66,20 @@ interface FileOriginalRecord {
   content: string
 }
 
+interface DocumentRecord {
+  id?: number
+  projectId: number
+  fileName: string
+  docType: DocumentType
+  /** PDF binary data stored as Blob for efficient IndexedDB storage */
+  data: Blob
+}
+
 class GerbtraceDB extends Dexie {
   projects!: Dexie.Table<ProjectRecord, number>
   files!: Dexie.Table<FileRecord, number>
   fileOriginals!: Dexie.Table<FileOriginalRecord, number>
+  documents!: Dexie.Table<DocumentRecord, number>
 
   constructor() {
     super('GerbtraceDB')
@@ -109,6 +138,38 @@ class GerbtraceDB extends Dexie {
       files: '++id, projectId, packet, fileName',
       fileOriginals: '++id, projectId, packet, fileName',
     })
+    // v12: add pnpDeletedComponents to projects (non-indexed, just stored)
+    this.version(12).stores({
+      projects: '++id, name, mode, createdAt, updatedAt',
+      files: '++id, projectId, packet, fileName',
+      fileOriginals: '++id, projectId, packet, fileName',
+    })
+    // v13: add bomLines and bomPricingCache to projects (non-indexed, just stored)
+    this.version(13).stores({
+      projects: '++id, name, mode, createdAt, updatedAt',
+      files: '++id, projectId, packet, fileName',
+      fileOriginals: '++id, projectId, packet, fileName',
+    })
+    // v14: add pcbData to projects (non-indexed, just stored)
+    this.version(14).stores({
+      projects: '++id, name, mode, createdAt, updatedAt',
+      files: '++id, projectId, packet, fileName',
+      fileOriginals: '++id, projectId, packet, fileName',
+    })
+    // v15: add documents table for PDF document storage
+    this.version(15).stores({
+      projects: '++id, name, mode, createdAt, updatedAt',
+      files: '++id, projectId, packet, fileName',
+      fileOriginals: '++id, projectId, packet, fileName',
+      documents: '++id, projectId, fileName',
+    })
+    // v16: add bomBoardQuantity to projects (non-indexed, just stored)
+    this.version(16).stores({
+      projects: '++id, name, mode, createdAt, updatedAt',
+      files: '++id, projectId, packet, fileName',
+      fileOriginals: '++id, projectId, packet, fileName',
+      documents: '++id, projectId, fileName',
+    })
   }
 }
 
@@ -141,6 +202,7 @@ export function useProject() {
   async function removeProject(id: number) {
     await db.files.where('projectId').equals(id).delete()
     await db.fileOriginals.where('projectId').equals(id).delete()
+    await db.documents.where('projectId').equals(id).delete()
     await db.projects.delete(id)
     await loadProjects()
   }
@@ -253,8 +315,28 @@ export function useProject() {
     await db.projects.update(id, { pnpFieldOverrides: overrides, updatedAt: new Date() })
   }
 
-  async function updateProjectManualComponents(id: number, components: { id: string; designator: string; value: string; package: string; x: number; y: number; rotation: number; side: 'top' | 'bottom' }[]) {
+  async function updateProjectManualComponents(id: number, components: { id: string; designator: string; value: string; package: string; x: number; y: number; rotation: number; side: 'top' | 'bottom'; componentType?: 'smd' | 'tht' }[]) {
     await db.projects.update(id, { pnpManualComponents: components, updatedAt: new Date() })
+  }
+
+  async function updateProjectDeletedComponents(id: number, keys: string[]) {
+    await db.projects.update(id, { pnpDeletedComponents: keys, updatedAt: new Date() })
+  }
+
+  async function updateBomLines(id: number, lines: BomLine[]) {
+    await db.projects.update(id, { bomLines: lines, updatedAt: new Date() })
+  }
+
+  async function updateBomPricingCache(id: number, cache: BomPricingCache) {
+    await db.projects.update(id, { bomPricingCache: cache, updatedAt: new Date() })
+  }
+
+  async function updateBomBoardQuantity(id: number, qty: number) {
+    await db.projects.update(id, { bomBoardQuantity: qty, updatedAt: new Date() })
+  }
+
+  async function updatePcbData(id: number, pcbData: ProjectRecord['pcbData']) {
+    await db.projects.update(id, { pcbData, updatedAt: new Date() })
   }
 
   // ── File originals (for edit detection and reset) ──
@@ -326,6 +408,38 @@ export function useProject() {
       .delete()
   }
 
+  // ── Document storage (PDF files) ──
+
+  async function getDocuments(projectId: number): Promise<{ fileName: string; docType: DocumentType; data: Blob }[]> {
+    const records = await db.documents
+      .where('projectId').equals(projectId)
+      .toArray()
+    return records.map(r => ({ fileName: r.fileName, docType: r.docType, data: r.data }))
+  }
+
+  async function addDocument(projectId: number, fileName: string, docType: DocumentType, data: Blob) {
+    await db.documents.add({ projectId, fileName, docType, data })
+    await db.projects.update(projectId, { updatedAt: new Date() })
+  }
+
+  async function removeDocument(projectId: number, fileName: string) {
+    await db.documents
+      .where('projectId').equals(projectId)
+      .and(r => r.fileName === fileName)
+      .delete()
+    await db.projects.update(projectId, { updatedAt: new Date() })
+  }
+
+  async function updateDocumentType(projectId: number, fileName: string, docType: DocumentType) {
+    const record = await db.documents
+      .where('projectId').equals(projectId)
+      .and(r => r.fileName === fileName)
+      .first()
+    if (record?.id) {
+      await db.documents.update(record.id, { docType })
+    }
+  }
+
   // Load on init
   if (import.meta.client) {
     loadProjects()
@@ -359,5 +473,14 @@ export function useProject() {
     updateProjectComponentNotes,
     updateProjectFieldOverrides,
     updateProjectManualComponents,
+    updateProjectDeletedComponents,
+    updateBomLines,
+    updateBomPricingCache,
+    updateBomBoardQuantity,
+    updatePcbData,
+    getDocuments,
+    addDocument,
+    removeDocument,
+    updateDocumentType,
   }
 }

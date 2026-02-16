@@ -31,6 +31,7 @@
             target="_blank"
             rel="noopener noreferrer"
             class="flex items-center gap-1.5 text-xs text-neutral-500 hover:text-primary transition-colors"
+            @click="openExternal($event, 'https://www.newmatik.com')"
           >
             <UIcon name="i-lucide-building-2" class="text-sm" />
             <span>Newmatik GmbH</span>
@@ -39,6 +40,7 @@
           <a
             href="mailto:software@newmatik.com"
             class="flex items-center gap-1.5 text-xs text-neutral-500 hover:text-primary transition-colors"
+            @click="openExternal($event, 'mailto:software@newmatik.com')"
           >
             <UIcon name="i-lucide-mail" class="text-sm" />
             <span>software@newmatik.com</span>
@@ -48,6 +50,7 @@
             target="_blank"
             rel="noopener noreferrer"
             class="flex items-center gap-1.5 text-xs text-neutral-500 hover:text-primary transition-colors"
+            @click="openExternal($event, 'https://github.com/newmatik/gerbtrace')"
           >
             <UIcon name="i-lucide-github" class="text-sm" />
             <span>GitHub</span>
@@ -95,6 +98,12 @@ const open = defineModel<boolean>('open', { default: false })
 const { status: updaterStatus, isTauri, checkForUpdate, downloadAndInstall } = useUpdater()
 
 const appVersion = useRuntimeConfig().public.appVersion as string
+
+function openExternal(event: MouseEvent, url: string) {
+  if (!isTauri) return
+  event.preventDefault()
+  import('@tauri-apps/plugin-opener').then(({ openUrl }) => openUrl(url))
+}
 
 const updateButtonLabel = computed(() => {
   if (updaterStatus.downloading) return 'Installing...'

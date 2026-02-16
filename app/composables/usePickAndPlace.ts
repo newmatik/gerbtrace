@@ -1,8 +1,11 @@
 import type { LayerInfo } from '~/utils/gerber-helpers'
-import { isPnPLayer } from '~/utils/gerber-helpers'
+import { isPnPLayer, isSmdPnPLayer, isThtPnPLayer } from '~/utils/gerber-helpers'
 import { parsePnPFile, isFiducial, type PnPComponent } from '~/utils/pnp-parser'
 import type { PnPConvention } from '~/utils/pnp-conventions'
 import type { PackageDefinition } from '~/utils/package-types'
+import type { THTPackageDefinition } from '~/utils/tht-package-types'
+
+export type ComponentType = 'smd' | 'tht'
 
 export interface AlignPoint {
   x: number
@@ -42,6 +45,8 @@ export interface EditablePnPComponent extends PnPComponent {
   originalY: number
   /** True when any field (designator, value, x, y) has been overridden. */
   fieldsOverridden: boolean
+  /** Whether this component is SMD or THT. */
+  componentType: ComponentType
 }
 
 /** Per-component field overrides (designator, value, x, y). */
@@ -62,6 +67,8 @@ export interface ManualPnPComponent {
   y: number
   rotation: number
   side: 'top' | 'bottom'
+  /** Component technology type. Defaults to 'smd' for backward compatibility. */
+  componentType?: ComponentType
 }
 
 export type PnPRotationOverrides = Record<string, number>
@@ -106,10 +113,13 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
   const componentNotes = ref(new Map<string, string>())
   // Per-component field overrides (designator, value, x, y) keyed by stable component key
   const fieldOverrides = ref(new Map<string, PnPFieldOverride>())
+  // Deleted component keys (parsed components removed by the user)
+  const deletedKeys = ref(new Set<string>())
   // User-added manual components (not from PnP file)
   const manualComponents = ref<ManualPnPComponent[]>([])
-  // Optional matcher supplied by the viewer (package library)
+  // Optional matchers supplied by the viewer (package libraries)
   const packageMatcher = ref<((name: string) => PackageDefinition | undefined) | null>(null)
+  const thtPackageMatcher = ref<((name: string) => THTPackageDefinition | undefined) | null>(null)
 
   function getComponentKey(comp: PnPComponent): string {
     return [
@@ -131,17 +141,21 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
     return true
   }
 
-  function toEditable(comp: PnPComponent & { id?: string }, isManual = false): EditablePnPComponent {
+  function toEditable(comp: PnPComponent & { id?: string; componentType?: ComponentType }, isManual = false): EditablePnPComponent {
     const key = isManual ? `manual|${comp.id || comp.designator}` : getComponentKey(comp)
     const override = rotationOverrides.value.get(key)
     const rotation = override ?? comp.rotation
 
     const cadPackage = comp.package
     const mapped = cadPackageMap.value.get(cadPackage)
-    const matchedFromLib = packageMatcher.value ? packageMatcher.value(cadPackage) : undefined
+    const compType = comp.componentType ?? 'smd'
+    // Use the correct library matcher based on component type
+    const matcherForType = compType === 'tht' ? thtPackageMatcher.value : packageMatcher.value
+    const nameToLookup = mapped || cadPackage
+    const matchedFromLib = matcherForType ? matcherForType(nameToLookup) : undefined
     const matchedPackage = mapped || matchedFromLib?.name || ''
 
-    const defaultPolarized = computeDefaultPolarized(comp, mapped ? (packageMatcher.value?.(mapped) ?? undefined) : matchedFromLib)
+    const defaultPolarized = computeDefaultPolarized(comp, mapped ? (packageMatcher.value?.(mapped) ?? undefined) : (compType === 'smd' ? matchedFromLib as PackageDefinition | undefined : undefined))
     const polOverride = polarizedOverrides.value.get(key)
     const polarized = polOverride ?? defaultPolarized
 
@@ -176,6 +190,7 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
       originalX: comp.x,
       originalY: comp.y,
       fieldsOverridden,
+      componentType: comp.componentType ?? 'smd',
     }
   }
 
@@ -183,14 +198,20 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
     // Cache key includes layer type so same-content layers with different types get separate entries
     const cacheKey = `${layer.file.fileName}::${layer.type}`
     if (parsedCache.has(cacheKey)) return parsedCache.get(cacheKey)!
-    const side = layer.type === 'PnP Bottom' ? 'bottom' : 'top'
+    const side = (layer.type === 'PnP Bottom' || layer.type === 'PnP Bottom (THT)') ? 'bottom' : 'top'
     const allComponents = parsePnPFile(layer.file.content, side)
     // Combined layers return all components; single-side layers filter by side
-    const components = layer.type === 'PnP Top + Bot'
+    const isCombined = layer.type === 'PnP Top + Bot' || layer.type === 'PnP Top + Bot (THT)'
+    const components = isCombined
       ? allComponents
       : allComponents.filter(c => c.side === side)
     parsedCache.set(cacheKey, components)
     return components
+  }
+
+  /** Determine the component type of a parsed layer */
+  function layerComponentType(layer: LayerInfo): ComponentType {
+    return isThtPnPLayer(layer.type) ? 'tht' : 'smd'
   }
 
   /** Invalidate cache when layers change (e.g. after re-import) */
@@ -215,21 +236,27 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
 
   const hasPnP = computed(() => pnpLayers.value.length > 0 || manualComponents.value.length > 0)
 
-  // ── All parsed components from all PnP layers (original values) ──
-  const allParsedComponents = computed<PnPComponent[]>(() => {
-    const result: PnPComponent[] = []
+  // ── All parsed components from all PnP layers (original values, with componentType) ──
+  const allParsedComponents = computed<(PnPComponent & { componentType: ComponentType })[]>(() => {
+    const result: (PnPComponent & { componentType: ComponentType })[] = []
     for (const layer of pnpLayers.value) {
-      result.push(...parseLayer(layer))
+      const ct = layerComponentType(layer)
+      for (const comp of parseLayer(layer)) {
+        result.push({ ...comp, componentType: ct })
+      }
     }
     return result
   })
 
   /** Visible parsed components (from visible PnP layers only) */
-  const visibleParsedComponents = computed<PnPComponent[]>(() => {
-    const result: PnPComponent[] = []
+  const visibleParsedComponents = computed<(PnPComponent & { componentType: ComponentType })[]>(() => {
+    const result: (PnPComponent & { componentType: ComponentType })[] = []
     for (const layer of pnpLayers.value) {
       if (!layer.visible) continue
-      result.push(...parseLayer(layer))
+      const ct = layerComponentType(layer)
+      for (const comp of parseLayer(layer)) {
+        result.push({ ...comp, componentType: ct })
+      }
     }
     return result
   })
@@ -245,7 +272,7 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
   // ── Editable components (with optional rotation overrides) ──
 
   /** Convert manual components to PnPComponent shape for toEditable */
-  function manualToPnP(mc: ManualPnPComponent): PnPComponent & { id: string } {
+  function manualToPnP(mc: ManualPnPComponent): PnPComponent & { id: string; componentType: ComponentType } {
     return {
       id: mc.id,
       designator: mc.designator,
@@ -255,11 +282,13 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
       y: mc.y,
       rotation: mc.rotation,
       side: mc.side,
+      componentType: mc.componentType ?? 'smd',
     }
   }
 
   const allComponents = computed<EditablePnPComponent[]>(() => {
     const parsed = allParsedComponents.value.map(c => toEditable(c, false))
+      .filter(c => !deletedKeys.value.has(c.key))
     const manual = manualComponents.value.map(mc => toEditable(manualToPnP(mc), true))
     return [...parsed, ...manual]
   })
@@ -267,12 +296,37 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
   /** Components from visible PnP layers, filtered by active side (for component panel base) */
   const activeComponents = computed<EditablePnPComponent[]>(() => {
     const base = visibleParsedComponents.value.map(c => toEditable(c, false))
+      .filter(c => !deletedKeys.value.has(c.key))
     const manual = manualComponents.value.map(mc => toEditable(manualToPnP(mc), true))
     const combined = [...base, ...manual]
     const side = activeSideFilter.value
     if (side === 'all') return combined
     return combined.filter(c => c.side === side)
   })
+
+  // ── SMD / THT filtered active component lists ──
+
+  /** SMD-only active components (filtered by side) */
+  const smdActiveComponents = computed<EditablePnPComponent[]>(() =>
+    activeComponents.value.filter(c => c.componentType === 'smd'),
+  )
+
+  /** THT-only active components (filtered by side) */
+  const thtActiveComponents = computed<EditablePnPComponent[]>(() =>
+    activeComponents.value.filter(c => c.componentType === 'tht'),
+  )
+
+  /** Whether any SMD data (parsed or manual) exists */
+  const hasSmdPnP = computed(() =>
+    pnpLayers.value.some(l => isSmdPnPLayer(l.type))
+    || manualComponents.value.some(mc => (mc.componentType ?? 'smd') === 'smd'),
+  )
+
+  /** Whether any THT data (parsed or manual) exists */
+  const hasThtPnP = computed(() =>
+    pnpLayers.value.some(l => isThtPnPLayer(l.type))
+    || manualComponents.value.some(mc => mc.componentType === 'tht'),
+  )
 
   // ── Search & filtering ──
 
@@ -307,6 +361,16 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
     }
     return result
   })
+
+  /** SMD-only filtered components */
+  const smdFilteredComponents = computed<EditablePnPComponent[]>(() =>
+    filteredComponents.value.filter(c => c.componentType === 'smd'),
+  )
+
+  /** THT-only filtered components */
+  const thtFilteredComponents = computed<EditablePnPComponent[]>(() =>
+    filteredComponents.value.filter(c => c.componentType === 'tht'),
+  )
 
   /** Components for canvas rendering — respects search + toggle filters when active */
   const visibleComponents = computed<EditablePnPComponent[]>(() => {
@@ -562,6 +626,49 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
     manualComponents.value = manualComponents.value.filter(mc => mc.id !== id)
   }
 
+  /**
+   * Delete any component (manual or parsed).
+   * Manual components are removed entirely; parsed components are tracked in deletedKeys.
+   */
+  function deleteComponent(key: string) {
+    if (key.startsWith('manual|')) {
+      const id = key.replace('manual|', '')
+      removeManualComponent(id)
+      return
+    }
+    // Parsed component: add to deletedKeys and clean up associated overrides
+    const next = new Set(deletedKeys.value)
+    next.add(key)
+    deletedKeys.value = next
+
+    const nextRot = new Map(rotationOverrides.value)
+    nextRot.delete(key)
+    if (nextRot.size !== rotationOverrides.value.size) rotationOverrides.value = nextRot
+
+    const nextDnp = new Set(dnpSet.value)
+    nextDnp.delete(key)
+    if (nextDnp.size !== dnpSet.value.size) dnpSet.value = nextDnp
+
+    const nextNotes = new Map(componentNotes.value)
+    nextNotes.delete(key)
+    if (nextNotes.size !== componentNotes.value.size) componentNotes.value = nextNotes
+
+    const nextFo = new Map(fieldOverrides.value)
+    nextFo.delete(key)
+    if (nextFo.size !== fieldOverrides.value.size) fieldOverrides.value = nextFo
+
+    const nextPol = new Map(polarizedOverrides.value)
+    nextPol.delete(key)
+    if (nextPol.size !== polarizedOverrides.value.size) polarizedOverrides.value = nextPol
+  }
+
+  function setDeletedKeys(keys: string[] | null | undefined) {
+    deletedKeys.value = new Set(keys ?? [])
+  }
+
+  /** Serialised deleted keys for persistence */
+  const deletedKeysRecord = computed<string[]>(() => [...deletedKeys.value])
+
   function setManualComponents(components: ManualPnPComponent[] | null | undefined) {
     manualComponents.value = components ?? []
   }
@@ -574,6 +681,10 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
 
   function setPackageMatcher(fn: ((name: string) => PackageDefinition | undefined) | null | undefined) {
     packageMatcher.value = fn ?? null
+  }
+
+  function setThtPackageMatcher(fn: ((name: string) => THTPackageDefinition | undefined) | null | undefined) {
+    thtPackageMatcher.value = fn ?? null
   }
 
   // ── PnP convention (orientation standard) ──
@@ -748,11 +859,17 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
   return {
     pnpLayers,
     hasPnP,
+    hasSmdPnP,
+    hasThtPnP,
     allComponents,
     activeComponents,
+    smdActiveComponents,
+    thtActiveComponents,
     visibleComponents,
     searchQuery,
     filteredComponents,
+    smdFilteredComponents,
+    thtFilteredComponents,
     selectedDesignator,
     selectedComponent,
     selectComponent,
@@ -775,6 +892,7 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
     dnpRecord,
     // Package mapping
     setPackageMatcher,
+    setThtPackageMatcher,
     setCadPackageMapping,
     setCadPackageMap,
     cadPackageMapRecord,
@@ -796,6 +914,10 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
     removeManualComponent,
     setManualComponents,
     manualComponentsRecord,
+    // Delete any component (manual or parsed)
+    deleteComponent,
+    setDeletedKeys,
+    deletedKeysRecord,
     startPlacement,
     placingComponent,
     // Convention

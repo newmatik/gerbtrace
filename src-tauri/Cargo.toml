@@ -1,6 +1,6 @@
 [package]
 name = "gerbtrace"
-version = "1.0.10"
+version = "1.0.11"
 description = "Gerbtrace — View and compare Gerber PCB files"
 authors = ["Newmatik GmbH"]
 license = "MIT"
@@ -25,4 +25,5 @@ tauri = { version = "2.10.0", features = [] }
 tauri-plugin-log = "2"
 tauri-plugin-process = "2"
 tauri-plugin-updater = "2"
+tauri-plugin-opener = "2"
 tauri-plugin-window-state = "2"

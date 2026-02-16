@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen flex flex-col">
+  <div class="h-screen flex flex-col">
     <AppHeader />
     <main class="flex-1 flex overflow-hidden">
       <!-- Left: Package List -->
@@ -32,7 +32,14 @@
             @click="selectPackage(pkg)"
           >
             <div class="text-sm font-medium truncate">{{ pkg.data.name }}</div>
-            <div class="text-xs text-neutral-400">{{ pkg.data.type }}</div>
+            <div class="flex items-center gap-1.5 mt-0.5">
+              <span class="text-[11px] px-1.5 py-0 rounded-full border border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400">
+                {{ pkg.data.type }}
+              </span>
+              <span v-if="pkg.data.aliases?.length" class="text-[11px] text-neutral-400 dark:text-neutral-500 truncate">
+                {{ pkg.data.aliases.slice(0, 3).join(', ') }}{{ pkg.data.aliases.length > 3 ? '...' : '' }}
+              </span>
+            </div>
           </div>
           <div v-if="!filteredPackages.length" class="p-4 text-center text-xs text-neutral-400">
             {{ teamPackages.length === 0 ? 'No team packages yet' : 'No matches' }}
@@ -41,68 +48,76 @@
       </div>
 
       <!-- Right: Package Form / Preview -->
-      <div class="flex-1 overflow-y-auto p-6">
-        <NuxtLink to="/" class="text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 flex items-center gap-1 mb-4">
-          <UIcon name="i-lucide-arrow-left" class="text-sm" />
-          Back to projects
-        </NuxtLink>
-
-        <div v-if="!selectedPackage && !isCreating" class="text-center py-20 text-sm text-neutral-400">
-          Select a package from the list or create a new one.
+      <div class="flex-1 flex flex-col overflow-hidden">
+        <!-- Preview -->
+        <div class="h-72 shrink-0 border-b border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-950">
+          <PackagePreview :pkg="editingDef" />
         </div>
 
-        <div v-else>
-          <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-semibold">
-              {{ isCreating ? 'New Team Package' : selectedPackage?.data.name }}
-            </h2>
-            <div class="flex gap-2">
+        <!-- Form -->
+        <div class="flex-1 overflow-y-auto p-6">
+          <NuxtLink to="/" class="text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 flex items-center gap-1 mb-4">
+            <UIcon name="i-lucide-arrow-left" class="text-sm" />
+            Back to projects
+          </NuxtLink>
+
+          <div v-if="!selectedPackage && !isCreating" class="text-center py-20 text-sm text-neutral-400">
+            Select a package from the list or create a new one.
+          </div>
+
+          <div v-else>
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-lg font-semibold">
+                {{ isCreating ? 'New Team Package' : selectedPackage?.data.name }}
+              </h2>
+              <div class="flex gap-2">
+                <UButton
+                  v-if="selectedPackage && isAdmin"
+                  size="xs"
+                  color="error"
+                  variant="ghost"
+                  icon="i-lucide-trash-2"
+                  @click="handleDelete"
+                >
+                  Delete
+                </UButton>
+              </div>
+            </div>
+
+            <p v-if="nameConflict" class="mb-3 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+              <UIcon name="i-lucide-alert-triangle" />
+              This name conflicts with a built-in package and cannot be saved.
+            </p>
+
+            <!-- Reuse existing PackageForm component -->
+            <PackageForm
+              v-if="editingDef"
+              :model-value="editingDef"
+              :readonly="!isEditor"
+              @update:model-value="handleFormUpdate"
+            />
+
+            <div v-if="isEditor" class="flex justify-end gap-2 mt-4">
               <UButton
-                v-if="selectedPackage && isAdmin"
-                size="xs"
-                color="error"
-                variant="ghost"
-                icon="i-lucide-trash-2"
-                @click="handleDelete"
+                variant="outline"
+                color="neutral"
+                @click="cancelEdit"
               >
-                Delete
+                Cancel
+              </UButton>
+              <UButton
+                :loading="saving"
+                :disabled="nameConflict"
+                @click="handleSave"
+              >
+                {{ isCreating ? 'Create' : 'Save' }}
               </UButton>
             </div>
+
+            <p v-if="errorMessage" class="mt-3 text-sm text-red-600 dark:text-red-400">
+              {{ errorMessage }}
+            </p>
           </div>
-
-          <p v-if="nameConflict" class="mb-3 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
-            <UIcon name="i-lucide-alert-triangle" />
-            This name conflicts with a built-in package and cannot be saved.
-          </p>
-
-          <!-- Reuse existing PackageForm component -->
-          <PackageForm
-            v-if="editingDef"
-            :model-value="editingDef"
-            :readonly="!isEditor"
-            @update:model-value="handleFormUpdate"
-          />
-
-          <div v-if="isEditor" class="flex justify-end gap-2 mt-4">
-            <UButton
-              variant="outline"
-              color="neutral"
-              @click="cancelEdit"
-            >
-              Cancel
-            </UButton>
-            <UButton
-              :loading="saving"
-              :disabled="nameConflict"
-              @click="handleSave"
-            >
-              {{ isCreating ? 'Create' : 'Save' }}
-            </UButton>
-          </div>
-
-          <p v-if="errorMessage" class="mt-3 text-sm text-red-600 dark:text-red-400">
-            {{ errorMessage }}
-          </p>
         </div>
       </div>
     </main>

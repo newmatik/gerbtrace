@@ -103,6 +103,10 @@ const LAYER_COLOR_MAP: Record<string, string> = {
   'PnP Top': '#FF69B4',
   'PnP Bottom': '#DDA0DD',
   'PnP Top + Bot': '#FF85C8',
+  'PnP Top (THT)': '#7B68EE',
+  'PnP Bottom (THT)': '#9370DB',
+  'PnP Top + Bot (THT)': '#8A6FDF',
+  'BOM': '#4FC3F7',
   'Unmatched': '#666666',
 }
 
@@ -123,6 +127,10 @@ export const ALL_LAYER_TYPES: string[] = [
   'PnP Top',
   'PnP Bottom',
   'PnP Top + Bot',
+  'PnP Top (THT)',
+  'PnP Bottom (THT)',
+  'PnP Top + Bot (THT)',
+  'BOM',
   'Unmatched',
 ]
 
@@ -135,7 +143,9 @@ const VALID_LAYER_TYPES = new Set(ALL_LAYER_TYPES)
  * type strings persisted in older DB records.
  */
 export function resolveLayerType(fileName: string, storedLayerType?: string | null): string {
-  if (storedLayerType && VALID_LAYER_TYPES.has(storedLayerType)) return storedLayerType
+  // Re-detect if stored type is missing, unknown, or 'Unmatched' (may have been imported
+  // before support for new layer types like BOM was added).
+  if (storedLayerType && storedLayerType !== 'Unmatched' && VALID_LAYER_TYPES.has(storedLayerType)) return storedLayerType
   return detectLayerType(fileName)
 }
 
@@ -201,6 +211,7 @@ export function detectLayerType(fileName: string): string {
   if (/bottom.*paste|paste.*bottom|solderpaste.*bottom|bottom.*solderpaste/i.test(lower)) return 'Bottom Paste'
   if (/outline|edge|board|profile|contour/i.test(lower)) return 'Outline'
   if (/drill|drl|holes/i.test(lower)) return 'Drill'
+  if (isBomFile(fileName)) return 'BOM'
   if (/inner|internal|mid.*layer|layer.*mid/i.test(lower)) return 'Inner Layer'
 
   // Generic standalone "top" / "bottom" (e.g. _TOP.art, _BOTTOM.gbr from Allegro)
@@ -229,6 +240,8 @@ const LAYER_SORT_ORDER: Record<string, number> = {
   'Drill': 0,
   'PnP Top': 1,
   'PnP Top + Bot': 2,
+  'PnP Top (THT)': 2.1,
+  'PnP Top + Bot (THT)': 2.2,
   'Top Silkscreen': 3,
   'Top Paste': 4,
   'Top Solder Mask': 5,
@@ -239,8 +252,10 @@ const LAYER_SORT_ORDER: Record<string, number> = {
   'Bottom Paste': 10,
   'Bottom Silkscreen': 11,
   'PnP Bottom': 12,
+  'PnP Bottom (THT)': 12.1,
   'Outline': 13,
   'Keep-Out': 14,
+  'BOM': 14.5,
   'Unmatched': 15,
 }
 
@@ -254,9 +269,9 @@ export function sortLayersByPcbOrder(layers: LayerInfo[]): LayerInfo[] {
 
 export type LayerFilter = 'all' | 'top' | 'bot'
 
-const TOP_LAYER_TYPES = new Set(['Top Silkscreen', 'Top Paste', 'Top Solder Mask', 'Top Copper', 'PnP Top'])
-const BOT_LAYER_TYPES = new Set(['Bottom Silkscreen', 'Bottom Paste', 'Bottom Solder Mask', 'Bottom Copper', 'PnP Bottom'])
-const SHARED_LAYER_TYPES = new Set(['Outline', 'Keep-Out', 'Drill', 'PnP Top + Bot'])
+const TOP_LAYER_TYPES = new Set(['Top Silkscreen', 'Top Paste', 'Top Solder Mask', 'Top Copper', 'PnP Top', 'PnP Top (THT)'])
+const BOT_LAYER_TYPES = new Set(['Bottom Silkscreen', 'Bottom Paste', 'Bottom Solder Mask', 'Bottom Copper', 'PnP Bottom', 'PnP Bottom (THT)'])
+const SHARED_LAYER_TYPES = new Set(['Outline', 'Keep-Out', 'Drill', 'PnP Top + Bot', 'PnP Top + Bot (THT)'])
 
 export function isTopLayer(type: string): boolean {
   return TOP_LAYER_TYPES.has(type)
@@ -345,14 +360,43 @@ export function detectPnPSide(fileName: string): 'PnP Top' | 'PnP Bottom' {
   return 'PnP Top'
 }
 
-/** Check if a layer type is a Pick & Place layer */
+/** Check if a layer type is a Pick & Place layer (SMD or THT) */
 export function isPnPLayer(type: string): boolean {
+  return type === 'PnP Top' || type === 'PnP Bottom' || type === 'PnP Top + Bot'
+    || type === 'PnP Top (THT)' || type === 'PnP Bottom (THT)' || type === 'PnP Top + Bot (THT)'
+}
+
+/** Check if a layer type is a SMD PnP layer */
+export function isSmdPnPLayer(type: string): boolean {
   return type === 'PnP Top' || type === 'PnP Bottom' || type === 'PnP Top + Bot'
 }
 
-/** Check if a file is importable (Gerber or PnP) */
+/** Check if a layer type is a THT PnP layer */
+export function isThtPnPLayer(type: string): boolean {
+  return type === 'PnP Top (THT)' || type === 'PnP Bottom (THT)' || type === 'PnP Top + Bot (THT)'
+}
+
+// ── BOM file detection ──
+
+const BOM_EXTENSIONS = new Set(['.csv', '.tsv', '.xlsx', '.xls', '.txt'])
+const BOM_NAME_PATTERNS = /(?:bom|bill[_\-\s]?of[_\-\s]?materials?|stückliste|stueckliste)/i
+
+/** Detect whether a file is a BOM file based on its name. */
+export function isBomFile(fileName: string): boolean {
+  const lower = fileName.toLowerCase()
+  const ext = lower.slice(lower.lastIndexOf('.'))
+  if (!BOM_EXTENSIONS.has(ext)) return false
+  return BOM_NAME_PATTERNS.test(lower)
+}
+
+/** Check if a layer type is a BOM layer */
+export function isBomLayer(type: string): boolean {
+  return type === 'BOM'
+}
+
+/** Check if a file is importable (Gerber, PnP, or BOM) */
 export function isImportableFile(fileName: string): boolean {
-  return isGerberFile(fileName) || isPnPFile(fileName)
+  return isGerberFile(fileName) || isPnPFile(fileName) || isBomFile(fileName)
 }
 
 /**
@@ -378,20 +422,28 @@ export function sniffContentType(content: string): 'gerber' | 'drill' | null {
 
 // ── Layer grouping ──
 
-export type LayerGroupKey = 'gerber' | 'drill' | 'pnp' | 'unknown'
+export type LayerGroupKey = 'gerber' | 'drill' | 'pnp' | 'bom' | 'docs' | 'unknown'
 
-export function getLayerGroup(type: string): LayerGroupKey {
+export function getLayerGroup(type: string, fileName?: string): LayerGroupKey {
   if (type === 'Drill') return 'drill'
-  if (type === 'PnP Top' || type === 'PnP Bottom' || type === 'PnP Top + Bot') return 'pnp'
+  if (isPnPLayer(type)) return 'pnp'
+  if (isBomLayer(type) || (fileName && isBomFile(fileName))) return 'bom'
   if (type === 'Unmatched') return 'unknown'
   return 'gerber'
+}
+
+/** Whether a layer type represents a non-renderable file (BOM or document) */
+export function isNonRenderableLayer(type: string): boolean {
+  return isBomLayer(type)
 }
 
 export const LAYER_GROUP_LABELS: Record<LayerGroupKey, string> = {
   gerber: 'Gerber Files',
   drill: 'Drill Files',
   pnp: 'Pick and Place',
+  bom: 'Bill of Materials',
+  docs: 'Documents',
   unknown: 'Unknown',
 }
 
-export const LAYER_GROUP_ORDER: LayerGroupKey[] = ['gerber', 'drill', 'pnp', 'unknown']
+export const LAYER_GROUP_ORDER: LayerGroupKey[] = ['gerber', 'drill', 'pnp', 'bom', 'docs', 'unknown']

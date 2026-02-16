@@ -10,6 +10,8 @@ export interface Team {
   name: string
   slug: string
   auto_join_domain: string | null
+  elexess_username: string | null
+  elexess_password: string | null
   created_at: string
   updated_at: string
 }
@@ -152,7 +154,7 @@ export function useTeam() {
   }
 
   /** Update team settings (admin only) */
-  async function updateTeam(updates: { name?: string; auto_join_domain?: string | null }) {
+  async function updateTeam(updates: { name?: string; auto_join_domain?: string | null; elexess_username?: string | null; elexess_password?: string | null }) {
     if (!currentTeamId.value) return { error: new Error('No team selected') }
 
     const { data, error } = await supabase

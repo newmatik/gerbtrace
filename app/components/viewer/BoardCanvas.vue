@@ -32,6 +32,7 @@ import type { AlignMode, AlignPoint } from '~/composables/usePickAndPlace'
 import type { PackageDefinition, FootprintShape } from '~/utils/package-types'
 import type { PnPConvention } from '~/utils/pnp-conventions'
 import { computeFootprint, getConventionRotationTransform } from '~/utils/package-types'
+import { computeThtFootprint, type THTPackageDefinition, type ColoredFootprintShape } from '~/utils/tht-package-types'
 
 export type ViewMode = 'layers' | 'realistic'
 
@@ -63,8 +64,10 @@ const props = defineProps<{
   alignMode?: AlignMode
   /** First alignment click for 2-pad mode */
   alignClickA?: AlignPoint | null
-  /** Package lookup function — returns definition for a package name */
+  /** Package lookup function — returns definition for a package name (SMD) */
   matchPackage?: (name: string) => PackageDefinition | undefined
+  /** THT package lookup function — returns definition for a THT package name */
+  matchThtPackage?: (name: string) => import('~/utils/tht-package-types').THTPackageDefinition | undefined
   /** Reactive package-library version token to trigger redraw when package data loads */
   packageLibraryVersion?: number
   /** Whether to render package footprints */
@@ -572,10 +575,16 @@ function drawPnPMarkers(
     // If a footprint package is renderable, suppress the center dot (but keep dots for unknown packages).
     if (options?.hideDotWhenPackagePresent) {
       const includePkgs = options.includePackages ?? !!props.showPackages
-      if (includePkgs && props.matchPackage) {
+      if (includePkgs) {
         const pkgName = comp.matchedPackage || comp.package
-        const pkg = pkgName ? props.matchPackage(pkgName) : undefined
-        if (pkg) {
+        const isTht = (comp as any).componentType === 'tht'
+        let hasPkg = false
+        if (isTht && props.matchThtPackage) {
+          hasPkg = !!props.matchThtPackage(pkgName)
+        } else if (props.matchPackage) {
+          hasPkg = !!(pkgName ? props.matchPackage(pkgName) : undefined)
+        }
+        if (hasPkg) {
           // Selection highlight is handled via footprint rendering; skip dot + label.
           continue
         }
@@ -618,6 +627,49 @@ function getFootprint(pkg: PackageDefinition): FootprintShape[] {
 }
 
 /**
+ * Compute the radius of the smallest circle centered at (0,0) that contains
+ * all footprint shapes. Rotation-invariant; used to estimate how far a
+ * component extends from its placement center for export bounds computation.
+ */
+function computePkgExtent(shapes: FootprintShape[]): number {
+  let maxDist = 0
+  for (const shape of shapes) {
+    if (shape.kind === 'circle') {
+      const dist = Math.sqrt(shape.cx * shape.cx + shape.cy * shape.cy) + shape.r
+      maxDist = Math.max(maxDist, dist)
+    } else {
+      const hw = shape.w / 2
+      const hh = shape.h / 2
+      for (const dx of [-hw, hw]) {
+        for (const dy of [-hh, hh]) {
+          const x = shape.cx + dx
+          const y = shape.cy + dy
+          maxDist = Math.max(maxDist, Math.sqrt(x * x + y * y))
+        }
+      }
+    }
+  }
+  return maxDist
+}
+
+// THT footprint shape cache (uses ColoredFootprintShape which extends FootprintShape)
+const thtFootprintCache = new Map<string, ColoredFootprintShape[]>()
+
+function getThtFootprint(pkg: THTPackageDefinition): ColoredFootprintShape[] {
+  const key = `tht:${pkg.name}`
+  if (thtFootprintCache.has(key)) return thtFootprintCache.get(key)!
+  const shapes = computeThtFootprint(pkg)
+  thtFootprintCache.set(key, shapes)
+  return shapes
+}
+
+// Flush footprint caches when package library version changes (add/update/delete)
+watch(() => props.packageLibraryVersion, () => {
+  footprintCache.clear()
+  thtFootprintCache.clear()
+})
+
+/**
  * Draw package footprints (body + pads) for PnP components.
  * Renders underneath the PnP center dots.
  */
@@ -635,7 +687,8 @@ function drawPackageFootprints(
 ) {
   const components = options?.components ?? props.pnpComponents
   const includePackages = options?.includePackages ?? !!props.showPackages
-  if (!components || components.length === 0 || !props.matchPackage || !includePackages) return
+  if (!components || components.length === 0 || !includePackages) return
+  if (!props.matchPackage && !props.matchThtPackage) return
 
   const units = detectUnits()
   const { ox, oy } = getEffectiveOrigin()
@@ -649,10 +702,31 @@ function drawPackageFootprints(
 
   for (const comp of components) {
     const pkgName = comp.matchedPackage || comp.package
-    const pkg = props.matchPackage(pkgName)
-    if (!pkg) continue
+    const isTht = comp.componentType === 'tht'
 
-    const shapes = getFootprint(pkg)
+    let shapes: FootprintShape[]
+    let rotRad: number
+
+    if (isTht && props.matchThtPackage) {
+      const thtPkg = props.matchThtPackage(pkgName)
+      if (!thtPkg) continue
+      shapes = getThtFootprint(thtPkg)
+      // Apply PnP convention rotation for THT components
+      const thtDirection = (props.pnpConvention ?? 'iec61188') === 'mycronic' ? -1 : 1
+      const rotationCCW = thtDirection * comp.rotation
+      rotRad = (-rotationCCW * Math.PI) / 180
+    } else if (props.matchPackage) {
+      const pkg = props.matchPackage(pkgName)
+      if (!pkg) continue
+      shapes = getFootprint(pkg)
+      // Convert PnP file rotation into our baseline (degrees CCW, top view)
+      const { direction, offsetDeg } = getConventionRotationTransform(pkg, props.pnpConvention ?? 'iec61188')
+      const adjustedRotationCCW = direction * comp.rotation + offsetDeg
+      rotRad = (-adjustedRotationCCW * Math.PI) / 180
+    } else {
+      continue
+    }
+
     const gx = pnpToGerber(comp.x, ox, units)
     const gy = pnpToGerber(comp.y, oy, units)
 
@@ -660,14 +734,6 @@ function drawPackageFootprints(
     const centerSy = transform.offsetY - gy * transform.scale
     if (mirrored) centerSx = cssWidth - centerSx
 
-    // Convert PnP file rotation into our baseline (degrees CCW, top view)
-    // - IPC / IEC: typically CCW-positive
-    // - Mycronic: CW-positive
-    const { direction, offsetDeg } = getConventionRotationTransform(pkg, props.pnpConvention ?? 'iec61188')
-    const adjustedRotationCCW = direction * comp.rotation + offsetDeg
-
-    // Rotation in radians (we keep adjustedRotationCCW in CCW degrees; canvas rotate is visually CW)
-    const rotRad = (-adjustedRotationCCW * Math.PI) / 180
     // Mirror flips the rotation direction
     const effectiveRot = mirrored ? -rotRad : rotRad
 
@@ -681,8 +747,11 @@ function drawPackageFootprints(
     for (const shape of shapes) {
       drawFootprintShape(ctx, shape, mmToScreen, mirrored, isSelected, comp.polarized)
     }
-    if (comp.polarized && isLedPackage(pkg, comp.package)) {
-      drawLedPolarityLabels(ctx, shapes, mmToScreen, mirrored)
+    if (!isTht && comp.polarized && props.matchPackage) {
+      const pkg = props.matchPackage(pkgName)
+      if (pkg && isLedPackage(pkg, comp.package)) {
+        drawLedPolarityLabels(ctx, shapes, mmToScreen, mirrored)
+      }
     }
 
     ctx.restore()
@@ -704,8 +773,38 @@ const LED_PIN_LABEL_FILL = 'rgba(255, 255, 255, 0.95)'
 const LED_PIN_LABEL_STROKE = 'rgba(0, 0, 0, 0.75)'
 
 /**
+ * Ensure a CSS color has the desired alpha. If the color is a hex (#rrggbb)
+ * or named color without alpha, wrap it in rgba with the given alpha.
+ */
+function withAlpha(color: string, alpha: number): string {
+  // Already has alpha (rgba / hsla)
+  if (color.startsWith('rgba') || color.startsWith('hsla')) return color
+  // Hex color
+  const hex = color.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i)
+  if (hex) {
+    const r = parseInt(hex[1]!, 16)
+    const g = parseInt(hex[2]!, 16)
+    const b = parseInt(hex[3]!, 16)
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`
+  }
+  // Short hex
+  const shex = color.match(/^#([0-9a-f])([0-9a-f])([0-9a-f])$/i)
+  if (shex) {
+    const r = parseInt(shex[1]! + shex[1]!, 16)
+    const g = parseInt(shex[2]! + shex[2]!, 16)
+    const b = parseInt(shex[3]! + shex[3]!, 16)
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`
+  }
+  return color
+}
+
+/**
  * Draw a single footprint shape at the current transform.
  * Coordinates are in mm, scaled by mmToScreen.
+ *
+ * Supports per-shape color overrides via `fillColor` and `strokeColorOverride`
+ * properties (used by THT component packages). If absent, uses default constants.
+ * Custom colors are blended with the same alpha as the default SMD colors.
  */
 function drawFootprintShape(
   ctx: CanvasRenderingContext2D,
@@ -716,6 +815,18 @@ function drawFootprintShape(
   polarized: boolean,
 ) {
   const mirrorFactor = mirrored ? -1 : 1
+  // Per-shape color overrides (from THT packages via ColoredFootprintShape)
+  // Apply matching alpha so THT components render at the same transparency as SMD
+  const rawFill = (shape as any).fillColor as string | undefined
+  const rawStroke = (shape as any).strokeColorOverride as string | undefined
+  const role0 = shape.role
+  const bodyAlpha = 0.85
+  const padAlpha = 0.9
+  const pin1Alpha = 0.95
+  const strokeAlpha = 0.9
+  const a = role0 === 'body' ? bodyAlpha : role0 === 'pin1' ? pin1Alpha : padAlpha
+  const customFill = rawFill ? withAlpha(rawFill, a) : undefined
+  const customStroke = rawStroke ? withAlpha(rawStroke, strokeAlpha) : undefined
 
   if (shape.kind === 'rect') {
     const sx = shape.cx * mmToScreen * mirrorFactor
@@ -726,16 +837,16 @@ function drawFootprintShape(
     const role = (!polarized && shape.role === 'pin1') ? 'pad' : shape.role
 
     if (role === 'body') {
-      ctx.fillStyle = isSelected ? PKG_BODY_FILL_SEL : PKG_BODY_FILL
+      ctx.fillStyle = isSelected ? PKG_BODY_FILL_SEL : (customFill || PKG_BODY_FILL)
       ctx.fillRect(sx - sw / 2, sy - sh / 2, sw, sh)
-      ctx.strokeStyle = isSelected ? PKG_BODY_STROKE_SEL : PKG_BODY_STROKE
+      ctx.strokeStyle = isSelected ? PKG_BODY_STROKE_SEL : (customStroke || PKG_BODY_STROKE)
       ctx.lineWidth = 1
       ctx.strokeRect(sx - sw / 2, sy - sh / 2, sw, sh)
     } else if (role === 'pad') {
-      ctx.fillStyle = isSelected ? PKG_PAD_FILL_SEL : PKG_PAD_FILL
+      ctx.fillStyle = isSelected ? PKG_PAD_FILL_SEL : (customFill || PKG_PAD_FILL)
       ctx.fillRect(sx - sw / 2, sy - sh / 2, sw, sh)
     } else if (role === 'pin1') {
-      ctx.fillStyle = isSelected ? PKG_PIN1_FILL_SEL : PKG_PIN1_FILL
+      ctx.fillStyle = isSelected ? PKG_PIN1_FILL_SEL : (customFill || PKG_PIN1_FILL)
       ctx.fillRect(sx - sw / 2, sy - sh / 2, sw, sh)
     }
   } else if (shape.kind === 'circle') {
@@ -748,20 +859,20 @@ function drawFootprintShape(
     if (role === 'body') {
       ctx.beginPath()
       ctx.arc(sx, sy, sr, 0, Math.PI * 2)
-      ctx.fillStyle = isSelected ? PKG_BODY_FILL_SEL : PKG_BODY_FILL
+      ctx.fillStyle = isSelected ? PKG_BODY_FILL_SEL : (customFill || PKG_BODY_FILL)
       ctx.fill()
-      ctx.strokeStyle = isSelected ? PKG_BODY_STROKE_SEL : PKG_BODY_STROKE
+      ctx.strokeStyle = isSelected ? PKG_BODY_STROKE_SEL : (customStroke || PKG_BODY_STROKE)
       ctx.lineWidth = 1
       ctx.stroke()
     } else if (role === 'pad') {
       ctx.beginPath()
       ctx.arc(sx, sy, Math.max(sr, 0.5), 0, Math.PI * 2)
-      ctx.fillStyle = isSelected ? PKG_PAD_FILL_SEL : PKG_PAD_FILL
+      ctx.fillStyle = isSelected ? PKG_PAD_FILL_SEL : (customFill || PKG_PAD_FILL)
       ctx.fill()
     } else if (role === 'pin1') {
       ctx.beginPath()
       ctx.arc(sx, sy, Math.max(sr, 0.5), 0, Math.PI * 2)
-      ctx.fillStyle = isSelected ? PKG_PIN1_FILL_SEL : PKG_PIN1_FILL
+      ctx.fillStyle = isSelected ? PKG_PIN1_FILL_SEL : (customFill || PKG_PIN1_FILL)
       ctx.fill()
     }
   } else if (shape.kind === 'roundedRect') {
@@ -774,15 +885,14 @@ function drawFootprintShape(
     ctx.beginPath()
     roundRect(ctx, sx - sw / 2, sy - sh / 2, sw, sh, sr)
 
-    // RoundedRect shapes are used for pads/bodies only (no pin1 role).
     if (shape.role === 'body') {
-      ctx.fillStyle = isSelected ? PKG_BODY_FILL_SEL : PKG_BODY_FILL
+      ctx.fillStyle = isSelected ? PKG_BODY_FILL_SEL : (customFill || PKG_BODY_FILL)
       ctx.fill()
-      ctx.strokeStyle = isSelected ? PKG_BODY_STROKE_SEL : PKG_BODY_STROKE
+      ctx.strokeStyle = isSelected ? PKG_BODY_STROKE_SEL : (customStroke || PKG_BODY_STROKE)
       ctx.lineWidth = 1
       ctx.stroke()
     } else {
-      ctx.fillStyle = isSelected ? PKG_PAD_FILL_SEL : PKG_PAD_FILL
+      ctx.fillStyle = isSelected ? PKG_PAD_FILL_SEL : (customFill || PKG_PAD_FILL)
       ctx.fill()
     }
   }
@@ -1473,7 +1583,7 @@ watch(
 
 // Watch for layer or transform changes and redraw
 watch(
-  () => [props.layers, props.allLayers, props.interaction.transform.value, props.mirrored, props.cropToOutline, props.outlineLayer, props.viewMode, props.preset, bgColor.value, appSettings.gridEnabled, appSettings.gridSpacingMm, props.pnpComponents, props.selectedPnpDesignator, props.pnpOriginX, props.pnpOriginY, props.alignMode, props.alignClickA, originCursorGerber.value, props.showPackages, props.pnpConvention, props.matchPackage, props.packageLibraryVersion, props.deleteTool?.pendingDeletion.value, props.boardRotation],
+  () => [props.layers, props.allLayers, props.interaction.transform.value, props.mirrored, props.cropToOutline, props.outlineLayer, props.viewMode, props.preset, bgColor.value, appSettings.gridEnabled, appSettings.gridSpacingMm, props.pnpComponents, props.selectedPnpDesignator, props.pnpOriginX, props.pnpOriginY, props.alignMode, props.alignClickA, originCursorGerber.value, props.showPackages, props.pnpConvention, props.matchPackage, props.matchThtPackage, props.packageLibraryVersion, props.deleteTool?.pendingDeletion.value, props.boardRotation],
   () => scheduleRedraw(),
   { deep: true },
 )
@@ -1691,11 +1801,49 @@ function exportPngForSide(
   const mirrorX = side === 'bottom'
 
   return new Promise((resolve) => {
-    const bounds = getExportBounds()
-    if (!bounds) return resolve(null)
+    const boardBounds = getExportBounds()
+    if (!boardBounds) return resolve(null)
 
-    const bw = bounds[2] - bounds[0]
-    const bh = bounds[3] - bounds[1]
+    // Start with board bounds; expand to include component extents if needed
+    let bMinX = boardBounds[0], bMinY = boardBounds[1]
+    let bMaxX = boardBounds[2], bMaxY = boardBounds[3]
+
+    if (includeComponents && components.length > 0) {
+      const units = detectUnits()
+      const { ox, oy } = getEffectiveOrigin()
+      const mmToGerber = units === 'in' ? 1 / 25.4 : 1
+      const dotR = 0.20 * mmToGerber
+
+      for (const comp of components) {
+        const gx = pnpToGerber(comp.x, ox, units)
+        const gy = pnpToGerber(comp.y, oy, units)
+        const pkgName = comp.matchedPackage || comp.package
+        const isTht = (comp as any).componentType === 'tht'
+        let extent = dotR
+
+        if (includePackages && pkgName) {
+          if (isTht && props.matchThtPackage) {
+            const thtPkg = props.matchThtPackage(pkgName)
+            if (thtPkg) {
+              extent = Math.max(extent, computePkgExtent(computeThtFootprint(thtPkg)) * mmToGerber)
+            }
+          } else if (props.matchPackage) {
+            const pkg = props.matchPackage(pkgName)
+            if (pkg) {
+              extent = Math.max(extent, computePkgExtent(computeFootprint(pkg)) * mmToGerber)
+            }
+          }
+        }
+
+        bMinX = Math.min(bMinX, gx - extent)
+        bMinY = Math.min(bMinY, gy - extent)
+        bMaxX = Math.max(bMaxX, gx + extent)
+        bMaxY = Math.max(bMaxY, gy + extent)
+      }
+    }
+
+    const bw = bMaxX - bMinX
+    const bh = bMaxY - bMinY
     if (bw <= 0 || bh <= 0) return resolve(null)
 
     const expRotDeg = props.boardRotation ?? 0
@@ -1710,8 +1858,8 @@ function exportPngForSide(
     const canvasW = Math.ceil(effectiveW * scaleFactor)
     const canvasH = Math.ceil(effectiveH * scaleFactor)
 
-    const gerberCX = (bounds[0] + bounds[2]) / 2
-    const gerberCY = (bounds[1] + bounds[3]) / 2
+    const gerberCX = (bMinX + bMaxX) / 2
+    const gerberCY = (bMinY + bMaxY) / 2
     const exportTransform = {
       offsetX: canvasW / 2 - gerberCX * scaleFactor,
       offsetY: canvasH / 2 + gerberCY * scaleFactor,
