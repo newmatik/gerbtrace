@@ -8,17 +8,31 @@
         <div ref="listRef" class="space-y-0.5">
           <template v-for="group in groups" :key="group.key">
             <!-- Group header -->
-            <button
-              class="flex items-center gap-1.5 w-full px-2 py-1 mt-1 first:mt-0 text-[10px] font-semibold uppercase tracking-wider text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors rounded hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
-              @click="toggleGroup(group.key)"
+            <div
+              class="flex items-center gap-1.5 w-full px-2 py-1 mt-1 first:mt-0 text-[10px] font-semibold uppercase tracking-wider text-neutral-400 rounded"
             >
-              <UIcon
-                :name="collapsed.has(group.key) ? 'i-lucide-chevron-right' : 'i-lucide-chevron-down'"
-                class="text-[10px] shrink-0"
-              />
-              <span>{{ group.label }}</span>
-              <span class="text-neutral-300 dark:text-neutral-600 font-normal">{{ group.layers.length }}</span>
-            </button>
+              <button
+                class="flex items-center gap-1.5 flex-1 min-w-0 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors cursor-pointer"
+                @click="toggleGroup(group.key)"
+              >
+                <UIcon
+                  :name="collapsed.has(group.key) ? 'i-lucide-chevron-right' : 'i-lucide-chevron-down'"
+                  class="text-[10px] shrink-0"
+                />
+                <span>{{ group.label }}</span>
+                <span class="text-neutral-300 dark:text-neutral-600 font-normal">{{ group.layers.length }}</span>
+              </button>
+              <button
+                class="shrink-0 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors cursor-pointer"
+                title="Toggle all layers in this section"
+                @click.stop="$emit('toggleGroupVisibility', group.layers.map(e => e.flatIndex))"
+              >
+                <UIcon
+                  :name="group.layers.some(e => e.layer.visible) ? 'i-lucide-eye' : 'i-lucide-eye-off'"
+                  class="text-xs"
+                />
+              </button>
+            </div>
 
             <!-- Group layers (when not collapsed) -->
             <template v-if="!collapsed.has(group.key)">
@@ -42,9 +56,14 @@
                 />
                 <LayerToggle
                   :layer="entry.layer"
+                  :is-edited="editedLayers?.has(entry.layer.file.fileName) ?? false"
                   @toggle-visibility="$emit('toggleVisibility', entry.flatIndex)"
                   @color-change="(color: string) => $emit('changeColor', entry.flatIndex, color)"
                   @type-change="(type: string) => $emit('changeType', entry.flatIndex, type)"
+                  @reset="$emit('resetLayer', entry.flatIndex)"
+                  @rename="(name: string) => $emit('renameLayer', entry.flatIndex, name)"
+                  @duplicate="$emit('duplicateLayer', entry.flatIndex)"
+                  @remove="$emit('removeLayer', entry.flatIndex)"
                 />
               </div>
             </template>
@@ -73,13 +92,19 @@ interface LayerGroupData {
 
 const props = defineProps<{
   layers: LayerInfo[]
+  editedLayers?: Set<string>
 }>()
 
 const emit = defineEmits<{
   toggleVisibility: [index: number]
+  toggleGroupVisibility: [indices: number[]]
   changeColor: [index: number, color: string]
   changeType: [index: number, type: string]
   reorder: [fromIndex: number, toIndex: number]
+  resetLayer: [index: number]
+  renameLayer: [index: number, newName: string]
+  duplicateLayer: [index: number]
+  removeLayer: [index: number]
 }>()
 
 // ── Collapsible groups ──

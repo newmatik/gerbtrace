@@ -113,12 +113,29 @@ function buildComment(
     parts.push('DNP')
   }
 
+  if (comp.manual) {
+    parts.push('Manual')
+  }
+
   if (comp.rotationOverridden) {
     parts.push(`Rotation edited (was ${fmtRotation(comp.originalRotation)}°)`)
   }
 
+  if (comp.fieldsOverridden) {
+    const changes: string[] = []
+    if (comp.designator !== comp.originalDesignator) changes.push(`ref was ${comp.originalDesignator}`)
+    if (comp.value !== comp.originalValue) changes.push(`value was ${comp.originalValue}`)
+    if (Math.abs(comp.x - comp.originalX) > 1e-6) changes.push(`X was ${fmtCoord(comp.originalX)}`)
+    if (Math.abs(comp.y - comp.originalY) > 1e-6) changes.push(`Y was ${fmtCoord(comp.originalY)}`)
+    if (changes.length) parts.push(`Fields edited (${changes.join(', ')})`)
+  }
+
   if (needsConversion && !packageMatched) {
     parts.push('Package unmatched, rotation offset may differ')
+  }
+
+  if (comp.note) {
+    parts.push(comp.note)
   }
 
   return parts.join('; ')
@@ -169,7 +186,7 @@ export function generatePnPExport(options: PnPExportOptions): string {
   lines.push(`# ${name}, ${conventionLabel}, metric (mm), exported ${timestamp} from Gerbtrace`)
 
   // Column header
-  const headers = ['Designator', 'Mid X', 'Mid Y', 'Rotation', 'Side', 'Value', 'Package', 'CAD Package', 'Polarized', 'Populated', 'Comment']
+  const headers = ['Designator', 'Mid X', 'Mid Y', 'Rotation', 'Side', 'Value', 'Package', 'CAD Package', 'Polarized', 'Populated', 'Note', 'Comment']
   lines.push(headers.join(delimiter))
 
   // Filter out DNP if requested
@@ -201,6 +218,7 @@ export function generatePnPExport(options: PnPExportOptions): string {
       escape(cadPkg),
       fmtYesNo(!!comp.polarized),
       fmtYesNo(!comp.dnp),
+      escape(comp.note || ''),
       escape(comment),
     ]
     lines.push(row.join(delimiter))

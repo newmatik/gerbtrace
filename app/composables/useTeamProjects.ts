@@ -21,6 +21,9 @@ export interface TeamProject {
   pnp_dnp_components: string[] | null
   pnp_cad_package_map: Record<string, string> | null
   pnp_polarized_overrides: Record<string, boolean> | null
+  pnp_component_notes: Record<string, string> | null
+  pnp_field_overrides: Record<string, { designator?: string; value?: string; x?: number; y?: number }> | null
+  pnp_manual_components: { id: string; designator: string; value: string; package: string; x: number; y: number; rotation: number; side: 'top' | 'bottom' }[] | null
   created_at: string
   updated_at: string
 }
@@ -176,7 +179,10 @@ export function useTeamProjects() {
       .eq('packet', packet)
       .order('file_name')
 
-    if (error) return []
+    if (error) {
+      console.error('[useTeamProjects] Failed to fetch project files:', projectId, error.message)
+      return []
+    }
     return (data ?? []) as TeamProjectFile[]
   }
 
@@ -197,9 +203,12 @@ export function useTeamProjects() {
       .from('gerber-files')
       .upload(storagePath, blob, { upsert: true })
 
-    if (uploadError) return { file: null, error: uploadError }
+    if (uploadError) {
+      console.error('[useTeamProjects] Storage upload failed:', storagePath, uploadError.message)
+      return { file: null, error: uploadError }
+    }
 
-    // Create file record
+    // Create/update file record
     const { data, error } = await supabase
       .from('project_files')
       .upsert({
@@ -212,6 +221,10 @@ export function useTeamProjects() {
       .select()
       .single()
 
+    if (error) {
+      console.error('[useTeamProjects] File record upsert failed:', fileName, error.message)
+    }
+
     return { file: data as TeamProjectFile | null, error }
   }
 
@@ -221,7 +234,10 @@ export function useTeamProjects() {
       .from('gerber-files')
       .download(storagePath)
 
-    if (error || !data) return null
+    if (error || !data) {
+      console.error('[useTeamProjects] File download failed:', storagePath, error?.message)
+      return null
+    }
     return await data.text()
   }
 

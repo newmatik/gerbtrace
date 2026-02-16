@@ -10,13 +10,19 @@ export interface AppSettings {
   gridEnabled: boolean
   /** Grid spacing in millimeters */
   gridSpacingMm: number
+  /** DPI resolution for PNG image exports */
+  exportDpi: number
 }
+
+/** Standard DPI presets for PNG export */
+export const EXPORT_DPI_PRESETS = [150, 300, 600, 1200] as const
 
 const STORAGE_KEY = 'gerbtrace-settings'
 
 const defaults: AppSettings = {
   gridEnabled: true,
   gridSpacingMm: 10,
+  exportDpi: 600,
 }
 
 function loadSettings(): AppSettings {
@@ -30,6 +36,9 @@ function loadSettings(): AppSettings {
       gridSpacingMm: typeof parsed.gridSpacingMm === 'number' && parsed.gridSpacingMm > 0
         ? parsed.gridSpacingMm
         : defaults.gridSpacingMm,
+      exportDpi: typeof parsed.exportDpi === 'number' && parsed.exportDpi >= 72 && parsed.exportDpi <= 4800
+        ? parsed.exportDpi
+        : defaults.exportDpi,
     }
   } catch {
     return { ...defaults }

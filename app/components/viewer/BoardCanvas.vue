@@ -10,6 +10,7 @@
     @mousemove="onMouseMove"
     @mouseup="onMouseUp"
     @mouseleave="onMouseLeave"
+    @dblclick="onDblClick"
     @contextmenu.prevent
   />
 </template>
@@ -20,7 +21,7 @@ import { isPnPLayer } from '~/utils/gerber-helpers'
 import { drawCanvasGrid } from '~/utils/canvas-grid'
 import type { PcbPreset } from '~/utils/pcb-presets'
 import type { ImageTree, BoundingBox } from '@lib/gerber/types'
-import { renderToCanvas, renderOutlineMask, computeAutoFitTransform } from '@lib/renderer/canvas-renderer'
+import { renderToCanvas, renderOutlineMask, computeAutoFitTransform, renderGraphicSubset } from '@lib/renderer/canvas-renderer'
 import { renderRealisticView } from '@lib/renderer/realistic-renderer'
 import type { RealisticLayers } from '@lib/renderer/realistic-renderer'
 import { parseGerber } from '@lib/gerber'
@@ -70,16 +71,22 @@ const props = defineProps<{
   showPackages?: boolean
   /** PnP orientation convention used in the PnP file */
   pnpConvention?: PnPConvention
+  /** Board rotation in degrees (CW). Purely visual — does not modify data. */
+  boardRotation?: number
 }>()
 
 const emit = defineEmits<{
   pnpClick: [designator: string | null]
+  pnpDblclick: [designator: string]
   alignClick: [gerberX: number, gerberY: number]
 }>()
 
 const canvasEl = ref<HTMLCanvasElement | null>(null)
 const autoFitDone = ref(false)
 const currentBounds = ref<[number, number, number, number] | null>(null)
+
+/** Reactive board dimensions in mm — updated on every draw cycle. */
+const boardDimensions = ref<{ width: number; height: number } | null>(null)
 const { backgroundColor: bgColor, isLight } = useBackgroundColor()
 const { settings: appSettings } = useAppSettings()
 
@@ -123,12 +130,41 @@ function computeSceneCacheKey(): string {
     props.mirrored ? 'M' : '',
     props.activeFilter ?? 'all',
     bgColor.value,
+    String(props.boardRotation ?? 0),
   )
   if (props.viewMode === 'realistic') {
     const al = props.allLayers ?? props.layers
     for (const l of al) parts.push(l.file.fileName, l.color)
   }
   return parts.join('|')
+}
+
+// ── Board rotation helpers ──
+
+/** Current board rotation in radians */
+function getRotationRad(): number {
+  const deg = props.boardRotation ?? 0
+  return (deg * Math.PI) / 180
+}
+
+/**
+ * Un-rotate a screen point around the canvas center.
+ * Converts a mouse position (in screen/CSS space) into the coordinate
+ * system used by the transform, accounting for the visual rotation.
+ */
+function unrotateScreenPoint(sx: number, sy: number): { x: number; y: number } {
+  const deg = props.boardRotation ?? 0
+  if (deg === 0) return { x: sx, y: sy }
+  const { cssWidth, cssHeight } = getCssDimensions()
+  const cx = cssWidth / 2
+  const cy = cssHeight / 2
+  const rad = -getRotationRad()
+  const dx = sx - cx
+  const dy = sy - cy
+  return {
+    x: cx + dx * Math.cos(rad) - dy * Math.sin(rad),
+    y: cy + dx * Math.sin(rad) + dy * Math.cos(rad),
+  }
 }
 
 function invalidateSceneCache() {
@@ -183,7 +219,7 @@ function getImageTree(layer: LayerInfo): ImageTree | null {
 
 function onWheel(e: WheelEvent) {
   if (canvasEl.value) {
-    props.interaction.handleWheel(e, canvasEl.value)
+    props.interaction.handleWheel(e, canvasEl.value, props.boardRotation ?? 0)
     markWheelActivity()
   }
 }
@@ -202,8 +238,8 @@ function buildLayerData(): { name: string; type: string; color: string; tree: Im
 }
 
 function onMouseDown(e: MouseEvent) {
-  // Right-click: always pan (regardless of active tool)
-  if (e.button === 2) {
+  // Right-click or middle-click: always pan (regardless of active tool)
+  if (e.button === 1 || e.button === 2) {
     props.interaction.handleMouseDown(e)
     return
   }
@@ -212,8 +248,9 @@ function onMouseDown(e: MouseEvent) {
     // Alignment mode: click with snap
     if (props.alignMode && props.alignMode !== 'idle') {
       const rect = canvasEl.value.getBoundingClientRect()
-      const sx = e.clientX - rect.left
-      const sy = e.clientY - rect.top
+      const rawSx = e.clientX - rect.left
+      const rawSy = e.clientY - rect.top
+      const { x: sx, y: sy } = unrotateScreenPoint(rawSx, rawSy)
       let gerber = screenToGerber(sx, sy, props.interaction.transform.value)
       const snap = findSnapForOrigin(gerber, props.interaction.transform.value)
       if (snap) gerber = snap
@@ -230,8 +267,9 @@ function onMouseDown(e: MouseEvent) {
     } else if (props.pnpComponents && props.pnpComponents.length > 0) {
       // In cursor mode, check for PnP dot clicks
       const rect = canvasEl.value.getBoundingClientRect()
-      const clickX = e.clientX - rect.left
-      const clickY = e.clientY - rect.top
+      const rawClickX = e.clientX - rect.left
+      const rawClickY = e.clientY - rect.top
+      const { x: clickX, y: clickY } = unrotateScreenPoint(rawClickX, rawClickY)
       const { cssWidth } = getCssDimensions()
       const hit = hitTestPnP(
         clickX,
@@ -246,15 +284,31 @@ function onMouseDown(e: MouseEvent) {
   }
 }
 
+function onDblClick(e: MouseEvent) {
+  if (e.button !== 0 || !canvasEl.value) return
+  if (props.alignMode && props.alignMode !== 'idle') return
+  if (props.measure?.active.value || props.info?.active.value || props.deleteTool?.active.value) return
+  if (!props.pnpComponents || props.pnpComponents.length === 0) return
+
+  const rect = canvasEl.value.getBoundingClientRect()
+  const rawClickX = e.clientX - rect.left
+  const rawClickY = e.clientY - rect.top
+  const { x: clickX, y: clickY } = unrotateScreenPoint(rawClickX, rawClickY)
+  const { cssWidth } = getCssDimensions()
+  const hit = hitTestPnP(clickX, clickY, cssWidth, props.interaction.transform.value, !!props.mirrored)
+  if (hit) emit('pnpDblclick', hit)
+}
+
 function onMouseMove(e: MouseEvent) {
   // Always update pan if dragging (right-click drag)
-  props.interaction.handleMouseMove(e, { invertPanX: !!props.mirrored })
+  props.interaction.handleMouseMove(e, { invertPanX: !!props.mirrored, rotationDeg: props.boardRotation ?? 0 })
 
   // Alignment mode: track cursor with snap
   if (props.alignMode && props.alignMode !== 'idle' && canvasEl.value) {
     const rect = canvasEl.value.getBoundingClientRect()
-    const sx = e.clientX - rect.left
-    const sy = e.clientY - rect.top
+    const rawSx = e.clientX - rect.left
+    const rawSy = e.clientY - rect.top
+    const { x: sx, y: sy } = unrotateScreenPoint(rawSx, rawSy)
     let gerber = screenToGerber(sx, sy, props.interaction.transform.value)
     const snap = findSnapForOrigin(gerber, props.interaction.transform.value)
     if (snap) {
@@ -1084,6 +1138,54 @@ function drawAlignOverlay(
   ctx.restore()
 }
 
+// ── Delete-tool selection highlight ──
+
+const DELETE_HIGHLIGHT_COLOR = '#ffffff'
+const DELETE_HIGHLIGHT_ALPHA = 0.55
+
+/**
+ * Draw a translucent white overlay on graphics that are pending deletion.
+ * This gives the user a clear visual indicator of which objects are selected
+ * (similar to Gerbv's highlight behaviour).
+ */
+function drawDeleteHighlights(
+  ctx: CanvasRenderingContext2D,
+  cssWidth: number,
+  dpr: number,
+  transform: { offsetX: number; offsetY: number; scale: number },
+  mirrored: boolean,
+) {
+  const pending = props.deleteTool?.pendingDeletion.value
+  if (!pending) return
+
+  ctx.save()
+  if (dpr !== 1) ctx.scale(dpr, dpr)
+
+  if (mirrored) {
+    ctx.translate(cssWidth, 0)
+    ctx.scale(-1, 1)
+  }
+
+  ctx.translate(transform.offsetX, transform.offsetY)
+  ctx.scale(transform.scale, -transform.scale)
+
+  ctx.globalAlpha = DELETE_HIGHLIGHT_ALPHA
+
+  for (const pendingLayer of pending.layers) {
+    if (!pendingLayer.selected) continue
+
+    const layer = props.layers.find(l => l.file.fileName === pendingLayer.layerName)
+    if (!layer) continue
+
+    const tree = getImageTree(layer)
+    if (!tree) continue
+
+    renderGraphicSubset(tree, pendingLayer.graphicIndices, ctx, DELETE_HIGHLIGHT_COLOR, transform.scale)
+  }
+
+  ctx.restore()
+}
+
 function draw() {
   const canvas = canvasEl.value
   if (!canvas) return
@@ -1141,18 +1243,57 @@ function draw() {
     fitBounds = [unifiedBounds[0], unifiedBounds[1], unifiedBounds[2], unifiedBounds[3]]
   }
 
+  // Update reactive board dimensions (mm) from the export-quality bounds
+  const dimBounds = getExportBounds()
+  if (dimBounds) {
+    const bw = dimBounds[2] - dimBounds[0]
+    const bh = dimBounds[3] - dimBounds[1]
+    if (bw > 0 && bh > 0) {
+      const toMm = detectUnits() === 'in' ? 25.4 : 1
+      boardDimensions.value = { width: bw * toMm, height: bh * toMm }
+    } else {
+      boardDimensions.value = null
+    }
+  } else {
+    boardDimensions.value = null
+  }
+
   // Auto-fit on first render, when bounds change, or when reset is requested (scale <= 0)
-  const boundsKey = fitBounds.join(',')
-  const prevKey = currentBounds.value?.join(',')
-  const needsAutoFit = !autoFitDone.value || boundsKey !== prevKey || props.interaction.transform.value.scale <= 0
-  if (needsAutoFit) {
-    const fit = computeAutoFitTransform(cssWidth, cssHeight, fitBounds)
+  const rotDeg = props.boardRotation ?? 0
+  const rotRad = getRotationRad()
+  const needsAutoFit = !autoFitDone.value || props.interaction.transform.value.scale <= 0
+  const boundsChanged = fitBounds.join(',') !== currentBounds.value?.join(',')
+  if (needsAutoFit || boundsChanged) {
+    let effectiveBounds = fitBounds
+    // When rotated, compute the enlarged bounding box so auto-fit accommodates the rotation
+    if (rotDeg !== 0) {
+      const gerberW = fitBounds[2] - fitBounds[0]
+      const gerberH = fitBounds[3] - fitBounds[1]
+      const absC = Math.abs(Math.cos(rotRad))
+      const absS = Math.abs(Math.sin(rotRad))
+      const rotW = gerberW * absC + gerberH * absS
+      const rotH = gerberW * absS + gerberH * absC
+      const cx = (fitBounds[0] + fitBounds[2]) / 2
+      const cy = (fitBounds[1] + fitBounds[3]) / 2
+      effectiveBounds = [cx - rotW / 2, cy - rotH / 2, cx + rotW / 2, cy + rotH / 2] as [number, number, number, number]
+    }
+    const fit = computeAutoFitTransform(cssWidth, cssHeight, effectiveBounds)
     props.interaction.transform.value = fit
     autoFitDone.value = true
     currentBounds.value = fitBounds
   }
 
   const transform = props.interaction.transform.value
+
+  // ── Apply board rotation around the canvas center ──
+  // All subsequent drawing (grid, scene, overlays) happens within this
+  // rotated context. The rotation is purely visual and does not modify data.
+  if (rotDeg !== 0) {
+    ctx.save()
+    ctx.translate(canvas.width / 2, canvas.height / 2)
+    ctx.rotate(rotRad)
+    ctx.translate(-canvas.width / 2, -canvas.height / 2)
+  }
 
   // Draw background grid (only in layers view)
   if (!isRealistic && appSettings.gridEnabled) {
@@ -1283,6 +1424,9 @@ function draw() {
     }
   }
 
+  // Highlight selected objects (delete tool pending selection)
+  drawDeleteHighlights(ctx, cssWidth, dpr, transform, !!props.mirrored)
+
   // Component overlays (footprints + markers) — always draw.
   // The layer cache above handles the expensive gerber re-rendering;
   // these are lightweight per-component shapes (rects/arcs).
@@ -1294,6 +1438,11 @@ function draw() {
   })
 
   drawAlignOverlay(ctx, cssWidth, cssHeight, dpr, transform, !!props.mirrored)
+
+  // Close the board rotation context
+  if (rotDeg !== 0) {
+    ctx.restore()
+  }
 }
 
 // ── rAF-coalesced redraw ──
@@ -1312,9 +1461,19 @@ watch(
   (dragging) => { if (!dragging) scheduleRedraw() },
 )
 
+// Re-fit the board when rotation changes
+watch(
+  () => props.boardRotation,
+  () => {
+    invalidateSceneCache()
+    autoFitDone.value = false
+    scheduleRedraw()
+  },
+)
+
 // Watch for layer or transform changes and redraw
 watch(
-  () => [props.layers, props.allLayers, props.interaction.transform.value, props.mirrored, props.cropToOutline, props.outlineLayer, props.viewMode, props.preset, bgColor.value, appSettings.gridEnabled, appSettings.gridSpacingMm, props.pnpComponents, props.selectedPnpDesignator, props.pnpOriginX, props.pnpOriginY, props.alignMode, props.alignClickA, originCursorGerber.value, props.showPackages, props.pnpConvention, props.matchPackage, props.packageLibraryVersion],
+  () => [props.layers, props.allLayers, props.interaction.transform.value, props.mirrored, props.cropToOutline, props.outlineLayer, props.viewMode, props.preset, bgColor.value, appSettings.gridEnabled, appSettings.gridSpacingMm, props.pnpComponents, props.selectedPnpDesignator, props.pnpOriginX, props.pnpOriginY, props.alignMode, props.alignClickA, originCursorGerber.value, props.showPackages, props.pnpConvention, props.matchPackage, props.packageLibraryVersion, props.deleteTool?.pendingDeletion.value, props.boardRotation],
   () => scheduleRedraw(),
   { deep: true },
 )
@@ -1361,12 +1520,23 @@ function getExportBounds(): [number, number, number, number] | null {
   return isEmpty(bounds) ? null : (bounds as [number, number, number, number])
 }
 
+/** Maximum canvas dimension to prevent browser memory issues */
+const MAX_CANVAS_PX = 16384
+
+/**
+ * Convert a DPI value to a scale factor (pixels per Gerber coordinate unit).
+ */
+function dpiToScaleFactor(dpi: number): number {
+  const units = detectUnits()
+  return units === 'in' ? dpi : dpi / 25.4
+}
+
 /**
  * Export the realistic (or layer) view as a PNG blob.
- * Renders to a dedicated offscreen canvas tightly cropped to the board
- * with a transparent background.
+ * Renders to a dedicated offscreen canvas tightly cropped to the board.
+ * @param dpi Resolution in dots per inch (default 600)
  */
-function exportPng(targetMaxPx: number = 4096): Promise<Blob | null> {
+function exportPng(dpi: number = 600): Promise<Blob | null> {
   return new Promise((resolve) => {
     const bounds = getExportBounds()
     if (!bounds) return resolve(null)
@@ -1375,17 +1545,27 @@ function exportPng(targetMaxPx: number = 4096): Promise<Blob | null> {
     const bh = bounds[3] - bounds[1]
     if (bw <= 0 || bh <= 0) return resolve(null)
 
-    // Size the export canvas to fit exactly, up to targetMaxPx on the longest side
-    const scaleFactor = Math.min(targetMaxPx / bw, targetMaxPx / bh)
-    const canvasW = Math.ceil(bw * scaleFactor)
-    const canvasH = Math.ceil(bh * scaleFactor)
+    const expRotDeg = props.boardRotation ?? 0
+    const expRotRad = (expRotDeg * Math.PI) / 180
 
-    // Tight-fit transform: maps gerber bounds exactly to [0,0]–[canvasW,canvasH]
-    //   screenX = offsetX + gerberX * scale  → gerberX=bounds[0] → 0
-    //   screenY = offsetY - gerberY * scale  → gerberY=bounds[3] → 0 (top)
+    // Compute effective dimensions after rotation
+    const absC = Math.abs(Math.cos(expRotRad))
+    const absS = Math.abs(Math.sin(expRotRad))
+    const effectiveW = expRotDeg !== 0 ? bw * absC + bh * absS : bw
+    const effectiveH = expRotDeg !== 0 ? bw * absS + bh * absC : bh
+
+    // Compute scale from DPI, capped to MAX_CANVAS_PX
+    const idealScale = dpiToScaleFactor(dpi)
+    const scaleFactor = Math.min(idealScale, MAX_CANVAS_PX / effectiveW, MAX_CANVAS_PX / effectiveH)
+    const canvasW = Math.ceil(effectiveW * scaleFactor)
+    const canvasH = Math.ceil(effectiveH * scaleFactor)
+
+    // Center the board in the export canvas (works for both rotated and unrotated)
+    const gerberCX = (bounds[0] + bounds[2]) / 2
+    const gerberCY = (bounds[1] + bounds[3]) / 2
     const exportTransform = {
-      offsetX: -bounds[0] * scaleFactor,
-      offsetY: bounds[3] * scaleFactor,
+      offsetX: canvasW / 2 - gerberCX * scaleFactor,
+      offsetY: canvasH / 2 + gerberCY * scaleFactor,
       scale: scaleFactor,
     }
 
@@ -1395,6 +1575,15 @@ function exportPng(targetMaxPx: number = 4096): Promise<Blob | null> {
 
     const isRealistic = props.viewMode === 'realistic' && props.preset
 
+    // Helper to apply rotation to an export context
+    const applyExportRotation = (c: CanvasRenderingContext2D) => {
+      if (expRotDeg !== 0) {
+        c.translate(canvasW / 2, canvasH / 2)
+        c.rotate(expRotRad)
+        c.translate(-canvasW / 2, -canvasH / 2)
+      }
+    }
+
     if (isRealistic) {
       const side = props.activeFilter === 'bot' ? 'bottom' : 'top'
       const realisticLayers = gatherRealisticLayers(side)
@@ -1403,12 +1592,18 @@ function exportPng(targetMaxPx: number = 4096): Promise<Blob | null> {
       sceneCanvas.width = canvasW
       sceneCanvas.height = canvasH
 
+      const sceneCtx = sceneCanvas.getContext('2d')!
+      sceneCtx.save()
+      applyExportRotation(sceneCtx)
+
       renderRealisticView(realisticLayers, sceneCanvas, {
         preset: props.preset!,
         transform: exportTransform,
         dpr: 1,
         side,
       })
+
+      sceneCtx.restore()
 
       const ctx = exportCanvas.getContext('2d')!
       if (props.mirrored) {
@@ -1419,6 +1614,10 @@ function exportPng(targetMaxPx: number = 4096): Promise<Blob | null> {
     } else {
       // Layer view export
       const ctx = exportCanvas.getContext('2d')!
+
+      ctx.save()
+      applyExportRotation(ctx)
+
       const source = props.layers
       for (const layer of source) {
         const tree = getImageTree(layer)
@@ -1451,6 +1650,8 @@ function exportPng(targetMaxPx: number = 4096): Promise<Blob | null> {
           ctx.globalCompositeOperation = 'source-over'
         }
       }
+
+      ctx.restore()
 
       if (props.mirrored) {
         const flipCanvas = document.createElement('canvas')
@@ -1477,13 +1678,13 @@ function exportPng(targetMaxPx: number = 4096): Promise<Blob | null> {
 function exportPngForSide(
   side: 'top' | 'bottom',
   options?: {
-    targetMaxPx?: number
+    dpi?: number
     includeComponents?: boolean
     components?: EditablePnPComponent[]
     includePackages?: boolean
   },
 ): Promise<Blob | null> {
-  const targetMaxPx = options?.targetMaxPx ?? 4096
+  const dpi = options?.dpi ?? 600
   const includeComponents = !!options?.includeComponents
   const components = options?.components ?? []
   const includePackages = options?.includePackages ?? !!props.showPackages
@@ -1497,14 +1698,32 @@ function exportPngForSide(
     const bh = bounds[3] - bounds[1]
     if (bw <= 0 || bh <= 0) return resolve(null)
 
-    const scaleFactor = Math.min(targetMaxPx / bw, targetMaxPx / bh)
-    const canvasW = Math.ceil(bw * scaleFactor)
-    const canvasH = Math.ceil(bh * scaleFactor)
+    const expRotDeg = props.boardRotation ?? 0
+    const expRotRad = (expRotDeg * Math.PI) / 180
+    const absC = Math.abs(Math.cos(expRotRad))
+    const absS = Math.abs(Math.sin(expRotRad))
+    const effectiveW = expRotDeg !== 0 ? bw * absC + bh * absS : bw
+    const effectiveH = expRotDeg !== 0 ? bw * absS + bh * absC : bh
 
+    const idealScale = dpiToScaleFactor(dpi)
+    const scaleFactor = Math.min(idealScale, MAX_CANVAS_PX / effectiveW, MAX_CANVAS_PX / effectiveH)
+    const canvasW = Math.ceil(effectiveW * scaleFactor)
+    const canvasH = Math.ceil(effectiveH * scaleFactor)
+
+    const gerberCX = (bounds[0] + bounds[2]) / 2
+    const gerberCY = (bounds[1] + bounds[3]) / 2
     const exportTransform = {
-      offsetX: -bounds[0] * scaleFactor,
-      offsetY: bounds[3] * scaleFactor,
+      offsetX: canvasW / 2 - gerberCX * scaleFactor,
+      offsetY: canvasH / 2 + gerberCY * scaleFactor,
       scale: scaleFactor,
+    }
+
+    const applyExportRot = (c: CanvasRenderingContext2D) => {
+      if (expRotDeg !== 0) {
+        c.translate(canvasW / 2, canvasH / 2)
+        c.rotate(expRotRad)
+        c.translate(-canvasW / 2, -canvasH / 2)
+      }
     }
 
     const exportCanvas = document.createElement('canvas')
@@ -1520,12 +1739,18 @@ function exportPngForSide(
       sceneCanvas.width = canvasW
       sceneCanvas.height = canvasH
 
+      const sceneCtx = sceneCanvas.getContext('2d')!
+      sceneCtx.save()
+      applyExportRot(sceneCtx)
+
       renderRealisticView(realisticLayers, sceneCanvas, {
         preset: props.preset!,
         transform: exportTransform,
         dpr: 1,
         side,
       })
+
+      sceneCtx.restore()
 
       const ctx = exportCanvas.getContext('2d')!
       ctx.save()
@@ -1538,6 +1763,10 @@ function exportPngForSide(
     } else {
       // Layer view export (uses currently visible layers)
       const ctx = exportCanvas.getContext('2d')!
+
+      ctx.save()
+      applyExportRot(ctx)
+
       const source = props.layers
       for (const layer of source) {
         const tree = getImageTree(layer)
@@ -1571,6 +1800,8 @@ function exportPngForSide(
         }
       }
 
+      ctx.restore()
+
       if (mirrorX) {
         const flipCanvas = document.createElement('canvas')
         flipCanvas.width = canvasW
@@ -1587,6 +1818,8 @@ function exportPngForSide(
     // Optional component overlay (packages under dots)
     if (includeComponents && components.length > 0) {
       const ctx = exportCanvas.getContext('2d')!
+      ctx.save()
+      applyExportRot(ctx)
       const cssWidth = canvasW
       drawPackageFootprints(ctx, cssWidth, 1, exportTransform, mirrorX, {
         components,
@@ -1599,6 +1832,7 @@ function exportPngForSide(
         hideDotWhenPackagePresent: true,
         includePackages,
       })
+      ctx.restore()
     }
 
     exportCanvas.toBlob((blob) => resolve(blob), 'image/png')
@@ -1625,6 +1859,20 @@ function invalidateCache(fileName: string) {
   invalidateSceneCache()
 }
 
+/**
+ * Return the board's physical dimensions in millimeters (for UI display).
+ */
+function getExportDimensionsMm(): { width: number; height: number } | null {
+  const bounds = getExportBounds()
+  if (!bounds) return null
+  const bw = bounds[2] - bounds[0]
+  const bh = bounds[3] - bounds[1]
+  if (bw <= 0 || bh <= 0) return null
+  const units = detectUnits()
+  const toMm = units === 'in' ? 25.4 : 1
+  return { width: bw * toMm, height: bh * toMm }
+}
+
 // Expose resetView and export helpers for external use
 defineExpose({
   resetView() {
@@ -1637,5 +1885,7 @@ defineExpose({
   getRealisticLayersForExport,
   getImageTree,
   invalidateCache,
+  getExportDimensionsMm,
+  boardDimensions,
 })
 </script>

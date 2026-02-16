@@ -41,27 +41,31 @@ let startupCheckTriggered = false
 const promptDismissed = ref(false)
 let pendingUpdate: import('@tauri-apps/plugin-updater').Update | null = null
 
-const POST_UPDATE_KEY = 'gerbtrace_post_update'
-
 interface PostUpdateInfo {
   version: string
   notes: string
 }
 
-/** Saved before relaunch so the next launch can show "What's New". */
-function savePostUpdateInfo(version: string, notes: string | null) {
+/**
+ * Persist post-update info via a Tauri command that writes a file to the
+ * app-data directory.  This guarantees the data is flushed to disk before the
+ * updater replaces the binary and relaunches – unlike localStorage, which may
+ * not be flushed by WKWebView in time.
+ */
+async function savePostUpdateInfo(version: string, notes: string | null) {
   try {
+    const { invoke } = await import('@tauri-apps/api/core')
     const info: PostUpdateInfo = { version, notes: notes || '' }
-    localStorage.setItem(POST_UPDATE_KEY, JSON.stringify(info))
-  } catch { /* localStorage may be unavailable */ }
+    await invoke('save_post_update_info', { payload: JSON.stringify(info) })
+  } catch { /* best-effort */ }
 }
 
-/** Read and clear stored post-update info (called once on startup). */
-function consumePostUpdateInfo(): PostUpdateInfo | null {
+/** Read and delete the stored post-update info file (called once on startup). */
+async function consumePostUpdateInfo(): Promise<PostUpdateInfo | null> {
   try {
-    const raw = localStorage.getItem(POST_UPDATE_KEY)
+    const { invoke } = await import('@tauri-apps/api/core')
+    const raw = await invoke<string | null>('consume_post_update_info')
     if (!raw) return null
-    localStorage.removeItem(POST_UPDATE_KEY)
     return JSON.parse(raw) as PostUpdateInfo
   } catch {
     return null
@@ -147,7 +151,7 @@ async function downloadAndInstall() {
     }
 
     await pendingUpdate.download()
-    savePostUpdateInfo(pendingUpdate.version, pendingUpdate.body ?? null)
+    await savePostUpdateInfo(pendingUpdate.version, pendingUpdate.body ?? null)
     await pendingUpdate.install()
     const { relaunch } = await import('@tauri-apps/plugin-process')
     await relaunch()
@@ -163,12 +167,12 @@ function dismissUpdatePrompt() {
   promptDismissed.value = true
 }
 
-function checkForUpdateOnStartup() {
+async function checkForUpdateOnStartup() {
   if (!isTauri || startupCheckTriggered) return
   startupCheckTriggered = true
 
   // Check if this launch follows an auto-update
-  postUpdateInfo.value = consumePostUpdateInfo()
+  postUpdateInfo.value = await consumePostUpdateInfo()
 
   void checkForUpdate()
 }
