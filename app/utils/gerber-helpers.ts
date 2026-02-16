@@ -124,6 +124,14 @@ export function detectLayerType(fileName: string): string {
   const extType = LAYER_TYPE_MAP[ext]
   if (extType && extType !== 'Unmatched') return extType
 
+  // Allegro / Cadence naming: CS = Component Side (Top), PS = Print Side (Bottom)
+  if (/sm[_\-]cs|soldermask[_\-]cs|mask[_\-]cs/i.test(lower)) return 'Top Solder Mask'
+  if (/sm[_\-]ps|soldermask[_\-]ps|mask[_\-]ps/i.test(lower)) return 'Bottom Solder Mask'
+  if (/silk[_\-]cs/i.test(lower)) return 'Top Silkscreen'
+  if (/silk[_\-]ps/i.test(lower)) return 'Bottom Silkscreen'
+  if (/sp[_\-]cs|paste[_\-]cs/i.test(lower)) return 'Top Paste'
+  if (/sp[_\-]ps|paste[_\-]ps/i.test(lower)) return 'Bottom Paste'
+
   // Try filename-based keyword matching (works for descriptive names like copper_top.gbr)
   if (/top.*copper|copper.*top|f\.cu/i.test(lower)) return 'Top Copper'
   if (/bottom.*copper|copper.*bottom|b\.cu/i.test(lower)) return 'Bottom Copper'
@@ -136,6 +144,13 @@ export function detectLayerType(fileName: string): string {
   if (/outline|edge|board|profile|contour/i.test(lower)) return 'Outline'
   if (/drill|drl|holes/i.test(lower)) return 'Drill'
   if (/inner|internal|mid.*layer|layer.*mid/i.test(lower)) return 'Inner Layer'
+
+  // Generic standalone "top" / "bottom" (e.g. _TOP.art, _BOTTOM.gbr from Allegro)
+  if (/[_\-.]top[_\-.]|[_\-]top$/i.test(lower)) return 'Top Copper'
+  if (/[_\-.]bot(?:tom)?[_\-.]|[_\-]bot(?:tom)?$/i.test(lower)) return 'Bottom Copper'
+
+  // Inner layer number patterns (e.g. _L2-GND.art, _L3-SIG.art from Allegro)
+  if (/[_\-]l\d+[_\-.]/i.test(lower)) return 'Inner Layer'
 
   // Fall back to extension-based type (e.g. 'Unmatched' for .gbr/.ger/.pho/.art)
   if (extType) return extType
