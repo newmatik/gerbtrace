@@ -88,8 +88,9 @@ jobs:
 
               echo "Applying migration: $name"
               tmp="$(mktemp)"
-              # Run with ON_ERROR_STOP=0 to keep a zero exit status (ssh-action stops on non-zero).
-              docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=0 < "$f" >"$tmp" 2>&1
+              # Run as supabase_admin (table owner on production) so ALTER TABLE succeeds.
+              # Bookkeeping queries still use postgres (owns schema_migrations).
+              docker compose exec -T db psql -U supabase_admin -d postgres -v ON_ERROR_STOP=0 < "$f" >"$tmp" 2>&1
 
               if grep -q "ERROR:" "$tmp"; then
                 bad="$(grep "ERROR:" "$tmp" | grep -Evi "already exists|duplicate key|already defined|already present|policy .* already exists" || true)"
