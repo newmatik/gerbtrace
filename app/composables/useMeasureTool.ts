@@ -91,6 +91,18 @@ export function useMeasureTool() {
     return Math.sqrt(dx * dx + dy * dy) * unitsToMm.value
   })
 
+  /** Absolute X offset in mm between pointA and the live end */
+  const liveOffsetXMm = computed<number | null>(() => {
+    if (!pointA.value || !liveEnd.value) return null
+    return Math.abs(liveEnd.value.x - pointA.value.x) * unitsToMm.value
+  })
+
+  /** Absolute Y offset in mm between pointA and the live end */
+  const liveOffsetYMm = computed<number | null>(() => {
+    if (!pointA.value || !liveEnd.value) return null
+    return Math.abs(liveEnd.value.y - pointA.value.y) * unitsToMm.value
+  })
+
   // ── Event handlers ──
 
   function toggle() {
@@ -273,6 +285,8 @@ export function useMeasureTool() {
     unitsToMm,
     liveEnd,
     liveDistanceMm,
+    liveOffsetXMm,
+    liveOffsetYMm,
     snapTargets,
     toggle,
     clear,

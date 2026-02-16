@@ -116,9 +116,14 @@ const settingsMenuItems = computed(() => {
 
   if (isAuthenticated.value && hasTeam.value) {
     items[0]!.push({
-      label: 'Team Packages',
+      label: 'Team SMD Packages',
       icon: 'i-lucide-package-check',
       onSelect: () => router.push('/team/packages'),
+    })
+    items[0]!.push({
+      label: 'Team THT Packages',
+      icon: 'i-lucide-circuit-board',
+      onSelect: () => router.push('/team/tht-packages'),
     })
   }
 

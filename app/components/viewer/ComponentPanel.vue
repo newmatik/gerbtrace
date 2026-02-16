@@ -288,7 +288,7 @@
             :value="sortedComponents[vRow.index].matchedPackage"
             title="Matched package (library)"
             @mousedown.stop
-            @change="emit('update:packageMapping', { cadPackage: sortedComponents[vRow.index].cadPackage, packageName: ($event.target as HTMLSelectElement).value || null })"
+            @change="emit('update:packageMapping', { cadPackage: sortedComponents[vRow.index].cadPackage, packageName: ($event.target as HTMLSelectElement).value || null, componentKey: sortedComponents[vRow.index].key, isManual: sortedComponents[vRow.index].manual })"
           >
             <option value="">—</option>
             <option v-for="p in packageOptions" :key="p" :value="p">
@@ -354,7 +354,7 @@ const emit = defineEmits<{
   'toggle:dnp': [key: string]
   'toggle:filter': [key: PnPFilterKey]
   clearFilters: []
-  'update:packageMapping': [payload: { cadPackage: string; packageName: string | null }]
+  'update:packageMapping': [payload: { cadPackage: string; packageName: string | null; componentKey?: string; isManual?: boolean }]
   'update:polarized': [payload: { key: string; polarized: boolean }]
   edit: [component: EditablePnPComponent]
   addComponent: []

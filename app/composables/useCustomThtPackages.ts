@@ -1,0 +1,89 @@
+import Dexie from 'dexie'
+import type { THTPackageDefinition } from '~/utils/tht-package-types'
+
+interface CustomThtPackageRecord {
+  id?: number
+  /** The full THTPackageDefinition JSON */
+  data: THTPackageDefinition
+  createdAt: Date
+  updatedAt: Date
+}
+
+class ThtPackageDB extends Dexie {
+  packages!: Dexie.Table<CustomThtPackageRecord, number>
+
+  constructor() {
+    super('GerbtraceTHTPackagesDB')
+    this.version(1).stores({
+      packages: '++id, createdAt, updatedAt',
+    })
+  }
+}
+
+const db = new ThtPackageDB()
+
+/**
+ * Composable for CRUD operations on user-created custom THT packages.
+ * Stores packages in IndexedDB (separate DB from SMD packages and projects).
+ */
+export function useCustomThtPackages() {
+  const packages = ref<CustomThtPackageRecord[]>([])
+  const loaded = ref(false)
+  const loading = ref(false)
+
+  async function loadCustomThtPackages() {
+    if (loading.value) return
+    loading.value = true
+    try {
+      packages.value = await db.packages.orderBy('updatedAt').reverse().toArray()
+      loaded.value = true
+    } catch (err) {
+      console.warn('[CustomThtPackages] Failed to load', err)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function addPackage(pkg: THTPackageDefinition): Promise<number> {
+    const now = new Date()
+    const record: CustomThtPackageRecord = {
+      data: pkg,
+      createdAt: now,
+      updatedAt: now,
+    }
+    const id = await db.packages.add(record)
+    await loadCustomThtPackages()
+    return id
+  }
+
+  async function updatePackage(id: number, pkg: THTPackageDefinition) {
+    await db.packages.update(id, { data: pkg, updatedAt: new Date() })
+    await loadCustomThtPackages()
+  }
+
+  async function removePackage(id: number) {
+    await db.packages.delete(id)
+    await loadCustomThtPackages()
+  }
+
+  /** Get just the THTPackageDefinition objects */
+  const customThtDefinitions = computed<THTPackageDefinition[]>(() =>
+    packages.value.map(r => r.data),
+  )
+
+  // Auto-load on client
+  if (import.meta.client) {
+    loadCustomThtPackages()
+  }
+
+  return {
+    packages,
+    customThtDefinitions,
+    loaded,
+    loading,
+    loadCustomThtPackages,
+    addPackage,
+    updatePackage,
+    removePackage,
+  }
+}

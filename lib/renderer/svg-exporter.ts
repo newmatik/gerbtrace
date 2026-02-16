@@ -26,6 +26,8 @@ import type { EditablePnPComponent } from '../../app/composables/usePickAndPlace
 import type { PnPConvention } from '../../app/utils/pnp-conventions'
 import type { PackageDefinition, FootprintShape } from '../../app/utils/package-types'
 import { computeFootprint, getConventionRotationTransform } from '../../app/utils/package-types'
+import type { THTPackageDefinition } from '../../app/utils/tht-package-types'
+import { computeThtFootprint } from '../../app/utils/tht-package-types'
 
 /**
  * Export a realistic PCB view as an SVG string.
@@ -196,6 +198,7 @@ export function exportRealisticSvgWithComponents(
     pnpOriginX: number | null
     pnpOriginY: number | null
     matchPackage: (name: string) => PackageDefinition | undefined
+    matchThtPackage?: (name: string) => THTPackageDefinition | undefined
     showPackages: boolean
     pnpConvention: PnPConvention
   },
@@ -227,14 +230,12 @@ export function exportRealisticSvgWithComponents(
     }
   }
 
-  const bw = maxX - minX
-  const bh = maxY - minY
-  const vbX = minX
-  const vbY = minY
-  const vbW = bw
-  const vbH = bh
+  // Board bounds (used for clipping, masks, internal fill rects)
+  const boardMinX = minX, boardMinY = minY, boardMaxX = maxX, boardMaxY = maxY
+  const boardBw = boardMaxX - boardMinX
+  const boardBh = boardMaxY - boardMinY
+  const pad = Math.max(boardBw, boardBh) * 0.5
 
-  const pad = Math.max(bw, bh) * 0.5
   const mirrorX = side === 'bottom'
 
   // Detect units (mm/in) from any available ImageTree (fallback to mm)
@@ -243,12 +244,50 @@ export function exportRealisticSvgWithComponents(
   // Compute effective PnP origin (Gerber coord space)
   const { ox, oy } = getEffectiveOriginForPnP(layers, options.pnpOriginX, options.pnpOriginY)
 
+  // Pre-compute component bounds so the export area includes components
+  // that extend beyond the board outline (e.g. large THT packages).
+  let exportMinX = boardMinX, exportMinY = boardMinY
+  let exportMaxX = boardMaxX, exportMaxY = boardMaxY
+
+  if (options.components.length > 0) {
+    const mmToG = units === 'in' ? (1 / 25.4) : 1
+    const dotR = 0.20 * mmToG
+
+    for (const comp of options.components) {
+      const gx = pnpToGerber(comp.x, ox, units)
+      const gy = pnpToGerber(comp.y, oy, units)
+
+      const pkgName = comp.matchedPackage || comp.package
+      const isTht = comp.componentType === 'tht'
+      let extent = dotR
+
+      if (options.showPackages && pkgName) {
+        if (isTht && options.matchThtPackage) {
+          const thtPkg = options.matchThtPackage(pkgName)
+          if (thtPkg) extent = Math.max(extent, computeFootprintExtent(computeThtFootprint(thtPkg)) * mmToG)
+        } else {
+          const pkg = options.matchPackage(pkgName)
+          if (pkg) extent = Math.max(extent, computeFootprintExtent(getFootprint(pkg)) * mmToG)
+        }
+      }
+
+      exportMinX = Math.min(exportMinX, gx - extent)
+      exportMinY = Math.min(exportMinY, gy - extent)
+      exportMaxX = Math.max(exportMaxX, gx + extent)
+      exportMaxY = Math.max(exportMaxY, gy + extent)
+    }
+  }
+
+  // Export viewBox encompasses both board and component extents
+  const vbW = exportMaxX - exportMinX
+  const vbH = exportMaxY - exportMinY
+
   const parts: string[] = []
-  parts.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${fmt(vbX)} ${fmt(-maxY)} ${fmt(vbW)} ${fmt(vbH)}" width="${fmt(vbW)}mm" height="${fmt(vbH)}mm">`)
+  parts.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${fmt(exportMinX)} ${fmt(-exportMaxY)} ${fmt(vbW)} ${fmt(vbH)}" width="${fmt(vbW)}mm" height="${fmt(vbH)}mm">`)
 
   // Group with Y-flip (and optional X-mirror for bottom view)
   if (mirrorX) {
-    const cx = (minX + maxX) / 2
+    const cx = (boardMinX + boardMaxX) / 2
     parts.push(`<g transform="scale(1,-1) translate(0,0)"><g transform="scale(-1,1) translate(${fmt(-2 * cx)},0)">`)
   } else {
     parts.push(`<g transform="scale(1,-1) translate(0,0)">`)
@@ -267,7 +306,7 @@ export function exportRealisticSvgWithComponents(
   // Solder mask openings mask (white = opening, black = covered)
   if (layers.solderMask) {
     parts.push('<mask id="mask-openings">')
-    parts.push(`<rect x="${fmt(minX - pad)}" y="${fmt(minY - pad)}" width="${fmt(bw + pad * 2)}" height="${fmt(bh + pad * 2)}" fill="black"/>`)
+    parts.push(`<rect x="${fmt(boardMinX - pad)}" y="${fmt(boardMinY - pad)}" width="${fmt(boardBw + pad * 2)}" height="${fmt(boardBh + pad * 2)}" fill="black"/>`)
     parts.push(imageTreeToSvgPaths(layers.solderMask, '#ffffff'))
     parts.push('</mask>')
   }
@@ -275,7 +314,7 @@ export function exportRealisticSvgWithComponents(
   // Inverted solder mask (white = covered, black = opening) for the mask layer
   if (layers.solderMask) {
     parts.push('<mask id="mask-inverted">')
-    parts.push(`<rect x="${fmt(minX - pad)}" y="${fmt(minY - pad)}" width="${fmt(bw + pad * 2)}" height="${fmt(bh + pad * 2)}" fill="white"/>`)
+    parts.push(`<rect x="${fmt(boardMinX - pad)}" y="${fmt(boardMinY - pad)}" width="${fmt(boardBw + pad * 2)}" height="${fmt(boardBh + pad * 2)}" fill="white"/>`)
     parts.push(imageTreeToSvgPaths(layers.solderMask, '#000000'))
     parts.push('</mask>')
   }
@@ -283,20 +322,20 @@ export function exportRealisticSvgWithComponents(
   // Drill holes mask (white = solid, black = holes)
   if (layers.drill) {
     parts.push('<mask id="drill-mask">')
-    parts.push(`<rect x="${fmt(minX - pad)}" y="${fmt(minY - pad)}" width="${fmt(bw + pad * 2)}" height="${fmt(bh + pad * 2)}" fill="white"/>`)
+    parts.push(`<rect x="${fmt(boardMinX - pad)}" y="${fmt(boardMinY - pad)}" width="${fmt(boardBw + pad * 2)}" height="${fmt(boardBh + pad * 2)}" fill="white"/>`)
     parts.push(imageTreeToSvgPaths(layers.drill, '#000000'))
     parts.push('</mask>')
   }
 
   parts.push('</defs>')
 
-  // Wrap everything in outline clip and drill mask
+  // Board content clipped to outline and drilled
   const clipAttr = layers.outline ? ' clip-path="url(#outline-clip)"' : ''
   const drillAttr = layers.drill ? ' mask="url(#drill-mask)"' : ''
   parts.push(`<g${clipAttr}${drillAttr}>`)
 
   // 1. Substrate fill
-  parts.push(`<rect x="${fmt(minX - pad)}" y="${fmt(minY - pad)}" width="${fmt(bw + pad * 2)}" height="${fmt(bh + pad * 2)}" fill="${preset.substrate}"/>`)
+  parts.push(`<rect x="${fmt(boardMinX - pad)}" y="${fmt(boardMinY - pad)}" width="${fmt(boardBw + pad * 2)}" height="${fmt(boardBh + pad * 2)}" fill="${preset.substrate}"/>`)
 
   // 2. Copper layer
   if (layers.copper) {
@@ -308,10 +347,10 @@ export function exportRealisticSvgWithComponents(
   // 3. Solder mask (covers everything except openings)
   if (layers.solderMask) {
     parts.push(`<g mask="url(#mask-inverted)" opacity="${preset.solderMaskOpacity}">`)
-    parts.push(`<rect x="${fmt(minX - pad)}" y="${fmt(minY - pad)}" width="${fmt(bw + pad * 2)}" height="${fmt(bh + pad * 2)}" fill="${preset.solderMask}"/>`)
+    parts.push(`<rect x="${fmt(boardMinX - pad)}" y="${fmt(boardMinY - pad)}" width="${fmt(boardBw + pad * 2)}" height="${fmt(boardBh + pad * 2)}" fill="${preset.solderMask}"/>`)
     parts.push('</g>')
   } else {
-    parts.push(`<rect x="${fmt(minX - pad)}" y="${fmt(minY - pad)}" width="${fmt(bw + pad * 2)}" height="${fmt(bh + pad * 2)}" fill="${preset.solderMask}" opacity="${preset.solderMaskOpacity}"/>`)
+    parts.push(`<rect x="${fmt(boardMinX - pad)}" y="${fmt(boardMinY - pad)}" width="${fmt(boardBw + pad * 2)}" height="${fmt(boardBh + pad * 2)}" fill="${preset.solderMask}" opacity="${preset.solderMaskOpacity}"/>`)
   }
 
   // 4. Surface finish on exposed pads
@@ -328,17 +367,19 @@ export function exportRealisticSvgWithComponents(
     parts.push(imageTreeToSvgPaths(layers.silkscreen, preset.silkscreen))
   }
 
-  // 6. Components overlay (packages and/or dots)
+  parts.push('</g>') // end clip+drill group
+
+  // 6. Components overlay — rendered OUTSIDE the outline clip so components
+  //    extending beyond the board edge are not cropped.
   parts.push(renderComponentsOverlaySvg(options.components, {
     units,
     originX: ox,
     originY: oy,
     matchPackage: options.matchPackage,
+    matchThtPackage: options.matchThtPackage,
     showPackages: options.showPackages,
     pnpConvention: options.pnpConvention,
   }))
-
-  parts.push('</g>') // end clip+drill group
 
   // Close Y-flip group(s)
   if (mirrorX) {
@@ -530,6 +571,20 @@ const PKG_BODY_FILL = 'rgba(50, 50, 50, 0.85)'
 const PKG_BODY_STROKE = 'rgba(80, 80, 80, 0.9)'
 const PKG_PAD_FILL = 'rgba(205, 205, 205, 0.9)'
 const PKG_PIN1_FILL = 'rgba(255, 60, 60, 0.95)'
+
+/** Convert a hex color to rgba with a given alpha for SVG output */
+function svgWithAlpha(color: string, alpha: number): string {
+  if (color.startsWith('rgba') || color.startsWith('hsla')) return color
+  const hex = color.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i)
+  if (hex) {
+    return `rgba(${parseInt(hex[1]!, 16)}, ${parseInt(hex[2]!, 16)}, ${parseInt(hex[3]!, 16)}, ${alpha})`
+  }
+  const shex = color.match(/^#([0-9a-f])([0-9a-f])([0-9a-f])$/i)
+  if (shex) {
+    return `rgba(${parseInt(shex[1]! + shex[1]!, 16)}, ${parseInt(shex[2]! + shex[2]!, 16)}, ${parseInt(shex[3]! + shex[3]!, 16)}, ${alpha})`
+  }
+  return color
+}
 const PNP_DOT_COLOR = '#FF69B4'
 
 const footprintCache = new Map<string, FootprintShape[]>()
@@ -541,6 +596,37 @@ function getFootprint(pkg: PackageDefinition): FootprintShape[] {
   return shapes
 }
 
+/**
+ * Compute the radius of the smallest circle centered at (0,0) that contains
+ * all footprint shapes. This is rotation-invariant and used to estimate
+ * how far a component extends from its placement center.
+ */
+function computeFootprintExtent(shapes: FootprintShape[]): number {
+  let maxDist = 0
+  for (const shape of shapes) {
+    if (shape.kind === 'circle') {
+      const dist = Math.sqrt(shape.cx * shape.cx + shape.cy * shape.cy) + shape.r
+      maxDist = Math.max(maxDist, dist)
+    } else {
+      const hw = shape.w / 2
+      const hh = shape.h / 2
+      for (const dx of [-hw, hw]) {
+        for (const dy of [-hh, hh]) {
+          const x = shape.cx + dx
+          const y = shape.cy + dy
+          maxDist = Math.max(maxDist, Math.sqrt(x * x + y * y))
+        }
+      }
+    }
+  }
+  return maxDist
+}
+
+/** Clear cached footprint shapes so the next export picks up updated definitions. */
+export function clearFootprintCaches() {
+  footprintCache.clear()
+}
+
 function renderComponentsOverlaySvg(
   components: EditablePnPComponent[],
   opts: {
@@ -548,6 +634,7 @@ function renderComponentsOverlaySvg(
     originX: number
     originY: number
     matchPackage: (name: string) => PackageDefinition | undefined
+    matchThtPackage?: (name: string) => THTPackageDefinition | undefined
     showPackages: boolean
     pnpConvention: PnPConvention
   },
@@ -568,31 +655,54 @@ function renderComponentsOverlaySvg(
     const gy = pnpToGerber(comp.y, opts.originY, opts.units)
 
     const pkgName = comp.matchedPackage || comp.package
-    const pkg = (opts.showPackages && pkgName) ? opts.matchPackage(pkgName) : undefined
+    const isTht = comp.componentType === 'tht'
 
-    if (!pkg) {
+    let shapes: FootprintShape[] | undefined
+    let rotationCCW: number
+
+    if (opts.showPackages && pkgName) {
+      if (isTht && opts.matchThtPackage) {
+        const thtPkg = opts.matchThtPackage(pkgName)
+        if (thtPkg) {
+          shapes = computeThtFootprint(thtPkg)
+          const thtDirection = opts.pnpConvention === 'mycronic' ? -1 : 1
+          rotationCCW = thtDirection * comp.rotation
+        }
+      }
+      if (!shapes) {
+        const pkg = opts.matchPackage(pkgName)
+        if (pkg) {
+          shapes = getFootprint(pkg)
+          const { direction, offsetDeg } = getConventionRotationTransform(pkg, opts.pnpConvention)
+          rotationCCW = direction * comp.rotation + offsetDeg
+        }
+      }
+    }
+
+    if (!shapes) {
       parts.push(`<circle cx="${fmt(gx)}" cy="${fmt(gy)}" r="${fmt(dotR)}" fill="${PNP_DOT_COLOR}"/>`)
       continue
     }
 
-    const shapes = getFootprint(pkg)
-    const { direction, offsetDeg } = getConventionRotationTransform(pkg, opts.pnpConvention)
-    const adjustedRotationCCW = direction * comp.rotation + offsetDeg
-
-    parts.push(`<g transform="translate(${fmt(gx)},${fmt(gy)}) rotate(${fmt(adjustedRotationCCW)})">`)
+    parts.push(`<g transform="translate(${fmt(gx)},${fmt(gy)}) rotate(${fmt(rotationCCW!)})">`)
     for (const shape of shapes) {
       const role = (!comp.polarized && shape.role === 'pin1') ? 'pad' : shape.role
+      const rawFill = (shape as any).fillColor as string | undefined
+      const rawStroke = (shape as any).strokeColorOverride as string | undefined
+      const alphaForRole = role === 'body' ? 0.85 : role === 'pin1' ? 0.95 : 0.9
+      const customFill = rawFill ? svgWithAlpha(rawFill, alphaForRole) : undefined
+      const customStroke = rawStroke ? svgWithAlpha(rawStroke, 0.9) : undefined
       if (shape.kind === 'rect') {
         const w = shape.w * mmToGerber
         const h = shape.h * mmToGerber
         const x = shape.cx * mmToGerber - w / 2
         const y = shape.cy * mmToGerber - h / 2
         if (role === 'body') {
-          parts.push(`<rect x="${fmt(x)}" y="${fmt(y)}" width="${fmt(w)}" height="${fmt(h)}" fill="${PKG_BODY_FILL}" stroke="${PKG_BODY_STROKE}" stroke-width="${fmt(bodyStrokeW)}"/>`)
+          parts.push(`<rect x="${fmt(x)}" y="${fmt(y)}" width="${fmt(w)}" height="${fmt(h)}" fill="${customFill || PKG_BODY_FILL}" stroke="${customStroke || PKG_BODY_STROKE}" stroke-width="${fmt(bodyStrokeW)}"/>`)
         } else if (role === 'pin1') {
-          parts.push(`<rect x="${fmt(x)}" y="${fmt(y)}" width="${fmt(w)}" height="${fmt(h)}" fill="${PKG_PIN1_FILL}"/>`)
+          parts.push(`<rect x="${fmt(x)}" y="${fmt(y)}" width="${fmt(w)}" height="${fmt(h)}" fill="${customFill || PKG_PIN1_FILL}"/>`)
         } else {
-          parts.push(`<rect x="${fmt(x)}" y="${fmt(y)}" width="${fmt(w)}" height="${fmt(h)}" fill="${PKG_PAD_FILL}"/>`)
+          parts.push(`<rect x="${fmt(x)}" y="${fmt(y)}" width="${fmt(w)}" height="${fmt(h)}" fill="${customFill || PKG_PAD_FILL}"/>`)
         }
       } else if (shape.kind === 'roundedRect') {
         const w = shape.w * mmToGerber
@@ -601,13 +711,13 @@ function renderComponentsOverlaySvg(
         const y = shape.cy * mmToGerber - h / 2
         const r = Math.min(shape.r * mmToGerber, w / 2, h / 2)
         if (shape.role === 'body') {
-          parts.push(`<rect x="${fmt(x)}" y="${fmt(y)}" width="${fmt(w)}" height="${fmt(h)}" rx="${fmt(r)}" ry="${fmt(r)}" fill="${PKG_BODY_FILL}" stroke="${PKG_BODY_STROKE}" stroke-width="${fmt(bodyStrokeW)}"/>`)
+          parts.push(`<rect x="${fmt(x)}" y="${fmt(y)}" width="${fmt(w)}" height="${fmt(h)}" rx="${fmt(r)}" ry="${fmt(r)}" fill="${customFill || PKG_BODY_FILL}" stroke="${customStroke || PKG_BODY_STROKE}" stroke-width="${fmt(bodyStrokeW)}"/>`)
         } else {
-          parts.push(`<rect x="${fmt(x)}" y="${fmt(y)}" width="${fmt(w)}" height="${fmt(h)}" rx="${fmt(r)}" ry="${fmt(r)}" fill="${PKG_PAD_FILL}"/>`)
+          parts.push(`<rect x="${fmt(x)}" y="${fmt(y)}" width="${fmt(w)}" height="${fmt(h)}" rx="${fmt(r)}" ry="${fmt(r)}" fill="${customFill || PKG_PAD_FILL}"/>`)
         }
       } else if (shape.kind === 'circle') {
-        const fill = role === 'body' ? PKG_BODY_FILL : role === 'pin1' ? PKG_PIN1_FILL : PKG_PAD_FILL
-        const stroke = role === 'body' ? ` stroke="${PKG_BODY_STROKE}" stroke-width="${fmt(bodyStrokeW)}"` : ''
+        const fill = role === 'body' ? (customFill || PKG_BODY_FILL) : role === 'pin1' ? (customFill || PKG_PIN1_FILL) : (customFill || PKG_PAD_FILL)
+        const stroke = role === 'body' ? ` stroke="${customStroke || PKG_BODY_STROKE}" stroke-width="${fmt(bodyStrokeW)}"` : ''
         parts.push(`<circle cx="${fmt(shape.cx * mmToGerber)}" cy="${fmt(shape.cy * mmToGerber)}" r="${fmt(shape.r * mmToGerber)}" fill="${fill}"${stroke}/>`)
       }
     }

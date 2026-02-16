@@ -1,0 +1,66 @@
+---
+description: Supabase migration authoring rules for the self-hosted production droplet
+globs: supabase/migrations/**/*.sql
+alwaysApply: false
+---
+
+# Supabase Migration Safety (Production Droplet)
+
+The production Supabase runs on a self-hosted Docker droplet. Migrations are applied
+by `.github/workflows/deploy-supabase.yml` using `psql -U supabase_admin`. These rules
+prevent the recurring deploy failures we have hit in every release since v1.0.6.
+
+## Object ownership
+
+- All tables, functions, and triggers in `public` are owned by **`supabase_admin`**.
+- The deploy workflow already runs migrations as `supabase_admin`.
+- If a migration needs to modify an object potentially owned by a different role,
+  use a `DO` block that looks up the owner and calls `SET LOCAL ROLE`:
+
+```sql
+do $$
+declare v_owner name;
+begin
+  select r.rolname into v_owner
+    from pg_proc p join pg_roles r on p.proowner = r.oid
+   where p.proname = 'my_function' and p.pronamespace = 'public'::regnamespace;
+  if v_owner is not null and v_owner <> current_user then
+    execute format('SET LOCAL ROLE %I', v_owner);
+  end if;
+end;
+$$;
+-- now CREATE OR REPLACE / ALTER ...
+reset role;
+```
+
+## Every statement must be idempotent
+
+Migrations can be retried after partial failures. Every statement must tolerate re-runs:
+
+- `CREATE TABLE` -> `CREATE TABLE IF NOT EXISTS`
+- `CREATE FUNCTION` -> `CREATE OR REPLACE FUNCTION`
+- `CREATE POLICY` -> wrap in `DO $$ ... IF NOT EXISTS (select from pg_policy ...) ...`
+- `ALTER TABLE ADD COLUMN` -> `ADD COLUMN IF NOT EXISTS`
+- `ALTER TABLE ADD CONSTRAINT` -> check `pg_constraint` first in a `DO` block
+- `DELETE` dedup -> use `row_number()` with a stable tiebreaker (`ctid`) so re-runs are no-ops
+
+## Test against realistic ownership
+
+Local Supabase (`supabase start`) runs everything as `postgres` superuser, hiding
+ownership problems. Before merging a migration:
+
+1. Mentally verify every `ALTER TABLE`, `CREATE OR REPLACE FUNCTION`, and `DROP`
+   will succeed when run as `supabase_admin` against objects it owns.
+2. Check the error filter in `deploy-supabase.yml` — only "already exists"-family
+   errors are tolerated; anything else aborts the deploy.
+
+## Migration is NOT recorded on failure
+
+The deploy script only inserts into `schema_migrations` **after** the migration
+succeeds. A failed migration will be retried on the next deploy, which is why
+idempotency is critical.
+
+## Do not use SET ROLE from postgres
+
+`postgres` is **not** a superuser on the production droplet and cannot
+`SET ROLE supabase_admin`. Never write migrations that depend on this.

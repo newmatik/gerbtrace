@@ -5,6 +5,8 @@
  * pages can work identically with both local and team projects.
  */
 
+import type { BomLine, BomPricingCache } from '~/utils/bom-types'
+
 export interface TeamProject {
   id: string
   team_id: string
@@ -24,6 +26,17 @@ export interface TeamProject {
   pnp_component_notes: Record<string, string> | null
   pnp_field_overrides: Record<string, { designator?: string; value?: string; x?: number; y?: number }> | null
   pnp_manual_components: { id: string; designator: string; value: string; package: string; x: number; y: number; rotation: number; side: 'top' | 'bottom' }[] | null
+  pnp_deleted_components: string[] | null
+  bom_lines: BomLine[] | null
+  bom_pricing_cache: BomPricingCache | null
+  bom_board_quantity: number | null
+  pcb_data: {
+    sizeX?: number
+    sizeY?: number
+    layerCount?: number
+    surfaceFinish?: string
+    copperWeight?: string
+  } | null
   created_at: string
   updated_at: string
 }
@@ -36,6 +49,16 @@ export interface TeamProjectFile {
   storage_path: string
   layer_type: string | null
   content_hash: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface TeamProjectDocument {
+  id: string
+  project_id: string
+  file_name: string
+  storage_path: string
+  doc_type: string
   created_at: string
   updated_at: string
 }
@@ -255,6 +278,95 @@ export function useTeamProjects() {
     return { error }
   }
 
+  // ── Document operations ────────────────────────────────────────────────
+
+  /** Get documents for a project */
+  async function getProjectDocuments(projectId: string): Promise<TeamProjectDocument[]> {
+    const { data, error } = await supabase
+      .from('project_documents')
+      .select('*')
+      .eq('project_id', projectId)
+      .order('file_name')
+
+    if (error) {
+      console.error('[useTeamProjects] Failed to fetch project documents:', projectId, error.message)
+      return []
+    }
+    return (data ?? []) as TeamProjectDocument[]
+  }
+
+  /** Upload a PDF document to a team project */
+  async function uploadDocument(
+    projectId: string,
+    teamId: string,
+    fileName: string,
+    data: Blob,
+    docType: string,
+  ) {
+    const storagePath = `${teamId}/${projectId}/docs/${fileName}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('gerber-files')
+      .upload(storagePath, data, { upsert: true, contentType: 'application/pdf' })
+
+    if (uploadError) {
+      console.error('[useTeamProjects] Document upload failed:', storagePath, uploadError.message)
+      return { doc: null, error: uploadError }
+    }
+
+    const { data: record, error } = await supabase
+      .from('project_documents')
+      .upsert({
+        project_id: projectId,
+        file_name: fileName,
+        storage_path: storagePath,
+        doc_type: docType,
+      }, { onConflict: 'project_id,file_name' })
+      .select()
+      .single()
+
+    if (error) {
+      console.error('[useTeamProjects] Document record upsert failed:', fileName, error.message)
+    }
+
+    return { doc: record as TeamProjectDocument | null, error }
+  }
+
+  /** Download a document's binary content */
+  async function downloadDocument(storagePath: string): Promise<Blob | null> {
+    const { data, error } = await supabase.storage
+      .from('gerber-files')
+      .download(storagePath)
+
+    if (error || !data) {
+      console.error('[useTeamProjects] Document download failed:', storagePath, error?.message)
+      return null
+    }
+    return data
+  }
+
+  /** Update a document's type */
+  async function updateDocumentType(docId: string, docType: string) {
+    const { error } = await supabase
+      .from('project_documents')
+      .update({ doc_type: docType })
+      .eq('id', docId)
+
+    return { error }
+  }
+
+  /** Delete a document */
+  async function deleteDocument(docId: string, storagePath: string) {
+    await supabase.storage.from('gerber-files').remove([storagePath])
+
+    const { error } = await supabase
+      .from('project_documents')
+      .delete()
+      .eq('id', docId)
+
+    return { error }
+  }
+
   // Auto-fetch when team changes
   watch(currentTeamId, () => {
     fetchProjects()
@@ -274,5 +386,10 @@ export function useTeamProjects() {
     uploadFile,
     downloadFile,
     deleteFile,
+    getProjectDocuments,
+    uploadDocument,
+    downloadDocument,
+    updateDocumentType,
+    deleteDocument,
   }
 }

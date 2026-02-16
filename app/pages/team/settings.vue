@@ -65,6 +65,50 @@
           </div>
         </form>
 
+        <!-- Elexess API Credentials (admin only) -->
+        <form v-if="isAdmin" @submit.prevent="handleSaveElexess" class="space-y-5 mt-8 pt-8 border-t border-neutral-200 dark:border-neutral-800">
+          <h2 class="text-lg font-semibold">Elexess API Credentials</h2>
+          <p class="text-sm text-neutral-500 dark:text-neutral-400">
+            Configure the Elexess API credentials used for BOM pricing and availability lookups.
+          </p>
+
+          <UFormField label="Username">
+            <UInput
+              v-model="elexessUsername"
+              size="lg"
+              placeholder="Elexess API username"
+              :disabled="savingElexess"
+            />
+          </UFormField>
+
+          <UFormField label="Password">
+            <UInput
+              v-model="elexessPassword"
+              type="password"
+              size="lg"
+              placeholder="Elexess API password"
+              :disabled="savingElexess"
+            />
+          </UFormField>
+
+          <div class="flex justify-end gap-3 pt-4">
+            <UButton
+              type="submit"
+              :loading="savingElexess"
+              :disabled="!hasElexessChanges"
+            >
+              Save Credentials
+            </UButton>
+          </div>
+
+          <p v-if="elexessSuccessMessage" class="text-sm text-green-600 dark:text-green-400">
+            {{ elexessSuccessMessage }}
+          </p>
+          <p v-if="elexessErrorMessage" class="text-sm text-red-600 dark:text-red-400">
+            {{ elexessErrorMessage }}
+          </p>
+        </form>
+
         <p v-if="successMessage" class="mt-4 text-sm text-green-600 dark:text-green-400">
           {{ successMessage }}
         </p>
@@ -91,11 +135,20 @@ const saving = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 
+// Elexess credentials state
+const elexessUsername = ref('')
+const elexessPassword = ref('')
+const savingElexess = ref(false)
+const elexessErrorMessage = ref('')
+const elexessSuccessMessage = ref('')
+
 // Init from current team
 watch(currentTeam, (team) => {
   if (team) {
     teamName.value = team.name
     autoJoinDomain.value = team.auto_join_domain ?? ''
+    elexessUsername.value = team.elexess_username ?? ''
+    elexessPassword.value = team.elexess_password ?? ''
   }
 }, { immediate: true })
 
@@ -103,6 +156,12 @@ const hasChanges = computed(() => {
   if (!currentTeam.value) return false
   return teamName.value !== currentTeam.value.name
     || autoJoinDomain.value !== (currentTeam.value.auto_join_domain ?? '')
+})
+
+const hasElexessChanges = computed(() => {
+  if (!currentTeam.value) return false
+  return elexessUsername.value !== (currentTeam.value.elexess_username ?? '')
+    || elexessPassword.value !== (currentTeam.value.elexess_password ?? '')
 })
 
 async function handleSave() {
@@ -124,6 +183,28 @@ async function handleSave() {
     }
   } finally {
     saving.value = false
+  }
+}
+
+async function handleSaveElexess() {
+  elexessErrorMessage.value = ''
+  elexessSuccessMessage.value = ''
+  savingElexess.value = true
+
+  try {
+    const { error } = await updateTeam({
+      elexess_username: elexessUsername.value.trim() || null,
+      elexess_password: elexessPassword.value.trim() || null,
+    })
+
+    if (error) {
+      elexessErrorMessage.value = (error as any).message ?? 'Failed to save credentials'
+    } else {
+      elexessSuccessMessage.value = 'Elexess credentials saved!'
+      setTimeout(() => { elexessSuccessMessage.value = '' }, 3000)
+    }
+  } finally {
+    savingElexess.value = false
   }
 }
 </script>
