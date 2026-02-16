@@ -1094,11 +1094,15 @@ function draw() {
   const ctx = canvas.getContext('2d')!
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-  // Fill background
-  ctx.fillStyle = bgColor.value
-  ctx.fillRect(0, 0, canvas.width, canvas.height)
-
   const isRealistic = props.viewMode === 'realistic' && props.preset
+
+  // Fill background — use a soft workspace tone in realistic mode so the
+  // area outside the board doesn't look like a harsh void.
+  const effectiveBg = isRealistic
+    ? (isLight.value ? '#e8e8ec' : '#1a1a1e')
+    : bgColor.value
+  ctx.fillStyle = effectiveBg
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
 
   // Collect all image trees and compute unified bounds
   // For realistic mode, use allLayers for bounds computation
@@ -1165,6 +1169,34 @@ function draw() {
     })
   }
 
+  // ── Overscan: render 10 % extra on each side so panning doesn't
+  //    immediately expose bare background at the edges. ──
+  const OVERSCAN = 0.10
+  const overscanW = Math.ceil(canvas.width * (1 + 2 * OVERSCAN))
+  const overscanH = Math.ceil(canvas.height * (1 + 2 * OVERSCAN))
+  const marginCssX = cssWidth * OVERSCAN
+  const marginCssY = cssHeight * OVERSCAN
+
+  // Composite a scene canvas onto the main canvas using a delta-transform.
+  // Used identically for fresh renders and cached reprojection.
+  function blitScene(
+    scene: HTMLCanvasElement,
+    sceneTransform: { offsetX: number; offsetY: number; scale: number },
+  ) {
+    const r = transform.scale / sceneTransform.scale
+    const tx = (transform.offsetX - r * sceneTransform.offsetX) * dpr
+    const ty = (transform.offsetY - r * sceneTransform.offsetY) * dpr
+    ctx.save()
+    if (props.mirrored) {
+      ctx.translate(canvas.width, 0)
+      ctx.scale(-1, 1)
+    }
+    ctx.translate(tx, ty)
+    ctx.scale(r, r)
+    ctx.drawImage(scene, 0, 0)
+    ctx.restore()
+  }
+
   // ── Layer composite with caching ──
   const cacheKey = computeSceneCacheKey()
   const canUseCache = isInteracting.value
@@ -1175,23 +1207,15 @@ function draw() {
     && sceneCache.dpr === dpr
 
   if (canUseCache && sceneCache) {
-    // Reproject the cached scene with a delta-transform (single drawImage call)
-    const ct = sceneCache.transform
-    const r = transform.scale / ct.scale
-    const tx = (transform.offsetX - r * ct.offsetX) * dpr
-    const ty = (transform.offsetY - r * ct.offsetY) * dpr
-
-    ctx.save()
-    if (props.mirrored) {
-      ctx.translate(canvas.width, 0)
-      ctx.scale(-1, 1)
-    }
-    ctx.translate(tx, ty)
-    ctx.scale(r, r)
-    ctx.drawImage(sceneCache.canvas, 0, 0)
-    ctx.restore()
+    blitScene(sceneCache.canvas, sceneCache.transform)
   } else {
-    // Full render — build scene and update cache
+    // Full render — build overscan scene and update cache
+    const osTransform = {
+      offsetX: transform.offsetX + marginCssX,
+      offsetY: transform.offsetY + marginCssY,
+      scale: transform.scale,
+    }
+
     let sceneCanvas: HTMLCanvasElement
 
     if (isRealistic) {
@@ -1199,35 +1223,25 @@ function draw() {
       const side = props.activeFilter === 'bot' ? 'bottom' : 'top'
       const realisticLayers = gatherRealisticLayers(side)
 
-      sceneCanvas = acquireCanvas(canvas.width, canvas.height)
+      sceneCanvas = acquireCanvas(overscanW, overscanH)
 
       renderRealisticView(realisticLayers, sceneCanvas, {
         preset: props.preset!,
-        transform,
+        transform: osTransform,
         dpr,
         side,
       })
-
-      if (props.mirrored) {
-        ctx.save()
-        ctx.translate(canvas.width, 0)
-        ctx.scale(-1, 1)
-      }
-      ctx.drawImage(sceneCanvas, 0, 0)
-      if (props.mirrored) {
-        ctx.restore()
-      }
     } else {
       // ── Standard layer rendering mode ──
-      sceneCanvas = acquireCanvas(canvas.width, canvas.height)
+      sceneCanvas = acquireCanvas(overscanW, overscanH)
       const sceneCtx = sceneCanvas.getContext('2d')!
 
       for (const { layer, tree } of layerTrees) {
-        const tempCanvas = acquireCanvas(canvas.width, canvas.height)
+        const tempCanvas = acquireCanvas(overscanW, overscanH)
 
         renderToCanvas(tree, tempCanvas, {
           color: layer.color,
-          transform,
+          transform: osTransform,
           dpr,
         })
 
@@ -1238,11 +1252,11 @@ function draw() {
       if (props.cropToOutline && props.outlineLayer) {
         const outlineTree = getImageTree(props.outlineLayer)
         if (outlineTree && outlineTree.children.length > 0) {
-          const maskCanvas = acquireCanvas(canvas.width, canvas.height)
+          const maskCanvas = acquireCanvas(overscanW, overscanH)
 
           renderOutlineMask(outlineTree, maskCanvas, {
             color: '#ffffff',
-            transform,
+            transform: osTransform,
             dpr,
           })
 
@@ -1253,23 +1267,15 @@ function draw() {
           releaseCanvas(maskCanvas)
         }
       }
-
-      if (props.mirrored) {
-        ctx.save()
-        ctx.translate(canvas.width, 0)
-        ctx.scale(-1, 1)
-      }
-      ctx.drawImage(sceneCanvas, 0, 0)
-      if (props.mirrored) {
-        ctx.restore()
-      }
     }
+
+    blitScene(sceneCanvas, osTransform)
 
     // Update the scene cache (take ownership of the canvas — don't release it)
     if (sceneCache) releaseCanvas(sceneCache.canvas)
     sceneCache = {
       canvas: sceneCanvas,
-      transform: { ...transform },
+      transform: { ...osTransform },
       dpr,
       width: canvas.width,
       height: canvas.height,

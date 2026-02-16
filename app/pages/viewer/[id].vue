@@ -251,6 +251,7 @@
           :filtered-components="pnp.filteredComponents.value"
           :selected-designator="pnp.selectedDesignator.value"
           :search-query="pnp.searchQuery.value"
+          :active-filters="pnp.activeFilters.value"
           :align-mode="pnp.alignMode.value"
           :has-origin="pnp.hasOrigin.value"
           :origin-x="pnp.originX.value"
@@ -264,6 +265,8 @@
           @update:rotation="pnp.setRotationOverride($event.key, $event.rotation)"
           @reset:rotation="pnp.resetRotationOverride($event.key)"
           @toggle:dnp="pnp.toggleDnp($event)"
+          @toggle:filter="pnp.toggleFilter($event)"
+          @clear-filters="pnp.clearFilters()"
           @update:package-mapping="pnp.setCadPackageMapping($event.cadPackage, $event.packageName)"
           @update:polarized="pnp.setPolarizedOverride($event.key, $event.polarized)"
           @select="pnp.selectComponent($event)"
@@ -284,7 +287,7 @@
       <main
         class="flex-1 relative outline-none"
         :class="{ 'select-none': sidebarDragging }"
-        :style="{ backgroundColor }"
+        :style="{ backgroundColor: canvasAreaBg }"
         @keydown="handleKeyDown"
         @keyup="handleKeyUp"
         tabindex="0"
@@ -437,7 +440,14 @@ const infoTool = useInfoTool()
 const deleteTool = useDeleteTool()
 const editHistory = useEditHistory()
 const isMac = computed(() => typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.userAgent))
-const { backgroundColor } = useBackgroundColor()
+const { backgroundColor, isLight: isBgLight } = useBackgroundColor()
+
+// Effective canvas-area background — softer tone in realistic mode
+const canvasAreaBg = computed(() =>
+  viewMode.value === 'realistic'
+    ? (isBgLight.value ? '#e8e8ec' : '#1a1a1e')
+    : backgroundColor.value,
+)
 const { sidebarWidth, dragging: sidebarDragging, onDragStart: onSidebarDragStart } = useSidebarWidth()
 
 // ── Sidebar tab (Layers / Components) ──

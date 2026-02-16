@@ -33,6 +33,7 @@ export interface EditablePnPComponent extends PnPComponent {
 export type PnPRotationOverrides = Record<string, number>
 export type PnPPackageMap = Record<string, string>
 export type PnPPolarizedOverrides = Record<string, boolean>
+export type PnPFilterKey = 'polarized' | 'dnp' | 'edited' | 'unmatched'
 
 /**
  * Alignment mode state machine:
@@ -173,6 +174,10 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
 
   const activeSideFilter = ref<'all' | 'top' | 'bottom'>('all')
 
+  // ── Component filters (toggle chips in the sidebar) ──
+
+  const activeFilters = ref(new Set<PnPFilterKey>())
+
   // ── Editable components (with optional rotation overrides) ──
 
   const allComponents = computed<EditablePnPComponent[]>(() =>
@@ -187,26 +192,60 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
     return base.filter(c => c.side === side)
   })
 
-  /** Components from visible PnP layers, filtered by side and excluding DNP (for canvas rendering) */
-  const visibleComponents = computed<EditablePnPComponent[]>(() =>
-    activeComponents.value.filter(c => !c.dnp),
-  )
-
   // ── Search & filtering ──
 
   const searchQuery = ref('')
 
-  /** Active components filtered by search query (for component panel table) */
+  function isComponentEdited(comp: EditablePnPComponent): boolean {
+    return comp.rotationOverridden || comp.packageMapped || !comp.polarizedDefaulted || comp.dnp
+  }
+
+  function matchesActiveFilters(comp: EditablePnPComponent): boolean {
+    const filters = activeFilters.value
+    if (filters.size === 0) return true
+    if (filters.has('polarized') && comp.polarized) return true
+    if (filters.has('dnp') && comp.dnp) return true
+    if (filters.has('edited') && isComponentEdited(comp)) return true
+    if (filters.has('unmatched') && !comp.matchedPackage) return true
+    return false
+  }
+
+  /** Active components filtered by toggle filters and search query (for sidebar table) */
   const filteredComponents = computed<EditablePnPComponent[]>(() => {
+    let result = activeComponents.value.filter(matchesActiveFilters)
     const q = searchQuery.value.trim().toLowerCase()
-    if (!q) return activeComponents.value
-    return activeComponents.value.filter(c =>
-      c.designator.toLowerCase().includes(q)
-      || c.value.toLowerCase().includes(q)
-      || c.cadPackage.toLowerCase().includes(q)
-      || c.matchedPackage.toLowerCase().includes(q),
-    )
+    if (q) {
+      result = result.filter(c =>
+        c.designator.toLowerCase().includes(q)
+        || c.value.toLowerCase().includes(q)
+        || c.cadPackage.toLowerCase().includes(q)
+        || c.matchedPackage.toLowerCase().includes(q),
+      )
+    }
+    return result
   })
+
+  /** Components for canvas rendering — respects search + toggle filters when active */
+  const visibleComponents = computed<EditablePnPComponent[]>(() => {
+    const hasFilters = activeFilters.value.size > 0
+    const hasSearch = searchQuery.value.trim() !== ''
+    if (!hasFilters && !hasSearch) {
+      return activeComponents.value.filter(c => !c.dnp)
+    }
+    return filteredComponents.value
+  })
+
+  function toggleFilter(key: PnPFilterKey) {
+    const next = new Set(activeFilters.value)
+    if (next.has(key)) next.delete(key)
+    else next.add(key)
+    activeFilters.value = next
+  }
+
+  function clearFilters() {
+    if (activeFilters.value.size > 0) activeFilters.value = new Set()
+    if (searchQuery.value) searchQuery.value = ''
+  }
 
   // ── Selection ──
 
@@ -495,6 +534,10 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
     invalidateCache,
     // Side filter
     activeSideFilter,
+    // Component filters
+    activeFilters,
+    toggleFilter,
+    clearFilters,
     // DNP
     toggleDnp,
     setDnpKeys,

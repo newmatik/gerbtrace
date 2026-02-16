@@ -1,6 +1,6 @@
 <template>
   <div class="flex-1 flex flex-col overflow-hidden">
-    <!-- Search bar -->
+    <!-- Filter bar -->
     <div class="p-3 pb-2">
       <div class="relative">
         <UIcon
@@ -10,17 +10,34 @@
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="Search components..."
-          class="w-full text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md pl-7 pr-2 py-1.5 outline-none placeholder:text-neutral-400 focus:border-primary transition-colors"
+          placeholder="Filter components..."
+          class="w-full text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md pl-7 pr-6 py-1.5 outline-none placeholder:text-neutral-400 focus:border-primary transition-colors"
         />
         <button
-          v-if="searchQuery"
+          v-if="hasActiveFiltersOrSearch"
           class="absolute right-1.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors"
-          @click="searchQuery = ''"
+          title="Clear all filters"
+          @click="clearAll"
         >
           <UIcon name="i-lucide-x" class="text-xs" />
         </button>
       </div>
+    </div>
+
+    <!-- Filter toggles -->
+    <div v-if="allComponents.length > 0" class="flex flex-wrap items-center gap-1 px-3 pb-1.5">
+      <button
+        v-for="filter in filterOptions"
+        :key="filter.key"
+        class="text-[10px] px-1.5 py-0.5 rounded-full border transition-colors"
+        :class="activeFilters.has(filter.key)
+          ? 'bg-primary/10 border-primary/30 text-primary dark:text-primary-300'
+          : 'border-neutral-200 dark:border-neutral-700 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-600'"
+        :title="filter.title"
+        @click="emit('toggle:filter', filter.key)"
+      >
+        {{ filter.label }}
+      </button>
     </div>
 
     <!-- Package controls row -->
@@ -162,7 +179,7 @@
           :class="{
             'bg-cyan-50 dark:bg-cyan-900/20 hover:bg-cyan-100 dark:hover:bg-cyan-900/30': selectedDesignator === sortedComponents[vRow.index].designator && !sortedComponents[vRow.index].dnp,
             'hover:bg-neutral-100 dark:hover:bg-neutral-800': selectedDesignator !== sortedComponents[vRow.index].designator && !sortedComponents[vRow.index].dnp,
-            'opacity-40': sortedComponents[vRow.index].dnp,
+            'opacity-40': sortedComponents[vRow.index].dnp && activeFilters.size === 0,
           }"
           @click="onRowClick(sortedComponents[vRow.index].designator)"
         >
@@ -259,8 +276,7 @@
 
 <script setup lang="ts">
 import { useVirtualizer } from '@tanstack/vue-virtual'
-import type { EditablePnPComponent } from '~/composables/usePickAndPlace'
-import type { AlignMode } from '~/composables/usePickAndPlace'
+import type { EditablePnPComponent, AlignMode, PnPFilterKey } from '~/composables/usePickAndPlace'
 import type { PnPConvention } from '~/utils/pnp-conventions'
 import { PNP_CONVENTION_LABELS } from '~/utils/pnp-conventions'
 
@@ -269,6 +285,7 @@ const props = defineProps<{
   filteredComponents: EditablePnPComponent[]
   selectedDesignator: string | null
   searchQuery: string
+  activeFilters: Set<PnPFilterKey>
   alignMode: AlignMode
   hasOrigin: boolean
   originX: number | null
@@ -289,11 +306,20 @@ const emit = defineEmits<{
   'update:rotation': [payload: { key: string; rotation: number }]
   'reset:rotation': [payload: { key: string }]
   'toggle:dnp': [key: string]
+  'toggle:filter': [key: PnPFilterKey]
+  clearFilters: []
   'update:packageMapping': [payload: { cadPackage: string; packageName: string | null }]
   'update:polarized': [payload: { key: string; polarized: boolean }]
 }>()
 
 const conventionOptions = Object.entries(PNP_CONVENTION_LABELS) as [PnPConvention, string][]
+
+const filterOptions: { key: PnPFilterKey; label: string; title: string }[] = [
+  { key: 'polarized', label: 'Polarized', title: 'Show polarized components only' },
+  { key: 'dnp', label: 'DNP', title: 'Show Do Not Populate components only' },
+  { key: 'edited', label: 'Edited', title: 'Show manually edited components only' },
+  { key: 'unmatched', label: 'Unmatched', title: 'Show components with unmatched packages only' },
+]
 
 // DNP count
 const dnpCount = computed(() => props.allComponents.filter(c => c.dnp).length)
@@ -407,6 +433,15 @@ const searchQuery = computed({
   get: () => localSearch.value,
   set: (v: string) => { localSearch.value = v },
 })
+
+const hasActiveFiltersOrSearch = computed(() =>
+  props.activeFilters.size > 0 || localSearch.value.trim() !== '',
+)
+
+function clearAll() {
+  localSearch.value = ''
+  emit('clearFilters')
+}
 
 const listRef = ref<HTMLElement | null>(null)
 
