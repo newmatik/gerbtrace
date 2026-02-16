@@ -1,6 +1,6 @@
 {
   "name": "gerbtrace",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "private": true,
   "description": "Gerbtrace — View and compare Gerber PCB files in the browser",
   "author": "Newmatik GmbH",
@@ -29,6 +29,7 @@
   "dependencies": {
     "@nuxt/ui": "^4.4.0",
     "@supabase/supabase-js": "^2.95.3",
+    "@tanstack/vue-virtual": "^3.13.18",
     "@tauri-apps/plugin-process": "^2.3.1",
     "@tauri-apps/plugin-updater": "^2.10.0",
     "@tauri-apps/plugin-window-state": "^2.4.1",

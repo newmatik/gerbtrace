@@ -24,7 +24,7 @@ const DEFAULTS: ViewerPrefs = {
   presetId: 'green-enig',
 }
 
-export function useViewerPreferences(projectId: number) {
+export function useViewerPreferences(projectId: number | string) {
   const key = STORAGE_PREFIX + projectId
 
   function load(): { prefs: ViewerPrefs, hasStoredCropToOutline: boolean } {

@@ -14,18 +14,22 @@
 <script setup lang="ts">
 import type { ImageTree } from '@lib/gerber/types'
 import { renderToCanvas, computeAutoFitTransform } from '@lib/renderer/canvas-renderer'
+import { drawCanvasGrid } from '~/utils/canvas-grid'
 
 const props = defineProps<{
   imageTree: ImageTree | null
   color?: string
   interaction: ReturnType<typeof useCanvasInteraction>
   viewBounds?: [number, number, number, number]
+  /** Gerber-space offset for alignment (shifts the entire render) */
+  gerberOffset?: { x: number; y: number }
 }>()
 
 const canvasEl = ref<HTMLCanvasElement | null>(null)
 const autoFitDone = ref(false)
 const prevBoundsKey = ref('')
-const { backgroundColor } = useBackgroundColor()
+const { backgroundColor, isLight } = useBackgroundColor()
+const { settings: appSettings } = useAppSettings()
 
 function onWheel(e: WheelEvent) {
   if (canvasEl.value) {
@@ -74,16 +78,36 @@ function draw() {
     prevBoundsKey.value = boundsKey
   }
 
+  const transform = props.interaction.transform.value
+
   renderToCanvas(props.imageTree, canvas, {
     color: props.color || '#cc0000',
-    transform: props.interaction.transform.value,
+    transform,
     dpr,
     backgroundColor: backgroundColor.value,
+    gerberOffset: props.gerberOffset,
   })
+
+  // Draw background grid when enabled
+  if (appSettings.gridEnabled) {
+    const ctx = canvas.getContext('2d')
+    if (ctx) {
+      drawCanvasGrid({
+        ctx,
+        cssWidth,
+        cssHeight,
+        dpr,
+        transform,
+        units: props.imageTree.units,
+        gridSpacingMm: appSettings.gridSpacingMm,
+        isLight: isLight.value,
+      })
+    }
+  }
 }
 
 watch(
-  () => [props.imageTree, props.color, props.interaction.transform.value, backgroundColor.value],
+  () => [props.imageTree, props.color, props.interaction.transform.value, backgroundColor.value, appSettings.gridEnabled, appSettings.gridSpacingMm, props.gerberOffset],
   () => draw(),
   { deep: true },
 )

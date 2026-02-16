@@ -1,7 +1,7 @@
 <template>
   <div class="h-screen flex flex-col">
-    <AppHeader>
-      <div class="w-px h-5 bg-neutral-200 dark:bg-neutral-700/80 ml-1" />
+    <AppHeader compact>
+      <div class="w-px h-5 bg-neutral-200 dark:bg-neutral-700/80" />
 
       <!-- Project name -->
       <div class="group flex items-center shrink-0">
@@ -113,47 +113,19 @@
         />
       </template>
 
-      <!-- Downloads: Image / Gerber / PnP (same muted style, no divider between) -->
-      <template v-if="viewMode === 'realistic' || layers.length > 0 || pnp.hasPnP.value">
+      <!-- Downloads dropdown -->
+      <template v-if="downloadMenuItems.length > 0">
         <div class="w-px h-5 bg-neutral-200 dark:bg-neutral-700/80" />
-        <div class="flex items-center rounded-lg p-0.5 gap-0.5 bg-neutral-100/90 border border-neutral-200 dark:bg-neutral-900/70 dark:border-neutral-700">
+        <UDropdownMenu :items="[downloadMenuItems]">
           <UButton
-            v-if="viewMode === 'realistic'"
             size="xs"
             color="neutral"
             variant="ghost"
             icon="i-lucide-download"
             :class="[tbBtnBase, tbBtnIdle]"
-            title="Download image (PNG/SVG)"
-            @click="showImageExport = true"
-          >
-            <span>Image</span>
-          </UButton>
-          <UButton
-            v-if="layers.length > 0"
-            size="xs"
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-download"
-            :class="[tbBtnBase, tbBtnIdle]"
-            title="Download Gerber files as ZIP"
-            @click="handleDownloadGerber"
-          >
-            <span>Gerber</span>
-          </UButton>
-          <UButton
-            v-if="pnp.hasPnP.value"
-            size="xs"
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-download"
-            :class="[tbBtnBase, tbBtnIdle]"
-            title="Export Pick &amp; Place data"
-            @click="showPnPExport = true"
-          >
-            <span>PnP</span>
-          </UButton>
-        </div>
+            title="Downloads"
+          />
+        </UDropdownMenu>
       </template>
 
       <!-- Team project: Approval badge + Revert button -->
@@ -279,6 +251,7 @@
           :filtered-components="pnp.filteredComponents.value"
           :selected-designator="pnp.selectedDesignator.value"
           :search-query="pnp.searchQuery.value"
+          :active-filters="pnp.activeFilters.value"
           :align-mode="pnp.alignMode.value"
           :has-origin="pnp.hasOrigin.value"
           :origin-x="pnp.originX.value"
@@ -292,6 +265,8 @@
           @update:rotation="pnp.setRotationOverride($event.key, $event.rotation)"
           @reset:rotation="pnp.resetRotationOverride($event.key)"
           @toggle:dnp="pnp.toggleDnp($event)"
+          @toggle:filter="pnp.toggleFilter($event)"
+          @clear-filters="pnp.clearFilters()"
           @update:package-mapping="pnp.setCadPackageMapping($event.cadPackage, $event.packageName)"
           @update:polarized="pnp.setPolarizedOverride($event.key, $event.polarized)"
           @select="pnp.selectComponent($event)"
@@ -312,7 +287,7 @@
       <main
         class="flex-1 relative outline-none"
         :class="{ 'select-none': sidebarDragging }"
-        :style="{ backgroundColor }"
+        :style="{ backgroundColor: canvasAreaBg }"
         @keydown="handleKeyDown"
         @keyup="handleKeyUp"
         tabindex="0"
@@ -323,6 +298,7 @@
           :all-layers="layers"
           :interaction="canvasInteraction"
           :mirrored="mirrored"
+          :active-filter="activeFilter"
           :crop-to-outline="cropToOutline"
           :outline-layer="outlineLayer"
           :measure="measureTool"
@@ -352,6 +328,32 @@
           :delete-tool="deleteTool"
           @confirm-delete="handleConfirmDelete"
         />
+
+        <!-- Undo toast — shown briefly after a deletion -->
+        <Transition
+          enter-active-class="transition duration-200 ease-out"
+          enter-from-class="translate-y-2 opacity-0"
+          enter-to-class="translate-y-0 opacity-100"
+          leave-active-class="transition duration-150 ease-in"
+          leave-from-class="translate-y-0 opacity-100"
+          leave-to-class="translate-y-2 opacity-0"
+        >
+          <div
+            v-if="undoToastVisible"
+            class="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3.5 py-2 rounded-lg bg-neutral-800/90 dark:bg-neutral-700/95 backdrop-blur-sm shadow-lg text-white text-xs"
+          >
+            <UIcon name="i-lucide-trash-2" class="text-red-400 text-sm shrink-0" />
+            <span>Deletion applied</span>
+            <button
+              class="ml-1 px-2 py-0.5 rounded font-medium bg-white/15 hover:bg-white/25 transition-colors"
+              @click="handleUndo"
+            >
+              Undo
+            </button>
+            <span class="text-[10px] text-neutral-400 ml-0.5">{{ isMac ? '⌘' : 'Ctrl+' }}Z</span>
+          </div>
+        </Transition>
+
         <CanvasControls
           :interaction="canvasInteraction"
           :view-mode="viewMode"
@@ -404,7 +406,18 @@ const { getProject, getFiles, addFiles, upsertFiles, clearFiles, renameProject, 
 
 // ── Team project support ──
 const teamProjectIdRef = ref(teamProjectId)
-const { currentTeamRole, isAdmin: isTeamAdmin } = useTeam()
+const { currentTeamRole, currentTeamId, isAdmin: isTeamAdmin } = useTeam()
+
+/** Resolves with the team ID once it becomes available (for async write paths). */
+function waitForTeamId(): Promise<string> {
+  if (currentTeamId.value) return Promise.resolve(currentTeamId.value)
+  return new Promise<string>((resolve, reject) => {
+    const timeout = setTimeout(() => { stop(); reject(new Error('Team context not available')) }, 15_000)
+    const stop = watch(currentTeamId, (id) => {
+      if (id) { clearTimeout(timeout); stop(); resolve(id) }
+    })
+  })
+}
 const { presentUsers } = isTeamProject ? usePresence(teamProjectIdRef) : { presentUsers: ref([]) }
 const projectSync = isTeamProject ? useProjectSync(teamProjectIdRef) : null
 
@@ -425,7 +438,16 @@ const canvasInteraction = useCanvasInteraction()
 const measureTool = useMeasureTool()
 const infoTool = useInfoTool()
 const deleteTool = useDeleteTool()
-const { backgroundColor } = useBackgroundColor()
+const editHistory = useEditHistory()
+const isMac = computed(() => typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.userAgent))
+const { backgroundColor, isLight: isBgLight } = useBackgroundColor()
+
+// Effective canvas-area background — softer tone in realistic mode
+const canvasAreaBg = computed(() =>
+  viewMode.value === 'realistic'
+    ? (isBgLight.value ? '#e8e8ec' : '#1a1a1e')
+    : backgroundColor.value,
+)
 const { sidebarWidth, dragging: sidebarDragging, onDragStart: onSidebarDragStart } = useSidebarWidth()
 
 // ── Sidebar tab (Layers / Components) ──
@@ -443,7 +465,7 @@ const tbBtnActive =
 
 // ── Persisted per-project preferences ──
 
-const prefs = useViewerPreferences(projectId)
+const prefs = useViewerPreferences(isTeamProject && teamProjectId ? teamProjectId : projectId)
 const viewMode = prefs.viewMode
 const activeFilter = prefs.activeFilter
 const cropToOutline = prefs.cropToOutline
@@ -498,6 +520,19 @@ watch(() => deleteTool.active.value, (isActive) => {
 })
 
 function handleKeyDown(e: KeyboardEvent) {
+  // Don't intercept keyboard shortcuts inside editable controls (preserve native undo, etc.)
+  const target = e.target as HTMLElement | null
+  if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
+
+  // Undo: Cmd+Z (macOS) / Ctrl+Z (other) — works in any mode
+  if (e.key === 'z' && (e.metaKey || e.ctrlKey) && !e.shiftKey) {
+    if (editHistory.canUndo.value) {
+      e.preventDefault()
+      handleUndo()
+    }
+    return
+  }
+
   // Cancel alignment mode on Escape
   if (pnp.isAligning.value && e.key === 'Escape') {
     pnp.cancelAlign()
@@ -566,6 +601,20 @@ const boardCanvasRef = ref<any>(null)
 const showSettings = ref(false)
 const showPnPExport = ref(false)
 const showImageExport = ref(false)
+
+const downloadMenuItems = computed(() => {
+  const items: { label: string; icon: string; onSelect: () => void }[] = []
+  if (viewMode.value === 'realistic') {
+    items.push({ label: 'Export Image', icon: 'i-lucide-image', onSelect: () => { showImageExport.value = true } })
+  }
+  if (layers.value.length > 0) {
+    items.push({ label: 'Download Gerber', icon: 'i-lucide-file-archive', onSelect: () => { handleDownloadGerber() } })
+  }
+  if (pnp.hasPnP.value) {
+    items.push({ label: 'Export PnP', icon: 'i-lucide-table', onSelect: () => { showPnPExport.value = true } })
+  }
+  return items
+})
 
 const outlineLayer = computed(() => layers.value.find(l => l.type === 'Outline') || undefined)
 const hasOutline = computed(() => layers.value.some(l => l.type === 'Outline'))
@@ -723,7 +772,7 @@ function cancelEdit() {
 }
 
 // ── Team project actions (approve / revert) ──
-const { getProject: getTeamProject, approveProject: doApprove, revertToDraft: doRevert, updateProject: updateTeamProject } = useTeamProjects()
+const { getProject: getTeamProject, approveProject: doApprove, revertToDraft: doRevert, updateProject: updateTeamProject, getProjectFiles: getTeamFiles, downloadFile: downloadTeamFile, uploadFile: uploadTeamFile } = useTeamProjects()
 
 async function handleApproveProject() {
   if (!teamProjectId) return
@@ -809,8 +858,24 @@ onMounted(async () => {
   } else {
     project.value = await getProject(projectId)
   }
-  const storedFiles = await getFiles(projectId, 1)
-  layers.value = sortLayersByPcbOrder(storedFiles.map(f => {
+  let loadedFiles: GerberFile[] = []
+  if (isTeamProject && teamProjectId) {
+    // Try loading files from Supabase for team projects
+    const teamFiles = await getTeamFiles(teamProjectId, 1)
+    if (teamFiles.length > 0) {
+      const downloaded = await Promise.all(
+        teamFiles.map(async (tf) => {
+          const content = await downloadTeamFile(tf.storage_path)
+          if (content == null) return null
+          return { fileName: tf.file_name, content, layerType: tf.layer_type ?? undefined } as GerberFile
+        }),
+      )
+      loadedFiles = downloaded.filter((f): f is GerberFile => f != null)
+    }
+  } else {
+    loadedFiles = await getFiles(projectId, 1)
+  }
+  layers.value = sortLayersByPcbOrder(loadedFiles.map(f => {
     const type = f.layerType || detectLayerType(f.fileName)
     return {
       file: f,
@@ -864,7 +929,14 @@ async function handleImport(newFiles: GerberFile[], sourceName: string) {
   }
 
   // Merge into the database: overwrite same-name files, keep the rest
-  await upsertFiles(projectId, 1, newFiles)
+  if (isTeamProject && teamProjectId) {
+    const teamId = currentTeamId.value || await waitForTeamId()
+    await Promise.all(
+      newFiles.map(f => uploadTeamFile(teamProjectId, teamId, 1, f.fileName, f.content, f.layerType)),
+    )
+  } else {
+    await upsertFiles(projectId, 1, newFiles)
+  }
 
   // Auto-rename only on first import into a default-named project
   const isDefaultName = project.value?.name?.match(/^(View Project |New Viewer Project|New Compare Project)/)
@@ -932,7 +1004,12 @@ async function changeLayerType(index: number, type: string) {
   layer.color = getColorForType(type)
   layer.file.layerType = type
   layers.value = sortLayersByPcbOrder([...layers.value])
-  await updateFileLayerType(projectId, 1, layer.file.fileName, type)
+  if (isTeamProject && teamProjectId) {
+    const teamId = currentTeamId.value || await waitForTeamId()
+    await uploadTeamFile(teamProjectId, teamId, 1, layer.file.fileName, layer.file.content, type)
+  } else {
+    await updateFileLayerType(projectId, 1, layer.file.fileName, type)
+  }
 }
 
 function reorderLayers(fromIndex: number, toIndex: number) {
@@ -950,6 +1027,10 @@ async function handleConfirmDelete() {
 
   const canvas = boardCanvasRef.value
   if (!canvas) return
+
+  // Snapshot affected layer contents before mutation (for undo)
+  const snapshots = new Map<string, string>()
+  let totalDeleted = 0
 
   for (const pendingLayer of deleteTool.pendingDeletion.value.layers) {
     if (!pendingLayer.selected || pendingLayer.graphicIndices.length === 0) continue
@@ -973,23 +1054,84 @@ async function handleConfirmDelete() {
 
     if (sourceRanges.length === 0) continue
 
+    // Save pre-deletion content for undo
+    snapshots.set(layer.file.fileName, layer.file.content)
+    totalDeleted += pendingLayer.graphicIndices.length
+
     // Apply the deletion to the source text
     const newContent = removeSourceRanges(layer.file.content, sourceRanges)
 
     // Update in-memory content
     layer.file.content = newContent
 
-    // Persist to IndexedDB
-    await updateFileContent(projectId, 1, layer.file.fileName, newContent)
+    // Persist to storage
+    if (isTeamProject && teamProjectId) {
+      const teamId = currentTeamId.value || await waitForTeamId()
+      await uploadTeamFile(teamProjectId, teamId, 1, layer.file.fileName, newContent, layer.type)
+    } else {
+      await updateFileContent(projectId, 1, layer.file.fileName, newContent)
+    }
 
     // Invalidate the parsed tree cache so it gets re-parsed
     canvas.invalidateCache(layer.file.fileName)
+  }
+
+  // Push undo entry if anything was actually deleted
+  if (snapshots.size > 0) {
+    const label = `Deleted ${totalDeleted} object${totalDeleted !== 1 ? 's' : ''}`
+    editHistory.pushEntry(snapshots, label)
+    undoToastVisible.value = true
+    if (undoToastTimer) clearTimeout(undoToastTimer)
+    undoToastTimer = setTimeout(() => { undoToastVisible.value = false }, 5000)
   }
 
   // Clear the pending deletion
   deleteTool.cancelDeletion()
 
   // Force re-render by triggering reactivity
+  layers.value = [...layers.value]
+}
+
+// ── Undo handler ──
+
+const undoToastVisible = ref(false)
+let undoToastTimer: ReturnType<typeof setTimeout> | undefined
+
+onUnmounted(() => {
+  if (undoToastTimer) clearTimeout(undoToastTimer)
+})
+
+async function handleUndo() {
+  const entry = editHistory.popEntry()
+  if (!entry) return
+
+  const canvas = boardCanvasRef.value
+  if (!canvas) return
+
+  for (const [fileName, previousContent] of entry.snapshots) {
+    const layer = layers.value.find(l => l.file.fileName === fileName)
+    if (!layer) continue
+
+    // Restore in-memory content
+    layer.file.content = previousContent
+
+    // Persist restored content
+    if (isTeamProject && teamProjectId) {
+      const teamId = currentTeamId.value || await waitForTeamId()
+      await uploadTeamFile(teamProjectId, teamId, 1, layer.file.fileName, previousContent, layer.type)
+    } else {
+      await updateFileContent(projectId, 1, layer.file.fileName, previousContent)
+    }
+
+    // Invalidate cache so the restored content gets re-parsed
+    canvas.invalidateCache(fileName)
+  }
+
+  // Hide the undo toast
+  undoToastVisible.value = false
+  if (undoToastTimer) clearTimeout(undoToastTimer)
+
+  // Force re-render
   layers.value = [...layers.value]
 }
 
