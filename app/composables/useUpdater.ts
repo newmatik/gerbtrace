@@ -41,6 +41,35 @@ let startupCheckTriggered = false
 const promptDismissed = ref(false)
 let pendingUpdate: import('@tauri-apps/plugin-updater').Update | null = null
 
+const POST_UPDATE_KEY = 'gerbtrace_post_update'
+
+interface PostUpdateInfo {
+  version: string
+  notes: string
+}
+
+/** Saved before relaunch so the next launch can show "What's New". */
+function savePostUpdateInfo(version: string, notes: string | null) {
+  try {
+    const info: PostUpdateInfo = { version, notes: notes || '' }
+    localStorage.setItem(POST_UPDATE_KEY, JSON.stringify(info))
+  } catch { /* localStorage may be unavailable */ }
+}
+
+/** Read and clear stored post-update info (called once on startup). */
+function consumePostUpdateInfo(): PostUpdateInfo | null {
+  try {
+    const raw = localStorage.getItem(POST_UPDATE_KEY)
+    if (!raw) return null
+    localStorage.removeItem(POST_UPDATE_KEY)
+    return JSON.parse(raw) as PostUpdateInfo
+  } catch {
+    return null
+  }
+}
+
+const postUpdateInfo = ref<PostUpdateInfo | null>(null)
+
 function toUpdaterErrorMessage(err: unknown, fallback: string) {
   const message = (err as any)?.message || fallback
   if (typeof message !== 'string') return fallback
@@ -118,6 +147,7 @@ async function downloadAndInstall() {
     }
 
     await pendingUpdate.download()
+    savePostUpdateInfo(pendingUpdate.version, pendingUpdate.body ?? null)
     await pendingUpdate.install()
     const { relaunch } = await import('@tauri-apps/plugin-process')
     await relaunch()
@@ -136,7 +166,15 @@ function dismissUpdatePrompt() {
 function checkForUpdateOnStartup() {
   if (!isTauri || startupCheckTriggered) return
   startupCheckTriggered = true
+
+  // Check if this launch follows an auto-update
+  postUpdateInfo.value = consumePostUpdateInfo()
+
   void checkForUpdate()
+}
+
+function dismissPostUpdate() {
+  postUpdateInfo.value = null
 }
 
 export function useUpdater() {
@@ -147,10 +185,12 @@ export function useUpdater() {
     status: readonly(status),
     menuTriggered,
     promptDismissed: readonly(promptDismissed),
+    postUpdateInfo: readonly(postUpdateInfo),
     isTauri,
     checkForUpdate,
     checkForUpdateOnStartup,
     downloadAndInstall,
     dismissUpdatePrompt,
+    dismissPostUpdate,
   }
 }

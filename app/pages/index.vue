@@ -35,6 +35,25 @@
           </div>
         </div>
 
+        <!-- ── Search & Filter ─────────────────────────────────────────── -->
+        <div v-if="hasAnyProjects" class="flex items-center gap-2 mb-6">
+          <UInput
+            v-model="query"
+            size="sm"
+            placeholder="Search projects..."
+            icon="i-lucide-search"
+            class="w-64"
+          />
+          <USelect
+            v-model="modeFilter"
+            size="sm"
+            :items="modeOptions"
+            value-key="value"
+            label-key="label"
+            class="w-36"
+          />
+        </div>
+
         <!-- ── Team Projects (when logged in with team) ────────────────── -->
         <section v-if="isAuthenticated && hasTeam" class="mb-10">
           <div class="flex items-end justify-between gap-4 mb-3">
@@ -43,7 +62,7 @@
                 {{ currentTeam?.name ?? 'Team' }} Projects
               </h2>
               <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                {{ teamProjects.length }} project{{ teamProjects.length === 1 ? '' : 's' }}
+                {{ filteredTeamProjects.length }} project{{ filteredTeamProjects.length === 1 ? '' : 's' }}
               </p>
             </div>
             <div class="flex items-center gap-2">
@@ -62,9 +81,9 @@
             Loading team projects...
           </div>
 
-          <div v-else-if="teamProjects.length" class="space-y-2">
+          <div v-else-if="filteredTeamProjects.length" class="space-y-2">
             <div
-              v-for="project in teamProjects"
+              v-for="project in filteredTeamProjects"
               :key="project.id"
               class="group flex items-center gap-3 px-4 py-3 rounded-lg border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors cursor-pointer"
               @click="openTeamProject(project)"
@@ -107,7 +126,7 @@
           </div>
 
           <div v-else class="rounded-lg border border-dashed border-neutral-200 dark:border-neutral-800 p-8 text-center text-sm text-neutral-500 dark:text-neutral-400">
-            No team projects yet. Create one to start collaborating.
+            {{ teamProjects.length ? 'No team projects found.' : 'No team projects yet. Create one to start collaborating.' }}
           </div>
         </section>
 
@@ -135,23 +154,6 @@
               <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
                 {{ filteredProjects.length }} project{{ filteredProjects.length === 1 ? '' : 's' }}
               </p>
-            </div>
-            <div class="flex items-center gap-2">
-              <UInput
-                v-model="query"
-                size="sm"
-                placeholder="Search projects..."
-                icon="i-lucide-search"
-                class="w-64"
-              />
-              <USelect
-                v-model="modeFilter"
-                size="sm"
-                :items="modeOptions"
-                value-key="value"
-                label-key="label"
-                class="w-36"
-              />
             </div>
           </div>
 
@@ -313,6 +315,17 @@ const modeOptions = [
   { label: 'Viewer', value: 'viewer' },
   { label: 'Compare', value: 'compare' },
 ]
+
+const hasAnyProjects = computed(() => projects.value.length > 0 || teamProjects.value.length > 0)
+
+const filteredTeamProjects = computed(() => {
+  const q = query.value.trim().toLowerCase()
+  return teamProjects.value.filter(p => {
+    const matchesMode = modeFilter.value === 'all' ? true : p.mode === modeFilter.value
+    const matchesQuery = !q ? true : p.name.toLowerCase().includes(q)
+    return matchesMode && matchesQuery
+  })
+})
 
 const filteredProjects = computed(() => {
   const q = query.value.trim().toLowerCase()

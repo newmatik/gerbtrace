@@ -1,8 +1,8 @@
 <template>
   <div class="h-screen flex flex-col">
-    <AppHeader>
+    <AppHeader compact>
       <!-- Toolbar separator -->
-      <div class="w-px h-5 bg-neutral-200 dark:bg-neutral-700/80 ml-1" />
+      <div class="w-px h-5 bg-neutral-200 dark:bg-neutral-700/80" />
 
       <!-- Project name -->
       <div class="group flex items-center shrink-0">
@@ -43,6 +43,20 @@
           <span>{{ m.label }}</span>
         </UButton>
       </div>
+
+      <div class="w-px h-5 bg-neutral-200 dark:bg-neutral-700/80" />
+
+      <!-- Alignment toggle -->
+      <UButton
+        size="xs"
+        color="neutral"
+        variant="ghost"
+        icon="i-lucide-crosshair"
+        :class="[tbBtnBase, alignment.isAligned.value ? tbBtnActive : tbBtnIdle]"
+        @click="showAlignPanel = !showAlignPanel"
+      >
+        <span>Align</span>
+      </UButton>
     </AppHeader>
 
     <div class="flex-1 flex overflow-hidden">
@@ -64,6 +78,60 @@
               @import="(f, name) => handleImport(2, f, name)"
             />
           </div>
+        </div>
+
+        <!-- Alignment panel -->
+        <div v-if="showAlignPanel" class="p-3 border-b border-neutral-200 dark:border-neutral-800">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-semibold text-neutral-600 dark:text-neutral-300 uppercase tracking-wide">Alignment</span>
+            <UButton
+              v-if="alignment.isAligned.value"
+              size="xs"
+              variant="ghost"
+              color="error"
+              icon="i-lucide-x"
+              @click="alignment.clearAlignment()"
+            >
+              Clear
+            </UButton>
+          </div>
+          <div class="space-y-2">
+            <!-- Packet 1 reference -->
+            <div class="flex items-center gap-2">
+              <div class="w-2 h-2 rounded-full bg-red-500 shrink-0" />
+              <span class="text-xs text-neutral-500 dark:text-neutral-400 w-9 shrink-0">Pkt 1</span>
+              <template v-if="alignment.refA.value">
+                <span class="text-xs font-mono text-neutral-700 dark:text-neutral-200 flex-1 truncate">
+                  {{ alignment.refA.value.x.toFixed(3) }}, {{ alignment.refA.value.y.toFixed(3) }}
+                </span>
+                <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-crosshair" title="Re-set" @click="alignment.startPicking(1)" />
+              </template>
+              <template v-else>
+                <UButton size="xs" variant="soft" color="neutral" icon="i-lucide-crosshair" class="flex-1" @click="alignment.startPicking(1)">
+                  Set Reference
+                </UButton>
+              </template>
+            </div>
+            <!-- Packet 2 reference -->
+            <div class="flex items-center gap-2">
+              <div class="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
+              <span class="text-xs text-neutral-500 dark:text-neutral-400 w-9 shrink-0">Pkt 2</span>
+              <template v-if="alignment.refB.value">
+                <span class="text-xs font-mono text-neutral-700 dark:text-neutral-200 flex-1 truncate">
+                  {{ alignment.refB.value.x.toFixed(3) }}, {{ alignment.refB.value.y.toFixed(3) }}
+                </span>
+                <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-crosshair" title="Re-set" @click="alignment.startPicking(2)" />
+              </template>
+              <template v-else>
+                <UButton size="xs" variant="soft" color="neutral" icon="i-lucide-crosshair" class="flex-1" @click="alignment.startPicking(2)">
+                  Set Reference
+                </UButton>
+              </template>
+            </div>
+          </div>
+          <p class="text-[10px] text-neutral-400 dark:text-neutral-500 mt-2 leading-snug">
+            Set a reference point (e.g. fiducial, pad) on each packet. Both packages will be aligned at those points.
+          </p>
         </div>
 
         <LayerMatcher
@@ -90,17 +158,23 @@
             v-if="comparisonMode === 'side-by-side'"
             :match="selectedMatchData"
             :interaction="canvasInteraction"
+            :offset-a="alignment.offsetA.value"
+            :offset-b="alignment.offsetB.value"
           />
           <OverlayView
             v-else-if="comparisonMode === 'overlay'"
             :match="selectedMatchData"
             :interaction="canvasInteraction"
             :speed="overlaySpeed"
+            :offset-a="alignment.offsetA.value"
+            :offset-b="alignment.offsetB.value"
           />
           <DiffHighlightView
             v-else-if="comparisonMode === 'diff'"
             :match="selectedMatchData"
             :interaction="canvasInteraction"
+            :offset-a="alignment.offsetA.value"
+            :offset-b="alignment.offsetB.value"
           />
           <TextDiffViewer
             v-else-if="comparisonMode === 'text'"
@@ -110,16 +184,30 @@
             <p>Import files and select a layer pair to compare</p>
           </div>
 
+          <!-- Alignment picker overlay -->
+          <AlignmentPicker
+            v-if="alignment.pickingPacket.value && pickerTree"
+            :image-tree="pickerTree"
+            :packet="alignment.pickingPacket.value"
+            :interaction="canvasInteraction"
+            @pick="onAlignmentPick"
+            @cancel="alignment.cancelPicking()"
+          />
+
           <!-- Floating canvas controls (hidden in text mode) -->
-          <CanvasControls v-if="comparisonMode !== 'text'" :interaction="canvasInteraction" />
+          <CanvasControls v-if="comparisonMode !== 'text'" :interaction="canvasInteraction" @open-settings="showSettings = true" />
         </div>
       </main>
     </div>
+
+    <!-- Settings modal -->
+    <AppSettingsModal v-model:open="showSettings" />
   </div>
 </template>
 
 <script setup lang="ts">
 import type { GerberFile, LayerMatch } from '~/utils/gerber-helpers'
+import type { ImageTree } from '@lib/gerber/types'
 
 type ComparisonMode = 'side-by-side' | 'overlay' | 'diff' | 'text'
 
@@ -137,6 +225,8 @@ const { autoMatch } = useLayerMatching()
 const canvasInteraction = useCanvasInteraction()
 const { backgroundColor } = useBackgroundColor()
 const { sidebarWidth, dragging: sidebarDragging, onDragStart: onSidebarDragStart } = useSidebarWidth()
+const alignment = useCompareAlignment()
+const { parse } = useGerberRenderer()
 
 // Toolbar button styling (outline + blue active border)
 const tbBtnBase =
@@ -155,6 +245,33 @@ const matches = ref<LayerMatch[]>([])
 const selectedMatch = ref<number>(0)
 const comparisonMode = ref<ComparisonMode>('side-by-side')
 const overlaySpeed = ref(1000)
+const showSettings = ref(false)
+const showAlignPanel = ref(false)
+
+// Alignment: parse the first file from the picking packet to show in the picker
+const pickerTree = computed<ImageTree | null>(() => {
+  const pkt = alignment.pickingPacket.value
+  if (!pkt) return null
+  const files = pkt === 1 ? filesA.value : filesB.value
+  // Use the first file as a representative layer for reference picking
+  // Prefer a copper layer if available (most likely to have fiducials/pads)
+  const copperFile = files.find(f =>
+    (f.layerType || '').includes('Copper') || f.fileName.toLowerCase().match(/\.(gtl|gbl|cmp|sol)$/),
+  )
+  const file = copperFile || files[0]
+  if (!file) return null
+  try { return parse(file.content) } catch { return null }
+})
+
+function onAlignmentPick(point: { x: number; y: number }) {
+  const pkt = alignment.pickingPacket.value
+  if (!pkt) return
+  alignment.setRef(pkt, point)
+  // Auto-fit after alignment changes so the view adjusts
+  if (alignment.isAligned.value) {
+    canvasInteraction.resetView()
+  }
+}
 
 // Editable project name
 const isEditingName = ref(false)
@@ -199,12 +316,13 @@ onMounted(async () => {
   project.value = await getProject(projectId)
   filesA.value = await getFiles(projectId, 1)
   filesB.value = await getFiles(projectId, 2)
-  if (filesA.value.length && filesB.value.length) {
-    matches.value = autoMatch(filesA.value, filesB.value)
-  }
+  matches.value = autoMatch(filesA.value, filesB.value)
 })
 
 async function handleImport(packet: number, newFiles: GerberFile[], sourceName: string) {
+  // Clear alignment when files change (reference points are no longer valid)
+  alignment.clearAlignment()
+
   // Replace the packet contents (instead of appending) to avoid stacking
   // multiple imports and breaking auto-fit/bounds.
   await clearFiles(projectId, packet)
@@ -228,11 +346,7 @@ async function handleImport(packet: number, newFiles: GerberFile[], sourceName: 
     }
   }
   selectedMatch.value = 0
-  if (filesA.value.length && filesB.value.length) {
-    matches.value = autoMatch(filesA.value, filesB.value)
-  } else {
-    matches.value = []
-  }
+  matches.value = autoMatch(filesA.value, filesB.value)
 }
 
 function selectMatch(index: number) {

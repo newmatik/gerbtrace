@@ -1,0 +1,45 @@
+---
+description: Consistent style for GitHub release notes
+alwaysApply: true
+---
+
+# Release Notes Style
+
+Every tagged release must have release notes on GitHub. Keep them minimalistic and user-oriented.
+
+## Title format
+
+Use the bare version number as the release title:
+
+```
+v1.0.X
+```
+
+Do not prefix with the product name (no "Gerbtrace v1.0.X").
+
+## Body format
+
+- Use a flat bullet list. No headings, no categories, no sub-lists.
+- Each bullet is a single concise sentence describing one user-facing change.
+- Focus on new features and bug fixes that affect users. Omit internal refactors, CI changes, and dependency bumps unless they fix a visible problem.
+- No emojis.
+- No "What's Changed" heading or auto-generated contributor lists.
+- For the initial release (v1.0.0), start with a one-line "Initial release." before the bullets.
+
+## Example
+
+```
+- Pick and Place file support with component visualization on the board
+- Component panel with search and bidirectional highlighting
+- Fix Windows desktop build
+```
+
+## When to write release notes
+
+Write release notes at the time the version tag is pushed and the GitHub Release is created. The notes are consumed by:
+
+1. The GitHub Releases page.
+2. The Tauri desktop updater (`latest.json` body field).
+3. The in-app "What's New" dialog shown after a desktop update.
+
+Keep the text short enough to read comfortably in a small modal dialog.

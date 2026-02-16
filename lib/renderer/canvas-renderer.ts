@@ -32,6 +32,8 @@ export interface RenderOptions {
   dpr?: number
   /** Optional background fill color (e.g. '#000000' or '#ffffff'). If omitted the canvas is cleared to transparent. */
   backgroundColor?: string
+  /** Optional Gerber-space translation applied after the view transform (for alignment) */
+  gerberOffset?: { x: number; y: number }
 }
 
 /**
@@ -89,6 +91,11 @@ export function renderToCanvas(
   //   screenY = offsetY - gerberY * scale
   ctx.translate(offsetX, offsetY)
   ctx.scale(scale, -scale)
+
+  // Per-packet Gerber-space offset (for reference-point alignment)
+  if (options.gerberOffset) {
+    ctx.translate(options.gerberOffset.x, options.gerberOffset.y)
+  }
 
   // Base drawing style
   ctx.fillStyle = color
@@ -290,6 +297,10 @@ export function renderOutlineMask(
   if (dpr !== 1) ctx.scale(dpr, dpr)
   ctx.translate(offsetX, offsetY)
   ctx.scale(scale, -scale)
+
+  if (options.gerberOffset) {
+    ctx.translate(options.gerberOffset.x, options.gerberOffset.y)
+  }
 
   // ── Collect contours, partitioned by polarity ──
   const darkContours: PathSegment[][] = []

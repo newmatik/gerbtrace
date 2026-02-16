@@ -7,6 +7,14 @@
     <!-- Global About modal – opened via native "Check for Updates…" menu -->
     <AppAboutModal v-if="isTauri" v-model:open="aboutOpen" />
 
+    <!-- Post-update "What's New" modal -->
+    <WhatsNewModal
+      v-if="postUpdateInfo"
+      v-model:open="whatsNewOpen"
+      :version="postUpdateInfo.version"
+      :notes="postUpdateInfo.notes"
+    />
+
     <!-- Global desktop update prompt -->
     <div
       v-if="isTauri && showUpdatePrompt"
@@ -54,11 +62,14 @@ const {
   isTauri,
   menuTriggered,
   promptDismissed,
+  postUpdateInfo,
   checkForUpdateOnStartup,
   downloadAndInstall,
   dismissUpdatePrompt,
+  dismissPostUpdate,
 } = useUpdater()
 const aboutOpen = ref(false)
+const whatsNewOpen = ref(false)
 const showUpdatePrompt = computed(() =>
   updaterStatus.available && !promptDismissed.value,
 )
@@ -69,6 +80,15 @@ watch(menuTriggered, (triggered) => {
     aboutOpen.value = true
     menuTriggered.value = false
   }
+})
+
+// Show "What's New" when post-update info is available
+watch(postUpdateInfo, (info) => {
+  if (info) whatsNewOpen.value = true
+}, { immediate: true })
+
+watch(whatsNewOpen, (open) => {
+  if (!open) dismissPostUpdate()
 })
 
 onMounted(() => {

@@ -17,6 +17,7 @@
 <script setup lang="ts">
 import type { LayerInfo } from '~/utils/gerber-helpers'
 import { isPnPLayer } from '~/utils/gerber-helpers'
+import { drawCanvasGrid } from '~/utils/canvas-grid'
 import type { PcbPreset } from '~/utils/pcb-presets'
 import type { ImageTree, BoundingBox } from '@lib/gerber/types'
 import { renderToCanvas, renderOutlineMask, computeAutoFitTransform } from '@lib/renderer/canvas-renderer'
@@ -37,6 +38,8 @@ const props = defineProps<{
   layers: LayerInfo[]
   interaction: ReturnType<typeof useCanvasInteraction>
   mirrored?: boolean
+  /** Active layer filter — used to determine which side to render in realistic mode */
+  activeFilter?: 'all' | 'top' | 'bot'
   cropToOutline?: boolean
   outlineLayer?: LayerInfo
   measure?: ReturnType<typeof useMeasureTool>
@@ -80,6 +83,76 @@ const currentBounds = ref<[number, number, number, number] | null>(null)
 const { backgroundColor: bgColor, isLight } = useBackgroundColor()
 const { settings: appSettings } = useAppSettings()
 
+// ── Interaction tracking (skip heavy overlays during pan/zoom) ──
+let wheelSettleTimer = 0
+const isZooming = ref(false)
+
+function markWheelActivity() {
+  isZooming.value = true
+  clearTimeout(wheelSettleTimer)
+  wheelSettleTimer = window.setTimeout(() => {
+    isZooming.value = false
+    scheduleRedraw()
+  }, 120)
+}
+
+const isInteracting = computed(() => props.interaction.isDragging.value || isZooming.value)
+
+// ── Layer-composite cache ──
+// Stores the last fully-rendered gerber scene so pan/zoom can reproject it
+// with a single drawImage call instead of re-rendering every layer.
+interface SceneCache {
+  canvas: HTMLCanvasElement
+  transform: { offsetX: number; offsetY: number; scale: number }
+  dpr: number
+  width: number
+  height: number
+  key: string
+}
+
+let sceneCache: SceneCache | null = null
+
+function computeSceneCacheKey(): string {
+  const parts: string[] = []
+  for (const l of props.layers) parts.push(l.file.fileName, l.color)
+  parts.push(
+    props.viewMode ?? 'layers',
+    props.preset?.name ?? '',
+    props.cropToOutline ? '1' : '0',
+    props.outlineLayer?.file.fileName ?? '',
+    props.mirrored ? 'M' : '',
+    props.activeFilter ?? 'all',
+    bgColor.value,
+  )
+  if (props.viewMode === 'realistic') {
+    const al = props.allLayers ?? props.layers
+    for (const l of al) parts.push(l.file.fileName, l.color)
+  }
+  return parts.join('|')
+}
+
+function invalidateSceneCache() {
+  sceneCache = null
+}
+
+// ── Reusable offscreen-canvas pool ──
+const _canvasPool: HTMLCanvasElement[] = []
+
+function acquireCanvas(w: number, h: number): HTMLCanvasElement {
+  const c = _canvasPool.pop() || document.createElement('canvas')
+  if (c.width !== w || c.height !== h) {
+    c.width = w
+    c.height = h
+  } else {
+    c.getContext('2d')!.clearRect(0, 0, w, h)
+  }
+  return c
+}
+
+function releaseCanvas(c: HTMLCanvasElement) {
+  _canvasPool.push(c)
+}
+
 // Cache parsed image trees
 const imageTreeCache = new Map<string, ImageTree>()
 
@@ -106,6 +179,7 @@ function getImageTree(layer: LayerInfo): ImageTree | null {
 function onWheel(e: WheelEvent) {
   if (canvasEl.value) {
     props.interaction.handleWheel(e, canvasEl.value)
+    markWheelActivity()
   }
 }
 
@@ -267,18 +341,22 @@ function gatherRealisticLayers(side: 'top' | 'bottom'): RealisticLayers {
 
   const drillTrees: ImageTree[] = []
   let outlineTree: ImageTree | undefined
+  let detectedUnits: 'mm' | 'in' | undefined
+  const usedTrees: ImageTree[] = []
 
   for (const layer of source) {
     const tree = getImageTree(layer)
     if (!tree || tree.children.length === 0) continue
 
-    if (layer.type === copperType) result.copper = tree
-    else if (layer.type === maskType) result.solderMask = tree
-    else if (layer.type === silkType) result.silkscreen = tree
-    else if (layer.type === pasteType) result.paste = tree
+    if (layer.type === copperType) { result.copper = tree; usedTrees.push(tree) }
+    else if (layer.type === maskType) { result.solderMask = tree; usedTrees.push(tree) }
+    else if (layer.type === silkType) { result.silkscreen = tree; usedTrees.push(tree) }
+    else if (layer.type === pasteType) { result.paste = tree; usedTrees.push(tree) }
     else if (layer.type === 'Drill') drillTrees.push(tree)
     else if (layer.type === 'Outline') outlineTree = tree
     else if (layer.type === 'Keep-Out' && !outlineTree) outlineTree = tree
+
+    if (!detectedUnits) detectedUnits = tree.units
   }
 
   // Merge all drill sources (round holes + slots, etc.)
@@ -298,7 +376,33 @@ function gatherRealisticLayers(side: 'top' | 'bottom'): RealisticLayers {
     }
   }
 
-  if (outlineTree) result.outline = outlineTree
+  if (outlineTree) {
+    result.outline = outlineTree
+  } else if (detectedUnits) {
+    // No outline layer available — synthesize a rectangular outline from the
+    // bounding box of the layers actually used for this side's realistic view.
+    let fallbackBounds: BoundingBox = emptyBounds()
+    for (const t of usedTrees) fallbackBounds = mergeBounds(fallbackBounds, t.bounds as BoundingBox)
+    for (const t of drillTrees) fallbackBounds = mergeBounds(fallbackBounds, t.bounds as BoundingBox)
+
+    if (!isEmpty(fallbackBounds)) {
+      const [minX, minY, maxX, maxY] = fallbackBounds
+      result.outline = {
+        units: detectedUnits,
+        bounds: fallbackBounds,
+        children: [{
+          type: 'shape',
+          shape: {
+            type: 'rect',
+            x: minX,
+            y: minY,
+            w: maxX - minX,
+            h: maxY - minY,
+          },
+        }],
+      }
+    }
+  }
 
   return result
 }
@@ -316,94 +420,6 @@ function detectUnits(): 'mm' | 'in' {
   return 'mm'
 }
 
-/**
- * Draw a background grid in Gerber coordinate space.
- * The grid spacing is in mm (converted to Gerber units if needed).
- * Uses subtle colors appropriate for the current background.
- */
-function drawGrid(
-  ctx: CanvasRenderingContext2D,
-  cssWidth: number,
-  cssHeight: number,
-  dpr: number,
-  transform: { offsetX: number; offsetY: number; scale: number },
-  mirrored: boolean,
-) {
-  const spacingMm = appSettings.gridSpacingMm
-  const units = detectUnits()
-  // Convert mm spacing to Gerber coordinate units
-  const spacing = units === 'in' ? spacingMm / 25.4 : spacingMm
-
-  const { offsetX, offsetY, scale } = transform
-  if (scale <= 0 || spacing <= 0) return
-
-  // Compute the visible Gerber coordinate range
-  // Transform model: screenX = offsetX + gerberX * scale
-  //                  screenY = offsetY - gerberY * scale
-  const gerberXAtScreenLeft = mirrored
-    ? (cssWidth - 0 - offsetX) / scale
-    : (0 - offsetX) / scale
-  const gerberXAtScreenRight = mirrored
-    ? (cssWidth - cssWidth - offsetX) / scale
-    : (cssWidth - offsetX) / scale
-  const gerberXMin = Math.min(gerberXAtScreenLeft, gerberXAtScreenRight)
-  const gerberXMax = Math.max(gerberXAtScreenLeft, gerberXAtScreenRight)
-  const gerberYMin = (offsetY - cssHeight) / scale
-  const gerberYMax = (offsetY - 0) / scale
-
-  // Snap to grid lines
-  const firstX = Math.floor(gerberXMin / spacing) * spacing
-  const lastX = Math.ceil(gerberXMax / spacing) * spacing
-  const firstY = Math.floor(gerberYMin / spacing) * spacing
-  const lastY = Math.ceil(gerberYMax / spacing) * spacing
-
-  // Limit to avoid performance issues at extreme zoom out
-  const lineCountX = (lastX - firstX) / spacing
-  const lineCountY = (lastY - firstY) / spacing
-  if (lineCountX > 500 || lineCountY > 500) return
-
-  // Choose grid colors based on background
-  const light = isLight.value
-  const minorColor = light ? 'rgba(0,0,0,0.10)' : 'rgba(255,255,255,0.10)'
-  const majorColor = light ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.25)'
-  // Major grid every 5 intervals
-  const majorEvery = 5
-
-  ctx.save()
-  if (dpr !== 1) ctx.scale(dpr, dpr)
-
-  // Draw in screen coordinates for crisp 1px lines
-  ctx.lineWidth = 1
-
-  // Vertical lines (along X axis)
-  for (let gx = firstX; gx <= lastX; gx += spacing) {
-    const screenX = mirrored
-      ? cssWidth - (offsetX + gx * scale)
-      : offsetX + gx * scale
-    // Determine if this is a major line
-    const gridIndex = Math.round(gx / spacing)
-    const isMajor = gridIndex % majorEvery === 0
-    ctx.strokeStyle = isMajor ? majorColor : minorColor
-    ctx.beginPath()
-    ctx.moveTo(Math.round(screenX) + 0.5, 0)
-    ctx.lineTo(Math.round(screenX) + 0.5, cssHeight)
-    ctx.stroke()
-  }
-
-  // Horizontal lines (along Y axis)
-  for (let gy = firstY; gy <= lastY; gy += spacing) {
-    const screenY = offsetY - gy * scale
-    const gridIndex = Math.round(gy / spacing)
-    const isMajor = gridIndex % majorEvery === 0
-    ctx.strokeStyle = isMajor ? majorColor : minorColor
-    ctx.beginPath()
-    ctx.moveTo(0, Math.round(screenY) + 0.5)
-    ctx.lineTo(cssWidth, Math.round(screenY) + 0.5)
-    ctx.stroke()
-  }
-
-  ctx.restore()
-}
 
 // ── PnP marker rendering ──
 
@@ -1131,125 +1147,180 @@ function draw() {
 
   // Draw background grid (only in layers view)
   if (!isRealistic && appSettings.gridEnabled) {
-    drawGrid(ctx, cssWidth, cssHeight, dpr, transform, !!props.mirrored)
+    drawCanvasGrid({
+      ctx,
+      cssWidth,
+      cssHeight,
+      dpr,
+      transform,
+      mirrored: !!props.mirrored,
+      units: detectUnits(),
+      gridSpacingMm: appSettings.gridSpacingMm,
+      isLight: isLight.value,
+    })
   }
 
-  if (isRealistic) {
-    // ── Realistic rendering mode ──
-    const side = props.mirrored ? 'bottom' : 'top'
-    const realisticLayers = gatherRealisticLayers(side)
+  // ── Layer composite with caching ──
+  const cacheKey = computeSceneCacheKey()
+  const canUseCache = isInteracting.value
+    && sceneCache
+    && sceneCache.key === cacheKey
+    && sceneCache.width === canvas.width
+    && sceneCache.height === canvas.height
+    && sceneCache.dpr === dpr
 
-    const sceneCanvas = document.createElement('canvas')
-    sceneCanvas.width = canvas.width
-    sceneCanvas.height = canvas.height
+  if (canUseCache && sceneCache) {
+    // Reproject the cached scene with a delta-transform (single drawImage call)
+    const ct = sceneCache.transform
+    const r = transform.scale / ct.scale
+    const tx = (transform.offsetX - r * ct.offsetX) * dpr
+    const ty = (transform.offsetY - r * ct.offsetY) * dpr
 
-    renderRealisticView(realisticLayers, sceneCanvas, {
-      preset: props.preset!,
-      transform,
-      dpr,
-      side,
-    })
-
-    // Apply horizontal mirror if viewing bottom layers
+    ctx.save()
     if (props.mirrored) {
-      ctx.save()
       ctx.translate(canvas.width, 0)
       ctx.scale(-1, 1)
     }
-
-    ctx.drawImage(sceneCanvas, 0, 0)
-
-    if (props.mirrored) {
-      ctx.restore()
-    }
+    ctx.translate(tx, ty)
+    ctx.scale(r, r)
+    ctx.drawImage(sceneCache.canvas, 0, 0)
+    ctx.restore()
   } else {
-    // ── Standard layer rendering mode ──
-    const sceneCanvas = document.createElement('canvas')
-    sceneCanvas.width = canvas.width
-    sceneCanvas.height = canvas.height
-    const sceneCtx = sceneCanvas.getContext('2d')!
+    // Full render — build scene and update cache
+    let sceneCanvas: HTMLCanvasElement
 
-    for (const { layer, tree } of layerTrees) {
-      // In standard mode, only render visible layers (props.layers is already filtered)
-      const tempCanvas = document.createElement('canvas')
-      tempCanvas.width = canvas.width
-      tempCanvas.height = canvas.height
+    if (isRealistic) {
+      // ── Realistic rendering mode ──
+      const side = props.activeFilter === 'bot' ? 'bottom' : 'top'
+      const realisticLayers = gatherRealisticLayers(side)
 
-      renderToCanvas(tree, tempCanvas, {
-        color: layer.color,
+      sceneCanvas = acquireCanvas(canvas.width, canvas.height)
+
+      renderRealisticView(realisticLayers, sceneCanvas, {
+        preset: props.preset!,
         transform,
         dpr,
+        side,
       })
 
-      sceneCtx.drawImage(tempCanvas, 0, 0)
-    }
+      if (props.mirrored) {
+        ctx.save()
+        ctx.translate(canvas.width, 0)
+        ctx.scale(-1, 1)
+      }
+      ctx.drawImage(sceneCanvas, 0, 0)
+      if (props.mirrored) {
+        ctx.restore()
+      }
+    } else {
+      // ── Standard layer rendering mode ──
+      sceneCanvas = acquireCanvas(canvas.width, canvas.height)
+      const sceneCtx = sceneCanvas.getContext('2d')!
 
-    // If cropping to outline, apply the outline as a mask
-    if (props.cropToOutline && props.outlineLayer) {
-      const outlineTree = getImageTree(props.outlineLayer)
-      if (outlineTree && outlineTree.children.length > 0) {
-        const maskCanvas = document.createElement('canvas')
-        maskCanvas.width = canvas.width
-        maskCanvas.height = canvas.height
+      for (const { layer, tree } of layerTrees) {
+        const tempCanvas = acquireCanvas(canvas.width, canvas.height)
 
-        renderOutlineMask(outlineTree, maskCanvas, {
-          color: '#ffffff',
+        renderToCanvas(tree, tempCanvas, {
+          color: layer.color,
           transform,
           dpr,
         })
 
-        // Clip: keep only the parts of the scene inside the outline
-        sceneCtx.globalCompositeOperation = 'destination-in'
-        sceneCtx.drawImage(maskCanvas, 0, 0)
-        sceneCtx.globalCompositeOperation = 'source-over'
+        sceneCtx.drawImage(tempCanvas, 0, 0)
+        releaseCanvas(tempCanvas)
+      }
+
+      if (props.cropToOutline && props.outlineLayer) {
+        const outlineTree = getImageTree(props.outlineLayer)
+        if (outlineTree && outlineTree.children.length > 0) {
+          const maskCanvas = acquireCanvas(canvas.width, canvas.height)
+
+          renderOutlineMask(outlineTree, maskCanvas, {
+            color: '#ffffff',
+            transform,
+            dpr,
+          })
+
+          sceneCtx.globalCompositeOperation = 'destination-in'
+          sceneCtx.drawImage(maskCanvas, 0, 0)
+          sceneCtx.globalCompositeOperation = 'source-over'
+
+          releaseCanvas(maskCanvas)
+        }
+      }
+
+      if (props.mirrored) {
+        ctx.save()
+        ctx.translate(canvas.width, 0)
+        ctx.scale(-1, 1)
+      }
+      ctx.drawImage(sceneCanvas, 0, 0)
+      if (props.mirrored) {
+        ctx.restore()
       }
     }
 
-    // Apply horizontal mirror if viewing bottom layers
-    if (props.mirrored) {
-      ctx.save()
-      ctx.translate(canvas.width, 0)
-      ctx.scale(-1, 1)
-    }
-
-    ctx.drawImage(sceneCanvas, 0, 0)
-
-    if (props.mirrored) {
-      ctx.restore()
+    // Update the scene cache (take ownership of the canvas — don't release it)
+    if (sceneCache) releaseCanvas(sceneCache.canvas)
+    sceneCache = {
+      canvas: sceneCanvas,
+      transform: { ...transform },
+      dpr,
+      width: canvas.width,
+      height: canvas.height,
+      key: cacheKey,
     }
   }
 
-  // ── Draw package footprints (under the dots) ──
+  // Component overlays (footprints + markers) — always draw.
+  // The layer cache above handles the expensive gerber re-rendering;
+  // these are lightweight per-component shapes (rects/arcs).
   drawPackageFootprints(ctx, cssWidth, dpr, transform, !!props.mirrored)
 
-  // ── Draw PnP markers on top of everything ──
   drawPnPMarkers(ctx, cssWidth, dpr, transform, !!props.mirrored, {
     hideDotWhenPackagePresent: true,
     includePackages: !!props.showPackages,
   })
 
-  // ── Draw alignment overlay (crosshair, points, midpoint line) ──
   drawAlignOverlay(ctx, cssWidth, cssHeight, dpr, transform, !!props.mirrored)
 }
+
+// ── rAF-coalesced redraw ──
+let rafId = 0
+function scheduleRedraw() {
+  if (rafId) return
+  rafId = requestAnimationFrame(() => {
+    rafId = 0
+    draw()
+  })
+}
+
+// Redraw when interaction ends (to restore footprints/markers)
+watch(
+  () => props.interaction.isDragging.value,
+  (dragging) => { if (!dragging) scheduleRedraw() },
+)
 
 // Watch for layer or transform changes and redraw
 watch(
   () => [props.layers, props.allLayers, props.interaction.transform.value, props.mirrored, props.cropToOutline, props.outlineLayer, props.viewMode, props.preset, bgColor.value, appSettings.gridEnabled, appSettings.gridSpacingMm, props.pnpComponents, props.selectedPnpDesignator, props.pnpOriginX, props.pnpOriginY, props.alignMode, props.alignClickA, originCursorGerber.value, props.showPackages, props.pnpConvention, props.matchPackage, props.packageLibraryVersion],
-  () => draw(),
+  () => scheduleRedraw(),
   { deep: true },
 )
 
 onMounted(() => {
   draw()
   const observer = new ResizeObserver(() => {
-    // On resize, re-fit if user hasn't manually zoomed/panned
     autoFitDone.value = false
-    draw()
+    scheduleRedraw()
   })
   if (canvasEl.value?.parentElement) {
     observer.observe(canvasEl.value.parentElement)
   }
-  onUnmounted(() => observer.disconnect())
+  onUnmounted(() => {
+    observer.disconnect()
+    if (rafId) { cancelAnimationFrame(rafId); rafId = 0 }
+  })
 })
 
 /**
@@ -1314,7 +1385,7 @@ function exportPng(targetMaxPx: number = 4096): Promise<Blob | null> {
     const isRealistic = props.viewMode === 'realistic' && props.preset
 
     if (isRealistic) {
-      const side = props.mirrored ? 'bottom' : 'top'
+      const side = props.activeFilter === 'bot' ? 'bottom' : 'top'
       const realisticLayers = gatherRealisticLayers(side)
 
       const sceneCanvas = document.createElement('canvas')
@@ -1540,6 +1611,7 @@ function getRealisticLayersForExport(side: 'top' | 'bottom'): RealisticLayers {
 /** Invalidate the cached ImageTree for a specific file so it gets re-parsed on next render. */
 function invalidateCache(fileName: string) {
   imageTreeCache.delete(fileName)
+  invalidateSceneCache()
 }
 
 // Expose resetView and export helpers for external use

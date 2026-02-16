@@ -3,7 +3,7 @@
     <div class="p-3">
       <h3 class="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-2">Layer Matches</h3>
       <div v-if="!matches.length" class="text-xs text-neutral-400 py-4 text-center">
-        Import files into both packets to match layers
+        Import Gerber files to see layers
       </div>
       <div class="space-y-1">
         <LayerRow
