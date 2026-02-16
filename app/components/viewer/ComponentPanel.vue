@@ -399,6 +399,10 @@ watch(() => props.searchQuery, (v) => {
   if (v !== localSearch.value) localSearch.value = v
 })
 
+onUnmounted(() => {
+  clearTimeout(searchDebounceTimer)
+})
+
 const searchQuery = computed({
   get: () => localSearch.value,
   set: (v: string) => { localSearch.value = v },

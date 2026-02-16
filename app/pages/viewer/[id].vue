@@ -1087,6 +1087,10 @@ async function handleConfirmDelete() {
 const undoToastVisible = ref(false)
 let undoToastTimer: ReturnType<typeof setTimeout> | undefined
 
+onUnmounted(() => {
+  if (undoToastTimer) clearTimeout(undoToastTimer)
+})
+
 async function handleUndo() {
   const entry = editHistory.popEntry()
   if (!entry) return

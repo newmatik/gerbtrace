@@ -177,6 +177,7 @@
           <p class="text-sm text-neutral-500">
             Are you sure you want to remove <strong>{{ removingMemberName }}</strong> from the team? This action cannot be undone.
           </p>
+          <p v-if="removeError" class="text-xs text-red-500">{{ removeError }}</p>
           <div class="flex justify-end gap-2 pt-2">
             <UButton size="sm" variant="outline" color="neutral" @click="confirmRemoveOpen = false">
               Cancel
@@ -281,19 +282,26 @@ const confirmRemoveOpen = ref(false)
 const removingMemberId = ref<string | null>(null)
 const removingMemberName = ref('')
 const removing = ref(false)
+const removeError = ref('')
 
 function openConfirmRemove(member: TeamMember) {
   removingMemberId.value = member.id
   removingMemberName.value = member.profile?.name ?? member.profile?.email ?? 'this member'
+  removeError.value = ''
   confirmRemoveOpen.value = true
 }
 
 async function handleConfirmRemove() {
   if (!removingMemberId.value) return
   removing.value = true
+  removeError.value = ''
   try {
-    await removeMember(removingMemberId.value)
-    confirmRemoveOpen.value = false
+    const { error } = await removeMember(removingMemberId.value)
+    if (error) {
+      removeError.value = (error as any).message ?? 'Failed to remove member'
+    } else {
+      confirmRemoveOpen.value = false
+    }
   } finally {
     removing.value = false
   }
