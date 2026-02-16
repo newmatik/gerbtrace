@@ -10,36 +10,32 @@ When a new migration file is created under `supabase/migrations/`, apply it dire
 
 ## Droplet details
 
-- **Host**: `167.172.166.141` (DigitalOcean droplet `supabase-gerbtrace`)
-- **SSH user**: `root`
-- **Supabase docker dir**: `/opt/supabase/docker`
-- **Migration user**: `supabase_admin` (owns all `public` schema objects)
-- **Bookkeeping user**: `postgres` (owns `schema_migrations`)
+Connection details are in the `supabase-droplet-ssh.mdc` rule. Use `supabase_admin` for DDL and `postgres` for bookkeeping (`schema_migrations` inserts).
 
 ## Step-by-step
 
 1. **Check which migrations are already applied:**
 
 ```bash
-ssh root@167.172.166.141 "cd /opt/supabase/docker && docker compose exec -T db psql -U postgres -d postgres -tAc \"select name from public.schema_migrations order by name;\""
+ssh root@api.gerbtrace.com "cd /opt/supabase/docker && docker compose exec -T db psql -U postgres -d postgres -tAc \"select name from public.schema_migrations order by name;\""
 ```
 
 2. **Apply each pending migration** (in timestamp order, as `supabase_admin`):
 
 ```bash
-cat supabase/migrations/<MIGRATION_FILE>.sql | ssh root@167.172.166.141 "cd /opt/supabase/docker && docker compose exec -T db psql -U supabase_admin -d postgres -v ON_ERROR_STOP=0"
+cat supabase/migrations/<MIGRATION_FILE>.sql | ssh root@api.gerbtrace.com "cd /opt/supabase/docker && docker compose exec -T db psql -U supabase_admin -d postgres -v ON_ERROR_STOP=0"
 ```
 
 3. **Record the migration** in the bookkeeping table (as `postgres`):
 
 ```bash
-ssh root@167.172.166.141 "cd /opt/supabase/docker && docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 -c \"insert into public.schema_migrations(name) values ('<MIGRATION_FILE>.sql') on conflict (name) do nothing;\""
+ssh root@api.gerbtrace.com "cd /opt/supabase/docker && docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 -c \"insert into public.schema_migrations(name) values ('<MIGRATION_FILE>.sql') on conflict (name) do nothing;\""
 ```
 
 4. **Verify** the migration is recorded:
 
 ```bash
-ssh root@167.172.166.141 "cd /opt/supabase/docker && docker compose exec -T db psql -U postgres -d postgres -tAc \"select name from public.schema_migrations order by name;\""
+ssh root@api.gerbtrace.com "cd /opt/supabase/docker && docker compose exec -T db psql -U postgres -d postgres -tAc \"select name from public.schema_migrations order by name;\""
 ```
 
 ## Important notes
@@ -48,4 +44,4 @@ ssh root@167.172.166.141 "cd /opt/supabase/docker && docker compose exec -T db p
 - Apply migrations as `supabase_admin`, record them as `postgres`.
 - The CI workflow (`.github/workflows/deploy-supabase.yml`) also applies migrations on push to `main`, so the bookkeeping table prevents double-application.
 - If a migration produces `NOTICE: ... already exists, skipping` that is fine.
-- If a migration produces `ERROR:` lines that are NOT "already exists" family, stop and investigate.
+- **Manually inspect the migration output.** The command uses `ON_ERROR_STOP=0` so psql continues on errors. If you see `ERROR:` lines that are NOT "already exists" family, do NOT proceed to step 3. Investigate and resolve the errors first.

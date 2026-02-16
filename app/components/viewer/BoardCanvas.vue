@@ -702,7 +702,7 @@ function drawPackageFootprints(
 
   for (const comp of components) {
     const pkgName = comp.matchedPackage || comp.package
-    const isTht = (comp as any).componentType === 'tht'
+    const isTht = comp.componentType === 'tht'
 
     let shapes: FootprintShape[]
     let rotRad: number
@@ -711,8 +711,10 @@ function drawPackageFootprints(
       const thtPkg = props.matchThtPackage(pkgName)
       if (!thtPkg) continue
       shapes = getThtFootprint(thtPkg)
-      // THT components use simple CCW rotation (no TPSys convention)
-      rotRad = (-comp.rotation * Math.PI) / 180
+      // Apply PnP convention rotation for THT components
+      const thtDirection = (props.pnpConvention ?? 'iec61188') === 'mycronic' ? -1 : 1
+      const rotationCCW = thtDirection * comp.rotation
+      rotRad = (-rotationCCW * Math.PI) / 180
     } else if (props.matchPackage) {
       const pkg = props.matchPackage(pkgName)
       if (!pkg) continue

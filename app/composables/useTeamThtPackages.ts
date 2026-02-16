@@ -110,7 +110,7 @@ export function useTeamThtPackages() {
   }
 
   // Subscribe to real-time changes on team_tht_packages
-  watch(currentTeamId, (teamId) => {
+  watch(currentTeamId, (teamId, _old, onCleanup) => {
     if (!teamId) {
       teamThtPackages.value = []
       return
@@ -137,7 +137,7 @@ export function useTeamThtPackages() {
       })
       .subscribe()
 
-    onBeforeUnmount(() => {
+    onCleanup(() => {
       supabase.removeChannel(channel)
     })
   }, { immediate: true })

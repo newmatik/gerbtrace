@@ -39,9 +39,19 @@ end;
 $$;
 
 -- updated_at trigger
-create trigger project_documents_updated_at
-  before update on public.project_documents
-  for each row execute function public.set_updated_at();
+do $$
+begin
+  if not exists (
+    select 1 from pg_trigger
+    where tgname = 'project_documents_updated_at'
+      and tgrelid = 'public.project_documents'::regclass
+  ) then
+    create trigger project_documents_updated_at
+      before update on public.project_documents
+      for each row execute function public.set_updated_at();
+  end if;
+end;
+$$;
 
 -- ── RLS policies ─────────────────────────────────────────────────────────────
 

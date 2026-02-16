@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS public.team_tht_packages (
   id          uuid primary key default gen_random_uuid(),
   team_id     uuid not null references public.teams(id) on delete cascade,
   data        jsonb not null,
-  created_by  uuid not null references public.profiles(id) on delete set null,
+  created_by  uuid references public.profiles(id) on delete set null,
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
 );

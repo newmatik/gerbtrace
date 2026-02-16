@@ -180,8 +180,9 @@ const cursorScreen = computed(() => {
 })
 
 function formatMm(d: number): string {
-  if (d < 0.01) return `${(d * 1000).toFixed(1)} µm`
-  if (d < 1) return `${(d * 1000).toFixed(0)} µm`
+  const abs = Math.abs(d)
+  if (abs < 0.01) return `${(d * 1000).toFixed(1)} µm`
+  if (abs < 1) return `${(d * 1000).toFixed(0)} µm`
   return `${d.toFixed(3)} mm`
 }
 

@@ -258,7 +258,7 @@ export function exportRealisticSvgWithComponents(
       const gy = pnpToGerber(comp.y, oy, units)
 
       const pkgName = comp.matchedPackage || comp.package
-      const isTht = (comp as any).componentType === 'tht'
+      const isTht = comp.componentType === 'tht'
       let extent = dotR
 
       if (options.showPackages && pkgName) {
@@ -655,7 +655,7 @@ function renderComponentsOverlaySvg(
     const gy = pnpToGerber(comp.y, opts.originY, opts.units)
 
     const pkgName = comp.matchedPackage || comp.package
-    const isTht = (comp as any).componentType === 'tht'
+    const isTht = comp.componentType === 'tht'
 
     let shapes: FootprintShape[] | undefined
     let rotationCCW: number
@@ -665,7 +665,8 @@ function renderComponentsOverlaySvg(
         const thtPkg = opts.matchThtPackage(pkgName)
         if (thtPkg) {
           shapes = computeThtFootprint(thtPkg)
-          rotationCCW = -comp.rotation
+          const thtDirection = opts.pnpConvention === 'mycronic' ? -1 : 1
+          rotationCCW = thtDirection * comp.rotation
         }
       }
       if (!shapes) {

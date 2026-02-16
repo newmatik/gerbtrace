@@ -191,8 +191,8 @@ const cursorMm = ref({ x: 0, y: 0 })
 const history = ref<THTPackageDefinition[]>([])
 const historyIdx = ref(-1)
 
-function pushHistory() {
-  const snap = JSON.parse(JSON.stringify(props.modelValue)) as THTPackageDefinition
+function pushHistory(state?: THTPackageDefinition) {
+  const snap = JSON.parse(JSON.stringify(state ?? props.modelValue)) as THTPackageDefinition
   // Truncate any redo states
   history.value = history.value.slice(0, historyIdx.value + 1)
   history.value.push(snap)
@@ -310,30 +310,36 @@ function updateSelectedShape(shape: THTShape) {
   if (idx == null) return
   const shapes = [...props.modelValue.shapes]
   shapes[idx] = shape
-  pushHistory()
-  emitShapes(shapes)
+  const next = { ...props.modelValue, shapes }
+  pushHistory(next)
+  emit('update:modelValue', next)
 }
 
 function deleteSelectedShapes() {
   if (selectedIndices.value.size === 0) return
   const toRemove = selectedIndices.value
   const shapes = props.modelValue.shapes.filter((_, i) => !toRemove.has(i))
-  pushHistory()
+  const next = { ...props.modelValue, shapes }
+  pushHistory(next)
   clearSelection()
-  emitShapes(shapes)
+  emit('update:modelValue', next)
 }
 
 function addShape(shape: THTShape) {
-  pushHistory()
-  emitShapes([...props.modelValue.shapes, shape])
-  selectOnly(props.modelValue.shapes.length) // will be the new last index
+  const shapes = [...props.modelValue.shapes, shape]
+  const next = { ...props.modelValue, shapes }
+  pushHistory(next)
+  emit('update:modelValue', next)
+  selectOnly(props.modelValue.shapes.length)
 }
 
 function addShapes(newShapes: THTShape[]) {
   if (newShapes.length === 0) return
-  pushHistory()
   const baseIdx = props.modelValue.shapes.length
-  emitShapes([...props.modelValue.shapes, ...newShapes])
+  const shapes = [...props.modelValue.shapes, ...newShapes]
+  const next = { ...props.modelValue, shapes }
+  pushHistory(next)
+  emit('update:modelValue', next)
   selectedIndices.value = new Set(newShapes.map((_, i) => baseIdx + i))
 }
 
@@ -343,8 +349,9 @@ function moveShapeToIndex(fromIdx: number, toIdx: number) {
   const shapes = [...props.modelValue.shapes]
   const [moved] = shapes.splice(fromIdx, 1)
   shapes.splice(toIdx, 0, moved!)
-  pushHistory()
-  emitShapes(shapes)
+  const next = { ...props.modelValue, shapes }
+  pushHistory(next)
+  emit('update:modelValue', next)
   selectOnly(toIdx)
 }
 

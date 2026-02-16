@@ -20,10 +20,11 @@
               <span v-if="field.required" class="text-red-400">*</span>
             </label>
             <select
-              v-model="mapping[field.key]"
+              :value="mapping[field.key] ?? ''"
+              @change="onFieldChange(field.key, $event)"
               class="mt-0.5 w-full text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md px-2 py-1.5 outline-none focus:border-primary transition-colors"
             >
-              <option :value="undefined">-- Not mapped --</option>
+              <option value="">-- Not mapped --</option>
               <option v-for="(header, idx) in headers" :key="idx" :value="idx">
                 {{ header || `Column ${idx + 1}` }}
               </option>
@@ -95,8 +96,13 @@ const mapping = reactive<BomColumnMapping>({})
 
 const previewRows = computed(() => props.rows.slice(0, 3))
 
+function onFieldChange(key: keyof BomColumnMapping, e: Event) {
+  const raw = (e.target as HTMLSelectElement).value
+  mapping[key] = raw === '' ? undefined : Number(raw)
+}
+
 const isValid = computed(() => {
-  return mapping.references !== undefined && mapping.quantity !== undefined
+  return Number.isFinite(mapping.references) && Number.isFinite(mapping.quantity)
 })
 
 function handleConfirm() {
