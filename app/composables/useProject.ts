@@ -140,6 +140,7 @@ export function useProject() {
 
   async function removeProject(id: number) {
     await db.files.where('projectId').equals(id).delete()
+    await db.fileOriginals.where('projectId').equals(id).delete()
     await db.projects.delete(id)
     await loadProjects()
   }

@@ -16,12 +16,19 @@
 -- ── 1. Unique constraint for upsert support ─────────────────────────────────
 
 -- Remove any duplicate rows first (keep the most recent per unique key)
-delete from public.project_files a
-using public.project_files b
-where a.project_id = b.project_id
-  and a.packet = b.packet
-  and a.file_name = b.file_name
-  and a.created_at < b.created_at;
+with ranked as (
+  select
+    ctid,
+    row_number() over (
+      partition by project_id, packet, file_name
+      order by created_at desc, ctid desc
+    ) as rn
+  from public.project_files
+)
+delete from public.project_files p
+using ranked r
+where p.ctid = r.ctid
+  and r.rn > 1;
 
 alter table public.project_files
   add constraint project_files_project_packet_file_uniq

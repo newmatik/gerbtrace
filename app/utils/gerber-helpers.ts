@@ -47,6 +47,20 @@ const LAYER_TYPE_MAP: Record<string, string> = {
   '.g4': 'Inner Layer',
   '.gp1': 'Inner Layer',
   '.gp2': 'Inner Layer',
+  '.gp3': 'Inner Layer',
+  '.gp4': 'Inner Layer',
+  '.gp5': 'Inner Layer',
+  '.gp6': 'Inner Layer',
+  '.gp7': 'Inner Layer',
+  '.gp8': 'Inner Layer',
+  '.gp9': 'Inner Layer',
+  '.gp10': 'Inner Layer',
+  '.gp11': 'Inner Layer',
+  '.gp12': 'Inner Layer',
+  '.gp13': 'Inner Layer',
+  '.gp14': 'Inner Layer',
+  '.gp15': 'Inner Layer',
+  '.gp16': 'Inner Layer',
   '.in1': 'Inner Layer',
   '.in2': 'Inner Layer',
   '.in3': 'Inner Layer',
@@ -112,6 +126,19 @@ export const ALL_LAYER_TYPES: string[] = [
   'Unmatched',
 ]
 
+const VALID_LAYER_TYPES = new Set(ALL_LAYER_TYPES)
+
+/**
+ * Return a validated layer type for a file.  If the stored `layerType`
+ * is a recognised value it is returned as-is; otherwise the type is
+ * re-detected from the filename.  This guards against stale or renamed
+ * type strings persisted in older DB records.
+ */
+export function resolveLayerType(fileName: string, storedLayerType?: string | null): string {
+  if (storedLayerType && VALID_LAYER_TYPES.has(storedLayerType)) return storedLayerType
+  return detectLayerType(fileName)
+}
+
 export function getColorForType(type: string): string {
   return LAYER_COLOR_MAP[type] || '#FF80AB'
 }
@@ -149,6 +176,11 @@ export function detectLayerType(fileName: string): string {
   // Return immediately for unambiguous extensions (skip 'Unmatched' mapped ones like .gbr)
   const extType = LAYER_TYPE_MAP[ext]
   if (extType && extType !== 'Unmatched') return extType
+
+  // Altium numbered layers not in the static map:
+  // .gpN → internal plane (copper), .gmN → mechanical (non-copper, treat as Unmatched)
+  if (/^\.gp\d{1,2}$/.test(ext)) return 'Inner Layer'
+  if (/^\.gm\d{1,2}$/.test(ext)) return 'Unmatched'
 
   // Allegro / Cadence naming: CS = Component Side (Top), PS = Print Side (Bottom)
   if (/sm[_\-]cs|soldermask[_\-]cs|mask[_\-]cs/i.test(lower)) return 'Top Solder Mask'
@@ -265,7 +297,6 @@ export function isGerberFile(fileName: string): boolean {
     // Altium drawing / guide / inner layers
     '.gd1', '.gd2', '.gg1', '.gg2',
     '.g1', '.g2', '.g3', '.g4',
-    '.gp1', '.gp2',
     '.in1', '.in2', '.in3', '.in4',
     // Protel / Altium / Eagle
     '.cmp', '.sol', '.stc', '.sts', '.plc', '.pls', '.crc', '.crs',
@@ -275,6 +306,9 @@ export function isGerberFile(fileName: string): boolean {
     '.art', '.phd', '.top', '.bot', '.smt', '.smb',
   ]
   if (gerberExts.includes(ext)) return true
+
+  // Altium numbered layers: .gm1-.gm32 (mechanical), .gp1-.gp16 (internal plane)
+  if (/^\.(gm\d{1,2}|gp\d{1,2})$/.test(ext)) return true
 
   // Check if the file has no standard extension but named 'drills' etc.
   if (/^(drill|drills|outline)$/i.test(fileName)) return true

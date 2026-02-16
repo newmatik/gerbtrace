@@ -314,7 +314,7 @@ function save() {
       if (Math.abs(normRot - comp.rotation) > 1e-6) updates.rotation = normRot
     }
     if (localSide.value !== comp.side) updates.side = localSide.value
-    if (localPackage.value !== comp.cadPackage) updates.package = localPackage.value
+    if (localPackage.value !== comp.package) updates.package = localPackage.value
 
     if (Object.keys(updates).length > 0) {
       emit('update:manualComponent', { id, ...updates })
@@ -351,9 +351,7 @@ function save() {
       fieldChanges.y = parsedY
       hasFieldChanges = true
     }
-    if (hasFieldChanges) {
-      emit('update:fields', fieldChanges as any)
-    }
+    emit('update:fields', fieldChanges as any)
 
     // Rotation
     const parsedRot = Number(localRotation.value)

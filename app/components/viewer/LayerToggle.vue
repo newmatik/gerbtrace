@@ -147,6 +147,7 @@ function startRename() {
 }
 
 function commitRename() {
+  if (!isRenaming.value) return
   isRenaming.value = false
   const trimmed = renameDraft.value.trim()
   if (trimmed && trimmed !== props.layer.file.fileName) {
@@ -156,6 +157,7 @@ function commitRename() {
 
 function cancelRename() {
   isRenaming.value = false
+  renameDraft.value = props.layer.file.fileName
 }
 
 // ── Dropdown menu ──

@@ -29,7 +29,9 @@ fn save_post_update_info(app: AppHandle, payload: String) -> Result<(), String> 
 fn consume_post_update_info(app: AppHandle) -> Option<String> {
   let path = post_update_file(&app)?;
   let data = fs::read_to_string(&path).ok()?;
-  let _ = fs::remove_file(&path);
+  if let Err(e) = fs::remove_file(&path) {
+    log::warn!("Failed to remove post-update info file: {}", e);
+  }
   Some(data)
 }
 

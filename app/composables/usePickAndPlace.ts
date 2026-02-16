@@ -131,8 +131,8 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
     return true
   }
 
-  function toEditable(comp: PnPComponent, isManual = false): EditablePnPComponent {
-    const key = isManual ? `manual|${(comp as any).id ?? comp.designator}` : getComponentKey(comp)
+  function toEditable(comp: PnPComponent & { id?: string }, isManual = false): EditablePnPComponent {
+    const key = isManual ? `manual|${comp.id || comp.designator}` : getComponentKey(comp)
     const override = rotationOverrides.value.get(key)
     const rotation = override ?? comp.rotation
 
@@ -729,12 +729,14 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
   // Invalidate cache when layers ref changes identity
   watch(layers, () => invalidateCache(), { deep: false })
   // Drop stale overrides when imported component set changes.
+  // Preserve manual component overrides (keys starting with 'manual|').
   watch(allParsedComponents, (components) => {
     if (rotationOverrides.value.size === 0) return
     const validKeys = new Set(components.map(getComponentKey))
     const next = new Map(rotationOverrides.value)
     let changed = false
     for (const key of next.keys()) {
+      if (key.startsWith('manual|')) continue
       if (!validKeys.has(key)) {
         next.delete(key)
         changed = true

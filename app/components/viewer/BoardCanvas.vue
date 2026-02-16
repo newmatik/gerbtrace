@@ -291,8 +291,9 @@ function onDblClick(e: MouseEvent) {
   if (!props.pnpComponents || props.pnpComponents.length === 0) return
 
   const rect = canvasEl.value.getBoundingClientRect()
-  const clickX = e.clientX - rect.left
-  const clickY = e.clientY - rect.top
+  const rawClickX = e.clientX - rect.left
+  const rawClickY = e.clientY - rect.top
+  const { x: clickX, y: clickY } = unrotateScreenPoint(rawClickX, rawClickY)
   const { cssWidth } = getCssDimensions()
   const hit = hitTestPnP(clickX, clickY, cssWidth, props.interaction.transform.value, !!props.mirrored)
   if (hit) emit('pnpDblclick', hit)

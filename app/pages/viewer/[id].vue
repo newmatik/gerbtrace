@@ -1112,7 +1112,7 @@ onMounted(async () => {
     loadedFiles = await getFiles(projectId, 1)
   }
   layers.value = sortLayersByPcbOrder(loadedFiles.map(f => {
-    const type = f.layerType || detectLayerType(f.fileName)
+    const type = resolveLayerType(f.fileName, f.layerType)
     return {
       file: f,
       visible: type !== 'Unmatched',
@@ -1276,7 +1276,7 @@ async function doImport(newFiles: GerberFile[], sourceName: string) {
 
   // Build layer entries for the incoming files
   const incomingLayers = newFiles.map(f => {
-    const type = f.layerType || detectLayerType(f.fileName)
+    const type = resolveLayerType(f.fileName, f.layerType)
     return {
       file: f,
       visible: type !== 'Unmatched',
@@ -1414,11 +1414,13 @@ async function renameLayer(index: number, newName: string) {
   // Persist to DB
   if (isTeamProject && teamProjectId) {
     const teamId = currentTeamId.value || await waitForTeamId()
-    // Team: upload under new name, delete old
-    await uploadTeamFile(teamProjectId, teamId, 1, newName, layer.file.content, layer.file.layerType)
-    const teamFiles = await getTeamFiles(teamProjectId, 1)
-    const oldRecord = teamFiles.find(tf => tf.file_name === oldName)
-    if (oldRecord) await deleteTeamFile(oldRecord.id, oldRecord.storage_path)
+    // Team: upload under new name, delete old only if upload succeeded
+    const { error: uploadErr } = await uploadTeamFile(teamProjectId, teamId, 1, newName, layer.file.content, layer.file.layerType)
+    if (!uploadErr) {
+      const teamFiles = await getTeamFiles(teamProjectId, 1)
+      const oldRecord = teamFiles.find(tf => tf.file_name === oldName)
+      if (oldRecord) await deleteTeamFile(oldRecord.id, oldRecord.storage_path)
+    }
   } else {
     await renameFile(projectId, 1, oldName, newName)
   }
