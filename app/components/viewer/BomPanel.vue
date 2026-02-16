@@ -23,11 +23,52 @@
       </div>
     </div>
 
+    <!-- Filter chips + sort -->
+    <div class="flex items-center gap-1.5 px-3 pb-1.5 flex-wrap">
+      <button
+        v-for="f in filterDefs"
+        :key="f.key"
+        class="text-[10px] px-1.5 py-0.5 rounded-full border transition-colors flex items-center gap-0.5"
+        :class="activeFilters.has(f.key)
+          ? f.activeClass
+          : 'border-neutral-200 dark:border-neutral-700 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200'"
+        @click="toggleFilter(f.key)"
+      >
+        {{ f.label }}
+        <span class="tabular-nums opacity-60">{{ f.count }}</span>
+      </button>
+      <!-- Spacer -->
+      <span class="flex-1" />
+      <!-- Sort controls -->
+      <button
+        class="text-[10px] px-1.5 py-0.5 rounded-full border transition-colors flex items-center gap-0.5"
+        :class="sortBy === 'designator'
+          ? 'border-primary/40 text-primary bg-primary/5'
+          : 'border-neutral-200 dark:border-neutral-700 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200'"
+        title="Sort by designator"
+        @click="sortBy = 'designator'"
+      >
+        <UIcon name="i-lucide-arrow-down-a-z" class="text-[10px]" />
+        Ref
+      </button>
+      <button
+        class="text-[10px] px-1.5 py-0.5 rounded-full border transition-colors flex items-center gap-0.5"
+        :class="sortBy === 'price'
+          ? 'border-primary/40 text-primary bg-primary/5'
+          : 'border-neutral-200 dark:border-neutral-700 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200'"
+        title="Sort by total price (cheapest first)"
+        @click="sortBy = 'price'"
+      >
+        <UIcon name="i-lucide-arrow-down-0-1" class="text-[10px]" />
+        Price
+      </button>
+    </div>
+
     <!-- Toolbar -->
     <div class="flex items-center justify-between px-3 pb-1.5 gap-1">
       <div class="flex items-center gap-2">
         <span class="text-[10px] text-neutral-400">
-          {{ filteredLines.length }}/{{ bomLines.length }} lines
+          {{ displayLines.length }}/{{ bomLines.length }} lines
         </span>
         <!-- Board quantity input -->
         <div class="flex items-center gap-1">
@@ -159,7 +200,7 @@
 
       <div v-else class="space-y-1">
         <div
-          v-for="line in filteredLines"
+          v-for="line in displayLines"
           :key="line.id"
           class="rounded-lg border border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600 transition-colors cursor-pointer"
           @click="toggleExpanded(line.id)"
@@ -226,10 +267,19 @@
                 <span v-if="boardQuantity > 1" class="text-neutral-400">({{ formatNumber(line.quantity * boardQuantity) }})</span>
               </button>
             </div>
-            <!-- Pricing badge -->
-            <span v-if="!line.dnp && getBestPrice(line)" class="text-[10px] text-green-600 dark:text-green-400 font-medium shrink-0 tabular-nums">
-              {{ getBestPrice(line) }}
-            </span>
+            <!-- Pricing badge: unit price + line value -->
+            <template v-if="!line.dnp">
+              <template v-for="offer in [getLineBestOffer(line)]" :key="'price'">
+                <template v-if="offer">
+                  <span class="text-[10px] text-green-600 dark:text-green-400 font-medium shrink-0 tabular-nums">
+                    {{ formatCurrency(offer.unitPrice, offer.currency) }}/pc
+                  </span>
+                  <span class="text-[10px] text-neutral-400 shrink-0 tabular-nums">
+                    {{ formatCurrency(offer.lineValue, offer.currency) }}
+                  </span>
+                </template>
+              </template>
+            </template>
             <!-- Context actions -->
             <div class="flex items-center gap-0.5 shrink-0">
               <button
@@ -251,7 +301,7 @@
           </div>
 
           <!-- Expanded detail -->
-          <div v-if="expandedIds.has(line.id)" class="px-2.5 pb-2.5 pt-0.5 border-t border-neutral-100 dark:border-neutral-800" :class="{ 'opacity-50': line.dnp }">
+          <div v-if="expandedIds.has(line.id)" class="px-2.5 pb-2.5 pt-0.5 border-t border-neutral-100 dark:border-neutral-800" :class="{ 'opacity-50': line.dnp }" @click.stop>
             <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px] mb-2">
               <div v-if="line.dnp"><span class="text-red-500 font-medium">Do Not Populate</span></div>
               <div v-if="line.package"><span class="text-neutral-400">Package:</span> {{ line.package }}</div>
@@ -264,48 +314,82 @@
               </div>
             </div>
 
-            <!-- Manufacturers -->
-            <div class="space-y-1">
-              <p class="text-[10px] text-neutral-400 font-medium uppercase tracking-wide">Manufacturers</p>
+            <!-- Manufacturers & supplier offers -->
+            <div class="space-y-2">
               <div
                 v-for="(mfr, idx) in line.manufacturers"
                 :key="idx"
-                class="flex items-center gap-2 rounded bg-neutral-50 dark:bg-neutral-800/50 px-2 py-1"
+                class="space-y-1"
               >
-                <div class="flex-1 min-w-0">
-                  <span class="text-[10px] text-neutral-600 dark:text-neutral-300">{{ mfr.manufacturer || '(unknown)' }}</span>
-                  <span class="text-[10px] font-mono text-neutral-500 ml-1">{{ mfr.manufacturerPart }}</span>
-                </div>
-                <!-- Pricing info for this MPN -->
-                <div v-if="pricingCache[mfr.manufacturerPart]" class="text-[10px] text-right shrink-0">
-                  <div class="text-green-600 dark:text-green-400 font-medium tabular-nums">
-                    {{ formatPricing(pricingCache[mfr.manufacturerPart], line.quantity * boardQuantity) }}
-                  </div>
-                  <div class="text-neutral-400">
+                <!-- MPN header -->
+                <div class="flex items-center gap-2">
+                  <span class="text-[10px] text-neutral-600 dark:text-neutral-300 font-medium">{{ mfr.manufacturer || '(unknown)' }}</span>
+                  <span class="text-[10px] font-mono text-neutral-500">{{ mfr.manufacturerPart }}</span>
+                  <!-- Queue status indicator for this MPN -->
+                  <UIcon
+                    v-if="getQueueStatus(mfr.manufacturerPart) === 'fetching'"
+                    name="i-lucide-loader-2"
+                    class="text-[10px] text-blue-500 animate-spin shrink-0"
+                  />
+                  <UIcon
+                    v-else-if="getQueueStatus(mfr.manufacturerPart) === 'error'"
+                    name="i-lucide-x-circle"
+                    class="text-[10px] text-red-500 shrink-0"
+                    title="Pricing fetch failed"
+                  />
+                  <button
+                    v-if="hasCredentials && mfr.manufacturerPart"
+                    class="text-neutral-400 hover:text-blue-500 transition-colors shrink-0"
+                    title="Refresh pricing for this part"
+                    :disabled="getQueueStatus(mfr.manufacturerPart) === 'fetching'"
+                    @click.stop="handleRefreshSingle(mfr.manufacturerPart)"
+                  >
+                    <UIcon name="i-lucide-refresh-cw" class="text-[10px]" />
+                  </button>
+                  <span v-if="pricingCache[mfr.manufacturerPart]" class="text-[10px] text-neutral-400 ml-auto shrink-0">
                     {{ formatAge(pricingCache[mfr.manufacturerPart]?.fetchedAt) }}
+                  </span>
+                </div>
+
+                <!-- Supplier offers table -->
+                <div v-if="getSupplierOffers(mfr.manufacturerPart, line.quantity * boardQuantity).length > 0" class="rounded border border-neutral-100 dark:border-neutral-800 overflow-hidden">
+                  <!-- Table header -->
+                  <div class="grid grid-cols-[1fr_60px_60px_70px_70px] gap-1 px-2 py-0.5 bg-neutral-50 dark:bg-neutral-800/80 text-[9px] text-neutral-400 uppercase tracking-wide font-medium">
+                    <span>Supplier</span>
+                    <span class="text-right">Stock</span>
+                    <span class="text-right">MOQ</span>
+                    <span class="text-right">Unit</span>
+                    <span class="text-right">Total</span>
+                  </div>
+                  <!-- Supplier rows -->
+                  <div
+                    v-for="(offer, oi) in getSupplierOffers(mfr.manufacturerPart, line.quantity * boardQuantity)"
+                    :key="oi"
+                    class="grid grid-cols-[1fr_60px_60px_70px_70px] gap-1 px-2 py-0.5 text-[10px] border-t border-neutral-50 dark:border-neutral-800/50"
+                    :class="{ 'bg-green-50/30 dark:bg-green-900/5': oi === 0 }"
+                  >
+                    <span class="text-neutral-600 dark:text-neutral-300 truncate" :title="offer.supplier + (offer.country ? ` (${offer.country})` : '')">
+                      {{ offer.supplier }}
+                    </span>
+                    <span class="text-right tabular-nums" :class="offer.stock > 0 ? 'text-neutral-600 dark:text-neutral-300' : 'text-red-400'">
+                      {{ formatNumber(offer.stock) }}
+                    </span>
+                    <span class="text-right tabular-nums text-neutral-500">
+                      {{ formatNumber(offer.moq) }}
+                    </span>
+                    <span class="text-right tabular-nums font-medium" :class="oi === 0 ? 'text-green-600 dark:text-green-400' : 'text-neutral-600 dark:text-neutral-300'">
+                      {{ formatCurrency(offer.unitPrice, offer.currency) }}
+                    </span>
+                    <span class="text-right tabular-nums text-neutral-500">
+                      {{ formatCurrency(offer.lineValue, offer.currency) }}
+                    </span>
                   </div>
                 </div>
-                <!-- Queue status indicator for this MPN -->
-                <UIcon
-                  v-if="getQueueStatus(mfr.manufacturerPart) === 'fetching'"
-                  name="i-lucide-loader-2"
-                  class="text-[10px] text-blue-500 animate-spin shrink-0"
-                />
-                <UIcon
-                  v-else-if="getQueueStatus(mfr.manufacturerPart) === 'error'"
-                  name="i-lucide-x-circle"
-                  class="text-[10px] text-red-500 shrink-0"
-                  title="Pricing fetch failed"
-                />
-                <button
-                  v-if="hasCredentials && mfr.manufacturerPart"
-                  class="text-neutral-400 hover:text-blue-500 transition-colors shrink-0"
-                  title="Refresh pricing for this part"
-                  :disabled="getQueueStatus(mfr.manufacturerPart) === 'fetching'"
-                  @click.stop="handleRefreshSingle(mfr.manufacturerPart)"
-                >
-                  <UIcon name="i-lucide-refresh-cw" class="text-[10px]" />
-                </button>
+
+                <!-- No pricing data -->
+                <div v-else-if="!pricingCache[mfr.manufacturerPart] && !getQueueStatus(mfr.manufacturerPart)" class="text-[10px] text-neutral-400 italic pl-1">
+                  No pricing data
+                </div>
               </div>
 
               <!-- Inline add manufacturer -->
@@ -363,7 +447,7 @@
 </template>
 
 <script setup lang="ts">
-import type { BomLine, BomPricingEntry, BomPricingCache } from '~/utils/bom-types'
+import type { BomLine, BomPricingCache } from '~/utils/bom-types'
 import { BOM_LINE_TYPES } from '~/utils/bom-types'
 import type { PricingQueueItem } from '~/composables/useElexessApi'
 
@@ -400,6 +484,75 @@ function handleBoardQtyInput(e: Event) {
     emit('update:boardQuantity', val)
   }
 }
+
+// ── Filter chips + sort ──
+
+type FilterKey = 'smd' | 'tht' | 'dnp' | 'no-mfr' | 'no-price'
+const activeFilters = ref(new Set<FilterKey>())
+const sortBy = ref<'designator' | 'price'>('designator')
+
+function toggleFilter(key: FilterKey) {
+  const next = new Set(activeFilters.value)
+  if (next.has(key)) next.delete(key)
+  else next.add(key)
+  activeFilters.value = next
+}
+
+function lineHasPrice(line: BomLine): boolean {
+  for (const mfr of line.manufacturers) {
+    const entry = props.pricingCache[mfr.manufacturerPart]
+    if (entry?.data?.results?.length > 0) return true
+  }
+  return false
+}
+
+function lineHasManufacturer(line: BomLine): boolean {
+  return line.manufacturers.length > 0 && line.manufacturers.some(m => !!m.manufacturerPart)
+}
+
+const filterDefs = computed(() => {
+  const lines = props.filteredLines
+  return [
+    { key: 'smd' as FilterKey, label: 'SMD', count: lines.filter(l => l.type === 'SMD').length, activeClass: 'border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' },
+    { key: 'tht' as FilterKey, label: 'THT', count: lines.filter(l => l.type === 'THT').length, activeClass: 'border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20' },
+    { key: 'dnp' as FilterKey, label: 'DNP', count: lines.filter(l => l.dnp).length, activeClass: 'border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20' },
+    { key: 'no-mfr' as FilterKey, label: 'No MFR', count: lines.filter(l => !lineHasManufacturer(l)).length, activeClass: 'border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20' },
+    { key: 'no-price' as FilterKey, label: 'No Price', count: lines.filter(l => !lineHasPrice(l)).length, activeClass: 'border-orange-300 dark:border-orange-700 text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20' },
+  ]
+})
+
+/** Apply local filters and sorting on top of the text-search filteredLines. */
+const displayLines = computed(() => {
+  let lines = props.filteredLines
+  const filters = activeFilters.value
+
+  if (filters.size > 0) {
+    lines = lines.filter(line => {
+      if (filters.has('smd') && line.type === 'SMD') return true
+      if (filters.has('tht') && line.type === 'THT') return true
+      if (filters.has('dnp') && line.dnp) return true
+      if (filters.has('no-mfr') && !lineHasManufacturer(line)) return true
+      if (filters.has('no-price') && !lineHasPrice(line)) return true
+      return false
+    })
+  }
+
+  if (sortBy.value === 'price') {
+    lines = [...lines].sort((a, b) => {
+      const pa = getLineBestOffer(a)?.lineValue ?? -1
+      const pb = getLineBestOffer(b)?.lineValue ?? -1
+      return pb - pa
+    })
+  } else {
+    lines = [...lines].sort((a, b) => {
+      const ra = a.references || '\uffff'
+      const rb = b.references || '\uffff'
+      return ra.localeCompare(rb, undefined, { numeric: true })
+    })
+  }
+
+  return lines
+})
 
 // Expanded rows
 const expandedIds = ref(new Set<string>())
@@ -542,82 +695,95 @@ function typeClass(type: string) {
   }
 }
 
-function getBestPrice(line: BomLine): string | null {
-  const totalQty = line.quantity * props.boardQuantity
-  for (const mfr of line.manufacturers) {
-    const cached = props.pricingCache[mfr.manufacturerPart]
-    if (cached?.data) {
-      const formatted = formatPricing(cached, totalQty)
-      if (formatted !== 'N/A') return formatted
-    }
-  }
-  return null
+// ── Elexess pricing extraction ──
+// Elexess response: { results: [{ supplier, country, current_stock, moq, current_leadtime, pricebreaks: [{ quantity, price, currency }] }] }
+
+interface SupplierOffer {
+  supplier: string
+  country: string
+  stock: number
+  moq: number
+  leadtime: number | null
+  unitPrice: number
+  currency: string
+  lineValue: number
 }
 
 /**
- * Extract the best matching price from the Elexess response data based on
- * total quantity.  The Elexess response may contain price tiers (quantity
- * breaks). We pick the tier whose minimum quantity is <= totalQty and as
- * close to it as possible.
+ * Pick the best price tier for a given quantity from an array of pricebreaks.
+ * Returns the tier whose quantity is <= totalQty and closest to it,
+ * or the first tier if qty is below all tiers.
  */
-function formatPricing(entry: BomPricingEntry | undefined, totalQty?: number): string {
-  if (!entry?.data) return 'N/A'
-  const data = entry.data
-  const qty = totalQty ?? 1
+function pickTierPrice(pricebreaks: any[], totalQty: number): { price: number; currency: string } | null {
+  if (!pricebreaks || pricebreaks.length === 0) return null
+  const sorted = [...pricebreaks].sort((a, b) => (a.quantity ?? 0) - (b.quantity ?? 0))
+  let best = sorted[0]
+  for (const tier of sorted) {
+    if ((tier.quantity ?? 0) <= totalQty) best = tier
+    else break
+  }
+  if (best?.price === undefined) return null
+  return { price: Number(best.price), currency: best.currency || 'EUR' }
+}
 
-  // Helper: pick best price from an array of { quantity/minQuantity, price, currency } tiers
-  function pickTierPrice(prices: any[]): string | null {
-    if (!prices || prices.length === 0) return null
+/**
+ * Extract supplier offers from cached Elexess data for an MPN.
+ * Returns offers sorted by unit price (cheapest first), deduplicated by supplier.
+ */
+function getSupplierOffers(mpn: string, totalQty: number): SupplierOffer[] {
+  const entry = props.pricingCache[mpn]
+  if (!entry?.data) return []
+  const results = entry.data?.results
+  if (!Array.isArray(results) || results.length === 0) return []
 
-    // Sort by quantity ascending and find the best matching tier
-    const sorted = [...prices].sort((a, b) => {
-      const aq = a.quantity ?? a.minQuantity ?? a.min_quantity ?? 0
-      const bq = b.quantity ?? b.minQuantity ?? b.min_quantity ?? 0
-      return aq - bq
+  const offers: SupplierOffer[] = []
+  const seenSuppliers = new Set<string>()
+
+  for (const r of results) {
+    if (!r.pricebreaks || r.pricebreaks.length === 0) continue
+    const tier = pickTierPrice(r.pricebreaks, totalQty)
+    if (!tier) continue
+
+    // Deduplicate by supplier — keep cheapest
+    const key = `${r.supplier}-${tier.currency}`
+    if (seenSuppliers.has(key)) continue
+    seenSuppliers.add(key)
+
+    offers.push({
+      supplier: r.supplier || 'Unknown',
+      country: r.country || '',
+      stock: r.current_stock ?? 0,
+      moq: r.moq ?? 0,
+      leadtime: r.current_leadtime ?? null,
+      unitPrice: tier.price,
+      currency: tier.currency,
+      lineValue: tier.price * totalQty,
     })
-
-    let best: any = sorted[0]
-    for (const tier of sorted) {
-      const tierQty = tier.quantity ?? tier.minQuantity ?? tier.min_quantity ?? 0
-      if (tierQty <= qty) best = tier
-      else break
-    }
-
-    if (best?.price !== undefined) {
-      const currency = best.currency || 'EUR'
-      return `${currency} ${Number(best.price).toFixed(4)}`
-    }
-    return null
   }
 
-  // Shape: array of results (e.g. from search endpoint)
-  if (Array.isArray(data) && data.length > 0) {
-    const first = data[0]
+  return offers.sort((a, b) => a.unitPrice - b.unitPrice)
+}
 
-    // { prices: [...] } with quantity tiers
-    if (first?.prices && Array.isArray(first.prices) && first.prices.length > 0) {
-      const result = pickTierPrice(first.prices)
-      if (result) return result
+/**
+ * Get the cheapest supplier offer across all MPNs for a BOM line.
+ */
+function getLineBestOffer(line: BomLine): SupplierOffer | null {
+  const totalQty = line.quantity * props.boardQuantity
+  let best: SupplierOffer | null = null
+  for (const mfr of line.manufacturers) {
+    const offers = getSupplierOffers(mfr.manufacturerPart, totalQty)
+    if (offers.length > 0 && (!best || offers[0].unitPrice < best.unitPrice)) {
+      best = offers[0]
     }
-
-    // Flat { price, currency } on the item itself
-    if (first?.price !== undefined && first?.currency) {
-      return `${first.currency} ${Number(first.price).toFixed(4)}`
-    }
   }
+  return best
+}
 
-  // Shape: single object with prices array
-  if (data.prices && Array.isArray(data.prices) && data.prices.length > 0) {
-    const result = pickTierPrice(data.prices)
-    if (result) return result
+function formatCurrency(value: number, currency: string): string {
+  if (value < 0.01) {
+    return `${currency} ${value.toFixed(4)}`
   }
-
-  // Shape: single object with price
-  if (data.price !== undefined) {
-    return `${data.currency || 'EUR'} ${Number(data.price).toFixed(4)}`
-  }
-
-  return 'Data available'
+  return `${currency} ${value.toFixed(2)}`
 }
 
 function formatAge(fetchedAt: string | undefined): string {
