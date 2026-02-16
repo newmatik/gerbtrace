@@ -28,7 +28,6 @@
             placeholder="Search members..."
             size="sm"
             class="w-full"
-            :ui="{ icon: { leading: { pointer: '' } } }"
           />
         </div>
 
