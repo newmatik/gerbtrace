@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Gerbtrace",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "identifier": "com.newmatik.gerbtrace",
   "build": {
     "frontendDist": "../.output/public",
@@ -16,7 +16,8 @@
         "width": 1280,
         "height": 800,
         "resizable": true,
-        "fullscreen": false
+        "fullscreen": false,
+        "dragDropEnabled": false
       }
     ],
     "security": {

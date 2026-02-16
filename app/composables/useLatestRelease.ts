@@ -1,7 +1,11 @@
 /**
  * Fetches the latest GitHub release and extracts platform-specific download URLs.
  * Caches the result for 10 minutes to avoid hitting API rate limits.
+ *
+ * Skipped entirely in Tauri desktop builds — the user already has the app installed.
  */
+
+import { isTauri as coreIsTauri } from '@tauri-apps/api/core'
 
 interface ReleaseAsset {
   name: string
@@ -64,8 +68,9 @@ async function fetchLatestRelease() {
 
 export function useLatestRelease() {
   const platform = detectPlatform()
+  const isDesktop = typeof window !== 'undefined' && coreIsTauri()
 
-  if (import.meta.client && !release.value && !loading.value) {
+  if (import.meta.client && !isDesktop && !release.value && !loading.value) {
     fetchLatestRelease()
   }
 
