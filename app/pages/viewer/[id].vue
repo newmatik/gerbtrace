@@ -404,6 +404,17 @@ const { getProject, getFiles, addFiles, upsertFiles, clearFiles, renameProject, 
 // ── Team project support ──
 const teamProjectIdRef = ref(teamProjectId)
 const { currentTeamRole, currentTeamId, isAdmin: isTeamAdmin } = useTeam()
+
+/** Resolves with the team ID once it becomes available (for async write paths). */
+function waitForTeamId(): Promise<string> {
+  if (currentTeamId.value) return Promise.resolve(currentTeamId.value)
+  return new Promise<string>((resolve, reject) => {
+    const timeout = setTimeout(() => { stop(); reject(new Error('Team context not available')) }, 15_000)
+    const stop = watch(currentTeamId, (id) => {
+      if (id) { clearTimeout(timeout); stop(); resolve(id) }
+    })
+  })
+}
 const { presentUsers } = isTeamProject ? usePresence(teamProjectIdRef) : { presentUsers: ref([]) }
 const projectSync = isTeamProject ? useProjectSync(teamProjectIdRef) : null
 
@@ -499,6 +510,10 @@ watch(() => deleteTool.active.value, (isActive) => {
 })
 
 function handleKeyDown(e: KeyboardEvent) {
+  // Don't intercept keyboard shortcuts inside editable controls (preserve native undo, etc.)
+  const target = e.target as HTMLElement | null
+  if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
+
   // Undo: Cmd+Z (macOS) / Ctrl+Z (other) — works in any mode
   if (e.key === 'z' && (e.metaKey || e.ctrlKey) && !e.shiftKey) {
     if (editHistory.canUndo.value) {
@@ -847,35 +862,6 @@ onMounted(async () => {
       )
       loadedFiles = downloaded.filter((f): f is GerberFile => f != null)
     }
-
-    // Fallback: load from local IndexedDB (legacy projectId=0 cache) if
-    // Supabase had no records or all downloads failed.
-    if (loadedFiles.length === 0) {
-      const localFiles = await getFiles(0, 1)
-      if (localFiles.length > 0) {
-        loadedFiles = localFiles
-        // Migrate to Supabase in the background once team context is available,
-        // then clear the legacy IndexedDB cache so it doesn't leak into other projects.
-        const doMigrate = () => {
-          if (!currentTeamId.value) return
-          Promise.all(
-            localFiles.map(f => uploadTeamFile(teamProjectId, currentTeamId.value!, 1, f.fileName, f.content, f.layerType)),
-          ).then(async () => {
-            await clearFiles(0, 1)
-            console.info(`[viewer] Migrated ${localFiles.length} files to Supabase for team project ${teamProjectId}`)
-          }).catch(err => {
-            console.warn('[viewer] Failed to migrate files to Supabase:', err)
-          })
-        }
-        if (currentTeamId.value) {
-          doMigrate()
-        } else {
-          const stop = watch(currentTeamId, (id) => {
-            if (id) { doMigrate(); stop() }
-          })
-        }
-      }
-    }
   } else {
     loadedFiles = await getFiles(projectId, 1)
   }
@@ -933,9 +919,10 @@ async function handleImport(newFiles: GerberFile[], sourceName: string) {
   }
 
   // Merge into the database: overwrite same-name files, keep the rest
-  if (isTeamProject && teamProjectId && currentTeamId.value) {
+  if (isTeamProject && teamProjectId) {
+    const teamId = currentTeamId.value || await waitForTeamId()
     await Promise.all(
-      newFiles.map(f => uploadTeamFile(teamProjectId, currentTeamId.value!, 1, f.fileName, f.content, f.layerType)),
+      newFiles.map(f => uploadTeamFile(teamProjectId, teamId, 1, f.fileName, f.content, f.layerType)),
     )
   } else {
     await upsertFiles(projectId, 1, newFiles)
@@ -1007,8 +994,9 @@ async function changeLayerType(index: number, type: string) {
   layer.color = getColorForType(type)
   layer.file.layerType = type
   layers.value = sortLayersByPcbOrder([...layers.value])
-  if (isTeamProject && teamProjectId && currentTeamId.value) {
-    await uploadTeamFile(teamProjectId, currentTeamId.value, 1, layer.file.fileName, layer.file.content, type)
+  if (isTeamProject && teamProjectId) {
+    const teamId = currentTeamId.value || await waitForTeamId()
+    await uploadTeamFile(teamProjectId, teamId, 1, layer.file.fileName, layer.file.content, type)
   } else {
     await updateFileLayerType(projectId, 1, layer.file.fileName, type)
   }
@@ -1067,8 +1055,9 @@ async function handleConfirmDelete() {
     layer.file.content = newContent
 
     // Persist to storage
-    if (isTeamProject && teamProjectId && currentTeamId.value) {
-      await uploadTeamFile(teamProjectId, currentTeamId.value, 1, layer.file.fileName, newContent, layer.type)
+    if (isTeamProject && teamProjectId) {
+      const teamId = currentTeamId.value || await waitForTeamId()
+      await uploadTeamFile(teamProjectId, teamId, 1, layer.file.fileName, newContent, layer.type)
     } else {
       await updateFileContent(projectId, 1, layer.file.fileName, newContent)
     }
@@ -1113,8 +1102,9 @@ async function handleUndo() {
     layer.file.content = previousContent
 
     // Persist restored content
-    if (isTeamProject && teamProjectId && currentTeamId.value) {
-      await uploadTeamFile(teamProjectId, currentTeamId.value, 1, layer.file.fileName, previousContent, layer.type)
+    if (isTeamProject && teamProjectId) {
+      const teamId = currentTeamId.value || await waitForTeamId()
+      await uploadTeamFile(teamProjectId, teamId, 1, layer.file.fileName, previousContent, layer.type)
     } else {
       await updateFileContent(projectId, 1, layer.file.fileName, previousContent)
     }

@@ -438,7 +438,7 @@ const showSideIndicator = computed(() => {
 // Build a designator → sorted-index lookup for scroll-to-selection
 const designatorIndexMap = computed(() => {
   const map = new Map<string, number>()
-  sortedComponents.value.forEach((c, i) => map.set(c.designator, i))
+  sortedComponents.value.forEach((c, i) => { map.set(c.designator, i) })
   return map
 })
 

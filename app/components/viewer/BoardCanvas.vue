@@ -140,12 +140,17 @@ const _canvasPool: HTMLCanvasElement[] = []
 
 function acquireCanvas(w: number, h: number): HTMLCanvasElement {
   const c = _canvasPool.pop() || document.createElement('canvas')
+  const ctx = c.getContext('2d')!
   if (c.width !== w || c.height !== h) {
     c.width = w
     c.height = h
   } else {
-    c.getContext('2d')!.clearRect(0, 0, w, h)
+    ctx.clearRect(0, 0, w, h)
   }
+  // Reset context state so prior renders (e.g. composite masks) don't leak
+  ctx.setTransform(1, 0, 0, 1, 0, 0)
+  ctx.globalCompositeOperation = 'source-over'
+  ctx.setLineDash([])
   return c
 }
 

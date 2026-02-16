@@ -52,7 +52,8 @@ export function useTeam() {
       // matches their email domain. Idempotent (ON CONFLICT DO NOTHING).
       // This covers both first-login catch-up and edge cases where the
       // signup trigger didn't fire (e.g. OAuth).
-      await supabase.rpc('try_auto_join')
+      const { error: autoJoinError } = await supabase.rpc('try_auto_join')
+      if (autoJoinError) console.warn('[useTeam] try_auto_join RPC failed:', autoJoinError)
 
       // Get team memberships
       const { data: memberships, error: memError } = await supabase

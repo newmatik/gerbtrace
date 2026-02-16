@@ -176,6 +176,26 @@ export function useTeamMembers() {
     return { error }
   }
 
+  /** Update a member's display name (admin only, via RPC) */
+  async function updateMemberName(userId: string, name: string) {
+    if (!currentTeamId.value) return { error: new Error('No team selected') }
+
+    const { error } = await supabase.rpc('admin_update_member_name', {
+      p_team_id: currentTeamId.value,
+      p_user_id: userId,
+      p_name: name.trim(),
+    })
+
+    if (!error) {
+      const member = members.value.find(m => m.user_id === userId)
+      if (member?.profile) {
+        (member.profile as UserProfile).name = name.trim()
+      }
+    }
+
+    return { error }
+  }
+
   // Auto-fetch when team changes
   watch(currentTeamId, () => {
     fetchMembers()
@@ -191,5 +211,6 @@ export function useTeamMembers() {
     toggleStatus,
     removeMember,
     cancelInvitation,
+    updateMemberName,
   }
 }
