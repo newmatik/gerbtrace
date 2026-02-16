@@ -4,13 +4,22 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      appVersion: '1.0.7',
+      appVersion: '1.0.8',
       supabaseUrl: process.env.SUPABASE_URL || 'http://localhost:54321',
       supabaseAnonKey: process.env.SUPABASE_ANON_KEY || '',
     },
   },
 
   modules: ['@nuxt/ui'],
+
+  icon: {
+    clientBundle: {
+      scan: {
+        globInclude: ['app/**/*.vue', 'app/**/*.ts', 'node_modules/@nuxt/ui/dist/**'],
+        globExclude: ['node_modules/@nuxt/ui/dist/**/node_modules/**'],
+      },
+    },
+  },
 
   css: ['~/assets/css/main.css'],
 
