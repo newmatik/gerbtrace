@@ -28,20 +28,59 @@ export interface EditablePnPComponent extends PnPComponent {
   polarized: boolean
   /** True when polarized is defaulted (no user override). */
   polarizedDefaulted: boolean
+  /** User-provided note for this component (empty string when no note). */
+  note: string
+  /** True when this component was manually added by the user (not from PnP file). */
+  manual: boolean
+  /** Original designator before any field overrides (for display/export). */
+  originalDesignator: string
+  /** Original value before field overrides. */
+  originalValue: string
+  /** Original X before field overrides. */
+  originalX: number
+  /** Original Y before field overrides. */
+  originalY: number
+  /** True when any field (designator, value, x, y) has been overridden. */
+  fieldsOverridden: boolean
+}
+
+/** Per-component field overrides (designator, value, x, y). */
+export interface PnPFieldOverride {
+  designator?: string
+  value?: string
+  x?: number
+  y?: number
+}
+
+/** Serialised manual component for persistence. */
+export interface ManualPnPComponent {
+  id: string
+  designator: string
+  value: string
+  package: string
+  x: number
+  y: number
+  rotation: number
+  side: 'top' | 'bottom'
 }
 
 export type PnPRotationOverrides = Record<string, number>
 export type PnPPackageMap = Record<string, string>
 export type PnPPolarizedOverrides = Record<string, boolean>
+export type PnPComponentNotes = Record<string, string>
+export type PnPFieldOverrides = Record<string, PnPFieldOverride>
 export type PnPFilterKey = 'polarized' | 'dnp' | 'edited' | 'unmatched'
 
 /**
- * Alignment mode state machine:
+ * Alignment / placement mode state machine:
  * - 'idle': no alignment in progress
  * - 'set-origin': click to place the 0/0 origin directly
  * - 'align-single': click one point for fiducial alignment (single pad)
- * - 'align-first': waiting for first pad click (2-pad component alignment)
- * - 'align-second': waiting for second pad click (2-pad component alignment)
+ * - 'align-first': waiting for first click (alignment or manual component placement)
+ * - 'align-second': waiting for second click (same spot confirms, different spot uses midpoint)
+ *
+ * When `placingComponent` is set, align-first/align-second place a component
+ * instead of computing the origin offset. Same UX, different outcome.
  */
 export type AlignMode = 'idle' | 'set-origin' | 'align-single' | 'align-first' | 'align-second'
 
@@ -63,6 +102,12 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
   const cadPackageMap = ref(new Map<string, string>())
   // Per-component polarized override keyed by stable component key
   const polarizedOverrides = ref(new Map<string, boolean>())
+  // Per-component user notes keyed by stable component key
+  const componentNotes = ref(new Map<string, string>())
+  // Per-component field overrides (designator, value, x, y) keyed by stable component key
+  const fieldOverrides = ref(new Map<string, PnPFieldOverride>())
+  // User-added manual components (not from PnP file)
+  const manualComponents = ref<ManualPnPComponent[]>([])
   // Optional matcher supplied by the viewer (package library)
   const packageMatcher = ref<((name: string) => PackageDefinition | undefined) | null>(null)
 
@@ -86,8 +131,8 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
     return true
   }
 
-  function toEditable(comp: PnPComponent): EditablePnPComponent {
-    const key = getComponentKey(comp)
+  function toEditable(comp: PnPComponent & { id?: string }, isManual = false): EditablePnPComponent {
+    const key = isManual ? `manual|${comp.id || comp.designator}` : getComponentKey(comp)
     const override = rotationOverrides.value.get(key)
     const rotation = override ?? comp.rotation
 
@@ -100,8 +145,20 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
     const polOverride = polarizedOverrides.value.get(key)
     const polarized = polOverride ?? defaultPolarized
 
+    // Apply field overrides
+    const fo = fieldOverrides.value.get(key)
+    const designator = fo?.designator ?? comp.designator
+    const value = fo?.value ?? comp.value
+    const x = fo?.x ?? comp.x
+    const y = fo?.y ?? comp.y
+    const fieldsOverridden = fo != null && (fo.designator != null || fo.value != null || fo.x != null || fo.y != null)
+
     return {
       ...comp,
+      designator,
+      value,
+      x,
+      y,
       key,
       rotation,
       originalRotation: comp.rotation,
@@ -112,6 +169,13 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
       packageMapped: mapped != null,
       polarized,
       polarizedDefaulted: polOverride == null,
+      note: componentNotes.value.get(key) ?? '',
+      manual: isManual,
+      originalDesignator: comp.designator,
+      originalValue: comp.value,
+      originalX: comp.x,
+      originalY: comp.y,
+      fieldsOverridden,
     }
   }
 
@@ -149,7 +213,7 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
     layers.value.filter(l => isPnPLayer(l.type)),
   )
 
-  const hasPnP = computed(() => pnpLayers.value.length > 0)
+  const hasPnP = computed(() => pnpLayers.value.length > 0 || manualComponents.value.length > 0)
 
   // ── All parsed components from all PnP layers (original values) ──
   const allParsedComponents = computed<PnPComponent[]>(() => {
@@ -180,16 +244,34 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
 
   // ── Editable components (with optional rotation overrides) ──
 
-  const allComponents = computed<EditablePnPComponent[]>(() =>
-    allParsedComponents.value.map(toEditable),
-  )
+  /** Convert manual components to PnPComponent shape for toEditable */
+  function manualToPnP(mc: ManualPnPComponent): PnPComponent & { id: string } {
+    return {
+      id: mc.id,
+      designator: mc.designator,
+      value: mc.value,
+      package: mc.package,
+      x: mc.x,
+      y: mc.y,
+      rotation: mc.rotation,
+      side: mc.side,
+    }
+  }
+
+  const allComponents = computed<EditablePnPComponent[]>(() => {
+    const parsed = allParsedComponents.value.map(c => toEditable(c, false))
+    const manual = manualComponents.value.map(mc => toEditable(manualToPnP(mc), true))
+    return [...parsed, ...manual]
+  })
 
   /** Components from visible PnP layers, filtered by active side (for component panel base) */
   const activeComponents = computed<EditablePnPComponent[]>(() => {
-    const base = visibleParsedComponents.value.map(toEditable)
+    const base = visibleParsedComponents.value.map(c => toEditable(c, false))
+    const manual = manualComponents.value.map(mc => toEditable(manualToPnP(mc), true))
+    const combined = [...base, ...manual]
     const side = activeSideFilter.value
-    if (side === 'all') return base
-    return base.filter(c => c.side === side)
+    if (side === 'all') return combined
+    return combined.filter(c => c.side === side)
   })
 
   // ── Search & filtering ──
@@ -197,7 +279,7 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
   const searchQuery = ref('')
 
   function isComponentEdited(comp: EditablePnPComponent): boolean {
-    return comp.rotationOverridden || comp.packageMapped || !comp.polarizedDefaulted || comp.dnp
+    return comp.rotationOverridden || comp.packageMapped || !comp.polarizedDefaulted || comp.dnp || comp.note !== '' || comp.fieldsOverridden || comp.manual
   }
 
   function matchesActiveFilters(comp: EditablePnPComponent): boolean {
@@ -219,7 +301,8 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
         c.designator.toLowerCase().includes(q)
         || c.value.toLowerCase().includes(q)
         || c.cadPackage.toLowerCase().includes(q)
-        || c.matchedPackage.toLowerCase().includes(q),
+        || c.matchedPackage.toLowerCase().includes(q)
+        || c.note.toLowerCase().includes(q),
       )
     }
     return result
@@ -382,6 +465,111 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
     return out
   })
 
+  // ── Component notes ──
+
+  function setComponentNote(key: string, note: string) {
+    const next = new Map(componentNotes.value)
+    const trimmed = note.trim()
+    if (!trimmed) {
+      next.delete(key)
+    } else {
+      next.set(key, trimmed)
+    }
+    componentNotes.value = next
+  }
+
+  function setComponentNotes(notes: PnPComponentNotes | null | undefined) {
+    const next = new Map<string, string>()
+    for (const [key, val] of Object.entries(notes ?? {})) {
+      if (typeof val === 'string' && val.trim()) next.set(key, val.trim())
+    }
+    componentNotes.value = next
+  }
+
+  const componentNotesRecord = computed<PnPComponentNotes>(() => {
+    const out: PnPComponentNotes = {}
+    for (const [k, v] of componentNotes.value.entries()) out[k] = v
+    return out
+  })
+
+  // ── Field overrides (designator, value, x, y) ──
+
+  function setFieldOverride(key: string, override: PnPFieldOverride) {
+    const next = new Map(fieldOverrides.value)
+    // Remove empty overrides
+    const clean: PnPFieldOverride = {}
+    if (override.designator != null && override.designator !== '') clean.designator = override.designator
+    if (override.value != null) clean.value = override.value
+    if (override.x != null && Number.isFinite(override.x)) clean.x = override.x
+    if (override.y != null && Number.isFinite(override.y)) clean.y = override.y
+    if (Object.keys(clean).length === 0) {
+      next.delete(key)
+    } else {
+      next.set(key, clean)
+    }
+    fieldOverrides.value = next
+  }
+
+  function setFieldOverrides(overrides: PnPFieldOverrides | null | undefined) {
+    const next = new Map<string, PnPFieldOverride>()
+    for (const [key, val] of Object.entries(overrides ?? {})) {
+      if (val && typeof val === 'object') next.set(key, val)
+    }
+    fieldOverrides.value = next
+  }
+
+  const fieldOverridesRecord = computed<PnPFieldOverrides>(() => {
+    const out: PnPFieldOverrides = {}
+    for (const [k, v] of fieldOverrides.value.entries()) out[k] = v
+    return out
+  })
+
+  // ── Manual components ──
+
+  function addManualComponent(mc: ManualPnPComponent) {
+    manualComponents.value = [...manualComponents.value, mc]
+  }
+
+  function updateManualComponent(id: string, updates: Partial<ManualPnPComponent>) {
+    manualComponents.value = manualComponents.value.map(mc =>
+      mc.id === id ? { ...mc, ...updates } : mc,
+    )
+  }
+
+  function removeManualComponent(id: string) {
+    const key = `manual|${id}`
+    // Clean up any overrides/notes for this component
+    const nextRot = new Map(rotationOverrides.value)
+    nextRot.delete(key)
+    if (nextRot.size !== rotationOverrides.value.size) rotationOverrides.value = nextRot
+
+    const nextDnp = new Set(dnpSet.value)
+    nextDnp.delete(key)
+    if (nextDnp.size !== dnpSet.value.size) dnpSet.value = nextDnp
+
+    const nextNotes = new Map(componentNotes.value)
+    nextNotes.delete(key)
+    if (nextNotes.size !== componentNotes.value.size) componentNotes.value = nextNotes
+
+    const nextFo = new Map(fieldOverrides.value)
+    nextFo.delete(key)
+    if (nextFo.size !== fieldOverrides.value.size) fieldOverrides.value = nextFo
+
+    const nextPol = new Map(polarizedOverrides.value)
+    nextPol.delete(key)
+    if (nextPol.size !== polarizedOverrides.value.size) polarizedOverrides.value = nextPol
+
+    manualComponents.value = manualComponents.value.filter(mc => mc.id !== id)
+  }
+
+  function setManualComponents(components: ManualPnPComponent[] | null | undefined) {
+    manualComponents.value = components ?? []
+  }
+
+  const manualComponentsRecord = computed<ManualPnPComponent[]>(() =>
+    manualComponents.value.map(mc => ({ ...mc })),
+  )
+
   // ── External package matcher (library) ──
 
   function setPackageMatcher(fn: ((name: string) => PackageDefinition | undefined) | null | undefined) {
@@ -449,16 +637,34 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
     }
   }
 
-  /** Cancel any in-progress alignment */
+  /** Pending manual component being placed (set during align-first/align-second) */
+  const placingComponent = ref<ManualPnPComponent | null>(null)
+
+  /** Cancel any in-progress alignment or placement */
   function cancelAlign() {
     alignMode.value = 'idle'
     alignComponent.value = null
     alignClickA.value = null
+    placingComponent.value = null
   }
 
   /**
-   * Handle a snapped click from the canvas during alignment.
-   * Returns true if the alignment is complete (origin has been set).
+   * Convert a Gerber coordinate to PnP coordinate (mm) using the current origin.
+   */
+  function gerberToPnP(gerberX: number, gerberY: number, units: 'mm' | 'in'): { x: number; y: number } {
+    const ox = originX.value ?? 0
+    const oy = originY.value ?? 0
+    const dx = gerberX - ox
+    const dy = gerberY - oy
+    if (units === 'in') {
+      return { x: dx * 25.4, y: dy * 25.4 }
+    }
+    return { x: dx, y: dy }
+  }
+
+  /**
+   * Handle a snapped click from the canvas during alignment or placement.
+   * Returns true if the operation is complete.
    */
   function handleAlignClick(gerberX: number, gerberY: number, units: 'mm' | 'in'): boolean {
     switch (alignMode.value) {
@@ -481,32 +687,56 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
         alignMode.value = 'align-second'
         return false
 
-      case 'align-second':
-        if (alignComponent.value && alignClickA.value) {
-          // Midpoint of the two clicks = component center
-          const midX = (alignClickA.value.x + gerberX) / 2
-          const midY = (alignClickA.value.y + gerberY) / 2
+      case 'align-second': {
+        if (!alignClickA.value) break
+        // Midpoint of the two clicks (or same point if clicked twice on same spot)
+        const midX = (alignClickA.value.x + gerberX) / 2
+        const midY = (alignClickA.value.y + gerberY) / 2
+
+        if (placingComponent.value) {
+          // Placement mode: set position and add the manual component
+          const pos = gerberToPnP(midX, midY, units)
+          placingComponent.value.x = pos.x
+          placingComponent.value.y = pos.y
+          addManualComponent(placingComponent.value)
+          selectComponent(placingComponent.value.designator)
+          placingComponent.value = null
+        } else if (alignComponent.value) {
+          // Alignment mode: compute origin from the midpoint
           computeOriginFromComponent(alignComponent.value, midX, midY, units)
         }
+
         alignMode.value = 'idle'
         alignComponent.value = null
         alignClickA.value = null
         return true
+      }
 
       default:
         return false
     }
+    return false
+  }
+
+  /** Start placement mode for a new manual component. Uses the same two-click flow as component alignment. */
+  function startPlacement(mc: ManualPnPComponent) {
+    placingComponent.value = mc
+    alignComponent.value = null
+    alignClickA.value = null
+    alignMode.value = 'align-first'
   }
 
   // Invalidate cache when layers ref changes identity
   watch(layers, () => invalidateCache(), { deep: false })
   // Drop stale overrides when imported component set changes.
+  // Preserve manual component overrides (keys starting with 'manual|').
   watch(allParsedComponents, (components) => {
     if (rotationOverrides.value.size === 0) return
     const validKeys = new Set(components.map(getComponentKey))
     const next = new Map(rotationOverrides.value)
     let changed = false
     for (const key of next.keys()) {
+      if (key.startsWith('manual|')) continue
       if (!validKeys.has(key)) {
         next.delete(key)
         changed = true
@@ -552,6 +782,22 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
     setPolarizedOverride,
     setPolarizedOverrides,
     polarizedOverridesRecord,
+    // Notes
+    setComponentNote,
+    setComponentNotes,
+    componentNotesRecord,
+    // Field overrides
+    setFieldOverride,
+    setFieldOverrides,
+    fieldOverridesRecord,
+    // Manual components
+    addManualComponent,
+    updateManualComponent,
+    removeManualComponent,
+    setManualComponents,
+    manualComponentsRecord,
+    startPlacement,
+    placingComponent,
     // Convention
     convention,
     // Origin

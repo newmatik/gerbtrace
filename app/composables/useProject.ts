@@ -22,6 +22,12 @@ interface ProjectRecord {
   pnpCadPackageMap?: Record<string, string> | null
   /** Per-component polarized overrides keyed by stable component key */
   pnpPolarizedOverrides?: Record<string, boolean> | null
+  /** Per-component user notes keyed by stable component key */
+  pnpComponentNotes?: Record<string, string> | null
+  /** Per-component field overrides (designator, value, x, y) */
+  pnpFieldOverrides?: Record<string, { designator?: string; value?: string; x?: number; y?: number }> | null
+  /** User-added manual components */
+  pnpManualComponents?: { id: string; designator: string; value: string; package: string; x: number; y: number; rotation: number; side: 'top' | 'bottom' }[] | null
 }
 
 interface FileRecord {
@@ -33,9 +39,18 @@ interface FileRecord {
   layerType?: string
 }
 
+interface FileOriginalRecord {
+  id?: number
+  projectId: number
+  packet: number
+  fileName: string
+  content: string
+}
+
 class GerbtraceDB extends Dexie {
   projects!: Dexie.Table<ProjectRecord, number>
   files!: Dexie.Table<FileRecord, number>
+  fileOriginals!: Dexie.Table<FileOriginalRecord, number>
 
   constructor() {
     super('GerbtraceDB')
@@ -78,6 +93,22 @@ class GerbtraceDB extends Dexie {
       projects: '++id, name, mode, createdAt, updatedAt',
       files: '++id, projectId, packet, fileName',
     })
+    // v9: add pnpComponentNotes to projects (non-indexed, just stored)
+    this.version(9).stores({
+      projects: '++id, name, mode, createdAt, updatedAt',
+      files: '++id, projectId, packet, fileName',
+    })
+    // v10: add pnpFieldOverrides and pnpManualComponents to projects
+    this.version(10).stores({
+      projects: '++id, name, mode, createdAt, updatedAt',
+      files: '++id, projectId, packet, fileName',
+    })
+    // v11: add fileOriginals table for tracking original layer content across reloads
+    this.version(11).stores({
+      projects: '++id, name, mode, createdAt, updatedAt',
+      files: '++id, projectId, packet, fileName',
+      fileOriginals: '++id, projectId, packet, fileName',
+    })
   }
 }
 
@@ -109,6 +140,7 @@ export function useProject() {
 
   async function removeProject(id: number) {
     await db.files.where('projectId').equals(id).delete()
+    await db.fileOriginals.where('projectId').equals(id).delete()
     await db.projects.delete(id)
     await loadProjects()
   }
@@ -213,6 +245,80 @@ export function useProject() {
     await db.projects.update(id, { pnpPolarizedOverrides: overrides, updatedAt: new Date() })
   }
 
+  async function updateProjectComponentNotes(id: number, notes: Record<string, string>) {
+    await db.projects.update(id, { pnpComponentNotes: notes, updatedAt: new Date() })
+  }
+
+  async function updateProjectFieldOverrides(id: number, overrides: Record<string, { designator?: string; value?: string; x?: number; y?: number }>) {
+    await db.projects.update(id, { pnpFieldOverrides: overrides, updatedAt: new Date() })
+  }
+
+  async function updateProjectManualComponents(id: number, components: { id: string; designator: string; value: string; package: string; x: number; y: number; rotation: number; side: 'top' | 'bottom' }[]) {
+    await db.projects.update(id, { pnpManualComponents: components, updatedAt: new Date() })
+  }
+
+  // ── File originals (for edit detection and reset) ──
+
+  async function getOriginalFiles(projectId: number, packet: number): Promise<Map<string, string>> {
+    const records = await db.fileOriginals
+      .where('projectId').equals(projectId)
+      .and(r => r.packet === packet)
+      .toArray()
+    const map = new Map<string, string>()
+    for (const r of records) map.set(r.fileName, r.content)
+    return map
+  }
+
+  async function storeOriginalFiles(projectId: number, packet: number, files: { fileName: string; content: string }[]) {
+    for (const f of files) {
+      const existing = await db.fileOriginals
+        .where('projectId').equals(projectId)
+        .and(r => r.packet === packet && r.fileName === f.fileName)
+        .first()
+      if (existing?.id) {
+        await db.fileOriginals.update(existing.id, { content: f.content })
+      } else {
+        await db.fileOriginals.add({ projectId, packet, fileName: f.fileName, content: f.content })
+      }
+    }
+  }
+
+  async function renameOriginalFile(projectId: number, packet: number, oldName: string, newName: string) {
+    const record = await db.fileOriginals
+      .where('projectId').equals(projectId)
+      .and(r => r.packet === packet && r.fileName === oldName)
+      .first()
+    if (record?.id) {
+      await db.fileOriginals.update(record.id, { fileName: newName })
+    }
+  }
+
+  async function removeOriginalFile(projectId: number, packet: number, fileName: string) {
+    await db.fileOriginals
+      .where('projectId').equals(projectId)
+      .and(r => r.packet === packet && r.fileName === fileName)
+      .delete()
+  }
+
+  async function renameFile(projectId: number, packet: number, oldName: string, newName: string) {
+    const record = await db.files
+      .where('projectId').equals(projectId)
+      .and(r => r.packet === packet && r.fileName === oldName)
+      .first()
+    if (record?.id) {
+      await db.files.update(record.id, { fileName: newName })
+      await db.projects.update(projectId, { updatedAt: new Date() })
+    }
+  }
+
+  async function removeFile(projectId: number, packet: number, fileName: string) {
+    await db.files
+      .where('projectId').equals(projectId)
+      .and(r => r.packet === packet && r.fileName === fileName)
+      .delete()
+    await db.projects.update(projectId, { updatedAt: new Date() })
+  }
+
   async function clearFiles(projectId: number, packet: number) {
     await db.files
       .where('projectId').equals(projectId)
@@ -236,6 +342,12 @@ export function useProject() {
     addFiles,
     upsertFiles,
     clearFiles,
+    renameFile,
+    removeFile,
+    getOriginalFiles,
+    storeOriginalFiles,
+    renameOriginalFile,
+    removeOriginalFile,
     updateFileContent,
     updateFileLayerType,
     updateProjectOrigin,
@@ -244,5 +356,8 @@ export function useProject() {
     updateProjectDnp,
     updateProjectCadPackageMap,
     updateProjectPolarizedOverrides,
+    updateProjectComponentNotes,
+    updateProjectFieldOverrides,
+    updateProjectManualComponents,
   }
 }

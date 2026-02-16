@@ -47,6 +47,20 @@ const LAYER_TYPE_MAP: Record<string, string> = {
   '.g4': 'Inner Layer',
   '.gp1': 'Inner Layer',
   '.gp2': 'Inner Layer',
+  '.gp3': 'Inner Layer',
+  '.gp4': 'Inner Layer',
+  '.gp5': 'Inner Layer',
+  '.gp6': 'Inner Layer',
+  '.gp7': 'Inner Layer',
+  '.gp8': 'Inner Layer',
+  '.gp9': 'Inner Layer',
+  '.gp10': 'Inner Layer',
+  '.gp11': 'Inner Layer',
+  '.gp12': 'Inner Layer',
+  '.gp13': 'Inner Layer',
+  '.gp14': 'Inner Layer',
+  '.gp15': 'Inner Layer',
+  '.gp16': 'Inner Layer',
   '.in1': 'Inner Layer',
   '.in2': 'Inner Layer',
   '.in3': 'Inner Layer',
@@ -112,8 +126,47 @@ export const ALL_LAYER_TYPES: string[] = [
   'Unmatched',
 ]
 
+const VALID_LAYER_TYPES = new Set(ALL_LAYER_TYPES)
+
+/**
+ * Return a validated layer type for a file.  If the stored `layerType`
+ * is a recognised value it is returned as-is; otherwise the type is
+ * re-detected from the filename.  This guards against stale or renamed
+ * type strings persisted in older DB records.
+ */
+export function resolveLayerType(fileName: string, storedLayerType?: string | null): string {
+  if (storedLayerType && VALID_LAYER_TYPES.has(storedLayerType)) return storedLayerType
+  return detectLayerType(fileName)
+}
+
 export function getColorForType(type: string): string {
   return LAYER_COLOR_MAP[type] || '#FF80AB'
+}
+
+/**
+ * Return a version of the layer color darkened enough to be readable on a
+ * light background.  Colours whose relative luminance is above the threshold
+ * are shifted toward a darker variant of the same hue.
+ */
+export function getReadableColorForType(type: string, isDark: boolean): string {
+  const hex = getColorForType(type)
+  if (isDark) return hex
+
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+
+  // Relative luminance (sRGB approximation)
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  if (luminance <= 0.6) return hex
+
+  // Darken by mixing toward black; stronger for very bright colours
+  const factor = 0.45
+  const dr = Math.round(r * factor)
+  const dg = Math.round(g * factor)
+  const db = Math.round(b * factor)
+
+  return `#${dr.toString(16).padStart(2, '0')}${dg.toString(16).padStart(2, '0')}${db.toString(16).padStart(2, '0')}`
 }
 
 export function detectLayerType(fileName: string): string {
@@ -123,6 +176,11 @@ export function detectLayerType(fileName: string): string {
   // Return immediately for unambiguous extensions (skip 'Unmatched' mapped ones like .gbr)
   const extType = LAYER_TYPE_MAP[ext]
   if (extType && extType !== 'Unmatched') return extType
+
+  // Altium numbered layers not in the static map:
+  // .gpN → internal plane (copper), .gmN → mechanical (non-copper, treat as Unmatched)
+  if (/^\.gp\d{1,2}$/.test(ext)) return 'Inner Layer'
+  if (/^\.gm\d{1,2}$/.test(ext)) return 'Unmatched'
 
   // Allegro / Cadence naming: CS = Component Side (Top), PS = Print Side (Bottom)
   if (/sm[_\-]cs|soldermask[_\-]cs|mask[_\-]cs/i.test(lower)) return 'Top Solder Mask'
@@ -239,7 +297,6 @@ export function isGerberFile(fileName: string): boolean {
     // Altium drawing / guide / inner layers
     '.gd1', '.gd2', '.gg1', '.gg2',
     '.g1', '.g2', '.g3', '.g4',
-    '.gp1', '.gp2',
     '.in1', '.in2', '.in3', '.in4',
     // Protel / Altium / Eagle
     '.cmp', '.sol', '.stc', '.sts', '.plc', '.pls', '.crc', '.crs',
@@ -249,6 +306,9 @@ export function isGerberFile(fileName: string): boolean {
     '.art', '.phd', '.top', '.bot', '.smt', '.smb',
   ]
   if (gerberExts.includes(ext)) return true
+
+  // Altium numbered layers: .gm1-.gm32 (mechanical), .gp1-.gp16 (internal plane)
+  if (/^\.(gm\d{1,2}|gp\d{1,2})$/.test(ext)) return true
 
   // Check if the file has no standard extension but named 'drills' etc.
   if (/^(drill|drills|outline)$/i.test(fileName)) return true

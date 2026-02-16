@@ -42,7 +42,7 @@
 
 <script setup lang="ts">
 import type { GerberFile, LayerMatch } from '~/utils/gerber-helpers'
-import { getColorForType } from '~/utils/gerber-helpers'
+import { getReadableColorForType } from '~/utils/gerber-helpers'
 
 const props = defineProps<{
   match: LayerMatch
@@ -55,7 +55,10 @@ defineEmits<{
   rematch: [file: GerberFile | null]
 }>()
 
-const layerColor = computed(() => getColorForType(props.match.type))
+const colorMode = useColorMode()
+const layerColor = computed(() =>
+  getReadableColorForType(props.match.type, colorMode.value === 'dark'),
+)
 
 /** True when the other packet has files (so "Missing" badge is meaningful) */
 const hasOtherPacket = computed(() => props.availableFiles.length > 0)

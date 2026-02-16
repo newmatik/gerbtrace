@@ -110,6 +110,33 @@ export function renderToCanvas(
   ctx.restore()
 }
 
+/**
+ * Render a subset of graphics from an ImageTree onto an already-transformed
+ * context.  The caller must set up the Gerber→screen transform (translate +
+ * scale) before calling — this function only draws the specified children.
+ *
+ * Used for highlighting selected objects (e.g. delete-tool pending deletion).
+ */
+export function renderGraphicSubset(
+  imageTree: ImageTree,
+  indices: number[],
+  ctx: CanvasRenderingContext2D,
+  color: string,
+  scale: number,
+): void {
+  ctx.fillStyle = color
+  ctx.strokeStyle = color
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
+
+  for (const idx of indices) {
+    const graphic = imageTree.children[idx]
+    if (graphic) {
+      renderGraphic(ctx, graphic, color, scale)
+    }
+  }
+}
+
 function renderGraphic(
   ctx: CanvasRenderingContext2D,
   graphic: ImageGraphic,
@@ -302,11 +329,9 @@ export function renderOutlineMask(
     ctx.translate(options.gerberOffset.x, options.gerberOffset.y)
   }
 
-  // ── Collect contours, partitioned by polarity ──
-  const darkContours: PathSegment[][] = []
-  const eraseContours: PathSegment[][] = []
-  const darkLooseSegs: PathSegment[] = []
-  const eraseLooseSegs: PathSegment[] = []
+  // ── Collect path/region fragments and shapes, partitioned by polarity ──
+  const darkFragments: PathSegment[][] = []
+  const eraseFragments: PathSegment[][] = []
 
   type ShapeDrawFn = () => void
   const darkShapes: ShapeDrawFn[] = []
@@ -314,20 +339,16 @@ export function renderOutlineMask(
 
   for (const graphic of outlineTree.children) {
     const isErase = 'erase' in graphic && graphic.erase
-    const contours = isErase ? eraseContours : darkContours
-    const loose = isErase ? eraseLooseSegs : darkLooseSegs
+    const fragments = isErase ? eraseFragments : darkFragments
     const shapes = isErase ? eraseShapes : darkShapes
 
     if (graphic.type === 'path' || graphic.type === 'region') {
-      const segs = graphic.segments
-      if (segs.length > 1) {
-        contours.push(segs)
-      } else if (segs.length === 1) {
-        loose.push(segs[0]!)
+      if (graphic.segments.length > 0) {
+        fragments.push(graphic.segments)
       }
     } else if (graphic.type === 'shape') {
       if (graphic.shape.type === 'outline') {
-        contours.push(graphic.shape.segments)
+        fragments.push(graphic.shape.segments)
       } else if (graphic.shape.type === 'circle') {
         const s = graphic.shape
         shapes.push(() => {
@@ -351,9 +372,10 @@ export function renderOutlineMask(
     }
   }
 
-  // Chain loose single-segment graphics into contours
-  for (const c of chainSegmentsIntoContours(darkLooseSegs)) darkContours.push(c)
-  for (const c of chainSegmentsIntoContours(eraseLooseSegs)) eraseContours.push(c)
+  // Merge all fragments into closed contours (handles arbitrary segment order,
+  // reversed segments, and mixed single/multi-segment paths)
+  const darkContours = chainFragmentsIntoContours(darkFragments)
+  const eraseContours = chainFragmentsIntoContours(eraseFragments)
 
   // ── Identify the outer boundary (largest bounding-box area) ──
   let outerIdx = 0
@@ -428,43 +450,110 @@ function contourBBoxArea(segments: PathSegment[]): number {
   return (maxX - minX) * (maxY - minY)
 }
 
+/** Reverse a path segment (swap start↔end, flip arc direction). */
+function reverseSegment(seg: PathSegment): PathSegment {
+  if (seg.type === 'line') {
+    return { type: 'line', start: seg.end, end: seg.start }
+  }
+  return {
+    type: 'arc',
+    start: seg.end,
+    end: seg.start,
+    center: seg.center,
+    radius: seg.radius,
+    startAngle: seg.endAngle,
+    endAngle: seg.startAngle,
+    counterclockwise: !seg.counterclockwise,
+  }
+}
+
+/** Squared-distance helper for endpoint matching. */
+function ptDistSq(a: [number, number], b: [number, number]): number {
+  const dx = a[0] - b[0]
+  const dy = a[1] - b[1]
+  return dx * dx + dy * dy
+}
+
 /**
- * Group an unordered list of segments into chains where each segment's end
- * connects to the next segment's start (within tolerance).  Each resulting
- * chain is a closed (or nearly-closed) contour suitable for filling.
+ * Merge an array of path fragments (each an ordered sub-chain of segments)
+ * into closed contours by matching endpoints bidirectionally.
+ *
+ * Handles:
+ *  - Single-segment fragments (loose D02+D01 pairs)
+ *  - Multi-segment fragments (already partially chained by the plotter)
+ *  - Reversed fragments (CAD tools may emit edges in arbitrary direction)
+ *  - Mixed combinations of all the above
+ *
+ * Each resulting array is a closed (or nearly-closed) contour suitable for
+ * filling as an outline mask.
  */
-function chainSegmentsIntoContours(segments: PathSegment[]): PathSegment[][] {
-  if (segments.length === 0) return []
+function chainFragmentsIntoContours(fragments: PathSegment[][]): PathSegment[][] {
+  if (fragments.length === 0) return []
 
   const EPS_SQ = 0.01 * 0.01 // 10 µm tolerance squared
-  const remaining = segments.slice() // mutable working copy
-  const contours: PathSegment[][] = []
+  const remaining = fragments.map(f => f.slice()) // mutable shallow copies
+  const result: PathSegment[][] = []
 
   while (remaining.length > 0) {
-    const chain: PathSegment[] = [remaining.splice(0, 1)[0]!]
+    const chain = remaining.splice(0, 1)[0]!
 
-    // Extend the chain forward by matching end → start
     let extended = true
     while (extended) {
       extended = false
-      const tail = chain[chain.length - 1]!.end
+
+      const tailPt = chain[chain.length - 1]!.end
+      const headPt = chain[0]!.start
+
+      // Stop extending if the chain is already closed
+      if (chain.length > 1 && ptDistSq(tailPt, headPt) < EPS_SQ) break
 
       for (let i = 0; i < remaining.length; i++) {
-        const seg = remaining[i]!
-        const dx = seg.start[0] - tail[0]
-        const dy = seg.start[1] - tail[1]
-        if (dx * dx + dy * dy < EPS_SQ) {
-          chain.push(remaining.splice(i, 1)[0]!)
+        const frag = remaining[i]!
+        const fragHead = frag[0]!.start
+        const fragTail = frag[frag.length - 1]!.end
+
+        // Append forward: chain.tail → frag.head
+        if (ptDistSq(tailPt, fragHead) < EPS_SQ) {
+          chain.push(...remaining.splice(i, 1)[0]!)
+          extended = true
+          break
+        }
+
+        // Append reversed: chain.tail → frag.tail
+        if (ptDistSq(tailPt, fragTail) < EPS_SQ) {
+          const removed = remaining.splice(i, 1)[0]!
+          for (let k = removed.length - 1; k >= 0; k--) {
+            chain.push(reverseSegment(removed[k]!))
+          }
+          extended = true
+          break
+        }
+
+        // Prepend forward: frag.tail → chain.head
+        if (ptDistSq(headPt, fragTail) < EPS_SQ) {
+          chain.unshift(...remaining.splice(i, 1)[0]!)
+          extended = true
+          break
+        }
+
+        // Prepend reversed: frag.head → chain.head
+        if (ptDistSq(headPt, fragHead) < EPS_SQ) {
+          const removed = remaining.splice(i, 1)[0]!
+          const reversed: PathSegment[] = []
+          for (let k = removed.length - 1; k >= 0; k--) {
+            reversed.push(reverseSegment(removed[k]!))
+          }
+          chain.unshift(...reversed)
           extended = true
           break
         }
       }
     }
 
-    contours.push(chain)
+    result.push(chain)
   }
 
-  return contours
+  return result
 }
 
 /**

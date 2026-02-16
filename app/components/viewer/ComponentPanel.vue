@@ -25,18 +25,29 @@
     </div>
 
     <!-- Filter toggles -->
-    <div v-if="allComponents.length > 0" class="flex flex-wrap items-center gap-1 px-3 pb-1.5">
+    <div class="flex flex-wrap items-center gap-1 px-3 pb-1.5">
+      <template v-if="allComponents.length > 0">
+        <button
+          v-for="filter in filterOptions"
+          :key="filter.key"
+          class="text-[10px] px-1.5 py-0.5 rounded-full border transition-colors"
+          :class="activeFilters.has(filter.key)
+            ? 'bg-primary/10 border-primary/30 text-primary dark:text-primary-300'
+            : 'border-neutral-200 dark:border-neutral-700 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-600'"
+          :title="filter.title"
+          @click="emit('toggle:filter', filter.key)"
+        >
+          {{ filter.label }}
+        </button>
+      </template>
+      <span class="flex-1" />
       <button
-        v-for="filter in filterOptions"
-        :key="filter.key"
-        class="text-[10px] px-1.5 py-0.5 rounded-full border transition-colors"
-        :class="activeFilters.has(filter.key)
-          ? 'bg-primary/10 border-primary/30 text-primary dark:text-primary-300'
-          : 'border-neutral-200 dark:border-neutral-700 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-600'"
-        :title="filter.title"
-        @click="emit('toggle:filter', filter.key)"
+        class="text-[10px] px-1.5 py-0.5 rounded-full border border-neutral-200 dark:border-neutral-700 text-neutral-400 hover:text-green-600 dark:hover:text-green-400 hover:border-green-300 dark:hover:border-green-600 transition-colors flex items-center gap-0.5"
+        title="Add component — click to place, click again to confirm or pick two points for center"
+        @click="emit('addComponent')"
       >
-        {{ filter.label }}
+        <UIcon name="i-lucide-plus" class="text-[10px]" />
+        Add
       </button>
     </div>
 
@@ -49,6 +60,17 @@
             ({{ dnpCount }} DNP)
           </span>
         </span>
+        <button
+          class="text-[10px] px-1 py-0.5 rounded transition-colors flex items-center gap-0.5"
+          :class="showCoords
+            ? 'text-blue-500 dark:text-blue-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+            : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'"
+          :title="showCoords ? 'Hide X/Y coordinates' : 'Show X/Y coordinates'"
+          @click="showCoords = !showCoords"
+        >
+          <UIcon name="i-lucide-map-pin" class="text-[10px]" />
+          <span>XY</span>
+        </button>
         <button
           class="text-[10px] px-1 py-0.5 rounded transition-colors flex items-center gap-0.5"
           :class="showPackages
@@ -135,12 +157,13 @@
 
     <!-- Table header -->
     <div
-      class="grid grid-cols-[1rem_3.6rem_3.2rem_3.2rem_4rem_2.4rem_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.6fr)] gap-x-2 px-3 py-1 text-[10px] font-medium text-neutral-400 uppercase tracking-wider border-b border-neutral-200 dark:border-neutral-700 shrink-0"
+      class="grid gap-x-2 px-3 py-1 text-[10px] font-medium text-neutral-400 uppercase tracking-wider border-b border-neutral-200 dark:border-neutral-700 shrink-0"
+      :style="{ gridTemplateColumns: gridCols }"
     >
       <!-- DNP indicator header (non-sortable) -->
       <span class="flex items-center justify-center" title="DNP indicator"></span>
       <button
-        v-for="col in sortColumns"
+        v-for="col in visibleSortColumns"
         :key="col.key"
         class="flex items-center gap-0.5 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors text-left"
         :class="{ 'text-neutral-600 dark:text-neutral-200': sortKey === col.key }"
@@ -153,6 +176,8 @@
           class="text-[9px] shrink-0"
         />
       </button>
+      <!-- Actions column header -->
+      <span />
     </div>
 
     <!-- Component rows (virtualized) -->
@@ -174,14 +199,16 @@
             width: '100%',
             height: `${vRow.size}px`,
             transform: `translateY(${vRow.start}px)`,
+            gridTemplateColumns: gridCols,
           }"
-          class="grid grid-cols-[1rem_3.6rem_3.2rem_3.2rem_4rem_2.4rem_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.6fr)] gap-x-2 px-3 py-1 text-[11px] cursor-pointer transition-colors border-b border-neutral-100 dark:border-neutral-800/50"
+          class="group/row grid gap-x-2 px-3 py-1 text-[11px] cursor-pointer transition-colors border-b border-neutral-100 dark:border-neutral-800/50"
           :class="{
             'bg-cyan-50 dark:bg-cyan-900/20 hover:bg-cyan-100 dark:hover:bg-cyan-900/30': selectedDesignator === sortedComponents[vRow.index].designator && !sortedComponents[vRow.index].dnp,
             'hover:bg-neutral-100 dark:hover:bg-neutral-800': selectedDesignator !== sortedComponents[vRow.index].designator && !sortedComponents[vRow.index].dnp,
             'opacity-40': sortedComponents[vRow.index].dnp && activeFilters.size === 0,
           }"
           @click="onRowClick(sortedComponents[vRow.index].designator)"
+          @dblclick="emit('edit', sortedComponents[vRow.index])"
         >
           <!-- DNP toggle / indicator -->
           <button
@@ -204,8 +231,8 @@
               class="text-[9px] font-normal text-neutral-400 ml-0.5"
             >{{ sortedComponents[vRow.index].side === 'top' ? 'T' : 'B' }}</span>
           </span>
-          <span class="text-neutral-500 tabular-nums">{{ sortedComponents[vRow.index].x.toFixed(2) }}</span>
-          <span class="text-neutral-500 tabular-nums">{{ sortedComponents[vRow.index].y.toFixed(2) }}</span>
+          <span v-if="showCoords" class="text-neutral-500 tabular-nums">{{ sortedComponents[vRow.index].x.toFixed(2) }}</span>
+          <span v-if="showCoords" class="text-neutral-500 tabular-nums">{{ sortedComponents[vRow.index].y.toFixed(2) }}</span>
           <div class="flex items-center gap-0.5" @click.stop>
             <input
               type="number"
@@ -268,6 +295,25 @@
               {{ p }}
             </option>
           </select>
+          <!-- Note indicator / edit button -->
+          <div class="flex items-center justify-center" @click.stop>
+            <button
+              v-if="sortedComponents[vRow.index].note"
+              class="text-amber-500 dark:text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 transition-colors"
+              :title="sortedComponents[vRow.index].note"
+              @click="emit('edit', sortedComponents[vRow.index])"
+            >
+              <UIcon name="i-lucide-sticky-note" class="text-[11px]" />
+            </button>
+            <button
+              v-else
+              class="text-neutral-300 dark:text-neutral-700 opacity-0 group-hover/row:opacity-100 hover:!text-neutral-500 dark:hover:!text-neutral-400 transition-all"
+              title="Edit component"
+              @click="emit('edit', sortedComponents[vRow.index])"
+            >
+              <UIcon name="i-lucide-ellipsis" class="text-[11px]" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -310,6 +356,8 @@ const emit = defineEmits<{
   clearFilters: []
   'update:packageMapping': [payload: { cadPackage: string; packageName: string | null }]
   'update:polarized': [payload: { key: string; polarized: boolean }]
+  edit: [component: EditablePnPComponent]
+  addComponent: []
 }>()
 
 const conventionOptions = Object.entries(PNP_CONVENTION_LABELS) as [PnPConvention, string][]
@@ -324,6 +372,15 @@ const filterOptions: { key: PnPFilterKey; label: string; title: string }[] = [
 // DNP count
 const dnpCount = computed(() => props.allComponents.filter(c => c.dnp).length)
 
+// --- Column visibility ---
+const showCoords = ref(false)
+
+const gridCols = computed(() =>
+  showCoords.value
+    ? '1rem 3.6rem 3.2rem 3.2rem 4rem 2.4rem minmax(0,1fr) minmax(0,1fr) minmax(0,1.6fr) 1.6rem'
+    : '1rem 3.6rem 4rem 2.4rem minmax(0,1fr) minmax(0,1fr) minmax(0,1.6fr) 1.6rem',
+)
+
 // --- Sorting ---
 type SortKey = 'ref' | 'x' | 'y' | 'rot' | 'pol' | 'value' | 'cadPackage' | 'package'
 
@@ -337,6 +394,12 @@ const sortColumns: { key: SortKey; label: string }[] = [
   { key: 'cadPackage', label: 'CAD Pkg' },
   { key: 'package', label: 'Package' },
 ]
+
+const visibleSortColumns = computed(() =>
+  showCoords.value
+    ? sortColumns
+    : sortColumns.filter(c => c.key !== 'x' && c.key !== 'y'),
+)
 
 const sortKey = ref<SortKey | null>(null)
 const sortAsc = ref(true)

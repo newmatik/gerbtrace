@@ -6,6 +6,7 @@ export interface CanvasTransform {
 
 interface MouseMoveOptions {
   invertPanX?: boolean
+  rotationDeg?: number
 }
 
 export function useCanvasInteraction() {
@@ -47,15 +48,55 @@ export function useCanvasInteraction() {
   }
 
   /**
+   * Un-rotate a screen point around the canvas center.
+   * Used to map screen-space mouse coordinates into the un-rotated
+   * coordinate space used by the transform (offsetX/offsetY/scale).
+   */
+  function unrotatePoint(sx: number, sy: number, cx: number, cy: number, rotDeg: number): { x: number; y: number } {
+    if (rotDeg === 0) return { x: sx, y: sy }
+    const rad = -(rotDeg * Math.PI) / 180
+    const dx = sx - cx
+    const dy = sy - cy
+    return {
+      x: cx + dx * Math.cos(rad) - dy * Math.sin(rad),
+      y: cy + dx * Math.sin(rad) + dy * Math.cos(rad),
+    }
+  }
+
+  /**
+   * Un-rotate a screen-space delta vector.
+   */
+  function unrotateDelta(dx: number, dy: number, rotDeg: number): { dx: number; dy: number } {
+    if (rotDeg === 0) return { dx, dy }
+    const rad = -(rotDeg * Math.PI) / 180
+    return {
+      dx: dx * Math.cos(rad) - dy * Math.sin(rad),
+      dy: dx * Math.sin(rad) + dy * Math.cos(rad),
+    }
+  }
+
+  /**
    * Zoom around the mouse cursor position.
    * Transform model: screenX = offsetX + gerberX * scale
    *                  screenY = offsetY - gerberY * scale
    * The Gerber point under the cursor must stay fixed after zoom.
+   *
+   * @param rotationDeg Optional board rotation in degrees. When non-zero,
+   *   the mouse position is un-rotated around the canvas center before
+   *   computing the zoom pivot so zooming feels natural in a rotated view.
    */
-  function handleWheel(e: WheelEvent, canvasEl: HTMLCanvasElement) {
+  function handleWheel(e: WheelEvent, canvasEl: HTMLCanvasElement, rotationDeg: number = 0) {
     const rect = canvasEl.getBoundingClientRect()
-    const mouseX = e.clientX - rect.left
-    const mouseY = e.clientY - rect.top
+    let mouseX = e.clientX - rect.left
+    let mouseY = e.clientY - rect.top
+
+    if (rotationDeg !== 0) {
+      const cx = rect.width / 2
+      const cy = rect.height / 2
+      const pt = unrotatePoint(mouseX, mouseY, cx, cy, rotationDeg)
+      mouseX = pt.x
+      mouseY = pt.y
+    }
 
     const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1
     const oldScale = transform.value.scale
@@ -73,7 +114,8 @@ export function useCanvasInteraction() {
   }
 
   function handleMouseDown(e: MouseEvent) {
-    if (e.button === 2) {
+    if (e.button === 1 || e.button === 2) {
+      e.preventDefault()
       isDragging.value = true
       lastX = e.clientX
       lastY = e.clientY
@@ -82,10 +124,18 @@ export function useCanvasInteraction() {
 
   function handleMouseMove(e: MouseEvent, options?: MouseMoveOptions) {
     if (!isDragging.value) return
-    const dx = e.clientX - lastX
-    const dy = e.clientY - lastY
+    let dx = e.clientX - lastX
+    let dy = e.clientY - lastY
     lastX = e.clientX
     lastY = e.clientY
+
+    // Un-rotate the pan delta so dragging follows the cursor in a rotated view
+    if (options?.rotationDeg) {
+      const r = unrotateDelta(dx, dy, options.rotationDeg)
+      dx = r.dx
+      dy = r.dy
+    }
+
     const panDx = options?.invertPanX ? -dx : dx
     transform.value = {
       ...transform.value,

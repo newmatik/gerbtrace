@@ -49,20 +49,22 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  import: [files: GerberFile[], sourceName: string]
+  import: [files: GerberFile[], sourceName: string, isZip: boolean]
 }>()
 
 function deriveSourceName(file: File): string {
-  // Strip extension (.zip, .gbr, etc.)
-  return file.name.replace(/\.[^.]+$/, '')
+  // Strip extension (.zip, .gbr, etc.) and common CAM suffixes like "_PCB-Data"
+  return file.name.replace(/\.[^.]+$/, '').replace(/_PCB-Data$/i, '')
 }
 
 async function handleFiles(rawFiles: File[]) {
   const importedFiles: GerberFile[] = []
   let sourceName = ''
+  let hasZip = false
 
   for (const file of rawFiles) {
     if (file.name.toLowerCase().endsWith('.zip')) {
+      hasZip = true
       if (!sourceName) sourceName = deriveSourceName(file)
       const buffer = await file.arrayBuffer()
       const zip = await JSZip.loadAsync(buffer)
@@ -103,7 +105,7 @@ async function handleFiles(rawFiles: File[]) {
   }
 
   if (importedFiles.length) {
-    emit('import', importedFiles, sourceName)
+    emit('import', importedFiles, sourceName, hasZip)
   }
 }
 </script>
