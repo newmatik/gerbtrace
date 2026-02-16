@@ -10,7 +10,7 @@
     <!-- Global desktop update prompt -->
     <div
       v-if="isTauri && showUpdatePrompt"
-      class="fixed bottom-4 right-4 z-[70] w-[min(24rem,calc(100vw-2rem))]"
+      class="fixed bottom-4 right-4 z-[70] w-[min(28rem,calc(100vw-2rem))]"
     >
       <div class="rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white/95 dark:bg-neutral-900/95 backdrop-blur shadow-xl px-4 py-3">
         <div class="flex items-center justify-between gap-3">

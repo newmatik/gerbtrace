@@ -29,7 +29,7 @@ export interface PnPComponent {
 }
 
 /** Common header keywords that indicate a header row rather than data */
-const HEADER_KEYWORDS = /^(ref|designator|component|part|name|x|y|rotation|angle|value|package|footprint|side|layer|pos\s?x|pos\s?y)/i
+const HEADER_KEYWORDS = /^(ref\s?des|ref|designator|component|comp|part|name|x|y|rotation|angle|value|package|footprint|side|layer|pos\s?x|pos\s?y)/i
 
 type Delimiter = '\t' | ',' | ';'
 
@@ -91,36 +91,69 @@ function normaliseHeaderName(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]/g, '')
 }
 
-function buildHeaderMap(fields: string[]): Partial<Record<ColumnKey, number>> {
-  const map: Partial<Record<ColumnKey, number>> = {}
-  for (let i = 0; i < fields.length; i++) {
-    const h = normaliseHeaderName(fields[i] || '')
-
-    if (!map.designator && /^(ref|refdes|designator|reference|name|component|part)$/.test(h)) map.designator = i
-    else if (!map.x && /^(posx|x|centerx|midx|cx)/.test(h)) map.x = i
-    else if (!map.y && /^(posy|y|centery|midy|cy)/.test(h)) map.y = i
-    else if (!map.rotation && /^(rot|rotation|angle|deg)/.test(h)) map.rotation = i
-    else if (!map.value && /^(val|value|comment|compvalue)$/.test(h)) map.value = i
-    else if (!map.package && /^(package|footprint|pkg|comppackage)$/.test(h)) map.package = i
-    else if (!map.side && /^(side|layer)$/.test(h)) map.side = i
-  }
-  return map
+interface HeaderMapResult {
+  map: Partial<Record<ColumnKey, number>>
+  /** Scale factor to convert X/Y coordinates to mm (1 = already mm) */
+  coordScale: number
 }
 
 /**
- * Detect coordinate unit scale from the raw (un-normalized) X column header.
- * Returns a multiplier to convert the parsed value to mm.
- *
- * Recognized hints:
- *   "X mil" / "X (mils)"  → 0.0254  (1 mil = 0.0254 mm)
- *   "X inch" / "X (inches)" → 25.4   (1 inch = 25.4 mm)
- *   anything else (including explicit "mm") → 1
+ * Detect coordinate unit from a raw header name like "X mil", "X (inch)", "X mm".
+ * Returns a scale factor to convert to mm.
  */
-function detectUnitScale(rawFields: string[], xIdx: number): number {
-  const raw = (rawFields[xIdx] || '').toLowerCase()
-  if (/\bmils?\b/.test(raw)) return 0.0254
-  if (/\binch(es)?\b/.test(raw)) return 25.4
+function detectCoordUnit(rawHeader: string): number {
+  if (/\bmils?\b|\bthous?\b/i.test(rawHeader)) return 0.0254
+  if (/\bin(?:ch(?:es)?)?\b/i.test(rawHeader)) return 25.4
   return 1
+}
+
+/**
+ * Resolve a single coordScale from both X and Y column headers.
+ *
+ * - Both agree → use that value.
+ * - One is the default (1 / mm) and the other is explicit → use the explicit one.
+ * - Both explicit but different → warn and prefer X.
+ */
+function resolveCoordScale(scaleX: number, scaleY: number, rawX: string, rawY: string): number {
+  if (scaleX === scaleY) return scaleX
+  if (scaleX === 1) return scaleY
+  if (scaleY === 1) return scaleX
+  console.warn(
+    `[pnp-parser] X and Y headers specify different units `
+    + `(X: "${rawX}" → ×${scaleX}, Y: "${rawY}" → ×${scaleY}). `
+    + `Using X unit scale.`,
+  )
+  return scaleX
+}
+
+function buildHeaderMap(fields: string[]): HeaderMapResult {
+  const map: Partial<Record<ColumnKey, number>> = {}
+  let scaleX = 1
+  let scaleY = 1
+  let rawX = ''
+  let rawY = ''
+  for (let i = 0; i < fields.length; i++) {
+    const raw = fields[i] || ''
+    const h = normaliseHeaderName(raw)
+
+    if (!map.designator && /^(refdes(ignator)?|ref|designator|reference|name|component|part)$/.test(h)) map.designator = i
+    else if (!map.x && /^(posx|x|centerx|midx|cx)/.test(h)) {
+      map.x = i
+      scaleX = detectCoordUnit(raw)
+      rawX = raw
+    }
+    else if (!map.y && /^(posy|y|centery|midy|cy)/.test(h)) {
+      map.y = i
+      scaleY = detectCoordUnit(raw)
+      rawY = raw
+    }
+    else if (!map.rotation && /^(rot|rotation|angle|deg)/.test(h)) map.rotation = i
+    else if (!map.value && /value|^val$|^comment$/.test(h)) map.value = i
+    else if (!map.package && /package|footprint|^pkg$/.test(h)) map.package = i
+    else if (!map.side && /^(side|layer|tb)$/.test(h)) map.side = i
+  }
+  const coordScale = resolveCoordScale(scaleX, scaleY, rawX, rawY)
+  return { map, coordScale }
 }
 
 function getField(fields: string[], idx: number | undefined): string {
@@ -175,7 +208,7 @@ export function parsePnPFile(content: string, side: 'top' | 'bottom'): PnPCompon
   const delimiter = detectDelimiter(content)
   const components: PnPComponent[] = []
   let headerMap: Partial<Record<ColumnKey, number>> | null = null
-  let unitScale = 1 // multiplier to convert X/Y values to mm (default: already mm)
+  let coordScale = 1
 
   for (const rawLine of lines) {
     const line = rawLine.trim()
@@ -191,15 +224,15 @@ export function parsePnPFile(content: string, side: 'top' | 'bottom'): PnPCompon
     // data rows with non-numeric text columns (e.g. Altium "Comment") aren't
     // misidentified as headers.
     if (!headerMap && isHeaderRow(fields, delimiter)) {
-      const maybeMap = buildHeaderMap(fields)
+      const result = buildHeaderMap(fields)
       if (
-        maybeMap.designator != null
-        && maybeMap.x != null
-        && maybeMap.y != null
-        && maybeMap.rotation != null
+        result.map.designator != null
+        && result.map.x != null
+        && result.map.y != null
+        && result.map.rotation != null
       ) {
-        headerMap = maybeMap
-        unitScale = detectUnitScale(fields, maybeMap.x!)
+        headerMap = result.map
+        coordScale = result.coordScale
       }
       continue
     }
@@ -212,8 +245,8 @@ export function parsePnPFile(content: string, side: 'top' | 'bottom'): PnPCompon
     const value = headerMap ? getField(fields, headerMap.value) : (fields[4] || '')
     let pkg = headerMap ? getField(fields, headerMap.package) : (fields[5] || '')
 
-    const x = parseNumeric(xStr, delimiter) * unitScale
-    const y = parseNumeric(yStr, delimiter) * unitScale
+    const x = parseNumeric(xStr, delimiter) * coordScale
+    const y = parseNumeric(yStr, delimiter) * coordScale
     const rotation = parseNumeric(rotStr, delimiter)
 
     // Validate numeric fields
