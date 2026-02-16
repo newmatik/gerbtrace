@@ -168,6 +168,24 @@ function normaliseCandidates(name: string): string[] {
     }
   }
 
+  // Bare chip size codes with leading zero dropped: 805 -> 0805, 603 -> 0603
+  {
+    const m = base.match(/^(\d{3,4})$/)
+    if (m?.[1]) {
+      const padded = m[1].padStart(4, '0')
+      if (padded !== m[1]) push(padded)
+    }
+  }
+
+  // Chip size with shape/variant prefix and optional suffix: SQ0402WID -> 0402, SQ0402L -> 0402
+  {
+    const m = base.match(/^(?:sq|cr|rc)(\d{3,4})\w*$/i)
+    if (m?.[1]) {
+      const code = m[1].padStart(4, '0')
+      push(code)
+    }
+  }
+
   // Common package-without-dash forms: SOD523 -> SOD-523, SOT23 -> SOT-23
   {
     const m = base.match(/^(sod|sot|qfn|dfn|wson|xson)(\d{2,})$/)

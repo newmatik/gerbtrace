@@ -173,7 +173,11 @@ Releases follow a tag-based workflow:
    git push origin v1.x.x
    ```
 4. GitHub Actions automatically builds macOS and Windows installers and creates a GitHub Release
-5. Review the draft release, add release notes, and publish
+5. Add release notes to the GitHub Release (see style guide below) and publish
+
+### Release notes
+
+Every release includes short, user-oriented release notes on the [GitHub Releases](https://github.com/newmatik/gerbtrace/releases) page. Notes focus on new features and bug fixes — no emojis, no internal details. The same text is shown in the desktop app's "What's New" dialog after an auto-update.
 
 **Web deployment** happens automatically on every push to `main` via DigitalOcean Spaces (see `deploy.yml`).
 **API deployment** (Supabase migrations + edge functions to the droplet) happens automatically on every push to `main` that changes `supabase/**` (see `deploy-supabase.yml`).

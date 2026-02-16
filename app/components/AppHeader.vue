@@ -1,12 +1,12 @@
 <template>
-  <header class="h-11 border-b border-neutral-200 dark:border-neutral-800 flex items-center px-3 shrink-0 gap-2 bg-white dark:bg-neutral-900">
-    <NuxtLink to="/" class="flex items-center gap-1.5 font-semibold text-sm shrink-0">
+  <header :class="['h-11 border-b border-neutral-200 dark:border-neutral-800 flex items-center shrink-0 bg-white dark:bg-neutral-900', compact ? 'px-2 gap-1.5' : 'px-3 gap-2']">
+    <NuxtLink to="/" class="flex items-center gap-1.5 font-semibold text-sm shrink-0" :title="compact ? 'Gerbtrace – Home' : undefined">
       <img
         :src="isDark ? '/icon-black.png' : '/icon-blue.png'"
         alt="Gerbtrace"
         class="size-5 rounded"
       >
-      <span>Gerbtrace</span>
+      <span v-if="!compact">Gerbtrace</span>
     </NuxtLink>
 
     <!-- Toolbar slot for page-specific tools -->
@@ -76,6 +76,8 @@
 <script setup lang="ts">
 import { useColorMode } from '#imports'
 import { isTauri as coreIsTauri } from '@tauri-apps/api/core'
+
+const { compact = false } = defineProps<{ compact?: boolean }>()
 
 const router = useRouter()
 const colorMode = useColorMode()

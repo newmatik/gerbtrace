@@ -8,7 +8,7 @@
           Back to projects
         </NuxtLink>
 
-        <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center justify-between mb-4">
           <h1 class="text-2xl font-bold">Team Members</h1>
           <UButton
             v-if="isAdmin"
@@ -20,14 +20,29 @@
           </UButton>
         </div>
 
+        <!-- Search -->
+        <div class="mb-4">
+          <UInput
+            v-model="search"
+            icon="i-lucide-search"
+            placeholder="Search members..."
+            size="sm"
+            class="w-full"
+          />
+        </div>
+
         <!-- Members list -->
         <div v-if="membersLoading" class="text-center py-8 text-sm text-neutral-400">
           Loading...
         </div>
 
+        <div v-else-if="filteredMembers.length === 0" class="text-center py-8 text-sm text-neutral-400">
+          {{ search ? 'No members match your search.' : 'No team members yet.' }}
+        </div>
+
         <div v-else class="space-y-2">
           <div
-            v-for="member in members"
+            v-for="member in filteredMembers"
             :key="member.id"
             class="flex items-center gap-3 p-3 rounded-lg border border-neutral-200 dark:border-neutral-800"
             :class="{ 'opacity-50': member.status === 'disabled' }"
@@ -56,13 +71,13 @@
         </div>
 
         <!-- Pending invitations -->
-        <div v-if="invitations.length > 0" class="mt-8">
+        <div v-if="filteredInvitations.length > 0" class="mt-8">
           <h2 class="text-xs font-semibold text-neutral-400 uppercase tracking-wide mb-3">
             Pending Invitations
           </h2>
           <div class="space-y-2">
             <div
-              v-for="inv in invitations"
+              v-for="inv in filteredInvitations"
               :key="inv.id"
               class="flex items-center gap-3 p-3 rounded-lg border border-dashed border-neutral-200 dark:border-neutral-800"
             >
@@ -125,6 +140,55 @@
         </div>
       </template>
     </UModal>
+
+    <!-- Edit Name Modal -->
+    <UModal v-model:open="editNameModalOpen">
+      <template #content>
+        <div class="p-5 space-y-4">
+          <h3 class="text-sm font-semibold">Edit Member Name</h3>
+          <form @submit.prevent="handleUpdateName" class="space-y-3">
+            <UFormField label="Name">
+              <UInput
+                v-model="editNameValue"
+                placeholder="Full name"
+                required
+                autofocus
+              />
+            </UFormField>
+            <p v-if="editNameError" class="text-xs text-red-500">{{ editNameError }}</p>
+            <div class="flex justify-end gap-2 pt-2">
+              <UButton size="sm" variant="outline" color="neutral" @click="editNameModalOpen = false">
+                Cancel
+              </UButton>
+              <UButton type="submit" size="sm" :loading="editNameSaving">
+                Save
+              </UButton>
+            </div>
+          </form>
+        </div>
+      </template>
+    </UModal>
+
+    <!-- Confirm Remove Modal -->
+    <UModal v-model:open="confirmRemoveOpen">
+      <template #content>
+        <div class="p-5 space-y-4">
+          <h3 class="text-sm font-semibold">Remove Member</h3>
+          <p class="text-sm text-neutral-500">
+            Are you sure you want to remove <strong>{{ removingMemberName }}</strong> from the team? This action cannot be undone.
+          </p>
+          <p v-if="removeError" class="text-xs text-red-500">{{ removeError }}</p>
+          <div class="flex justify-end gap-2 pt-2">
+            <UButton size="sm" variant="outline" color="neutral" @click="confirmRemoveOpen = false">
+              Cancel
+            </UButton>
+            <UButton size="sm" color="error" :loading="removing" @click="handleConfirmRemove">
+              Remove
+            </UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>
 
@@ -134,12 +198,43 @@ import type { TeamMember } from '~/composables/useTeamMembers'
 const router = useRouter()
 const { isAuthenticated, user: currentUser } = useAuth()
 const { isAdmin } = useTeam()
-const { members, invitations, membersLoading, invite, changeRole, toggleStatus, removeMember, cancelInvitation } = useTeamMembers()
+const {
+  members,
+  invitations,
+  membersLoading,
+  invite,
+  changeRole,
+  toggleStatus,
+  removeMember,
+  cancelInvitation,
+  updateMemberName,
+} = useTeamMembers()
 
 watch(isAuthenticated, (authed) => {
   if (!authed) router.replace('/auth/login')
 }, { immediate: true })
 
+// ── Search ──────────────────────────────────────────────────────────
+const search = ref('')
+
+const filteredMembers = computed(() => {
+  if (!search.value.trim()) return members.value
+  const q = search.value.toLowerCase()
+  return members.value.filter(m =>
+    (m.profile?.name ?? '').toLowerCase().includes(q) ||
+    (m.profile?.email ?? '').toLowerCase().includes(q),
+  )
+})
+
+const filteredInvitations = computed(() => {
+  if (!search.value.trim()) return invitations.value
+  const q = search.value.toLowerCase()
+  return invitations.value.filter(inv =>
+    inv.email.toLowerCase().includes(q),
+  )
+})
+
+// ── Invite ──────────────────────────────────────────────────────────
 const inviteModalOpen = ref(false)
 const inviteEmail = ref('')
 const inviteRole = ref<'admin' | 'editor' | 'viewer'>('viewer')
@@ -152,6 +247,67 @@ const roleOptions = [
   { label: 'Admin', value: 'admin' },
 ]
 
+// ── Edit Name ───────────────────────────────────────────────────────
+const editNameModalOpen = ref(false)
+const editNameValue = ref('')
+const editNameError = ref('')
+const editNameSaving = ref(false)
+const editNameMember = ref<TeamMember | null>(null)
+
+function openEditName(member: TeamMember) {
+  editNameMember.value = member
+  editNameValue.value = member.profile?.name ?? ''
+  editNameError.value = ''
+  editNameModalOpen.value = true
+}
+
+async function handleUpdateName() {
+  if (!editNameMember.value || !editNameValue.value.trim()) return
+  editNameError.value = ''
+  editNameSaving.value = true
+  try {
+    const { error } = await updateMemberName(editNameMember.value.user_id, editNameValue.value)
+    if (error) {
+      editNameError.value = (error as any).message ?? 'Failed to update name'
+    } else {
+      editNameModalOpen.value = false
+    }
+  } finally {
+    editNameSaving.value = false
+  }
+}
+
+// ── Confirm Remove ──────────────────────────────────────────────────
+const confirmRemoveOpen = ref(false)
+const removingMemberId = ref<string | null>(null)
+const removingMemberName = ref('')
+const removing = ref(false)
+const removeError = ref('')
+
+function openConfirmRemove(member: TeamMember) {
+  removingMemberId.value = member.id
+  removingMemberName.value = member.profile?.name ?? member.profile?.email ?? 'this member'
+  removeError.value = ''
+  confirmRemoveOpen.value = true
+}
+
+async function handleConfirmRemove() {
+  if (!removingMemberId.value) return
+  removing.value = true
+  removeError.value = ''
+  try {
+    const { error } = await removeMember(removingMemberId.value)
+    if (error) {
+      removeError.value = (error as any).message ?? 'Failed to remove member'
+    } else {
+      confirmRemoveOpen.value = false
+    }
+  } finally {
+    removing.value = false
+  }
+}
+
+// ── Helpers ─────────────────────────────────────────────────────────
 function initials(name: string | null | undefined): string {
   if (!name) return '?'
   return name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2)
@@ -168,13 +324,20 @@ function roleBadgeColor(role: string) {
 function memberActions(member: TeamMember) {
   return [
     [
-      { label: 'Set as Viewer', icon: 'i-lucide-eye', disabled: member.role === 'viewer', click: () => changeRole(member.id, 'viewer') },
-      { label: 'Set as Editor', icon: 'i-lucide-pencil', disabled: member.role === 'editor', click: () => changeRole(member.id, 'editor') },
-      { label: 'Set as Admin', icon: 'i-lucide-shield', disabled: member.role === 'admin', click: () => changeRole(member.id, 'admin') },
+      { label: 'Edit Name', icon: 'i-lucide-pen-line', onSelect: () => openEditName(member) },
     ],
     [
-      { label: member.status === 'active' ? 'Disable' : 'Enable', icon: 'i-lucide-ban', click: () => toggleStatus(member.id) },
-      { label: 'Remove', icon: 'i-lucide-user-minus', color: 'error' as const, click: () => removeMember(member.id) },
+      { label: 'Set as Viewer', icon: 'i-lucide-eye', disabled: member.role === 'viewer', onSelect: () => changeRole(member.id, 'viewer') },
+      { label: 'Set as Editor', icon: 'i-lucide-pencil', disabled: member.role === 'editor', onSelect: () => changeRole(member.id, 'editor') },
+      { label: 'Set as Admin', icon: 'i-lucide-shield', disabled: member.role === 'admin', onSelect: () => changeRole(member.id, 'admin') },
+    ],
+    [
+      {
+        label: member.status === 'active' ? 'Disable' : 'Enable',
+        icon: member.status === 'active' ? 'i-lucide-ban' : 'i-lucide-check-circle',
+        onSelect: () => toggleStatus(member.id),
+      },
+      { label: 'Remove', icon: 'i-lucide-user-minus', color: 'error' as const, onSelect: () => openConfirmRemove(member) },
     ],
   ]
 }

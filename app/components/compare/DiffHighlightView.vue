@@ -24,15 +24,21 @@ import type { ImageTree, BoundingBox } from '@lib/gerber/types'
 import { renderToCanvas, computeAutoFitTransform } from '@lib/renderer/canvas-renderer'
 import { computePixelDiff } from '@lib/renderer/pixel-diff'
 import { mergeBounds } from '@lib/gerber/bounding-box'
+import { drawCanvasGrid } from '~/utils/canvas-grid'
+
+import type { GerberOffset } from '~/composables/useCompareAlignment'
 
 const props = defineProps<{
   match: LayerMatch | null
   interaction: ReturnType<typeof useCanvasInteraction>
+  offsetA?: GerberOffset
+  offsetB?: GerberOffset
 }>()
 
 const canvasEl = ref<HTMLCanvasElement | null>(null)
 const { parse } = useGerberRenderer()
-const { backgroundColor } = useBackgroundColor()
+const { backgroundColor, isLight } = useBackgroundColor()
+const { settings: appSettings } = useAppSettings()
 const autoFitDone = ref(false)
 const prevBoundsKey = ref('')
 
@@ -66,8 +72,16 @@ function draw() {
 
   if (!treeA || !treeB) return
 
-  // Compute shared bounds for consistent positioning
-  const shared = mergeBounds(treeA.bounds as BoundingBox, treeB.bounds as BoundingBox)
+  // Compute shared bounds for consistent positioning (with alignment offsets)
+  const oA = props.offsetA
+  const oB = props.offsetB
+  const boundsA: BoundingBox = oA && (oA.x !== 0 || oA.y !== 0)
+    ? [treeA.bounds[0] + oA.x, treeA.bounds[1] + oA.y, treeA.bounds[2] + oA.x, treeA.bounds[3] + oA.y]
+    : treeA.bounds as BoundingBox
+  const boundsB: BoundingBox = oB && (oB.x !== 0 || oB.y !== 0)
+    ? [treeB.bounds[0] + oB.x, treeB.bounds[1] + oB.y, treeB.bounds[2] + oB.x, treeB.bounds[3] + oB.y]
+    : treeB.bounds as BoundingBox
+  const shared = mergeBounds(boundsA, boundsB)
   const viewBounds: [number, number, number, number] = [shared[0], shared[1], shared[2], shared[3]]
 
   const boundsKey = viewBounds.join(',')
@@ -81,16 +95,16 @@ function draw() {
 
   const transform = props.interaction.transform.value
 
-  // Render both to offscreen canvases with shared bounds
+  // Render both to offscreen canvases with shared bounds (applying alignment offsets)
   const offA = document.createElement('canvas')
   offA.width = canvas.width
   offA.height = canvas.height
-  renderToCanvas(treeA, offA, { color: '#ffffff', transform, dpr })
+  renderToCanvas(treeA, offA, { color: '#ffffff', transform, dpr, gerberOffset: props.offsetA })
 
   const offB = document.createElement('canvas')
   offB.width = canvas.width
   offB.height = canvas.height
-  renderToCanvas(treeB, offB, { color: '#ffffff', transform, dpr })
+  renderToCanvas(treeB, offB, { color: '#ffffff', transform, dpr, gerberOffset: props.offsetB })
 
   // Compute pixel diff
   const diffData = computePixelDiff(offA, offB)
@@ -109,10 +123,25 @@ function draw() {
   diffCanvas.height = canvas.height
   diffCanvas.getContext('2d')!.putImageData(diffData, 0, 0)
   ctx.drawImage(diffCanvas, 0, 0)
+
+  // Draw background grid when enabled
+  if (appSettings.gridEnabled) {
+    const units = treeA.units || treeB.units || 'mm'
+    drawCanvasGrid({
+      ctx,
+      cssWidth,
+      cssHeight,
+      dpr,
+      transform,
+      units,
+      gridSpacingMm: appSettings.gridSpacingMm,
+      isLight: isLight.value,
+    })
+  }
 }
 
 watch(
-  () => [props.match, props.interaction.transform.value, backgroundColor.value],
+  () => [props.match, props.interaction.transform.value, backgroundColor.value, appSettings.gridEnabled, appSettings.gridSpacingMm, props.offsetA, props.offsetB],
   () => draw(),
   { deep: true },
 )

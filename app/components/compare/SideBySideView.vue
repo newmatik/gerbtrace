@@ -7,6 +7,7 @@
         :color="'#cc0000'"
         :interaction="interaction"
         :view-bounds="sharedBounds"
+        :gerber-offset="offsetA"
       />
       <div v-else class="absolute inset-0 flex items-center justify-center text-neutral-600 text-sm">
         Packet 1
@@ -19,6 +20,7 @@
         :color="'#0066cc'"
         :interaction="interaction"
         :view-bounds="sharedBounds"
+        :gerber-offset="offsetB"
       />
       <div v-else class="absolute inset-0 flex items-center justify-center text-neutral-600 text-sm">
         Packet 2
@@ -30,11 +32,14 @@
 <script setup lang="ts">
 import type { LayerMatch } from '~/utils/gerber-helpers'
 import type { ImageTree, BoundingBox } from '@lib/gerber/types'
+import type { GerberOffset } from '~/composables/useCompareAlignment'
 import { mergeBounds } from '@lib/gerber/bounding-box'
 
 const props = defineProps<{
   match: LayerMatch | null
   interaction: ReturnType<typeof useCanvasInteraction>
+  offsetA?: GerberOffset
+  offsetB?: GerberOffset
 }>()
 
 const { parse } = useGerberRenderer()
@@ -49,13 +54,20 @@ const imageTreeB = computed<ImageTree | null>(() => {
   try { return parse(props.match.fileB.content) } catch { return null }
 })
 
+function shiftBounds(bounds: BoundingBox, offset?: GerberOffset): BoundingBox {
+  if (!offset || (offset.x === 0 && offset.y === 0)) return bounds
+  return [bounds[0] + offset.x, bounds[1] + offset.y, bounds[2] + offset.x, bounds[3] + offset.y]
+}
+
 const sharedBounds = computed<[number, number, number, number] | undefined>(() => {
   const a = imageTreeA.value
   const b = imageTreeB.value
   if (!a && !b) return undefined
-  if (a && !b) return a.bounds as [number, number, number, number]
-  if (!a && b) return b.bounds as [number, number, number, number]
-  const merged = mergeBounds(a!.bounds as BoundingBox, b!.bounds as BoundingBox)
+  const boundsA = a ? shiftBounds(a.bounds as BoundingBox, props.offsetA) : null
+  const boundsB = b ? shiftBounds(b.bounds as BoundingBox, props.offsetB) : null
+  if (boundsA && !boundsB) return boundsA as [number, number, number, number]
+  if (!boundsA && boundsB) return boundsB as [number, number, number, number]
+  const merged = mergeBounds(boundsA!, boundsB!)
   return [merged[0], merged[1], merged[2], merged[3]]
 })
 </script>

@@ -1,0 +1,34 @@
+---
+description: Nuxt UI v3 dropdown items must use onSelect, not click
+globs: "**/*.vue"
+alwaysApply: false
+---
+
+# Nuxt UI dropdown items: use onSelect, not click
+
+Nuxt UI v3 (`@nuxt/ui` 3.x, used with Nuxt 4) changed the dropdown-item action callback from `click` to `onSelect`. Using `click` silently does nothing.
+
+## Rule
+
+When building items for `UDropdownMenu` (or any Nuxt UI menu/dropdown component), always use `onSelect` for the action callback.
+
+```typescript
+// BAD — click is silently ignored in Nuxt UI v3
+const items = [
+  { label: 'Edit', icon: 'i-lucide-pencil', click: () => openEditor() },
+]
+
+// GOOD — onSelect is the correct callback
+const items = [
+  { label: 'Edit', icon: 'i-lucide-pencil', onSelect: () => openEditor() },
+]
+```
+
+## Applies to
+
+- `UDropdownMenu` `:items` prop
+- Any computed/inline array of menu-item objects passed to Nuxt UI dropdown or context-menu components
+
+## Quick check
+
+If you see `click:` inside a menu-item object literal (not a Vue template `@click`), replace it with `onSelect:`.

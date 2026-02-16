@@ -1,6 +1,6 @@
 <template>
   <div class="flex-1 flex flex-col overflow-hidden">
-    <!-- Search bar -->
+    <!-- Filter bar -->
     <div class="p-3 pb-2">
       <div class="relative">
         <UIcon
@@ -10,17 +10,34 @@
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="Search components..."
-          class="w-full text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md pl-7 pr-2 py-1.5 outline-none placeholder:text-neutral-400 focus:border-primary transition-colors"
+          placeholder="Filter components..."
+          class="w-full text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md pl-7 pr-6 py-1.5 outline-none placeholder:text-neutral-400 focus:border-primary transition-colors"
         />
         <button
-          v-if="searchQuery"
+          v-if="hasActiveFiltersOrSearch"
           class="absolute right-1.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors"
-          @click="searchQuery = ''"
+          title="Clear all filters"
+          @click="clearAll"
         >
           <UIcon name="i-lucide-x" class="text-xs" />
         </button>
       </div>
+    </div>
+
+    <!-- Filter toggles -->
+    <div v-if="allComponents.length > 0" class="flex flex-wrap items-center gap-1 px-3 pb-1.5">
+      <button
+        v-for="filter in filterOptions"
+        :key="filter.key"
+        class="text-[10px] px-1.5 py-0.5 rounded-full border transition-colors"
+        :class="activeFilters.has(filter.key)
+          ? 'bg-primary/10 border-primary/30 text-primary dark:text-primary-300'
+          : 'border-neutral-200 dark:border-neutral-700 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-600'"
+        :title="filter.title"
+        @click="emit('toggle:filter', filter.key)"
+      >
+        {{ filter.label }}
+      </button>
     </div>
 
     <!-- Package controls row -->
@@ -118,7 +135,7 @@
 
     <!-- Table header -->
     <div
-      class="grid grid-cols-[1rem_3.6rem_3.2rem_3.2rem_auto_2.4rem_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.6fr)] gap-x-2 px-3 py-1 text-[10px] font-medium text-neutral-400 uppercase tracking-wider border-b border-neutral-200 dark:border-neutral-700 shrink-0"
+      class="grid grid-cols-[1rem_3.6rem_3.2rem_3.2rem_4rem_2.4rem_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.6fr)] gap-x-2 px-3 py-1 text-[10px] font-medium text-neutral-400 uppercase tracking-wider border-b border-neutral-200 dark:border-neutral-700 shrink-0"
     >
       <!-- DNP indicator header (non-sortable) -->
       <span class="flex items-center justify-center" title="DNP indicator"></span>
@@ -138,116 +155,128 @@
       </button>
     </div>
 
-    <!-- Component rows -->
+    <!-- Component rows (virtualized) -->
     <div ref="listRef" class="flex-1 overflow-y-auto">
       <div v-if="!filteredComponents.length" class="text-xs text-neutral-400 py-6 text-center">
         {{ allComponents.length === 0 ? 'No components loaded' : 'No matches' }}
       </div>
       <div
-        v-for="(comp, index) in sortedComponents"
-        :key="comp.designator + '-' + comp.side"
-        :ref="(el) => setRowRef(comp.designator, el as HTMLElement | null)"
-        class="grid grid-cols-[1rem_3.6rem_3.2rem_3.2rem_auto_2.4rem_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.6fr)] gap-x-2 px-3 py-1 text-[11px] cursor-pointer transition-colors border-b border-neutral-100 dark:border-neutral-800/50"
-        :class="{
-          'bg-cyan-50 dark:bg-cyan-900/20 hover:bg-cyan-100 dark:hover:bg-cyan-900/30': selectedDesignator === comp.designator && !comp.dnp,
-          'hover:bg-neutral-100 dark:hover:bg-neutral-800': selectedDesignator !== comp.designator && !comp.dnp,
-          'opacity-40': comp.dnp,
-        }"
-        @click="onRowClick(comp.designator)"
+        v-else
+        :style="{ height: `${rowVirtualizer.getTotalSize()}px`, position: 'relative', width: '100%' }"
       >
-        <!-- DNP toggle / indicator -->
-        <button
-          class="flex items-center justify-center shrink-0 transition-colors"
-          :title="comp.dnp ? 'Remove DNP mark' : 'Mark as Do Not Populate'"
-          @click.stop="emit('toggle:dnp', comp.key)"
+        <div
+          v-for="vRow in rowVirtualizer.getVirtualItems()"
+          :key="sortedComponents[vRow.index].designator + '-' + sortedComponents[vRow.index].side"
+          :style="{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: `${vRow.size}px`,
+            transform: `translateY(${vRow.start}px)`,
+          }"
+          class="grid grid-cols-[1rem_3.6rem_3.2rem_3.2rem_4rem_2.4rem_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.6fr)] gap-x-2 px-3 py-1 text-[11px] cursor-pointer transition-colors border-b border-neutral-100 dark:border-neutral-800/50"
+          :class="{
+            'bg-cyan-50 dark:bg-cyan-900/20 hover:bg-cyan-100 dark:hover:bg-cyan-900/30': selectedDesignator === sortedComponents[vRow.index].designator && !sortedComponents[vRow.index].dnp,
+            'hover:bg-neutral-100 dark:hover:bg-neutral-800': selectedDesignator !== sortedComponents[vRow.index].designator && !sortedComponents[vRow.index].dnp,
+            'opacity-40': sortedComponents[vRow.index].dnp && activeFilters.size === 0,
+          }"
+          @click="onRowClick(sortedComponents[vRow.index].designator)"
         >
-          <span
-            class="h-2.5 w-2.5 rounded-full"
-            :class="comp.dnp
-              ? 'bg-red-500'
-              : 'bg-transparent border border-neutral-300/70 dark:border-neutral-700/70'"
-          />
-        </button>
+          <!-- DNP toggle / indicator -->
+          <button
+            class="flex items-center justify-center shrink-0 transition-colors"
+            :title="sortedComponents[vRow.index].dnp ? 'Remove DNP mark' : 'Mark as Do Not Populate'"
+            @click.stop="emit('toggle:dnp', sortedComponents[vRow.index].key)"
+          >
+            <span
+              class="h-2.5 w-2.5 rounded-full"
+              :class="sortedComponents[vRow.index].dnp
+                ? 'bg-red-500'
+                : 'bg-transparent border border-neutral-300/70 dark:border-neutral-700/70'"
+            />
+          </button>
 
-        <span class="font-medium truncate" :title="comp.designator" :class="{ 'line-through': comp.dnp }">
-          {{ comp.designator }}
-          <span
-            v-if="showSideIndicator"
-            class="text-[9px] font-normal text-neutral-400 ml-0.5"
-          >{{ comp.side === 'top' ? 'T' : 'B' }}</span>
-        </span>
-        <span class="text-neutral-500 tabular-nums">{{ comp.x.toFixed(2) }}</span>
-        <span class="text-neutral-500 tabular-nums">{{ comp.y.toFixed(2) }}</span>
-        <div class="flex items-center gap-0.5" @click.stop>
-          <input
-            type="number"
-            step="0.1"
-            :value="formatRotation(comp.rotation)"
-            class="rotation-input w-8 min-w-0 rounded px-1 py-0.5 tabular-nums outline-none border bg-transparent transition-colors"
-            :class="comp.rotationOverridden
-              ? 'text-amber-600 dark:text-amber-300 border-transparent focus:border-amber-300/70 dark:focus:border-amber-500/50 focus:bg-amber-50/60 dark:focus:bg-amber-500/10'
-              : 'text-neutral-500 border-transparent focus:border-neutral-300 dark:focus:border-neutral-600 focus:bg-neutral-50 dark:focus:bg-neutral-800/70'"
-            :title="comp.rotationOverridden
-              ? `Original: ${formatRotation(comp.originalRotation)}°`
-              : 'Rotation (deg)'"
+          <span class="font-medium truncate" :title="sortedComponents[vRow.index].designator" :class="{ 'line-through': sortedComponents[vRow.index].dnp }">
+            {{ sortedComponents[vRow.index].designator }}
+            <span
+              v-if="showSideIndicator"
+              class="text-[9px] font-normal text-neutral-400 ml-0.5"
+            >{{ sortedComponents[vRow.index].side === 'top' ? 'T' : 'B' }}</span>
+          </span>
+          <span class="text-neutral-500 tabular-nums">{{ sortedComponents[vRow.index].x.toFixed(2) }}</span>
+          <span class="text-neutral-500 tabular-nums">{{ sortedComponents[vRow.index].y.toFixed(2) }}</span>
+          <div class="flex items-center gap-0.5" @click.stop>
+            <input
+              type="number"
+              step="0.1"
+              :value="formatRotation(sortedComponents[vRow.index].rotation)"
+              class="rotation-input w-8 min-w-0 rounded px-1 py-0.5 tabular-nums outline-none border bg-transparent transition-colors"
+              :class="sortedComponents[vRow.index].rotationOverridden
+                ? 'text-amber-600 dark:text-amber-300 border-transparent focus:border-amber-300/70 dark:focus:border-amber-500/50 focus:bg-amber-50/60 dark:focus:bg-amber-500/10'
+                : 'text-neutral-500 border-transparent focus:border-neutral-300 dark:focus:border-neutral-600 focus:bg-neutral-50 dark:focus:bg-neutral-800/70'"
+              :title="sortedComponents[vRow.index].rotationOverridden
+                ? `Original: ${formatRotation(sortedComponents[vRow.index].originalRotation)}°`
+                : 'Rotation (deg)'"
+              @mousedown.stop
+              @keydown.enter.prevent="commitRotation(sortedComponents[vRow.index], $event)"
+              @blur="commitRotation(sortedComponents[vRow.index], $event)"
+            />
+            <button
+              v-if="selectedDesignator === sortedComponents[vRow.index].designator"
+              class="shrink-0 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
+              title="Rotate 90° CCW"
+              @mousedown.stop
+              @click.stop="rotateCCW(sortedComponents[vRow.index])"
+            >
+              <UIcon name="i-lucide-rotate-ccw" class="text-[10px]" />
+            </button>
+            <button
+              v-if="sortedComponents[vRow.index].rotationOverridden"
+              class="shrink-0 text-amber-600/90 dark:text-amber-300/90 hover:text-red-500 transition-colors"
+              title="Reset to original rotation"
+              @mousedown.stop
+              @click.stop="emit('reset:rotation', { key: sortedComponents[vRow.index].key })"
+            >
+              <UIcon name="i-lucide-undo-2" class="text-[10px]" />
+            </button>
+          </div>
+          <!-- Polarized toggle -->
+          <div class="flex items-center justify-center" @click.stop>
+            <input
+              type="checkbox"
+              class="h-3 w-3 rounded border-neutral-300 dark:border-neutral-600 text-primary focus:ring-primary/50 cursor-pointer"
+              :checked="sortedComponents[vRow.index].polarized"
+              :title="sortedComponents[vRow.index].polarized ? 'Polarized (pin 1 marked)' : 'Not polarized (no pin 1 marker)'"
+              @change="emit('update:polarized', { key: sortedComponents[vRow.index].key, polarized: ($event.target as HTMLInputElement).checked })"
+            />
+          </div>
+          <span class="truncate text-neutral-500" :title="sortedComponents[vRow.index].value">{{ sortedComponents[vRow.index].value || '—' }}</span>
+          <!-- CAD Package (customer footprint name) -->
+          <span class="truncate text-neutral-500" :title="sortedComponents[vRow.index].cadPackage">{{ sortedComponents[vRow.index].cadPackage || '—' }}</span>
+          <!-- Package (our matched package) -->
+          <select
+            class="text-[11px] bg-transparent border border-transparent hover:border-neutral-200 dark:hover:border-neutral-700 rounded px-1 py-0.5 outline-none text-neutral-600 dark:text-neutral-300 cursor-pointer"
+            :class="sortedComponents[vRow.index].packageMapped ? 'text-blue-700 dark:text-blue-300' : ''"
+            :value="sortedComponents[vRow.index].matchedPackage"
+            title="Matched package (library)"
             @mousedown.stop
-            @keydown.enter.prevent="commitRotation(comp, $event)"
-            @blur="commitRotation(comp, $event)"
-          />
-          <button
-            v-if="selectedDesignator === comp.designator"
-            class="shrink-0 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
-            title="Rotate 90° CCW"
-            @mousedown.stop
-            @click.stop="rotateCCW(comp)"
+            @change="emit('update:packageMapping', { cadPackage: sortedComponents[vRow.index].cadPackage, packageName: ($event.target as HTMLSelectElement).value || null })"
           >
-            <UIcon name="i-lucide-rotate-ccw" class="text-[10px]" />
-          </button>
-          <button
-            v-if="comp.rotationOverridden"
-            class="shrink-0 text-amber-600/90 dark:text-amber-300/90 hover:text-red-500 transition-colors"
-            title="Reset to original rotation"
-            @mousedown.stop
-            @click.stop="emit('reset:rotation', { key: comp.key })"
-          >
-            <UIcon name="i-lucide-undo-2" class="text-[10px]" />
-          </button>
+            <option value="">—</option>
+            <option v-for="p in packageOptions" :key="p" :value="p">
+              {{ p }}
+            </option>
+          </select>
         </div>
-        <!-- Polarized toggle -->
-        <div class="flex items-center justify-center" @click.stop>
-          <input
-            type="checkbox"
-            class="h-3 w-3 rounded border-neutral-300 dark:border-neutral-600 text-primary focus:ring-primary/50 cursor-pointer"
-            :checked="comp.polarized"
-            :title="comp.polarized ? 'Polarized (pin 1 marked)' : 'Not polarized (no pin 1 marker)'"
-            @change="emit('update:polarized', { key: comp.key, polarized: ($event.target as HTMLInputElement).checked })"
-          />
-        </div>
-        <span class="truncate text-neutral-500" :title="comp.value">{{ comp.value || '—' }}</span>
-        <!-- CAD Package (customer footprint name) -->
-        <span class="truncate text-neutral-500" :title="comp.cadPackage">{{ comp.cadPackage || '—' }}</span>
-        <!-- Package (our matched package) -->
-        <select
-          class="text-[11px] bg-transparent border border-transparent hover:border-neutral-200 dark:hover:border-neutral-700 rounded px-1 py-0.5 outline-none text-neutral-600 dark:text-neutral-300 cursor-pointer"
-          :class="comp.packageMapped ? 'text-blue-700 dark:text-blue-300' : ''"
-          :value="comp.matchedPackage"
-          title="Matched package (library)"
-          @mousedown.stop
-          @change="emit('update:packageMapping', { cadPackage: comp.cadPackage, packageName: ($event.target as HTMLSelectElement).value || null })"
-        >
-          <option value="">—</option>
-          <option v-for="p in packageOptions" :key="p" :value="p">
-            {{ p }}
-          </option>
-        </select>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { EditablePnPComponent } from '~/composables/usePickAndPlace'
-import type { AlignMode } from '~/composables/usePickAndPlace'
+import { useVirtualizer } from '@tanstack/vue-virtual'
+import type { EditablePnPComponent, AlignMode, PnPFilterKey } from '~/composables/usePickAndPlace'
 import type { PnPConvention } from '~/utils/pnp-conventions'
 import { PNP_CONVENTION_LABELS } from '~/utils/pnp-conventions'
 
@@ -256,6 +285,7 @@ const props = defineProps<{
   filteredComponents: EditablePnPComponent[]
   selectedDesignator: string | null
   searchQuery: string
+  activeFilters: Set<PnPFilterKey>
   alignMode: AlignMode
   hasOrigin: boolean
   originX: number | null
@@ -276,11 +306,20 @@ const emit = defineEmits<{
   'update:rotation': [payload: { key: string; rotation: number }]
   'reset:rotation': [payload: { key: string }]
   'toggle:dnp': [key: string]
+  'toggle:filter': [key: PnPFilterKey]
+  clearFilters: []
   'update:packageMapping': [payload: { cadPackage: string; packageName: string | null }]
   'update:polarized': [payload: { key: string; polarized: boolean }]
 }>()
 
 const conventionOptions = Object.entries(PNP_CONVENTION_LABELS) as [PnPConvention, string][]
+
+const filterOptions: { key: PnPFilterKey; label: string; title: string }[] = [
+  { key: 'polarized', label: 'Polarized', title: 'Show polarized components only' },
+  { key: 'dnp', label: 'DNP', title: 'Show Do Not Populate components only' },
+  { key: 'edited', label: 'Edited', title: 'Show manually edited components only' },
+  { key: 'unmatched', label: 'Unmatched', title: 'Show components with unmatched packages only' },
+]
 
 // DNP count
 const dnpCount = computed(() => props.allComponents.filter(c => c.dnp).length)
@@ -375,12 +414,47 @@ const sortedComponents = computed(() => {
   })
 })
 
-const searchQuery = computed({
-  get: () => props.searchQuery,
-  set: (v: string) => emit('update:searchQuery', v),
+const localSearch = ref(props.searchQuery)
+let searchDebounceTimer: ReturnType<typeof setTimeout> | undefined
+
+watch(localSearch, (v) => {
+  clearTimeout(searchDebounceTimer)
+  searchDebounceTimer = setTimeout(() => emit('update:searchQuery', v), 150)
+})
+watch(() => props.searchQuery, (v) => {
+  if (v !== localSearch.value) localSearch.value = v
 })
 
+onUnmounted(() => {
+  clearTimeout(searchDebounceTimer)
+})
+
+const searchQuery = computed({
+  get: () => localSearch.value,
+  set: (v: string) => { localSearch.value = v },
+})
+
+const hasActiveFiltersOrSearch = computed(() =>
+  props.activeFilters.size > 0 || localSearch.value.trim() !== '',
+)
+
+function clearAll() {
+  localSearch.value = ''
+  emit('clearFilters')
+}
+
 const listRef = ref<HTMLElement | null>(null)
+
+const ROW_HEIGHT = 25
+
+const rowVirtualizer = useVirtualizer(
+  computed(() => ({
+    count: sortedComponents.value.length,
+    getScrollElement: () => listRef.value,
+    estimateSize: () => ROW_HEIGHT,
+    overscan: 15,
+  })),
+)
 
 const isAligning = computed(() => props.alignMode !== 'idle')
 
@@ -400,16 +474,12 @@ const showSideIndicator = computed(() => {
   return sides.size > 1
 })
 
-// Track row refs for auto-scroll
-const rowRefs = new Map<string, HTMLElement>()
-
-function setRowRef(designator: string, el: HTMLElement | null) {
-  if (el) {
-    rowRefs.set(designator, el)
-  } else {
-    rowRefs.delete(designator)
-  }
-}
+// Build a designator → sorted-index lookup for scroll-to-selection
+const designatorIndexMap = computed(() => {
+  const map = new Map<string, number>()
+  sortedComponents.value.forEach((c, i) => { map.set(c.designator, i) })
+  return map
+})
 
 function onRowClick(designator: string) {
   // Toggle if clicking same one
@@ -452,12 +522,10 @@ watch(
   () => props.selectedDesignator,
   (designator) => {
     if (!designator) return
-    nextTick(() => {
-      const el = rowRefs.get(designator)
-      if (el) {
-        el.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
-      }
-    })
+    const idx = designatorIndexMap.value.get(designator)
+    if (idx != null) {
+      rowVirtualizer.value.scrollToIndex(idx, { align: 'auto' })
+    }
   },
 )
 </script>
