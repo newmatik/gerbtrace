@@ -2,9 +2,10 @@
  * Pick & Place (PnP) file parser.
  *
  * Supports tab-delimited, comma-delimited, and semicolon-delimited formats.
- * Expected columns: Designator, X (mm), Y (mm), Rotation (deg), Value, Package
+ * Expected columns: Designator, X, Y, Rotation (deg), Value, Package
  *
  * Auto-detects delimiter from content (tab → semicolon → comma).
+ * Auto-detects coordinate units from header (mm, mil, inch) and converts to mm.
  * Handles European decimal format (comma as decimal separator) when semicolons
  * are used as field delimiter. Handles optional header rows, empty value fields,
  * and trailing blank lines.
@@ -95,15 +96,31 @@ function buildHeaderMap(fields: string[]): Partial<Record<ColumnKey, number>> {
   for (let i = 0; i < fields.length; i++) {
     const h = normaliseHeaderName(fields[i] || '')
 
-    if (!map.designator && /^(ref|designator|reference|name|component|part)$/.test(h)) map.designator = i
+    if (!map.designator && /^(ref|refdes|designator|reference|name|component|part)$/.test(h)) map.designator = i
     else if (!map.x && /^(posx|x|centerx|midx|cx)/.test(h)) map.x = i
     else if (!map.y && /^(posy|y|centery|midy|cy)/.test(h)) map.y = i
     else if (!map.rotation && /^(rot|rotation|angle|deg)/.test(h)) map.rotation = i
-    else if (!map.value && /^(val|value|comment)$/.test(h)) map.value = i
-    else if (!map.package && /^(package|footprint|pkg)$/.test(h)) map.package = i
+    else if (!map.value && /^(val|value|comment|compvalue)$/.test(h)) map.value = i
+    else if (!map.package && /^(package|footprint|pkg|comppackage)$/.test(h)) map.package = i
     else if (!map.side && /^(side|layer)$/.test(h)) map.side = i
   }
   return map
+}
+
+/**
+ * Detect coordinate unit scale from the raw (un-normalized) X column header.
+ * Returns a multiplier to convert the parsed value to mm.
+ *
+ * Recognized hints:
+ *   "X mil" / "X (mils)"  → 0.0254  (1 mil = 0.0254 mm)
+ *   "X inch" / "X (inches)" → 25.4   (1 inch = 25.4 mm)
+ *   anything else (including explicit "mm") → 1
+ */
+function detectUnitScale(rawFields: string[], xIdx: number): number {
+  const raw = (rawFields[xIdx] || '').toLowerCase()
+  if (/\bmils?\b/.test(raw)) return 0.0254
+  if (/\binch(es)?\b/.test(raw)) return 25.4
+  return 1
 }
 
 function getField(fields: string[], idx: number | undefined): string {
@@ -158,6 +175,7 @@ export function parsePnPFile(content: string, side: 'top' | 'bottom'): PnPCompon
   const delimiter = detectDelimiter(content)
   const components: PnPComponent[] = []
   let headerMap: Partial<Record<ColumnKey, number>> | null = null
+  let unitScale = 1 // multiplier to convert X/Y values to mm (default: already mm)
 
   for (const rawLine of lines) {
     const line = rawLine.trim()
@@ -181,6 +199,7 @@ export function parsePnPFile(content: string, side: 'top' | 'bottom'): PnPCompon
         && maybeMap.rotation != null
       ) {
         headerMap = maybeMap
+        unitScale = detectUnitScale(fields, maybeMap.x!)
       }
       continue
     }
@@ -193,8 +212,8 @@ export function parsePnPFile(content: string, side: 'top' | 'bottom'): PnPCompon
     const value = headerMap ? getField(fields, headerMap.value) : (fields[4] || '')
     let pkg = headerMap ? getField(fields, headerMap.package) : (fields[5] || '')
 
-    const x = parseNumeric(xStr, delimiter)
-    const y = parseNumeric(yStr, delimiter)
+    const x = parseNumeric(xStr, delimiter) * unitScale
+    const y = parseNumeric(yStr, delimiter) * unitScale
     const rotation = parseNumeric(rotStr, delimiter)
 
     // Validate numeric fields
