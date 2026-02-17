@@ -82,6 +82,7 @@
           variant="ghost"
           :icon="m.icon"
           :class="[tbBtnBase, activeMode === m.value ? tbBtnActive : tbBtnIdle]"
+          :disabled="sidebarTab === 'panel' && (m.value === 'info' || m.value === 'delete')"
           :title="m.title"
           @click="setMode(m.value)"
         >
@@ -114,10 +115,11 @@
             variant="ghost"
             icon="i-lucide-rotate-ccw"
             :class="[tbBtnBase, tbBtnIdle]"
+            :disabled="sidebarTab === 'panel'"
             title="Rotate 90° counter-clockwise"
             @click="rotateCCW()"
           />
-          <UPopover :content="{ align: 'center', sideOffset: 8 }">
+          <UPopover v-if="sidebarTab !== 'panel'" :content="{ align: 'center', sideOffset: 8 }">
             <button
               class="text-[10px] font-mono px-1.5 py-0.5 rounded min-w-[2.5rem] text-center transition-colors cursor-pointer"
               :class="boardRotation !== 0
@@ -164,25 +166,25 @@
               </div>
             </template>
           </UPopover>
+          <button
+            v-else
+            disabled
+            class="text-[10px] font-mono px-1.5 py-0.5 rounded min-w-[2.5rem] text-center transition-colors cursor-not-allowed text-neutral-400 dark:text-neutral-500 opacity-70"
+            :title="'Board rotation: ' + boardRotation + '° (disabled in panel view)'"
+          >
+            {{ boardRotation }}°
+          </button>
           <UButton
             size="xs"
             color="neutral"
             variant="ghost"
             icon="i-lucide-rotate-cw"
             :class="[tbBtnBase, tbBtnIdle]"
+            :disabled="sidebarTab === 'panel'"
             title="Rotate 90° clockwise"
             @click="rotateCW()"
           />
         </div>
-      </template>
-
-      <!-- Realistic mode controls -->
-      <template v-if="viewMode === 'realistic'">
-        <div class="w-px h-5 bg-neutral-200 dark:bg-neutral-700/80" />
-        <RealisticControls
-          :selected-preset="selectedPreset"
-          @select-preset="selectedPreset = $event"
-        />
       </template>
 
       <!-- Downloads dropdown -->
@@ -274,7 +276,7 @@
         class="border-r border-neutral-200 dark:border-neutral-800 flex flex-col overflow-hidden shrink-0"
         :style="{ width: sidebarWidth + 'px' }"
       >
-        <!-- Sidebar tabs: Files / SMD / THT / BOM / PCB / Pricing -->
+        <!-- Sidebar tabs: Files / PCB / Panel / SMD / THT / BOM / Pricing / Docs -->
         <div
           class="flex items-center gap-0.5 px-3 pt-3 pb-1 flex-wrap"
         >
@@ -286,6 +288,24 @@
             @click="sidebarTab = 'layers'"
           >
             Files
+          </button>
+          <button
+            class="text-[11px] font-medium px-2 py-0.5 rounded transition-colors"
+            :class="sidebarTab === 'pcb'
+              ? 'bg-neutral-200/80 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100'
+              : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'"
+            @click="sidebarTab = 'pcb'"
+          >
+            PCB
+          </button>
+          <button
+            class="text-[11px] font-medium px-2 py-0.5 rounded transition-colors"
+            :class="sidebarTab === 'panel'
+              ? 'bg-neutral-200/80 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100'
+              : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'"
+            @click="sidebarTab = 'panel'"
+          >
+            Panel
           </button>
           <button
             v-if="pnp.hasPnP.value"
@@ -316,15 +336,6 @@
             @click="sidebarTab = 'bom'"
           >
             BOM
-          </button>
-          <button
-            class="text-[11px] font-medium px-2 py-0.5 rounded transition-colors"
-            :class="sidebarTab === 'pcb'
-              ? 'bg-neutral-200/80 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100'
-              : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'"
-            @click="sidebarTab = 'pcb'"
-          >
-            PCB
           </button>
           <button
             class="text-[11px] font-medium px-2 py-0.5 rounded transition-colors"
@@ -390,6 +401,11 @@
           :show-packages="showPackages"
           :pnp-convention="pnp.convention.value"
           :package-options="packageOptions"
+          :sort-state="pnpSortSmd"
+          :manual-order="pnpManualOrderSmd"
+          :groups="smdGroups"
+          :group-assignments="pnpGroupAssignments"
+          :bom-designators="bomDesignators"
           @update:search-query="pnp.searchQuery.value = $event"
           @update:show-packages="showPackages = $event"
           @update:pnp-convention="updateConvention"
@@ -400,6 +416,13 @@
           @clear-filters="pnp.clearFilters()"
           @update:package-mapping="handlePackageMapping($event)"
           @update:polarized="pnp.setPolarizedOverride($event.key, $event.polarized)"
+          @update:sort-state="applySortState('smd', $event)"
+          @update:manual-order="pnpManualOrderSmd = $event"
+          @create:group="createGroup('smd')"
+          @update:group-meta="updateGroupMeta($event)"
+          @toggle:group-hidden="toggleGroupHidden($event)"
+          @toggle:group-collapsed="toggleGroupCollapsed($event)"
+          @assign:group="assignComponentGroup($event, 'smd')"
           @select="pnp.selectComponent($event)"
           @start-set-origin="startSetOrigin"
           @start-component-align="startComponentAlign"
@@ -423,6 +446,11 @@
           :show-packages="showPackages"
           :pnp-convention="pnp.convention.value"
           :package-options="thtPackageOptions"
+          :sort-state="pnpSortTht"
+          :manual-order="pnpManualOrderTht"
+          :groups="thtGroups"
+          :group-assignments="pnpGroupAssignments"
+          :bom-designators="bomDesignators"
           @update:search-query="pnp.searchQuery.value = $event"
           @update:show-packages="showPackages = $event"
           @update:pnp-convention="updateConvention"
@@ -433,6 +461,13 @@
           @clear-filters="pnp.clearFilters()"
           @update:package-mapping="handlePackageMapping($event)"
           @update:polarized="pnp.setPolarizedOverride($event.key, $event.polarized)"
+          @update:sort-state="applySortState('tht', $event)"
+          @update:manual-order="pnpManualOrderTht = $event"
+          @create:group="createGroup('tht')"
+          @update:group-meta="updateGroupMeta($event)"
+          @toggle:group-hidden="toggleGroupHidden($event)"
+          @toggle:group-collapsed="toggleGroupCollapsed($event)"
+          @assign:group="assignComponentGroup($event, 'tht')"
           @select="pnp.selectComponent($event)"
           @start-set-origin="startSetOrigin"
           @start-component-align="startComponentAlign"
@@ -452,6 +487,7 @@
           :is-fetching-pricing="elexess.isFetching.value"
           :pricing-queue="(elexess.pricingQueue.value as PricingQueueItem[])"
           :board-quantity="bom.boardQuantity.value"
+          :pnp-designators="pnpDesignators"
           @update:search-query="bom.searchQuery.value = $event"
           @update:board-quantity="bom.boardQuantity.value = $event"
           @add-line="handleBomAddLine"
@@ -468,7 +504,28 @@
           :pcb-data="pcbData"
           :board-size-mm="boardSizeMm"
           :detected-layer-count="detectedLayerCount"
+          :layers="layers"
+          :edited-layers="editedLayers"
+          :selected-preset="selectedPreset"
           @update:pcb-data="handlePcbDataUpdate"
+          @select-preset="selectedPreset = $event"
+          @toggle-visibility="toggleLayerVisibility"
+          @toggle-group-visibility="toggleGroupVisibility"
+          @change-color="changeLayerColor"
+          @change-type="changeLayerType"
+          @reset-layer="resetLayer"
+          @rename-layer="renameLayer"
+          @duplicate-layer="duplicateLayer"
+          @remove-layer="removeLayer"
+        />
+
+        <!-- Panel view -->
+        <PanelPanel
+          v-else-if="sidebarTab === 'panel'"
+          :panel-data="panelData"
+          :board-size-mm="boardSizeMm"
+          @update:panel-data="handlePanelDataUpdate"
+          @update:danger-zone="(dz) => panelDangerZone = dz"
         />
 
         <!-- Pricing view -->
@@ -531,7 +588,33 @@
 
         <!-- Board canvas (hidden when viewing a document) -->
         <div v-show="!showDocumentViewer" class="absolute inset-0">
+          <!-- Panel canvas (shown when panel tab is active) -->
+          <PanelCanvas
+            v-if="sidebarTab === 'panel'"
+            ref="panelCanvasRef"
+            :layers="renderLayers"
+            :all-layers="layers"
+            :interaction="canvasInteraction"
+            :mirrored="mirrored"
+            :active-filter="activeFilter"
+            :view-mode="viewMode"
+            :preset="viewMode === 'realistic' ? selectedPreset : undefined"
+            :project-name="project?.name || 'Untitled'"
+            :pcb-data="pcbData"
+            :panel-config="panelData"
+            :board-size-mm="boardSizeMm"
+            :danger-zone="panelDangerZone"
+            :measure="measureTool"
+            :pnp-components="panelData.showComponents ? pnp.visibleComponents.value : []"
+            :match-package="pkgLib.matchPackage"
+            :match-tht-package="thtPkgLib.matchThtPackage"
+            :show-packages="showPackages"
+            :pnp-convention="pnp.convention.value"
+            @update:panel-config="handlePanelDataUpdate"
+          />
+          <!-- Board canvas (shown for all other tabs) -->
           <BoardCanvas
+            v-else
             ref="boardCanvasRef"
             :layers="renderLayers"
             :all-layers="layers"
@@ -545,7 +628,7 @@
             :delete-tool="deleteTool"
             :view-mode="viewMode"
             :preset="viewMode === 'realistic' ? selectedPreset : undefined"
-            :pnp-components="pnp.visibleComponents.value"
+            :pnp-components="sidebarTab === 'pcb' ? [] : pnp.visibleComponents.value"
             :selected-pnp-designator="pnp.selectedDesignator.value"
             :pnp-origin-x="pnp.originX.value"
             :pnp-origin-y="pnp.originY.value"
@@ -565,8 +648,9 @@
             :measure="measureTool"
             :transform="canvasInteraction.transform.value"
           />
-          <InfoOverlay :info="infoTool" />
+          <InfoOverlay v-if="sidebarTab !== 'panel'" :info="infoTool" />
           <DeleteOverlay
+            v-if="sidebarTab !== 'panel'"
             :delete-tool="deleteTool"
             @confirm-delete="handleConfirmDelete"
           />
@@ -601,13 +685,21 @@
             :view-mode="viewMode"
             @open-settings="showSettings = true"
           />
-          <BoardExtents :dimensions="boardSizeMm ?? null" />
+          <BoardExtents :dimensions="sidebarTab === 'panel' ? panelDimensionsMm : (boardSizeMm ?? null)" />
         </div>
       </main>
     </div>
 
     <!-- Settings modal -->
-    <AppSettingsModal v-model:open="showSettings" />
+    <AppSettingsModal
+      v-model:open="showSettings"
+      @open-performance="showPerformanceMonitor = true"
+    />
+    <PerformanceMonitorModal
+      v-model:open="showPerformanceMonitor"
+      :snapshot="performanceSnapshot"
+      @refresh="refreshPerformanceSnapshot"
+    />
 
     <!-- PnP export modal -->
     <PnPExportModal
@@ -624,7 +716,8 @@
     <ImageExportModal
       v-model:open="showImageExport"
       :has-pn-p="pnp.hasPnP.value"
-      :board-size-mm="boardSizeMm"
+      :board-size-mm="imageExportTarget === 'panel' ? (panelDimensionsMm ?? undefined) : boardSizeMm"
+      :svg-format-note="imageExportTarget === 'panel' ? 'Panel SVG exports embed a rasterized PNG. They preserve panel size, but scaling quality is lower and files can be larger than vector SVG.' : undefined"
       @export="handleExportImage"
     />
 
@@ -633,6 +726,7 @@
       v-model:open="showComponentEdit"
       :component="editingComponent"
       :package-options="editingComponent?.componentType === 'tht' ? thtPackageOptions : packageOptions"
+      :bom-designators="bomDesignators"
       @update:rotation="pnp.setRotationOverride($event.key, $event.rotation)"
       @reset:rotation="pnp.resetRotationOverride($event.key)"
       @toggle:dnp="pnp.toggleDnp($event)"
@@ -663,12 +757,21 @@
       @confirm="handleOverwriteConfirm"
       @cancel="handleOverwriteCancel"
     />
+
+    <PnPGroupModal
+      v-model:open="showCreateGroupModal"
+      :default-name="createGroupDefaultName"
+      @create="handleCreateGroup"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import type { GerberFile, LayerInfo, LayerFilter } from '~/utils/gerber-helpers'
-import type { SourceRange } from '@lib/gerber/types'
+import type { SourceRange, ImageTree, BoundingBox } from '@lib/gerber/types'
+import { parseGerber } from '@lib/gerber'
+import { plotImageTree } from '@lib/gerber/plotter'
+import { mergeBounds, emptyBounds, isEmpty } from '@lib/gerber/bounding-box'
 import { sortLayersByPcbOrder, isTopLayer, isBottomLayer, isSharedLayer, getColorForType, isPnPLayer } from '~/utils/gerber-helpers'
 import type { BomLine, BomColumnMapping } from '~/utils/bom-types'
 import type { PricingQueueItem } from '~/composables/useElexessApi'
@@ -687,7 +790,7 @@ const rawId = route.params.id as string
 const isTeamProject = rawId.startsWith('team-')
 const projectId = isTeamProject ? 0 : Number(rawId) // local projects use numeric IDs
 const teamProjectId = isTeamProject ? rawId.replace('team-', '') : null
-const { getProject, getFiles, addFiles, upsertFiles, clearFiles, renameFile, removeFile, getOriginalFiles, storeOriginalFiles, renameOriginalFile, removeOriginalFile, renameProject, updateFileLayerType, updateFileContent, updateProjectOrigin, updateProjectConvention, updateProjectRotationOverrides, updateProjectDnp, updateProjectCadPackageMap, updateProjectPolarizedOverrides, updateProjectComponentNotes, updateProjectFieldOverrides, updateProjectManualComponents, updateProjectDeletedComponents, updateBomLines, updateBomPricingCache, updateBomBoardQuantity, updatePcbData, getDocuments, addDocument, removeDocument: removeDocumentFromDb, updateDocumentType: updateDocumentTypeInDb } = useProject()
+const { getProject, getFiles, addFiles, upsertFiles, clearFiles, renameFile, removeFile, getOriginalFiles, storeOriginalFiles, renameOriginalFile, removeOriginalFile, renameProject, updateFileLayerType, updateFileContent, updateProjectOrigin, updateProjectConvention, updateProjectRotationOverrides, updateProjectDnp, updateProjectCadPackageMap, updateProjectPolarizedOverrides, updateProjectComponentNotes, updateProjectFieldOverrides, updateProjectManualComponents, updateProjectDeletedComponents, updateProjectSortSmd, updateProjectSortTht, updateProjectManualOrderSmd, updateProjectManualOrderTht, updateProjectComponentGroups, updateProjectGroupAssignments, updateBomLines, updateBomPricingCache, updateBomBoardQuantity, updatePcbData, updatePanelData, getDocuments, addDocument, removeDocument: removeDocumentFromDb, updateDocumentType: updateDocumentTypeInDb } = useProject()
 
 // ── Team project support ──
 const teamProjectIdRef = ref(teamProjectId)
@@ -735,9 +838,9 @@ const canvasAreaBg = computed(() =>
 )
 const { sidebarWidth, dragging: sidebarDragging, onDragStart: onSidebarDragStart } = useSidebarWidth()
 
-// ── Sidebar tab (Files / SMD Components / THT Components / BOM / PCB / Pricing) ──
-type SidebarTab = 'layers' | 'smd' | 'tht' | 'bom' | 'pcb' | 'pricing' | 'docs'
-const VALID_TABS: SidebarTab[] = ['layers', 'smd', 'tht', 'bom', 'pcb', 'pricing', 'docs']
+// ── Sidebar tab (Files / PCB / Panel / SMD / THT / BOM / Pricing / Docs) ──
+type SidebarTab = 'layers' | 'pcb' | 'panel' | 'smd' | 'tht' | 'bom' | 'pricing' | 'docs'
+const VALID_TABS: SidebarTab[] = ['layers', 'pcb', 'panel', 'smd', 'tht', 'bom', 'pricing', 'docs']
 
 const router = useRouter()
 const initialTab = (route.query.tab as string) || 'layers'
@@ -818,6 +921,17 @@ watch(() => measureTool.active.value, (isActive) => {
 watch(() => deleteTool.active.value, (isActive) => {
   if (!isActive && activeMode.value === 'delete') {
     activeMode.value = 'cursor'
+  }
+})
+
+// Panel view does not support info/delete tools; fall back to cursor.
+watch(sidebarTab, (tab) => {
+  // Leaving the docs tab should always close any open document preview.
+  if (tab !== 'docs' && selectedDocumentId.value) {
+    selectedDocumentId.value = null
+  }
+  if (tab === 'panel' && (activeMode.value === 'info' || activeMode.value === 'delete')) {
+    setMode('cursor')
   }
 })
 
@@ -959,15 +1073,28 @@ const project = ref<any>(null)
 const layers = ref<LayerInfo[]>([])
 
 // ── PCB parameters for pricing ──
-const pcbData = ref<{ sizeX?: number; sizeY?: number; layerCount?: number; surfaceFinish?: 'ENIG' | 'HAL'; copperWeight?: '1oz' | '2oz' } | null>(null)
+const pcbData = ref<{ sizeX?: number; sizeY?: number; layerCount?: number; surfaceFinish?: 'ENIG' | 'HAL'; copperWeight?: '1oz' | '2oz'; innerCopperWeight?: '0.5oz' | '1oz' | '2oz' } | null>(null)
 
 function handlePcbDataUpdate(data: typeof pcbData.value) {
   pcbData.value = data
-  if (isTeamProject) {
-    persistToProject({ pcbData: data })
-  } else {
-    updatePcbData(projectId, data)
-  }
+}
+
+// ── Panel configuration ──
+import type { PanelConfig, DangerZoneConfig } from '~/utils/panel-types'
+import { DEFAULT_PANEL_CONFIG, migratePanelConfig } from '~/utils/panel-types'
+
+const panelData = ref<PanelConfig>(DEFAULT_PANEL_CONFIG())
+const panelDangerZone = ref<DangerZoneConfig>({ enabled: false, insetMm: 2 })
+const hasLoadedProjectData = ref(false)
+
+function normalizePanelConfig(data: unknown): PanelConfig {
+  // Strip Vue proxies/functions and keep a plain, migrated JSON shape.
+  const plain = JSON.parse(JSON.stringify(data ?? {})) as Record<string, any>
+  return migratePanelConfig(plain)
+}
+
+function handlePanelDataUpdate(data: PanelConfig) {
+  panelData.value = normalizePanelConfig(data)
 }
 
 // ── Original content tracking (for edit detection + reset) ──
@@ -995,16 +1122,249 @@ const selectedPreset = computed({
   set: (p: PcbPreset) => { prefs.presetId.value = p.id },
 })
 const boardCanvasRef = ref<any>(null)
+const panelCanvasRef = ref<any>(null)
+
+const panelDimensionsMm = computed<{ width: number; height: number } | null>(() => {
+  const canvas = panelCanvasRef.value
+  if (!canvas) return null
+  const dims = canvas.panelDimensions
+  if (!dims) return null
+  if (typeof dims === 'object' && dims !== null && 'value' in dims) {
+    return (dims as { value: { width: number; height: number } | null }).value ?? null
+  }
+  return dims as { width: number; height: number } | null
+})
+
 const showSettings = ref(false)
+const showPerformanceMonitor = ref(false)
 const showPnPExport = ref(false)
 const showImageExport = ref(false)
+const imageExportTarget = ref<'board' | 'panel'>('board')
 const showComponentEdit = ref(false)
 const editingComponent = ref<import('~/composables/usePickAndPlace').EditablePnPComponent | null>(null)
+const performanceSnapshot = ref<{
+  fpsApprox?: number
+  frameMs?: number
+  longTaskCount30s?: number
+  memorySupported?: boolean
+  heapUsedBytes?: number
+  heapTotalBytes?: number
+  heapLimitBytes?: number
+  storageUsageBytes?: number
+  storageQuotaBytes?: number
+  projectEstimateBytes?: number
+  logicalCores?: number
+  deviceMemoryGb?: number | null
+  gpuRenderer?: string | null
+  board?: { sceneCacheBytes?: number, canvasPoolSize?: number, draws?: number }
+  panel?: { tileBytesTotal?: number, canvasPoolSize?: number, draws?: number }
+} | null>(null)
 
-const boardSizeMm = computed<{ width: number; height: number } | undefined>(() => {
+const documentSizeById = ref<Record<string, number>>({})
+let perfFrameReq = 0
+let perfRefreshTimer: ReturnType<typeof setInterval> | null = null
+let perfLastRafTs = 0
+let perfFrameMs = 0
+const longTaskTimestamps: number[] = []
+let longTaskObserver: PerformanceObserver | null = null
+
+function estimateProjectBytes(): number {
+  const encoder = new TextEncoder()
+  const layerBytes = layers.value.reduce((sum, layer) => sum + encoder.encode(layer.file.content).length, 0)
+  const docsBytes = Object.values(documentSizeById.value).reduce((sum, size) => sum + size, 0)
+  const pnpBytes = encoder.encode(JSON.stringify({
+    all: pnp.allComponents.value,
+    manual: pnp.manualComponentsRecord.value,
+    mapping: pnp.cadPackageMapRecord.value,
+  })).length
+  const bomBytes = encoder.encode(JSON.stringify({
+    lines: bom.bomLines.value,
+    pricing: bom.pricingCache.value,
+  })).length
+  const panelBytes = encoder.encode(JSON.stringify(panelData.value)).length
+  const pcbBytes = encoder.encode(JSON.stringify(pcbData.value ?? {})).length
+  return layerBytes + docsBytes + pnpBytes + bomBytes + panelBytes + pcbBytes
+}
+
+function getGpuRenderer(): string | null {
+  try {
+    const canvas = document.createElement('canvas')
+    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl')
+    if (!gl) return null
+    const ext = (gl as WebGLRenderingContext).getExtension('WEBGL_debug_renderer_info') as any
+    if (!ext) return null
+    return (gl as WebGLRenderingContext).getParameter(ext.UNMASKED_RENDERER_WEBGL) as string
+  } catch {
+    return null
+  }
+}
+
+function startPerfFrameLoop() {
+  const tick = (ts: number) => {
+    if (perfLastRafTs > 0) perfFrameMs = ts - perfLastRafTs
+    perfLastRafTs = ts
+    perfFrameReq = requestAnimationFrame(tick)
+  }
+  if (!perfFrameReq) perfFrameReq = requestAnimationFrame(tick)
+}
+
+function stopPerfFrameLoop() {
+  if (perfFrameReq) {
+    cancelAnimationFrame(perfFrameReq)
+    perfFrameReq = 0
+  }
+  perfLastRafTs = 0
+}
+
+function startLongTaskObserver() {
+  if (longTaskObserver || typeof PerformanceObserver === 'undefined') return
+  try {
+    longTaskObserver = new PerformanceObserver((list) => {
+      const now = performance.now()
+      for (const entry of list.getEntries()) {
+        if (entry.entryType === 'longtask') longTaskTimestamps.push(now)
+      }
+      while (longTaskTimestamps.length && now - longTaskTimestamps[0]! > 30000) {
+        longTaskTimestamps.shift()
+      }
+    })
+    longTaskObserver.observe({ entryTypes: ['longtask'] })
+  } catch {
+    longTaskObserver = null
+  }
+}
+
+function stopLongTaskObserver() {
+  if (longTaskObserver) {
+    longTaskObserver.disconnect()
+    longTaskObserver = null
+  }
+}
+
+async function refreshPerformanceSnapshot() {
+  const mem = ((performance as any).memory ?? null) as { usedJSHeapSize: number, totalJSHeapSize: number, jsHeapSizeLimit: number } | null
+  const storageEstimate = typeof navigator.storage?.estimate === 'function'
+    ? await navigator.storage.estimate().catch(() => null)
+    : null
+  const boardStats = boardCanvasRef.value?.getPerformanceStats?.()
+  const panelStats = panelCanvasRef.value?.getPerformanceStats?.()
+
+  performanceSnapshot.value = {
+    fpsApprox: perfFrameMs > 0 ? 1000 / perfFrameMs : 0,
+    frameMs: perfFrameMs,
+    longTaskCount30s: longTaskTimestamps.length,
+    memorySupported: !!mem,
+    heapUsedBytes: mem?.usedJSHeapSize ?? 0,
+    heapTotalBytes: mem?.totalJSHeapSize ?? 0,
+    heapLimitBytes: mem?.jsHeapSizeLimit ?? 0,
+    storageUsageBytes: storageEstimate?.usage ?? 0,
+    storageQuotaBytes: storageEstimate?.quota ?? 0,
+    projectEstimateBytes: estimateProjectBytes(),
+    logicalCores: navigator.hardwareConcurrency ?? 0,
+    deviceMemoryGb: (navigator as any).deviceMemory ?? null,
+    gpuRenderer: getGpuRenderer(),
+    board: {
+      sceneCacheBytes: boardStats?.sceneCache?.estimatedBytes ?? 0,
+      canvasPoolSize: boardStats?.canvasPoolSize ?? 0,
+      draws: boardStats?.draws ?? 0,
+    },
+    panel: {
+      tileBytesTotal: (panelStats?.pcbTile?.estimatedBytes ?? 0)
+        + (panelStats?.componentTile?.estimatedBytes ?? 0)
+        + (panelStats?.dangerTile?.estimatedBytes ?? 0),
+      canvasPoolSize: panelStats?.canvasPoolSize ?? 0,
+      draws: panelStats?.draws ?? 0,
+    },
+  }
+}
+
+watch(showPerformanceMonitor, (open) => {
+  if (!open) {
+    if (perfRefreshTimer) {
+      clearInterval(perfRefreshTimer)
+      perfRefreshTimer = null
+    }
+    stopPerfFrameLoop()
+    stopLongTaskObserver()
+    return
+  }
+  startPerfFrameLoop()
+  startLongTaskObserver()
+  refreshPerformanceSnapshot()
+  perfRefreshTimer = setInterval(() => {
+    refreshPerformanceSnapshot()
+  }, 1000)
+})
+
+// Board dimensions — cached so the value survives when BoardCanvas is unmounted (e.g. panel tab)
+const _cachedBoardSizeMm = ref<{ width: number; height: number } | undefined>(undefined)
+
+const _liveBoardSizeMm = computed<{ width: number; height: number } | undefined>(() => {
   const canvas = boardCanvasRef.value
   if (!canvas) return undefined
   return canvas.boardDimensions ?? canvas.getExportDimensionsMm() ?? undefined
+})
+
+// Keep the cache updated whenever the live value changes
+watch(_liveBoardSizeMm, (dims) => {
+  if (dims) _cachedBoardSizeMm.value = dims
+}, { immediate: true })
+
+// Gerber-based fallback: compute board dimensions directly from layer data.
+// Needed when BoardCanvas has never mounted (e.g. page opened on panel tab).
+const _gerberImageTreeCache = new Map<string, ImageTree>()
+const _gerberBoardSizeMm = computed<{ width: number; height: number } | undefined>(() => {
+  const ls = layers.value
+  if (ls.length === 0) return undefined
+
+  // Prefer outline bounds for accurate physical dimensions
+  const outlineLayer = ls.find(l => l.type === 'Outline') || ls.find(l => l.type === 'Keep-Out')
+  if (outlineLayer && !isPnPLayer(outlineLayer.type)) {
+    const tree = _parseLayerTree(outlineLayer)
+    if (tree && tree.children.length > 0 && !isEmpty(tree.bounds as BoundingBox)) {
+      const b = tree.bounds as BoundingBox
+      const bw = b[2] - b[0]
+      const bh = b[3] - b[1]
+      if (bw > 0 && bh > 0) {
+        const toMm = tree.units === 'in' ? 25.4 : 1
+        return { width: bw * toMm, height: bh * toMm }
+      }
+    }
+  }
+
+  // Fallback: union of all Gerber layer bounds
+  let bounds: BoundingBox = emptyBounds()
+  let units: 'mm' | 'in' = 'mm'
+  for (const layer of ls) {
+    if (isPnPLayer(layer.type)) continue
+    const tree = _parseLayerTree(layer)
+    if (!tree || tree.children.length === 0) continue
+    bounds = mergeBounds(bounds, tree.bounds as BoundingBox)
+    units = tree.units
+  }
+  if (isEmpty(bounds)) return undefined
+  const bw = bounds[2] - bounds[0]
+  const bh = bounds[3] - bounds[1]
+  if (bw <= 0 || bh <= 0) return undefined
+  const toMm = units === 'in' ? 25.4 : 1
+  return { width: bw * toMm, height: bh * toMm }
+})
+
+function _parseLayerTree(layer: LayerInfo): ImageTree | null {
+  const key = layer.file.fileName
+  if (_gerberImageTreeCache.has(key)) return _gerberImageTreeCache.get(key)!
+  try {
+    const ast = parseGerber(layer.file.content)
+    const tree = plotImageTree(ast)
+    _gerberImageTreeCache.set(key, tree)
+    return tree
+  } catch {
+    return null
+  }
+}
+
+const boardSizeMm = computed<{ width: number; height: number } | undefined>(() => {
+  return _liveBoardSizeMm.value ?? _cachedBoardSizeMm.value ?? _gerberBoardSizeMm.value
 })
 
 /** Count copper layers from loaded Gerber files to suggest PCB layer count */
@@ -1017,7 +1377,24 @@ const detectedLayerCount = computed<number | null>(() => {
 const downloadMenuItems = computed(() => {
   const items: { label: string; icon: string; onSelect: () => void }[] = []
   if (viewMode.value === 'realistic') {
-    items.push({ label: 'Export Image', icon: 'i-lucide-image', onSelect: () => { showImageExport.value = true } })
+    items.push({
+      label: 'Export Image',
+      icon: 'i-lucide-image',
+      onSelect: () => {
+        imageExportTarget.value = 'board'
+        showImageExport.value = true
+      },
+    })
+  }
+  if (sidebarTab.value === 'panel' && layers.value.length > 0) {
+    items.push({
+      label: 'Export Panel Image',
+      icon: 'i-lucide-grid-2x2',
+      onSelect: () => {
+        imageExportTarget.value = 'panel'
+        showImageExport.value = true
+      },
+    })
   }
   if (layers.value.length > 0) {
     items.push({ label: 'Download Gerber', icon: 'i-lucide-file-archive', onSelect: () => { handleDownloadGerber() } })
@@ -1041,6 +1418,99 @@ const _pkgLibVersion = ref(0)
 const packageLibraryVersion = computed(() => _pkgLibVersion.value)
 const packageOptions = computed(() => pkgLib.allPackages.value.map(p => p.name).sort((a, b) => a.localeCompare(b)))
 const thtPackageOptions = computed(() => thtPkgLib.allThtPackages.value.map(p => p.name).sort((a, b) => a.localeCompare(b)))
+
+type PnPSortKey = 'ref' | 'x' | 'y' | 'rot' | 'pol' | 'value' | 'cadPackage' | 'package'
+type PnPSortState = { key: PnPSortKey | null; asc: boolean }
+type PnPComponentGroup = {
+  id: string
+  componentType: 'smd' | 'tht'
+  name: string
+  comment: string
+  hidden: boolean
+  collapsed: boolean
+}
+
+const pnpSortSmd = ref<PnPSortState>({ key: null, asc: true })
+const pnpSortTht = ref<PnPSortState>({ key: null, asc: true })
+const pnpManualOrderSmd = ref<string[]>([])
+const pnpManualOrderTht = ref<string[]>([])
+const pnpComponentGroups = ref<PnPComponentGroup[]>([])
+const pnpGroupAssignments = ref<Record<string, string>>({})
+const showCreateGroupModal = ref(false)
+const pendingGroupType = ref<'smd' | 'tht'>('smd')
+const createGroupDefaultName = ref('Group 1')
+
+const smdGroups = computed(() => pnpComponentGroups.value.filter(g => g.componentType === 'smd'))
+const thtGroups = computed(() => pnpComponentGroups.value.filter(g => g.componentType === 'tht'))
+
+function isValidSortState(value: unknown): value is PnPSortState {
+  if (!value || typeof value !== 'object') return false
+  const v = value as Record<string, unknown>
+  const validKeys = new Set<PnPSortKey | null>(['ref', 'x', 'y', 'rot', 'pol', 'value', 'cadPackage', 'package', null])
+  return validKeys.has((v.key as PnPSortKey | null) ?? null) && typeof v.asc === 'boolean'
+}
+
+function applySortState(type: 'smd' | 'tht', value: PnPSortState) {
+  if (type === 'smd') pnpSortSmd.value = value
+  else pnpSortTht.value = value
+}
+
+function createGroup(type: 'smd' | 'tht') {
+  pendingGroupType.value = type
+  const baseName = type === 'smd' ? 'SMD Group' : 'THT Group'
+  const existing = pnpComponentGroups.value
+    .filter(g => g.componentType === type)
+    .map(g => g.name.trim().toLowerCase())
+  let idx = 1
+  while (existing.includes(`${baseName.toLowerCase()} ${idx}`)) idx++
+  createGroupDefaultName.value = `${baseName} ${idx}`
+  showCreateGroupModal.value = true
+}
+
+function handleCreateGroup(payload: { name: string; comment: string }) {
+  const id = `grp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+  pnpComponentGroups.value = [...pnpComponentGroups.value, {
+    id,
+    componentType: pendingGroupType.value,
+    name: payload.name,
+    comment: payload.comment,
+    hidden: false,
+    collapsed: false,
+  }]
+}
+
+function toggleGroupHidden(groupId: string) {
+  pnpComponentGroups.value = pnpComponentGroups.value.map(g =>
+    g.id === groupId ? { ...g, hidden: !g.hidden } : g,
+  )
+}
+
+function toggleGroupCollapsed(groupId: string) {
+  pnpComponentGroups.value = pnpComponentGroups.value.map(g =>
+    g.id === groupId ? { ...g, collapsed: !g.collapsed } : g,
+  )
+}
+
+function assignComponentGroup(payload: { componentKey: string; groupId: string | null }, type: 'smd' | 'tht') {
+  const next = { ...pnpGroupAssignments.value }
+  if (!payload.groupId) {
+    delete next[payload.componentKey]
+    pnpGroupAssignments.value = next
+    return
+  }
+  const target = pnpComponentGroups.value.find(g => g.id === payload.groupId)
+  if (!target || target.componentType !== type) return
+  next[payload.componentKey] = payload.groupId
+  pnpGroupAssignments.value = next
+}
+
+function updateGroupMeta(payload: { groupId: string; name: string; comment: string }) {
+  pnpComponentGroups.value = pnpComponentGroups.value.map(g =>
+    g.id === payload.groupId
+      ? { ...g, name: payload.name.trim(), comment: payload.comment.trim() }
+      : g,
+  )
+}
 
 // Load package library on mount (non-blocking)
 onMounted(() => { pkgLib.loadPackages() })
@@ -1097,6 +1567,7 @@ async function handleDocumentsAdd(files: File[]) {
     const docType = guessDocumentType(file.name)
     const blobUrl = URL.createObjectURL(file)
     const entry: ProjectDocument = { id, name: file.name, type: docType, blobUrl }
+    documentSizeById.value[id] = file.size
     // Persist
     if (isTeamProject && teamProjectId) {
       const teamId = currentTeamId.value || await waitForTeamId()
@@ -1122,6 +1593,7 @@ async function handleDocumentRemove(id: string) {
   const idx = documents.value.findIndex(d => d.id === id)
   if (idx < 0) return
   const doc = documents.value[idx]
+  delete documentSizeById.value[id]
   URL.revokeObjectURL(doc.blobUrl)
   documents.value.splice(idx, 1)
   if (selectedDocumentId.value === id) {
@@ -1157,11 +1629,39 @@ function handleDocumentTypeUpdate(id: string, type: DocumentType) {
 // Clean up all blob URLs on unmount
 onUnmounted(() => {
   for (const doc of documents.value) URL.revokeObjectURL(doc.blobUrl)
+  if (perfRefreshTimer) clearInterval(perfRefreshTimer)
+  stopPerfFrameLoop()
+  stopLongTaskObserver()
 })
 
 // ── BOM ──
 const bom = useBom(layers)
 const elexess = useElexessApi()
+
+// ── BOM ↔ PnP cross-reference designator sets ──
+
+/** Designators present in PnP (SMD + THT), excluding DNP components */
+const pnpDesignators = computed(() => {
+  const s = new Set<string>()
+  for (const c of pnp.smdActiveComponents.value) {
+    if (!c.dnp) s.add(c.designator)
+  }
+  for (const c of pnp.thtActiveComponents.value) {
+    if (!c.dnp) s.add(c.designator)
+  }
+  return s
+})
+
+/** Designators present in BOM (all non-DNP lines, split from comma-separated refs) */
+const bomDesignators = computed(() => {
+  const s = new Set<string>()
+  for (const line of bom.bomLines.value) {
+    if (line.dnp) continue
+    const refs = (line.references || '').split(/[,;\s]+/).map(r => r.trim()).filter(Boolean)
+    for (const r of refs) s.add(r)
+  }
+  return s
+})
 
 const showBomFieldMapping = ref(false)
 
@@ -1187,6 +1687,47 @@ watch(bom.needsFieldMapping, (needs) => {
   if (needs) showBomFieldMapping.value = true
 })
 
+// Keep group assignments clean when components/groups change.
+watch([() => pnp.allComponents.value.map(c => c.key), pnpComponentGroups], ([keys, groups]) => {
+  if (!hasLoadedProjectData.value) return
+  if (keys.length === 0) return
+  const validKeys = new Set(keys)
+  const validGroups = new Set(groups.map(g => g.id))
+  let changed = false
+  const next: Record<string, string> = {}
+  for (const [componentKey, groupId] of Object.entries(pnpGroupAssignments.value)) {
+    if (!validKeys.has(componentKey) || !validGroups.has(groupId)) {
+      changed = true
+      continue
+    }
+    next[componentKey] = groupId
+  }
+  if (changed) pnpGroupAssignments.value = next
+}, { deep: true })
+
+watch(() => pnp.allComponents.value, (all) => {
+  if (!hasLoadedProjectData.value) return
+  if (all.length === 0) return
+  const smdKeys = new Set(all.filter(c => c.componentType === 'smd').map(c => c.key))
+  const thtKeys = new Set(all.filter(c => c.componentType === 'tht').map(c => c.key))
+
+  const nextSmd = pnpManualOrderSmd.value.filter(k => smdKeys.has(k))
+  for (const key of smdKeys) {
+    if (!nextSmd.includes(key)) nextSmd.push(key)
+  }
+  if (nextSmd.length !== pnpManualOrderSmd.value.length || nextSmd.some((k, i) => k !== pnpManualOrderSmd.value[i])) {
+    pnpManualOrderSmd.value = nextSmd
+  }
+
+  const nextTht = pnpManualOrderTht.value.filter(k => thtKeys.has(k))
+  for (const key of thtKeys) {
+    if (!nextTht.includes(key)) nextTht.push(key)
+  }
+  if (nextTht.length !== pnpManualOrderTht.value.length || nextTht.some((k, i) => k !== pnpManualOrderTht.value[i])) {
+    pnpManualOrderTht.value = nextTht
+  }
+}, { deep: false })
+
 // Sync toolbar's All/Top/Bot filter with PnP side filter
 watch(activeFilter, (filter) => {
   if (filter === 'top') pnp.activeSideFilter.value = 'top'
@@ -1196,19 +1737,42 @@ watch(activeFilter, (filter) => {
 
 // ── Persist PnP data to local DB or Supabase ──────────────────────────
 
+let teamPersistQueue: Promise<void> = Promise.resolve()
+let pendingTeamUpdates: Record<string, any> = {}
+
 function persistToProject(updates: Record<string, any>) {
   if (isTeamProject && teamProjectId) {
-    // Map camelCase keys to snake_case for Supabase
-    const mapped: Record<string, any> = {}
-    for (const [k, v] of Object.entries(updates)) {
-      mapped[k.replace(/[A-Z]/g, m => '_' + m.toLowerCase())] = v
+    if (!hasLoadedProjectData.value) {
+      pendingTeamUpdates = { ...pendingTeamUpdates, ...updates }
+      return
     }
-    updateTeamProject(teamProjectId, mapped)
+    // Serialize writes so stale async responses cannot overwrite newer edits.
+    teamPersistQueue = teamPersistQueue.then(async () => {
+      const mapped: Record<string, any> = {}
+      for (const [k, v] of Object.entries(updates)) {
+        mapped[k.replace(/[A-Z]/g, m => '_' + m.toLowerCase())] = v
+      }
+      const { error } = await updateTeamProject(teamProjectId, mapped)
+      if (error) {
+        console.warn('[viewer] Failed to persist team project updates:', error.message ?? error)
+      }
+    }).catch((err) => {
+      console.warn('[viewer] Persist queue failed:', err)
+    })
   }
 }
 
+watch(hasLoadedProjectData, (loaded) => {
+  if (!loaded || !isTeamProject || !teamProjectId) return
+  if (Object.keys(pendingTeamUpdates).length === 0) return
+  const buffered = { ...pendingTeamUpdates }
+  pendingTeamUpdates = {}
+  persistToProject(buffered)
+})
+
 // Persist PnP origin to database when it changes
 watch([pnp.originX, pnp.originY], ([ox, oy]) => {
+  if (!hasLoadedProjectData.value) return
   if (isTeamProject) {
     persistToProject({ pnpOriginX: ox, pnpOriginY: oy })
   } else {
@@ -1218,6 +1782,7 @@ watch([pnp.originX, pnp.originY], ([ox, oy]) => {
 
 // Persist per-component PnP rotation overrides to database
 watch(pnp.rotationOverridesRecord, (overrides) => {
+  if (!hasLoadedProjectData.value) return
   if (isTeamProject) {
     persistToProject({ pnpRotationOverrides: overrides })
   } else {
@@ -1227,6 +1792,7 @@ watch(pnp.rotationOverridesRecord, (overrides) => {
 
 // Persist DNP component keys to database
 watch(pnp.dnpRecord, (keys) => {
+  if (!hasLoadedProjectData.value) return
   if (isTeamProject) {
     persistToProject({ pnpDnpComponents: keys })
   } else {
@@ -1236,6 +1802,7 @@ watch(pnp.dnpRecord, (keys) => {
 
 // Persist CAD package -> library package mapping
 watch(pnp.cadPackageMapRecord, (map) => {
+  if (!hasLoadedProjectData.value) return
   if (isTeamProject) {
     persistToProject({ pnpCadPackageMap: map })
   } else {
@@ -1245,6 +1812,7 @@ watch(pnp.cadPackageMapRecord, (map) => {
 
 // Persist polarized overrides
 watch(pnp.polarizedOverridesRecord, (overrides) => {
+  if (!hasLoadedProjectData.value) return
   if (isTeamProject) {
     persistToProject({ pnpPolarizedOverrides: overrides })
   } else {
@@ -1254,6 +1822,7 @@ watch(pnp.polarizedOverridesRecord, (overrides) => {
 
 // Persist component notes
 watch(pnp.componentNotesRecord, (notes) => {
+  if (!hasLoadedProjectData.value) return
   if (isTeamProject) {
     persistToProject({ pnpComponentNotes: notes })
   } else {
@@ -1263,6 +1832,7 @@ watch(pnp.componentNotesRecord, (notes) => {
 
 // Persist field overrides
 watch(pnp.fieldOverridesRecord, (overrides) => {
+  if (!hasLoadedProjectData.value) return
   if (isTeamProject) {
     persistToProject({ pnpFieldOverrides: overrides })
   } else {
@@ -1272,6 +1842,7 @@ watch(pnp.fieldOverridesRecord, (overrides) => {
 
 // Persist manual components
 watch(pnp.manualComponentsRecord, (components) => {
+  if (!hasLoadedProjectData.value) return
   if (isTeamProject) {
     persistToProject({ pnpManualComponents: components })
   } else {
@@ -1281,6 +1852,7 @@ watch(pnp.manualComponentsRecord, (components) => {
 
 // Persist deleted component keys to database
 watch(pnp.deletedKeysRecord, (keys) => {
+  if (!hasLoadedProjectData.value) return
   if (isTeamProject) {
     persistToProject({ pnpDeletedComponents: keys })
   } else {
@@ -1288,9 +1860,66 @@ watch(pnp.deletedKeysRecord, (keys) => {
   }
 }, { deep: true })
 
+// Persist per-tab sort state
+watch(pnpSortSmd, (state) => {
+  if (!hasLoadedProjectData.value) return
+  if (isTeamProject) {
+    persistToProject({ pnpSortSmd: state })
+  } else {
+    updateProjectSortSmd(projectId, state)
+  }
+}, { deep: true })
+
+watch(pnpSortTht, (state) => {
+  if (!hasLoadedProjectData.value) return
+  if (isTeamProject) {
+    persistToProject({ pnpSortTht: state })
+  } else {
+    updateProjectSortTht(projectId, state)
+  }
+}, { deep: true })
+
+watch(pnpManualOrderSmd, (keys) => {
+  if (!hasLoadedProjectData.value) return
+  if (isTeamProject) {
+    persistToProject({ pnpManualOrderSmd: keys })
+  } else {
+    updateProjectManualOrderSmd(projectId, keys)
+  }
+}, { deep: true })
+
+watch(pnpManualOrderTht, (keys) => {
+  if (!hasLoadedProjectData.value) return
+  if (isTeamProject) {
+    persistToProject({ pnpManualOrderTht: keys })
+  } else {
+    updateProjectManualOrderTht(projectId, keys)
+  }
+}, { deep: true })
+
+// Persist PnP grouping (group definitions + assignments)
+watch(pnpComponentGroups, (groups) => {
+  if (!hasLoadedProjectData.value) return
+  if (isTeamProject) {
+    persistToProject({ pnpComponentGroups: groups })
+  } else {
+    updateProjectComponentGroups(projectId, groups)
+  }
+}, { deep: true })
+
+watch(pnpGroupAssignments, (assignments) => {
+  if (!hasLoadedProjectData.value) return
+  if (isTeamProject) {
+    persistToProject({ pnpGroupAssignments: assignments })
+  } else {
+    updateProjectGroupAssignments(projectId, assignments)
+  }
+}, { deep: true })
+
 // ── Persist BOM data ──
 
 watch(bom.bomLinesRecord, (lines) => {
+  if (!hasLoadedProjectData.value) return
   if (isTeamProject) {
     persistToProject({ bomLines: lines })
   } else {
@@ -1299,6 +1928,7 @@ watch(bom.bomLinesRecord, (lines) => {
 }, { deep: true })
 
 watch(bom.pricingCacheRecord, (cache) => {
+  if (!hasLoadedProjectData.value) return
   if (isTeamProject) {
     persistToProject({ bomPricingCache: cache })
   } else {
@@ -1307,12 +1937,32 @@ watch(bom.pricingCacheRecord, (cache) => {
 }, { deep: true })
 
 watch(() => bom.boardQuantity.value, (qty) => {
+  if (!hasLoadedProjectData.value) return
   if (isTeamProject) {
     persistToProject({ bomBoardQuantity: qty })
   } else {
     updateBomBoardQuantity(projectId, qty)
   }
 })
+
+watch(pcbData, (data) => {
+  if (!hasLoadedProjectData.value) return
+  if (isTeamProject) {
+    persistToProject({ pcbData: data })
+  } else {
+    updatePcbData(projectId, data)
+  }
+}, { deep: true })
+
+watch(panelData, (data) => {
+  if (!hasLoadedProjectData.value) return
+  const snapshot = normalizePanelConfig(data)
+  if (isTeamProject) {
+    persistToProject({ panelData: snapshot })
+  } else {
+    updatePanelData(projectId, snapshot)
+  }
+}, { deep: true })
 
 // BOM pricing fetch handlers
 async function handleFetchAllPricing() {
@@ -1516,10 +2166,17 @@ onMounted(async () => {
         pnpFieldOverrides: tp.pnp_field_overrides,
         pnpManualComponents: tp.pnp_manual_components,
         pnpDeletedComponents: tp.pnp_deleted_components,
+        pnpSortSmd: tp.pnp_sort_smd,
+        pnpSortTht: tp.pnp_sort_tht,
+        pnpManualOrderSmd: tp.pnp_manual_order_smd,
+        pnpManualOrderTht: tp.pnp_manual_order_tht,
+        pnpComponentGroups: tp.pnp_component_groups,
+        pnpGroupAssignments: tp.pnp_group_assignments,
         bomLines: tp.bom_lines,
         bomPricingCache: tp.bom_pricing_cache,
         bomBoardQuantity: tp.bom_board_quantity,
         pcbData: tp.pcb_data,
+        panelData: tp.panel_data,
       }
     }
   } else {
@@ -1624,13 +2281,60 @@ onMounted(async () => {
   // Restore persisted deleted component keys
   pnp.setDeletedKeys(project.value?.pnpDeletedComponents)
 
+  // Restore persisted component table sort state
+  if (isValidSortState(project.value?.pnpSortSmd)) {
+    pnpSortSmd.value = project.value.pnpSortSmd
+  }
+  if (isValidSortState(project.value?.pnpSortTht)) {
+    pnpSortTht.value = project.value.pnpSortTht
+  }
+  pnpManualOrderSmd.value = Array.isArray(project.value?.pnpManualOrderSmd)
+    ? project.value.pnpManualOrderSmd.filter((k: unknown) => typeof k === 'string')
+    : []
+  pnpManualOrderTht.value = Array.isArray(project.value?.pnpManualOrderTht)
+    ? project.value.pnpManualOrderTht.filter((k: unknown) => typeof k === 'string')
+    : []
+
+  // Restore persisted component groups
+  const restoredGroups = Array.isArray(project.value?.pnpComponentGroups) ? project.value.pnpComponentGroups : []
+  pnpComponentGroups.value = restoredGroups
+    .map((g: any) => ({
+      id: String(g?.id ?? ''),
+      componentType: (g?.componentType === 'tht' || g?.component_type === 'tht') ? 'tht' : 'smd',
+      name: String(g?.name ?? '').trim(),
+      comment: String(g?.comment ?? '').trim(),
+      hidden: !!g?.hidden,
+      collapsed: !!g?.collapsed,
+    }))
+    .filter((g: PnPComponentGroup) => g.id && g.name)
+
+  const restoredAssignments = project.value?.pnpGroupAssignments
+  pnpGroupAssignments.value = restoredAssignments && typeof restoredAssignments === 'object'
+    ? Object.fromEntries(
+        Object.entries(restoredAssignments as Record<string, unknown>)
+          .filter(([key, groupId]) => key && typeof groupId === 'string' && groupId),
+      ) as Record<string, string>
+    : {}
+
   // Restore persisted BOM data
   bom.setBomLines(project.value?.bomLines)
-  bom.setPricingCache(project.value?.bomPricingCache)
+  const restoredCache = project.value?.bomPricingCache
+  try {
+    if (restoredCache) elexess.cleanPricingCache(restoredCache)
+  } catch (e) {
+    console.warn('[viewer] cleanPricingCache failed, using raw cache:', e)
+  }
+  bom.setPricingCache(restoredCache)
   bom.setBoardQuantity(project.value?.bomBoardQuantity)
 
   // Restore persisted PCB data
   pcbData.value = project.value?.pcbData ?? null
+
+  // Restore persisted panel data (with backward-compatible migration)
+  if (project.value?.panelData) {
+    panelData.value = normalizePanelConfig(project.value.panelData)
+  }
+  hasLoadedProjectData.value = true
 
   // Restore persisted documents (PDFs)
   if (isTeamProject && teamProjectId) {
@@ -1640,6 +2344,7 @@ onMounted(async () => {
       if (!blob) continue
       const id = `doc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
       const blobUrl = URL.createObjectURL(blob)
+      documentSizeById.value[id] = blob.size
       documents.value.push({ id, name: td.file_name, type: td.doc_type as DocumentType, blobUrl, dbId: td.id, storagePath: td.storage_path })
     }
   } else if (!isTeamProject) {
@@ -1647,9 +2352,11 @@ onMounted(async () => {
     for (const doc of storedDocs) {
       const id = `doc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
       const blobUrl = URL.createObjectURL(doc.data)
+      documentSizeById.value[id] = doc.data.size
       documents.value.push({ id, name: doc.fileName, type: doc.docType, blobUrl })
     }
   }
+
 })
 
 /**
@@ -2124,6 +2831,14 @@ function handleExportSvg() {
 }
 
 async function handleExportImage(options: { format: 'png' | 'svg'; componentsMode: 'none' | 'smd' | 'tht' | 'all' | 'both'; sideMode: 'top' | 'bottom' | 'both'; dpi: number }) {
+  if (imageExportTarget.value === 'panel') {
+    await handleExportPanelImage(options)
+    return
+  }
+  await handleExportBoardImage(options)
+}
+
+async function handleExportBoardImage(options: { format: 'png' | 'svg'; componentsMode: 'none' | 'smd' | 'tht' | 'all' | 'both'; sideMode: 'top' | 'bottom' | 'both'; dpi: number }) {
   const canvas = boardCanvasRef.value
   if (!canvas) return
   // Ensure SVG exporter uses fresh footprint shapes (not stale cached data)
@@ -2209,6 +2924,94 @@ async function handleExportImage(options: { format: 'png' | 'svg'; componentsMod
   }
   const zipBlob = await zip.generateAsync({ type: 'blob' })
   triggerDownload(zipBlob, `${projectName}-images.zip`)
+}
+
+function panelPngBlobToSvgBlob(pngBlob: Blob, panelSizeMm?: { width: number; height: number } | null): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader()
+    fr.onerror = () => reject(new Error('Failed to read PNG export'))
+    fr.onload = () => {
+      const dataUrl = String(fr.result || '')
+      // Panel SVG export is a PNG embedded in an SVG wrapper for physical dimensions.
+      // It preserves measured size but does not scale as cleanly as vector board SVG output.
+      const dims = panelSizeMm && panelSizeMm.width > 0 && panelSizeMm.height > 0
+      const widthMm = dims ? panelSizeMm.width : 100
+      const heightMm = dims ? panelSizeMm.height : 100
+      const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${widthMm}mm" height="${heightMm}mm" viewBox="0 0 ${widthMm} ${heightMm}">
+  <image href="${dataUrl}" x="0" y="0" width="${widthMm}" height="${heightMm}" preserveAspectRatio="none"/>
+</svg>`
+      resolve(new Blob([svg], { type: 'image/svg+xml' }))
+    }
+    fr.readAsDataURL(pngBlob)
+  })
+}
+
+async function handleExportPanelImage(options: { format: 'png' | 'svg'; componentsMode: 'none' | 'smd' | 'tht' | 'all' | 'both'; sideMode: 'top' | 'bottom' | 'both'; dpi: number }) {
+  const canvas = panelCanvasRef.value
+  if (!canvas) return
+
+  const projectName = project.value?.name || 'panel'
+  const sides: Array<'top' | 'bottom'> = options.sideMode === 'both' ? ['top', 'bottom'] : [options.sideMode]
+  const canRenderComponents = pnp.hasPnP.value
+  const variants: boolean[] =
+    (options.componentsMode === 'both' && canRenderComponents) ? [false, true]
+      : (options.componentsMode !== 'none' && canRenderComponents) ? [true]
+        : [false]
+
+  const buildComponentsForSide = (side: 'top' | 'bottom') => {
+    if (!canRenderComponents) return []
+    let list = pnp.allComponents.value
+      .filter(c => !c.dnp)
+      .filter(c => c.side === side)
+    if (options.componentsMode === 'smd') {
+      list = list.filter(c => c.componentType === 'smd')
+    } else if (options.componentsMode === 'tht') {
+      list = list.filter(c => c.componentType === 'tht')
+    }
+    return list
+  }
+
+  const ext = options.format === 'png' ? '.png' : '.svg'
+  const fileNameFor = (side: 'top' | 'bottom', withComponents: boolean) => {
+    const sideSuffix = `-panel-${side}`
+    const compSuffix = variants.length === 1
+      ? ''
+      : (withComponents ? '-with-components' : '-no-components')
+    return `${projectName}${sideSuffix}${compSuffix}${ext}`
+  }
+
+  const renderOne = async (side: 'top' | 'bottom', withComponents: boolean): Promise<Blob | null> => {
+    const comps = withComponents ? buildComponentsForSide(side) : []
+    const pngBlob = await canvas.exportPngForSide(side, {
+      dpi: options.dpi,
+      includeComponents: withComponents,
+      components: comps,
+      includePackages: showPackages.value,
+    })
+    if (!pngBlob) return null
+    if (options.format === 'png') return pngBlob
+    return await panelPngBlobToSvgBlob(pngBlob, panelDimensionsMm.value)
+  }
+
+  const fileCount = sides.length * variants.length
+  if (fileCount === 1) {
+    const blob = await renderOne(sides[0]!, variants[0]!)
+    if (!blob) return
+    triggerDownload(blob, fileNameFor(sides[0]!, variants[0]!))
+    return
+  }
+
+  const zip = new JSZip()
+  for (const side of sides) {
+    for (const withComponents of variants) {
+      const blob = await renderOne(side, withComponents)
+      if (!blob) continue
+      zip.file(fileNameFor(side, withComponents), blob)
+    }
+  }
+  const zipBlob = await zip.generateAsync({ type: 'blob' })
+  triggerDownload(zipBlob, `${projectName}-panel-images.zip`)
 }
 
 async function handleExportPnP(options: { convention: PnPConvention; format: PnPExportFormat; sideMode: PnPExportSideMode; componentMode: string; excludeDnp: boolean }) {

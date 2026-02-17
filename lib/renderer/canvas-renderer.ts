@@ -436,6 +436,117 @@ export function renderOutlineMask(
   ctx.restore()
 }
 
+/**
+ * Render only the outer boundary contour of the outline layer, ignoring all
+ * internal cutouts (holes, slots, erase-polarity features). Used for danger
+ * zone calculations that should only follow the external PCB edge.
+ */
+export function renderOuterBoundaryOnly(
+  outlineTree: ImageTree,
+  canvas: HTMLCanvasElement,
+  options: RenderOptions,
+): void {
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
+
+  const dpr = options.dpr ?? 1
+  const { offsetX, offsetY, scale } = options.transform
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+  if (outlineTree.children.length === 0 || scale <= 0) return
+
+  ctx.save()
+  if (dpr !== 1) ctx.scale(dpr, dpr)
+  ctx.translate(offsetX, offsetY)
+  ctx.scale(scale, -scale)
+
+  if (options.gerberOffset) {
+    ctx.translate(options.gerberOffset.x, options.gerberOffset.y)
+  }
+
+  const darkFragments: PathSegment[][] = []
+  type ShapeDrawFn = () => void
+  const darkShapes: Array<{ draw: ShapeDrawFn, area: number }> = []
+
+  for (const graphic of outlineTree.children) {
+    const isErase = 'erase' in graphic && graphic.erase
+    if (isErase) continue // skip all erase-polarity features
+
+    if (graphic.type === 'path' || graphic.type === 'region') {
+      if (graphic.segments.length > 0) {
+        darkFragments.push(graphic.segments)
+      }
+    } else if (graphic.type === 'shape') {
+      if (graphic.shape.type === 'outline') {
+        darkFragments.push(graphic.shape.segments)
+      } else if (graphic.shape.type === 'circle') {
+        const s = graphic.shape
+        darkShapes.push({
+          draw: () => {
+            ctx.moveTo(s.cx + s.r, s.cy)
+            ctx.arc(s.cx, s.cy, s.r, 0, Math.PI * 2)
+          },
+          area: Math.PI * s.r * s.r,
+        })
+      } else if (graphic.shape.type === 'rect') {
+        const s = graphic.shape
+        darkShapes.push({
+          draw: () => { ctx.rect(s.x, s.y, s.w, s.h) },
+          area: Math.abs(s.w * s.h),
+        })
+      } else if (graphic.shape.type === 'polygon') {
+        const pts = graphic.shape.points
+        if (pts.length >= 2) {
+          let minX = Infinity
+          let minY = Infinity
+          let maxX = -Infinity
+          let maxY = -Infinity
+          for (const [x, y] of pts) {
+            if (x < minX) minX = x
+            if (y < minY) minY = y
+            if (x > maxX) maxX = x
+            if (y > maxY) maxY = y
+          }
+          darkShapes.push({
+            draw: () => {
+              ctx.moveTo(pts[0]![0], pts[0]![1])
+              for (let k = 1; k < pts.length; k++) {
+                ctx.lineTo(pts[k]![0], pts[k]![1])
+              }
+            },
+            area: Math.max(0, (maxX - minX) * (maxY - minY)),
+          })
+        }
+      }
+    }
+  }
+
+  const darkContours = chainFragmentsIntoContours(darkFragments)
+
+  // Find the largest contour (outer boundary)
+  let outerIdx = 0
+  let outerArea = 0
+  for (let i = 0; i < darkContours.length; i++) {
+    const a = contourBBoxArea(darkContours[i]!)
+    if (a > outerArea) { outerArea = a; outerIdx = i }
+  }
+
+  // Fill ONLY the outer boundary — no cutouts
+  ctx.fillStyle = '#ffffff'
+  if (darkContours.length > 0) {
+    ctx.beginPath()
+    drawContour(ctx, darkContours[outerIdx]!)
+    ctx.fill()
+  } else if (darkShapes.length > 0) {
+    const largest = darkShapes.reduce((best, shape) => shape.area > best.area ? shape : best)
+    ctx.beginPath()
+    largest.draw()
+    ctx.fill()
+  }
+
+  ctx.restore()
+}
+
 /** Compute the bounding-box area of a contour (for identifying the outer boundary). */
 function contourBBoxArea(segments: PathSegment[]): number {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity

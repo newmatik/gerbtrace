@@ -30,6 +30,9 @@
               {{ fmt.label }}
             </button>
           </div>
+          <div v-if="selectedFormat === 'svg' && props.svgFormatNote" class="text-[11px] text-amber-600 dark:text-amber-400">
+            {{ props.svgFormatNote }}
+          </div>
         </div>
 
         <!-- Resolution selector (PNG only) -->
@@ -150,6 +153,8 @@ const props = defineProps<{
   hasPnP: boolean
   /** Board physical dimensions in mm, used for estimated output size display */
   boardSizeMm?: { width: number; height: number }
+  /** Optional notice shown when SVG is selected. */
+  svgFormatNote?: string
 }>()
 
 const emit = defineEmits<{
