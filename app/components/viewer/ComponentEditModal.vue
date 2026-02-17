@@ -30,6 +30,12 @@
           />
         </div>
 
+        <!-- BOM mismatch warning -->
+        <div v-if="notInBom" class="flex items-start gap-1.5 px-2 py-1.5 text-[10px] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded border border-amber-200 dark:border-amber-800">
+          <UIcon name="i-lucide-triangle-alert" class="text-xs shrink-0 mt-0.5" />
+          <span><span class="font-medium">{{ localDesignator }}</span> not found in BOM</span>
+        </div>
+
         <!-- Editable core fields -->
         <div class="grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs">
           <div>
@@ -221,6 +227,8 @@ const open = defineModel<boolean>('open', { default: false })
 const props = defineProps<{
   component: EditablePnPComponent | null
   packageOptions: string[]
+  /** Set of designators present in BOM data (excluding DNP lines) */
+  bomDesignators?: Set<string>
 }>()
 
 const emit = defineEmits<{
@@ -237,6 +245,12 @@ const emit = defineEmits<{
 }>()
 
 const noteInput = ref<HTMLTextAreaElement | null>(null)
+
+const notInBom = computed(() => {
+  if (!props.bomDesignators || props.bomDesignators.size === 0) return false
+  if (localDnp.value) return false
+  return !props.bomDesignators.has(localDesignator.value)
+})
 
 const localDesignator = ref('')
 const localValue = ref('')

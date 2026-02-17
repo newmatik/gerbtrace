@@ -10,6 +10,15 @@
           <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-x" @click="open = false" />
         </div>
 
+        <!-- PnP mismatch warning -->
+        <div v-if="missingInPnP.length > 0" class="flex items-start gap-1.5 px-2 py-1.5 text-[10px] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded border border-amber-200 dark:border-amber-800">
+          <UIcon name="i-lucide-triangle-alert" class="text-xs shrink-0 mt-0.5" />
+          <div>
+            <span class="font-medium">Not found in Pick &amp; Place:</span>
+            {{ missingInPnP.join(', ') }}
+          </div>
+        </div>
+
         <!-- Core fields -->
         <div class="grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs">
           <div class="col-span-2">
@@ -170,6 +179,8 @@ import { BOM_LINE_TYPES } from '~/utils/bom-types'
 
 const props = defineProps<{
   line: BomLine | null
+  /** Set of designators present in PnP data (SMD + THT, excluding DNP) */
+  pnpDesignators?: Set<string>
 }>()
 
 const emit = defineEmits<{
@@ -180,6 +191,12 @@ const emit = defineEmits<{
 const open = defineModel<boolean>('open', { default: false })
 
 const isNew = computed(() => !props.line)
+
+const missingInPnP = computed(() => {
+  if (!props.pnpDesignators || local.dnp) return []
+  const refs = local.references.split(/[,;\s]+/).map((r: string) => r.trim()).filter(Boolean)
+  return refs.filter((r: string) => !props.pnpDesignators!.has(r))
+})
 
 const local = reactive({
   description: '',

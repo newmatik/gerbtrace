@@ -121,6 +121,14 @@ interface SceneCache {
 }
 
 let sceneCache: SceneCache | null = null
+const PERF_ENABLED = import.meta.dev
+  && typeof window !== 'undefined'
+  && !!(window as any).__GERBTRACE_PERF__
+const boardPerf = {
+  draws: 0,
+  sceneCacheHits: 0,
+  sceneCacheBuilds: 0,
+}
 
 function computeSceneCacheKey(): string {
   const parts: string[] = []
@@ -170,8 +178,56 @@ function unrotateScreenPoint(sx: number, sy: number): { x: number; y: number } {
   }
 }
 
+/** Rotate a screen point around the canvas center by board rotation. */
+function rotateScreenPoint(sx: number, sy: number, cssWidth: number, cssHeight: number): { x: number; y: number } {
+  const deg = props.boardRotation ?? 0
+  if (deg === 0) return { x: sx, y: sy }
+  const cx = cssWidth / 2
+  const cy = cssHeight / 2
+  const rad = getRotationRad()
+  const dx = sx - cx
+  const dy = sy - cy
+  return {
+    x: cx + dx * Math.cos(rad) - dy * Math.sin(rad),
+    y: cy + dx * Math.sin(rad) + dy * Math.cos(rad),
+  }
+}
+
 function invalidateSceneCache() {
   sceneCache = null
+}
+
+function layerSignature(layers: LayerInfo[]): string {
+  return layers.map(layer => `${layer.file.fileName}:${layer.visible ? 1 : 0}:${layer.color}`).join('|')
+}
+
+function allLayerSignature(layers: LayerInfo[] | undefined): string {
+  if (!layers || layers.length === 0) return ''
+  return layers.map(layer => `${layer.file.fileName}:${layer.color}`).join('|')
+}
+
+function componentSignature(components: EditablePnPComponent[] | undefined): string {
+  if (!components || components.length === 0) return ''
+  return components.map(comp => [
+    comp.key,
+    comp.matchedPackage || comp.package,
+    comp.x,
+    comp.y,
+    comp.rotation,
+    comp.side,
+    comp.componentType,
+    comp.polarized ? 1 : 0,
+  ].join(':')).join('|')
+}
+
+function isCircleVisible(
+  x: number,
+  y: number,
+  radius: number,
+  width: number,
+  height: number,
+): boolean {
+  return !(x + radius < 0 || x - radius > width || y + radius < 0 || y - radius > height)
 }
 
 // ── Reusable offscreen-canvas pool ──
@@ -535,6 +591,7 @@ function getEffectiveOrigin(): { ox: number; oy: number } {
 function drawPnPMarkers(
   ctx: CanvasRenderingContext2D,
   cssWidth: number,
+  cssHeight: number,
   dpr: number,
   transform: { offsetX: number; offsetY: number; scale: number },
   mirrored: boolean,
@@ -569,6 +626,8 @@ function drawPnPMarkers(
     if (mirrored) {
       screenX = cssWidth - screenX
     }
+    const rotatedDot = rotateScreenPoint(screenX, screenY, cssWidth, cssHeight)
+    if (!isCircleVisible(rotatedDot.x, rotatedDot.y, PNP_DOT_RADIUS + 6, cssWidth, cssHeight)) continue
 
     const isSelected = (options?.selectedDesignator ?? props.selectedPnpDesignator) === comp.designator
 
@@ -676,6 +735,7 @@ watch(() => props.packageLibraryVersion, () => {
 function drawPackageFootprints(
   ctx: CanvasRenderingContext2D,
   cssWidth: number,
+  cssHeight: number,
   dpr: number,
   transform: { offsetX: number; offsetY: number; scale: number },
   mirrored: boolean,
@@ -738,6 +798,9 @@ function drawPackageFootprints(
     const effectiveRot = mirrored ? -rotRad : rotRad
 
     const isSelected = (options?.selectedDesignator ?? props.selectedPnpDesignator) === comp.designator
+    const extentPx = Math.max(6, computePkgExtent(shapes) * mmToScreen + 12)
+    const rotatedCenter = rotateScreenPoint(centerSx, centerSy, cssWidth, cssHeight)
+    if (!isCircleVisible(rotatedCenter.x, rotatedCenter.y, extentPx, cssWidth, cssHeight)) continue
 
     ctx.save()
     ctx.translate(centerSx, centerSy)
@@ -1297,6 +1360,7 @@ function drawDeleteHighlights(
 }
 
 function draw() {
+  const perfStart = PERF_ENABLED ? performance.now() : 0
   const canvas = canvasEl.value
   if (!canvas) return
 
@@ -1459,6 +1523,7 @@ function draw() {
 
   if (canUseCache && sceneCache) {
     blitScene(sceneCache.canvas, sceneCache.transform)
+    boardPerf.sceneCacheHits++
   } else {
     // Full render — build overscan scene and update cache
     const osTransform = {
@@ -1532,6 +1597,7 @@ function draw() {
       height: canvas.height,
       key: cacheKey,
     }
+    boardPerf.sceneCacheBuilds++
   }
 
   // Highlight selected objects (delete tool pending selection)
@@ -1540,9 +1606,9 @@ function draw() {
   // Component overlays (footprints + markers) — always draw.
   // The layer cache above handles the expensive gerber re-rendering;
   // these are lightweight per-component shapes (rects/arcs).
-  drawPackageFootprints(ctx, cssWidth, dpr, transform, !!props.mirrored)
+  drawPackageFootprints(ctx, cssWidth, cssHeight, dpr, transform, !!props.mirrored)
 
-  drawPnPMarkers(ctx, cssWidth, dpr, transform, !!props.mirrored, {
+  drawPnPMarkers(ctx, cssWidth, cssHeight, dpr, transform, !!props.mirrored, {
     hideDotWhenPackagePresent: true,
     includePackages: !!props.showPackages,
   })
@@ -1552,6 +1618,18 @@ function draw() {
   // Close the board rotation context
   if (rotDeg !== 0) {
     ctx.restore()
+  }
+  if (PERF_ENABLED) {
+    boardPerf.draws++
+    if (boardPerf.draws % 120 === 0) {
+      const took = performance.now() - perfStart
+      console.debug('[BoardCanvas][perf]', {
+        drawMs: Number(took.toFixed(2)),
+        draws: boardPerf.draws,
+        sceneCacheHits: boardPerf.sceneCacheHits,
+        sceneCacheBuilds: boardPerf.sceneCacheBuilds,
+      })
+    }
   }
 }
 
@@ -1581,11 +1659,32 @@ watch(
   },
 )
 
-// Watch for layer or transform changes and redraw
 watch(
-  () => [props.layers, props.allLayers, props.interaction.transform.value, props.mirrored, props.cropToOutline, props.outlineLayer, props.viewMode, props.preset, bgColor.value, appSettings.gridEnabled, appSettings.gridSpacingMm, props.pnpComponents, props.selectedPnpDesignator, props.pnpOriginX, props.pnpOriginY, props.alignMode, props.alignClickA, originCursorGerber.value, props.showPackages, props.pnpConvention, props.matchPackage, props.matchThtPackage, props.packageLibraryVersion, props.deleteTool?.pendingDeletion.value, props.boardRotation],
+  () => `${props.interaction.transform.value.offsetX}|${props.interaction.transform.value.offsetY}|${props.interaction.transform.value.scale}|${props.mirrored ? 1 : 0}|${appSettings.gridEnabled ? 1 : 0}|${appSettings.gridSpacingMm}|${bgColor.value}`,
   () => scheduleRedraw(),
-  { deep: true },
+)
+
+watch(
+  () => `${props.viewMode ?? 'layers'}|${props.preset?.name ?? ''}|${props.cropToOutline ? 1 : 0}|${props.outlineLayer?.file.fileName ?? ''}|${props.activeFilter ?? 'all'}|${layerSignature(props.layers)}|${allLayerSignature(props.allLayers)}`,
+  () => {
+    invalidateSceneCache()
+    scheduleRedraw()
+  },
+)
+
+watch(
+  () => `${componentSignature(props.pnpComponents)}|${props.selectedPnpDesignator ?? ''}|${props.showPackages ? 1 : 0}|${props.pnpConvention ?? 'iec61188'}|${props.packageLibraryVersion ?? 0}|${props.pnpOriginX ?? ''}|${props.pnpOriginY ?? ''}`,
+  () => scheduleRedraw(),
+)
+
+watch(
+  () => `${props.alignMode ?? 'idle'}|${props.alignClickA?.x ?? ''}|${props.alignClickA?.y ?? ''}|${originCursorGerber.value?.x ?? ''}|${originCursorGerber.value?.y ?? ''}`,
+  () => scheduleRedraw(),
+)
+
+watch(
+  () => `${props.deleteTool?.pendingDeletion.value ?? ''}`,
+  () => scheduleRedraw(),
 )
 
 onMounted(() => {
@@ -1969,12 +2068,13 @@ function exportPngForSide(
       ctx.save()
       applyExportRot(ctx)
       const cssWidth = canvasW
-      drawPackageFootprints(ctx, cssWidth, 1, exportTransform, mirrorX, {
+      const cssHeight = canvasH
+      drawPackageFootprints(ctx, cssWidth, cssHeight, 1, exportTransform, mirrorX, {
         components,
         selectedDesignator: null,
         includePackages,
       })
-      drawPnPMarkers(ctx, cssWidth, 1, exportTransform, mirrorX, {
+      drawPnPMarkers(ctx, cssWidth, cssHeight, 1, exportTransform, mirrorX, {
         components,
         selectedDesignator: null,
         hideDotWhenPackagePresent: true,
@@ -2021,6 +2121,26 @@ function getExportDimensionsMm(): { width: number; height: number } | null {
   return { width: bw * toMm, height: bh * toMm }
 }
 
+function getPerformanceStats() {
+  const sceneBytes = sceneCache ? sceneCache.canvas.width * sceneCache.canvas.height * 4 : 0
+  return {
+    draws: boardPerf.draws,
+    sceneCacheHits: boardPerf.sceneCacheHits,
+    sceneCacheBuilds: boardPerf.sceneCacheBuilds,
+    sceneCache: sceneCache
+      ? {
+          width: sceneCache.canvas.width,
+          height: sceneCache.canvas.height,
+          estimatedBytes: sceneBytes,
+        }
+      : null,
+    canvasPoolSize: _canvasPool.length,
+    footprintCacheSize: footprintCache.size,
+    thtFootprintCacheSize: thtFootprintCache.size,
+    parsedLayerCacheSize: imageTreeCache.size,
+  }
+}
+
 // Expose resetView and export helpers for external use
 defineExpose({
   resetView() {
@@ -2034,6 +2154,7 @@ defineExpose({
   getImageTree,
   invalidateCache,
   getExportDimensionsMm,
+  getPerformanceStats,
   boardDimensions,
 })
 </script>

@@ -49,6 +49,14 @@
         <UIcon name="i-lucide-plus" class="text-[10px]" />
         Add
       </button>
+      <button
+        class="text-[10px] px-1.5 py-0.5 rounded-full border border-neutral-200 dark:border-neutral-700 text-neutral-400 hover:text-indigo-600 dark:hover:text-indigo-300 hover:border-indigo-300 dark:hover:border-indigo-600 transition-colors flex items-center gap-0.5"
+        title="Create a component group"
+        @click="createGroup"
+      >
+        <UIcon name="i-lucide-folder-plus" class="text-[10px]" />
+        Group
+      </button>
     </div>
 
     <!-- Package controls row -->
@@ -153,6 +161,7 @@
           <span>0/0</span>
         </button>
       </div>
+
     </div>
 
     <!-- Table header -->
@@ -182,7 +191,7 @@
 
     <!-- Component rows (virtualized) -->
     <div ref="listRef" class="flex-1 overflow-y-auto">
-      <div v-if="!filteredComponents.length" class="text-xs text-neutral-400 py-6 text-center">
+      <div v-if="!groupedRows.length" class="text-xs text-neutral-400 py-6 text-center">
         {{ allComponents.length === 0 ? 'No components loaded' : 'No matches' }}
       </div>
       <div
@@ -191,7 +200,9 @@
       >
         <div
           v-for="vRow in rowVirtualizer.getVirtualItems()"
-          :key="sortedComponents[vRow.index].designator + '-' + sortedComponents[vRow.index].side"
+          :key="groupedRows[vRow.index].kind === 'group'
+            ? `group-${groupedRows[vRow.index].group.id}`
+            : `${groupedRows[vRow.index].component.key}-${groupedRows[vRow.index].component.side}`"
           :style="{
             position: 'absolute',
             top: 0,
@@ -201,118 +212,214 @@
             transform: `translateY(${vRow.start}px)`,
             gridTemplateColumns: gridCols,
           }"
-          class="group/row grid gap-x-2 px-3 py-1 text-[11px] cursor-pointer transition-colors border-b border-neutral-100 dark:border-neutral-800/50"
-          :class="{
-            'bg-cyan-50 dark:bg-cyan-900/20 hover:bg-cyan-100 dark:hover:bg-cyan-900/30': selectedDesignator === sortedComponents[vRow.index].designator && !sortedComponents[vRow.index].dnp,
-            'hover:bg-neutral-100 dark:hover:bg-neutral-800': selectedDesignator !== sortedComponents[vRow.index].designator && !sortedComponents[vRow.index].dnp,
-            'opacity-40': sortedComponents[vRow.index].dnp && activeFilters.size === 0,
-          }"
-          @click="onRowClick(sortedComponents[vRow.index].designator)"
-          @dblclick="emit('edit', sortedComponents[vRow.index])"
+          class="group/row px-3 py-1 text-[11px] transition-colors border-b border-neutral-100 dark:border-neutral-800/50"
         >
-          <!-- DNP toggle / indicator -->
-          <button
-            class="flex items-center justify-center shrink-0 transition-colors"
-            :title="sortedComponents[vRow.index].dnp ? 'Remove DNP mark' : 'Mark as Do Not Populate'"
-            @click.stop="emit('toggle:dnp', sortedComponents[vRow.index].key)"
+          <div
+            v-if="groupedRows[vRow.index].kind === 'group'"
+            class="flex items-center gap-2 w-full text-[10px]"
+            :class="groupedRows[vRow.index].group.hidden ? 'opacity-60' : ''"
+            @dragover.prevent
+            @drop.prevent="onDropToGroup(groupedRows[vRow.index].group.id)"
           >
+            <button
+              class="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
+              :title="groupedRows[vRow.index].group.collapsed ? 'Expand group' : 'Collapse group'"
+              @click.stop="emit('toggle:groupCollapsed', groupedRows[vRow.index].group.id)"
+            >
+              <UIcon
+                :name="groupedRows[vRow.index].group.collapsed ? 'i-lucide-chevron-right' : 'i-lucide-chevron-down'"
+                class="text-[11px]"
+              />
+            </button>
+            <template v-if="editingGroupId === groupedRows[vRow.index].group.id">
+              <input
+                v-model="editingGroupName"
+                type="text"
+                class="text-[10px] bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded px-1 py-0.5 outline-none min-w-24"
+                @click.stop
+              />
+              <input
+                v-model="editingGroupComment"
+                type="text"
+                placeholder="Comment"
+                class="text-[10px] bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded px-1 py-0.5 outline-none min-w-32"
+                @click.stop
+              />
+              <button
+                class="text-neutral-400 hover:text-green-600 dark:hover:text-green-300 transition-colors"
+                title="Save group details"
+                @click.stop="saveGroupMeta(groupedRows[vRow.index].group.id)"
+              >
+                <UIcon name="i-lucide-check" class="text-[11px]" />
+              </button>
+              <button
+                class="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
+                title="Cancel editing"
+                @click.stop="cancelGroupMetaEdit()"
+              >
+                <UIcon name="i-lucide-x" class="text-[11px]" />
+              </button>
+            </template>
+            <template v-else>
+              <span class="font-medium text-neutral-700 dark:text-neutral-200 truncate">
+                {{ groupedRows[vRow.index].group.name }}
+              </span>
+              <button
+                class="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
+                title="Edit group name/comment"
+                @click.stop="startGroupMetaEdit(groupedRows[vRow.index].group)"
+              >
+                <UIcon name="i-lucide-pencil" class="text-[10px]" />
+              </button>
+            </template>
+            <span class="text-neutral-400">({{ groupedRows[vRow.index].count }})</span>
             <span
-              class="h-2.5 w-2.5 rounded-full"
-              :class="sortedComponents[vRow.index].dnp
-                ? 'bg-red-500'
-                : 'bg-transparent border border-neutral-300/70 dark:border-neutral-700/70'"
-            />
-          </button>
+              v-if="groupedRows[vRow.index].group.comment && editingGroupId !== groupedRows[vRow.index].group.id"
+              class="truncate text-neutral-500"
+              :title="groupedRows[vRow.index].group.comment"
+            >
+              - {{ groupedRows[vRow.index].group.comment }}
+            </span>
+            <span class="flex-1" />
+            <button
+              class="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
+              :title="groupedRows[vRow.index].group.hidden ? 'Show group' : 'Hide group'"
+              @click.stop="emit('toggle:groupHidden', groupedRows[vRow.index].group.id)"
+            >
+              <UIcon
+                :name="groupedRows[vRow.index].group.hidden ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+                class="text-[11px]"
+              />
+            </button>
+          </div>
 
-          <span class="font-medium truncate" :title="sortedComponents[vRow.index].designator" :class="{ 'line-through': sortedComponents[vRow.index].dnp }">
-            {{ sortedComponents[vRow.index].designator }}
-            <span
-              v-if="showSideIndicator"
-              class="text-[9px] font-normal text-neutral-400 ml-0.5"
-            >{{ sortedComponents[vRow.index].side === 'top' ? 'T' : 'B' }}</span>
-          </span>
-          <span v-if="showCoords" class="text-neutral-500 tabular-nums">{{ sortedComponents[vRow.index].x.toFixed(2) }}</span>
-          <span v-if="showCoords" class="text-neutral-500 tabular-nums">{{ sortedComponents[vRow.index].y.toFixed(2) }}</span>
-          <div class="flex items-center gap-0.5" @click.stop>
-            <input
-              type="number"
-              step="0.1"
-              :value="formatRotation(sortedComponents[vRow.index].rotation)"
-              class="rotation-input w-8 min-w-0 rounded px-1 py-0.5 tabular-nums outline-none border bg-transparent transition-colors"
-              :class="sortedComponents[vRow.index].rotationOverridden
-                ? 'text-amber-600 dark:text-amber-300 border-transparent focus:border-amber-300/70 dark:focus:border-amber-500/50 focus:bg-amber-50/60 dark:focus:bg-amber-500/10'
-                : 'text-neutral-500 border-transparent focus:border-neutral-300 dark:focus:border-neutral-600 focus:bg-neutral-50 dark:focus:bg-neutral-800/70'"
-              :title="sortedComponents[vRow.index].rotationOverridden
-                ? `Original: ${formatRotation(sortedComponents[vRow.index].originalRotation)}°`
-                : 'Rotation (deg)'"
-              @mousedown.stop
-              @keydown.enter.prevent="commitRotation(sortedComponents[vRow.index], $event)"
-              @blur="commitRotation(sortedComponents[vRow.index], $event)"
-            />
-            <button
-              v-if="selectedDesignator === sortedComponents[vRow.index].designator"
-              class="shrink-0 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
-              title="Rotate 90° CCW"
-              @mousedown.stop
-              @click.stop="rotateCCW(sortedComponents[vRow.index])"
-            >
-              <UIcon name="i-lucide-rotate-ccw" class="text-[10px]" />
-            </button>
-            <button
-              v-if="sortedComponents[vRow.index].rotationOverridden"
-              class="shrink-0 text-amber-600/90 dark:text-amber-300/90 hover:text-red-500 transition-colors"
-              title="Reset to original rotation"
-              @mousedown.stop
-              @click.stop="emit('reset:rotation', { key: sortedComponents[vRow.index].key })"
-            >
-              <UIcon name="i-lucide-undo-2" class="text-[10px]" />
-            </button>
-          </div>
-          <!-- Polarized toggle -->
-          <div class="flex items-center justify-center" @click.stop>
-            <input
-              type="checkbox"
-              class="h-3 w-3 rounded border-neutral-300 dark:border-neutral-600 text-primary focus:ring-primary/50 cursor-pointer"
-              :checked="sortedComponents[vRow.index].polarized"
-              :title="sortedComponents[vRow.index].polarized ? 'Polarized (pin 1 marked)' : 'Not polarized (no pin 1 marker)'"
-              @change="emit('update:polarized', { key: sortedComponents[vRow.index].key, polarized: ($event.target as HTMLInputElement).checked })"
-            />
-          </div>
-          <span class="truncate text-neutral-500" :title="sortedComponents[vRow.index].value">{{ sortedComponents[vRow.index].value || '—' }}</span>
-          <!-- CAD Package (customer footprint name) -->
-          <span class="truncate text-neutral-500" :title="sortedComponents[vRow.index].cadPackage">{{ sortedComponents[vRow.index].cadPackage || '—' }}</span>
-          <!-- Package (our matched package) -->
-          <select
-            class="text-[11px] bg-transparent border border-transparent hover:border-neutral-200 dark:hover:border-neutral-700 rounded px-1 py-0.5 outline-none text-neutral-600 dark:text-neutral-300 cursor-pointer"
-            :class="sortedComponents[vRow.index].packageMapped ? 'text-blue-700 dark:text-blue-300' : ''"
-            :value="sortedComponents[vRow.index].matchedPackage"
-            title="Matched package (library)"
-            @mousedown.stop
-            @change="emit('update:packageMapping', { cadPackage: sortedComponents[vRow.index].cadPackage, packageName: ($event.target as HTMLSelectElement).value || null, componentKey: sortedComponents[vRow.index].key, isManual: sortedComponents[vRow.index].manual })"
+          <div
+            v-else
+            class="grid gap-x-2 cursor-pointer"
+            :style="{ gridTemplateColumns: gridCols }"
+            draggable="true"
+            :class="{
+              'bg-cyan-50 dark:bg-cyan-900/20 hover:bg-cyan-100 dark:hover:bg-cyan-900/30': selectedDesignator === groupedRows[vRow.index].component.designator && !groupedRows[vRow.index].component.dnp,
+              'hover:bg-neutral-100 dark:hover:bg-neutral-800': selectedDesignator !== groupedRows[vRow.index].component.designator && !groupedRows[vRow.index].component.dnp,
+              'opacity-40': groupedRows[vRow.index].component.dnp && activeFilters.size === 0,
+            }"
+            @dragstart="onDragStart(groupedRows[vRow.index].component)"
+            @dragover.prevent
+            @drop.prevent="onDropBeforeComponent(groupedRows[vRow.index].component.key)"
+            @dragend="onDragEnd"
+            @click="onRowClick(groupedRows[vRow.index].component.designator)"
+            @dblclick="emit('edit', groupedRows[vRow.index].component)"
           >
-            <option value="">—</option>
-            <option v-for="p in packageOptions" :key="p" :value="p">
-              {{ p }}
-            </option>
-          </select>
-          <!-- Note indicator / edit button -->
-          <div class="flex items-center justify-center" @click.stop>
+            <!-- DNP toggle / indicator -->
             <button
-              v-if="sortedComponents[vRow.index].note"
-              class="text-amber-500 dark:text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 transition-colors"
-              :title="sortedComponents[vRow.index].note"
-              @click="emit('edit', sortedComponents[vRow.index])"
+              class="flex items-center justify-center shrink-0 transition-colors"
+              :title="groupedRows[vRow.index].component.dnp ? 'Remove DNP mark' : 'Mark as Do Not Populate'"
+              @click.stop="emit('toggle:dnp', groupedRows[vRow.index].component.key)"
             >
-              <UIcon name="i-lucide-sticky-note" class="text-[11px]" />
+              <span
+                class="h-2.5 w-2.5 rounded-full"
+                :class="groupedRows[vRow.index].component.dnp
+                  ? 'bg-red-500'
+                  : 'bg-transparent border border-neutral-300/70 dark:border-neutral-700/70'"
+              />
             </button>
-            <button
-              v-else
-              class="text-neutral-300 dark:text-neutral-700 opacity-0 group-hover/row:opacity-100 hover:!text-neutral-500 dark:hover:!text-neutral-400 transition-all"
-              title="Edit component"
-              @click="emit('edit', sortedComponents[vRow.index])"
+
+            <span class="font-medium truncate flex items-center gap-0.5" :title="groupedRows[vRow.index].component.designator" :class="{ 'line-through': groupedRows[vRow.index].component.dnp }">
+              {{ groupedRows[vRow.index].component.designator }}
+              <span
+                v-if="showSideIndicator"
+                class="text-[9px] font-normal text-neutral-400"
+              >{{ groupedRows[vRow.index].component.side === 'top' ? 'T' : 'B' }}</span>
+              <UIcon
+                v-if="bomDesignators && bomDesignators.size > 0 && !groupedRows[vRow.index].component.dnp && !bomDesignators.has(groupedRows[vRow.index].component.designator)"
+                name="i-lucide-triangle-alert"
+                class="text-[10px] text-amber-500 shrink-0"
+                title="Not found in BOM"
+              />
+            </span>
+            <span v-if="showCoords" class="text-neutral-500 tabular-nums">{{ groupedRows[vRow.index].component.x.toFixed(2) }}</span>
+            <span v-if="showCoords" class="text-neutral-500 tabular-nums">{{ groupedRows[vRow.index].component.y.toFixed(2) }}</span>
+            <div class="flex items-center gap-0.5" @click.stop>
+              <input
+                type="number"
+                step="0.1"
+                :value="formatRotation(groupedRows[vRow.index].component.rotation)"
+                class="rotation-input w-8 min-w-0 rounded px-1 py-0.5 tabular-nums outline-none border bg-transparent transition-colors"
+                :class="groupedRows[vRow.index].component.rotationOverridden
+                  ? 'text-amber-600 dark:text-amber-300 border-transparent focus:border-amber-300/70 dark:focus:border-amber-500/50 focus:bg-amber-50/60 dark:focus:bg-amber-500/10'
+                  : 'text-neutral-500 border-transparent focus:border-neutral-300 dark:focus:border-neutral-600 focus:bg-neutral-50 dark:focus:bg-neutral-800/70'"
+                :title="groupedRows[vRow.index].component.rotationOverridden
+                  ? `Original: ${formatRotation(groupedRows[vRow.index].component.originalRotation)}°`
+                  : 'Rotation (deg)'"
+                @mousedown.stop
+                @keydown.enter.prevent="commitRotation(groupedRows[vRow.index].component, $event)"
+                @blur="commitRotation(groupedRows[vRow.index].component, $event)"
+              />
+              <button
+                v-if="selectedDesignator === groupedRows[vRow.index].component.designator"
+                class="shrink-0 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
+                title="Rotate 90° CCW"
+                @mousedown.stop
+                @click.stop="rotateCCW(groupedRows[vRow.index].component)"
+              >
+                <UIcon name="i-lucide-rotate-ccw" class="text-[10px]" />
+              </button>
+              <button
+                v-if="groupedRows[vRow.index].component.rotationOverridden"
+                class="shrink-0 text-amber-600/90 dark:text-amber-300/90 hover:text-red-500 transition-colors"
+                title="Reset to original rotation"
+                @mousedown.stop
+                @click.stop="emit('reset:rotation', { key: groupedRows[vRow.index].component.key })"
+              >
+                <UIcon name="i-lucide-undo-2" class="text-[10px]" />
+              </button>
+            </div>
+            <!-- Polarized toggle -->
+            <div class="flex items-center justify-center" @click.stop>
+              <input
+                type="checkbox"
+                class="h-3 w-3 rounded border-neutral-300 dark:border-neutral-600 text-primary focus:ring-primary/50 cursor-pointer"
+                :checked="groupedRows[vRow.index].component.polarized"
+                :title="groupedRows[vRow.index].component.polarized ? 'Polarized (pin 1 marked)' : 'Not polarized (no pin 1 marker)'"
+                @change="emit('update:polarized', { key: groupedRows[vRow.index].component.key, polarized: ($event.target as HTMLInputElement).checked })"
+              />
+            </div>
+            <span class="truncate text-neutral-500" :title="groupedRows[vRow.index].component.value">{{ groupedRows[vRow.index].component.value || '—' }}</span>
+            <!-- CAD Package (customer footprint name) -->
+            <span class="truncate text-neutral-500" :title="groupedRows[vRow.index].component.cadPackage">{{ groupedRows[vRow.index].component.cadPackage || '—' }}</span>
+            <!-- Package (our matched package) -->
+            <select
+              class="text-[11px] bg-transparent border border-transparent hover:border-neutral-200 dark:hover:border-neutral-700 rounded px-1 py-0.5 outline-none text-neutral-600 dark:text-neutral-300 cursor-pointer"
+              :class="groupedRows[vRow.index].component.packageMapped ? 'text-blue-700 dark:text-blue-300' : ''"
+              :value="groupedRows[vRow.index].component.matchedPackage"
+              title="Matched package (library)"
+              @mousedown.stop
+              @change="emit('update:packageMapping', { cadPackage: groupedRows[vRow.index].component.cadPackage, packageName: ($event.target as HTMLSelectElement).value || null, componentKey: groupedRows[vRow.index].component.key, isManual: groupedRows[vRow.index].component.manual })"
             >
-              <UIcon name="i-lucide-ellipsis" class="text-[11px]" />
-            </button>
+              <option value="">—</option>
+              <option v-for="p in packageOptions" :key="p" :value="p">
+                {{ p }}
+              </option>
+            </select>
+            <!-- Note indicator / edit button -->
+            <div class="flex items-center justify-center" @click.stop>
+              <button
+                v-if="groupedRows[vRow.index].component.note"
+                class="text-amber-500 dark:text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 transition-colors"
+                :title="groupedRows[vRow.index].component.note"
+                @click="emit('edit', groupedRows[vRow.index].component)"
+              >
+                <UIcon name="i-lucide-sticky-note" class="text-[11px]" />
+              </button>
+              <button
+                v-else
+                class="text-neutral-300 dark:text-neutral-700 opacity-0 group-hover/row:opacity-100 hover:!text-neutral-500 dark:hover:!text-neutral-400 transition-all"
+                title="Edit component"
+                @click="emit('edit', groupedRows[vRow.index].component)"
+              >
+                <UIcon name="i-lucide-ellipsis" class="text-[11px]" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -339,6 +446,12 @@ const props = defineProps<{
   showPackages: boolean
   pnpConvention: PnPConvention
   packageOptions: string[]
+  sortState: SortState
+  manualOrder: string[]
+  groups: ComponentGroup[]
+  groupAssignments: Record<string, string>
+  /** Set of designators present in BOM data (excluding DNP lines) */
+  bomDesignators?: Set<string>
 }>()
 
 const emit = defineEmits<{
@@ -356,6 +469,13 @@ const emit = defineEmits<{
   clearFilters: []
   'update:packageMapping': [payload: { cadPackage: string; packageName: string | null; componentKey?: string; isManual?: boolean }]
   'update:polarized': [payload: { key: string; polarized: boolean }]
+  'update:sortState': [value: SortState]
+  'update:manualOrder': [value: string[]]
+  'create:group': []
+  'update:groupMeta': [payload: { groupId: string; name: string; comment: string }]
+  'toggle:groupHidden': [groupId: string]
+  'toggle:groupCollapsed': [groupId: string]
+  'assign:group': [payload: { componentKey: string; groupId: string | null }]
   edit: [component: EditablePnPComponent]
   addComponent: []
 }>()
@@ -383,6 +503,17 @@ const gridCols = computed(() =>
 
 // --- Sorting ---
 type SortKey = 'ref' | 'x' | 'y' | 'rot' | 'pol' | 'value' | 'cadPackage' | 'package'
+type SortState = { key: SortKey | null; asc: boolean }
+type ComponentGroup = {
+  id: string
+  name: string
+  comment: string
+  hidden: boolean
+  collapsed: boolean
+}
+type DisplayRow =
+  | { kind: 'group'; group: ComponentGroup; count: number }
+  | { kind: 'component'; component: EditablePnPComponent }
 
 const sortColumns: { key: SortKey; label: string }[] = [
   { key: 'ref', label: 'Ref' },
@@ -401,22 +532,22 @@ const visibleSortColumns = computed(() =>
     : sortColumns.filter(c => c.key !== 'x' && c.key !== 'y'),
 )
 
-const sortKey = ref<SortKey | null>(null)
-const sortAsc = ref(true)
+const sortKey = computed<SortKey | null>(() => props.sortState.key)
+const sortAsc = computed<boolean>(() => props.sortState.asc)
 
 function toggleSort(key: SortKey) {
+  let next: SortState
   if (sortKey.value === key) {
     if (sortAsc.value) {
-      sortAsc.value = false
+      next = { key, asc: false }
     } else {
       // Third click resets to unsorted
-      sortKey.value = null
-      sortAsc.value = true
+      next = { key: null, asc: true }
     }
   } else {
-    sortKey.value = key
-    sortAsc.value = true
+    next = { key, asc: true }
   }
+  emit('update:sortState', next)
 }
 
 /** Natural-order compare for designator strings (e.g. C1, C2, C10). */
@@ -439,10 +570,20 @@ function naturalCompare(a: string, b: string): number {
   return 0
 }
 
-const sortedComponents = computed(() => {
+const sortedComponents = computed<EditablePnPComponent[]>(() => {
   const list = props.filteredComponents
   const key = sortKey.value
-  if (!key) return list
+  if (!key) {
+    const orderIndex = new Map(props.manualOrder.map((k, i) => [k, i]))
+    return [...list].sort((a, b) => {
+      const ai = orderIndex.get(a.key)
+      const bi = orderIndex.get(b.key)
+      if (ai == null && bi == null) return 0
+      if (ai == null) return 1
+      if (bi == null) return -1
+      return ai - bi
+    })
+  }
 
   const dir = sortAsc.value ? 1 : -1
   return [...list].sort((a, b) => {
@@ -476,6 +617,59 @@ const sortedComponents = computed(() => {
     return cmp * dir
   })
 })
+
+const groupedRows = computed<any[]>(() => {
+  const rows: DisplayRow[] = []
+  const groupMap = new Map<string, EditablePnPComponent[]>()
+  const groupsById = new Set(props.groups.map(g => g.id))
+
+  for (const group of props.groups) {
+    groupMap.set(group.id, [])
+  }
+
+  const ungrouped: EditablePnPComponent[] = []
+  for (const comp of sortedComponents.value) {
+    const groupId = props.groupAssignments[comp.key]
+    if (!groupId || !groupsById.has(groupId)) {
+      ungrouped.push(comp)
+      continue
+    }
+    groupMap.get(groupId)?.push(comp)
+  }
+
+  for (const comp of ungrouped) {
+    rows.push({ kind: 'component', component: comp })
+  }
+
+  for (const group of props.groups) {
+    const comps = groupMap.get(group.id) ?? []
+    rows.push({ kind: 'group', group, count: comps.length })
+    if (group.hidden || group.collapsed) continue
+    for (const comp of comps) {
+      rows.push({ kind: 'component', component: comp })
+    }
+  }
+
+  return rows
+})
+
+watch(
+  () => props.allComponents.map(c => c.key),
+  (keys) => {
+    const next = [...props.manualOrder]
+    const seen = new Set(next)
+    for (const key of keys) {
+      if (!seen.has(key)) {
+        next.push(key)
+        seen.add(key)
+      }
+    }
+    if (next.length !== props.manualOrder.length || next.some((k, i) => k !== props.manualOrder[i])) {
+      emit('update:manualOrder', next)
+    }
+  },
+  { immediate: true },
+)
 
 const localSearch = ref(props.searchQuery)
 let searchDebounceTimer: ReturnType<typeof setTimeout> | undefined
@@ -512,7 +706,7 @@ const ROW_HEIGHT = 25
 
 const rowVirtualizer = useVirtualizer(
   computed(() => ({
-    count: sortedComponents.value.length,
+    count: groupedRows.value.length,
     getScrollElement: () => listRef.value,
     estimateSize: () => ROW_HEIGHT,
     overscan: 15,
@@ -540,9 +734,81 @@ const showSideIndicator = computed(() => {
 // Build a designator → sorted-index lookup for scroll-to-selection
 const designatorIndexMap = computed(() => {
   const map = new Map<string, number>()
-  sortedComponents.value.forEach((c, i) => { map.set(c.designator, i) })
+  groupedRows.value.forEach((row, i) => {
+    if (row.kind === 'component') map.set(row.component.designator, i)
+  })
   return map
 })
+
+function createGroup() {
+  emit('create:group')
+}
+
+const dragComponentKey = ref<string | null>(null)
+
+function ensureManualSortMode() {
+  if (sortKey.value !== null) {
+    emit('update:sortState', { key: null, asc: true })
+  }
+}
+
+function onDragStart(comp: EditablePnPComponent) {
+  ensureManualSortMode()
+  dragComponentKey.value = comp.key
+}
+
+function onDropBeforeComponent(targetKey: string) {
+  const dragged = dragComponentKey.value
+  if (!dragged || dragged === targetKey) return
+  const next = props.manualOrder.filter(k => k !== dragged)
+  const idx = next.indexOf(targetKey)
+  if (idx < 0) {
+    next.push(dragged)
+  } else {
+    next.splice(idx, 0, dragged)
+  }
+  emit('update:manualOrder', next)
+}
+
+function onDropToGroup(groupId: string) {
+  const dragged = dragComponentKey.value
+  if (!dragged) return
+  emit('assign:group', { componentKey: dragged, groupId })
+  const next = props.manualOrder.filter(k => k !== dragged)
+  next.push(dragged)
+  emit('update:manualOrder', next)
+}
+
+function onDragEnd() {
+  dragComponentKey.value = null
+}
+
+const editingGroupId = ref<string | null>(null)
+const editingGroupName = ref('')
+const editingGroupComment = ref('')
+
+function startGroupMetaEdit(group: ComponentGroup) {
+  editingGroupId.value = group.id
+  editingGroupName.value = group.name
+  editingGroupComment.value = group.comment
+}
+
+function cancelGroupMetaEdit() {
+  editingGroupId.value = null
+  editingGroupName.value = ''
+  editingGroupComment.value = ''
+}
+
+function saveGroupMeta(groupId: string) {
+  const name = editingGroupName.value.trim()
+  if (!name) return
+  emit('update:groupMeta', {
+    groupId,
+    name,
+    comment: editingGroupComment.value.trim(),
+  })
+  cancelGroupMetaEdit()
+}
 
 function onRowClick(designator: string) {
   // Toggle if clicking same one

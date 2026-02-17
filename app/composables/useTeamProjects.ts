@@ -6,6 +6,7 @@
  */
 
 import type { BomLine, BomPricingCache } from '~/utils/bom-types'
+import type { PanelConfig } from '~/utils/panel-types'
 
 export interface TeamProject {
   id: string
@@ -27,6 +28,12 @@ export interface TeamProject {
   pnp_field_overrides: Record<string, { designator?: string; value?: string; x?: number; y?: number }> | null
   pnp_manual_components: { id: string; designator: string; value: string; package: string; x: number; y: number; rotation: number; side: 'top' | 'bottom' }[] | null
   pnp_deleted_components: string[] | null
+  pnp_sort_smd: { key: 'ref' | 'x' | 'y' | 'rot' | 'pol' | 'value' | 'cadPackage' | 'package' | null; asc: boolean } | null
+  pnp_sort_tht: { key: 'ref' | 'x' | 'y' | 'rot' | 'pol' | 'value' | 'cadPackage' | 'package' | null; asc: boolean } | null
+  pnp_manual_order_smd: string[] | null
+  pnp_manual_order_tht: string[] | null
+  pnp_component_groups: { id: string; componentType: 'smd' | 'tht'; name: string; comment: string; hidden: boolean; collapsed: boolean }[] | null
+  pnp_group_assignments: Record<string, string> | null
   bom_lines: BomLine[] | null
   bom_pricing_cache: BomPricingCache | null
   bom_board_quantity: number | null
@@ -36,7 +43,9 @@ export interface TeamProject {
     layerCount?: number
     surfaceFinish?: string
     copperWeight?: string
+    innerCopperWeight?: string
   } | null
+  panel_data: PanelConfig | null
   created_at: string
   updated_at: string
 }
