@@ -1243,7 +1243,9 @@ function stopLongTaskObserver() {
 
 async function refreshPerformanceSnapshot() {
   const mem = ((performance as any).memory ?? null) as { usedJSHeapSize: number, totalJSHeapSize: number, jsHeapSizeLimit: number } | null
-  const storageEstimate = await navigator.storage?.estimate?.().catch(() => null)
+  const storageEstimate = typeof navigator.storage?.estimate === 'function'
+    ? await navigator.storage.estimate().catch(() => null)
+    : null
   const boardStats = boardCanvasRef.value?.getPerformanceStats?.()
   const panelStats = panelCanvasRef.value?.getPerformanceStats?.()
 

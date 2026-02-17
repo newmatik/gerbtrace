@@ -657,8 +657,12 @@ watch(
   () => props.allComponents.map(c => c.key),
   (keys) => {
     const next = [...props.manualOrder]
+    const seen = new Set(next)
     for (const key of keys) {
-      if (!next.includes(key)) next.push(key)
+      if (!seen.has(key)) {
+        next.push(key)
+        seen.add(key)
+      }
     }
     if (next.length !== props.manualOrder.length || next.some((k, i) => k !== props.manualOrder[i])) {
       emit('update:manualOrder', next)
