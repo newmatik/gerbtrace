@@ -334,7 +334,7 @@ export function renderOutlineMask(
   const eraseFragments: PathSegment[][] = []
 
   type ShapeDrawFn = () => void
-  const darkShapes: Array<{ draw: ShapeDrawFn, area: number }> = []
+  const darkShapes: ShapeDrawFn[] = []
   const eraseShapes: ShapeDrawFn[] = []
 
   for (const graphic of outlineTree.children) {
@@ -466,7 +466,7 @@ export function renderOuterBoundaryOnly(
 
   const darkFragments: PathSegment[][] = []
   type ShapeDrawFn = () => void
-  const darkShapes: ShapeDrawFn[] = []
+  const darkShapes: Array<{ draw: ShapeDrawFn, area: number }> = []
 
   for (const graphic of outlineTree.children) {
     const isErase = 'erase' in graphic && graphic.erase

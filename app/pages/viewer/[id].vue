@@ -2311,7 +2311,7 @@ onMounted(async () => {
     ? Object.fromEntries(
         Object.entries(restoredAssignments as Record<string, unknown>)
           .filter(([key, groupId]) => key && typeof groupId === 'string' && groupId),
-      )
+      ) as Record<string, string>
     : {}
 
   // Restore persisted BOM data

@@ -1,6 +1,22 @@
 -- Persist PnP sorting and grouping state per project
-alter table public.projects
-  add column if not exists pnp_sort_smd jsonb,
-  add column if not exists pnp_sort_tht jsonb,
-  add column if not exists pnp_component_groups jsonb,
-  add column if not exists pnp_group_assignments jsonb;
+do $$
+declare
+  v_owner name;
+begin
+  select r.rolname into v_owner
+  from pg_class c
+  join pg_roles r on r.oid = c.relowner
+  where c.oid = 'public.projects'::regclass;
+
+  if v_owner is not null and v_owner <> current_user then
+    execute format('set local role %I', v_owner);
+  end if;
+
+  execute $sql$
+    alter table public.projects
+      add column if not exists pnp_sort_smd jsonb,
+      add column if not exists pnp_sort_tht jsonb,
+      add column if not exists pnp_component_groups jsonb,
+      add column if not exists pnp_group_assignments jsonb;
+  $sql$;
+end $$;

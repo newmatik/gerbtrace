@@ -99,7 +99,7 @@ defineProps<{
     storageQuotaBytes?: number
     projectEstimateBytes?: number
     logicalCores?: number
-    deviceMemoryGb?: number
+    deviceMemoryGb?: number | null
     gpuRenderer?: string | null
     board?: { sceneCacheBytes?: number, canvasPoolSize?: number, draws?: number }
     panel?: { tileBytesTotal?: number, canvasPoolSize?: number, draws?: number }

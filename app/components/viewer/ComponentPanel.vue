@@ -618,7 +618,7 @@ const sortedComponents = computed<EditablePnPComponent[]>(() => {
   })
 })
 
-const groupedRows = computed<DisplayRow[]>(() => {
+const groupedRows = computed<any[]>(() => {
   const rows: DisplayRow[] = []
   const groupMap = new Map<string, EditablePnPComponent[]>()
   const groupsById = new Set(props.groups.map(g => g.id))

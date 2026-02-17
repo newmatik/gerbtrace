@@ -569,16 +569,12 @@ export function computePanelLayout(
     const inset = frameW / 2
 
     for (const pos of config.fiducials.positions) {
-      let fx: number
-      let fy: number
+      let fx: number | null = null
+      let fy: number | null = null
 
       switch (pos) {
         case 'top-left':
           fx = inset
-          fy = inset
-          break
-        case 'top-right':
-          fx = totalWidth - inset
           fy = inset
           break
         case 'bottom-left':
@@ -589,9 +585,12 @@ export function computePanelLayout(
           fx = totalWidth - inset
           fy = totalHeight - inset
           break
+        default:
+          continue
       }
 
-      fiducials.push({ cx: fx!, cy: fy!, diameter: d, position: pos })
+      if (fx == null || fy == null) continue
+      fiducials.push({ cx: fx, cy: fy, diameter: d, position: pos })
     }
   }
 
@@ -603,8 +602,8 @@ export function computePanelLayout(
     const inset = frameW / 2
 
     for (const pos of config.toolingHoles.positions) {
-      let tx: number
-      let ty: number
+      let tx: number | null = null
+      let ty: number | null = null
 
       switch (pos) {
         case 'top-left':
@@ -623,9 +622,12 @@ export function computePanelLayout(
           tx = totalWidth - inset
           ty = totalHeight - inset - offset
           break
+        default:
+          continue
       }
 
-      toolingHoles.push({ cx: tx!, cy: ty!, diameter: d, position: pos })
+      if (tx == null || ty == null) continue
+      toolingHoles.push({ cx: tx, cy: ty, diameter: d, position: pos })
     }
   }
 
