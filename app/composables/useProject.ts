@@ -4,6 +4,7 @@ import type { PnPConvention } from '~/utils/pnp-conventions'
 import type { BomLine, BomPricingCache } from '~/utils/bom-types'
 import type { SurfaceFinish, CopperWeight } from '~/utils/pcb-pricing'
 import type { DocumentType } from '~/utils/document-types'
+import type { PanelConfig } from '~/utils/panel-types'
 
 interface ProjectRecord {
   id?: number
@@ -46,7 +47,10 @@ interface ProjectRecord {
     layerCount?: number       // 1, 2, 4, 6, 8, 10
     surfaceFinish?: SurfaceFinish
     copperWeight?: CopperWeight
+    innerCopperWeight?: '0.5oz' | CopperWeight
   } | null
+  /** Panel configuration for panelization */
+  panelData?: PanelConfig | null
 }
 
 interface FileRecord {
@@ -165,6 +169,13 @@ class GerbtraceDB extends Dexie {
     })
     // v16: add bomBoardQuantity to projects (non-indexed, just stored)
     this.version(16).stores({
+      projects: '++id, name, mode, createdAt, updatedAt',
+      files: '++id, projectId, packet, fileName',
+      fileOriginals: '++id, projectId, packet, fileName',
+      documents: '++id, projectId, fileName',
+    })
+    // v17: add panelData to projects (non-indexed, just stored)
+    this.version(17).stores({
       projects: '++id, name, mode, createdAt, updatedAt',
       files: '++id, projectId, packet, fileName',
       fileOriginals: '++id, projectId, packet, fileName',
@@ -339,6 +350,10 @@ export function useProject() {
     await db.projects.update(id, { pcbData, updatedAt: new Date() })
   }
 
+  async function updatePanelData(id: number, panelData: ProjectRecord['panelData']) {
+    await db.projects.update(id, { panelData, updatedAt: new Date() })
+  }
+
   // ── File originals (for edit detection and reset) ──
 
   async function getOriginalFiles(projectId: number, packet: number): Promise<Map<string, string>> {
@@ -478,6 +493,7 @@ export function useProject() {
     updateBomPricingCache,
     updateBomBoardQuantity,
     updatePcbData,
+    updatePanelData,
     getDocuments,
     addDocument,
     removeDocument,

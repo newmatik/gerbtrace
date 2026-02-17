@@ -36,7 +36,9 @@ export interface TeamProject {
     layerCount?: number
     surfaceFinish?: string
     copperWeight?: string
+    innerCopperWeight?: string
   } | null
+  panel_data: Record<string, any> | null
   created_at: string
   updated_at: string
 }

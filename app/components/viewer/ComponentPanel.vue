@@ -224,12 +224,18 @@
             />
           </button>
 
-          <span class="font-medium truncate" :title="sortedComponents[vRow.index].designator" :class="{ 'line-through': sortedComponents[vRow.index].dnp }">
+          <span class="font-medium truncate flex items-center gap-0.5" :title="sortedComponents[vRow.index].designator" :class="{ 'line-through': sortedComponents[vRow.index].dnp }">
             {{ sortedComponents[vRow.index].designator }}
             <span
               v-if="showSideIndicator"
-              class="text-[9px] font-normal text-neutral-400 ml-0.5"
+              class="text-[9px] font-normal text-neutral-400"
             >{{ sortedComponents[vRow.index].side === 'top' ? 'T' : 'B' }}</span>
+            <UIcon
+              v-if="bomDesignators && bomDesignators.size > 0 && !sortedComponents[vRow.index].dnp && !bomDesignators.has(sortedComponents[vRow.index].designator)"
+              name="i-lucide-triangle-alert"
+              class="text-[10px] text-amber-500 shrink-0"
+              title="Not found in BOM"
+            />
           </span>
           <span v-if="showCoords" class="text-neutral-500 tabular-nums">{{ sortedComponents[vRow.index].x.toFixed(2) }}</span>
           <span v-if="showCoords" class="text-neutral-500 tabular-nums">{{ sortedComponents[vRow.index].y.toFixed(2) }}</span>
@@ -339,6 +345,8 @@ const props = defineProps<{
   showPackages: boolean
   pnpConvention: PnPConvention
   packageOptions: string[]
+  /** Set of designators present in BOM data (excluding DNP lines) */
+  bomDesignators?: Set<string>
 }>()
 
 const emit = defineEmits<{

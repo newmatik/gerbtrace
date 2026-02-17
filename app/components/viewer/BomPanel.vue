@@ -217,6 +217,12 @@
             <span class="text-[10px] font-mono text-neutral-500 dark:text-neutral-400 shrink-0 w-[60px] truncate" :title="line.references">
               {{ line.references || '--' }}
             </span>
+            <UIcon
+              v-if="getMissingInPnP(line).length > 0"
+              name="i-lucide-triangle-alert"
+              class="text-[10px] text-amber-500 shrink-0"
+              :title="`Not in PnP: ${getMissingInPnP(line).join(', ')}`"
+            />
             <span
               class="text-[11px] flex-1 truncate"
               :class="line.dnp ? 'line-through text-neutral-400 dark:text-neutral-500' : 'text-neutral-800 dark:text-neutral-200'"
@@ -225,16 +231,12 @@
               {{ line.description || '(no description)' }}
             </span>
             <!-- DNP badge -->
-            <button
-              class="text-[10px] px-1.5 py-0.5 rounded-full border shrink-0 transition-colors"
-              :class="line.dnp
-                ? 'border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20'
-                : 'border-transparent text-transparent pointer-events-none'"
-              :title="line.dnp ? 'Click to remove DNP' : ''"
-              @click.stop="toggleDnp(line)"
+            <span
+              v-if="line.dnp"
+              class="text-[10px] px-1.5 py-0.5 rounded-full border shrink-0 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20"
             >
               DNP
-            </button>
+            </span>
             <!-- Type badge (click to cycle) -->
             <button
               class="text-[10px] px-1.5 py-0.5 rounded-full border shrink-0 transition-colors"
@@ -280,28 +282,26 @@
                 </template>
               </template>
             </template>
-            <!-- Context actions -->
-            <div class="flex items-center gap-0.5 shrink-0">
-              <button
-                class="text-neutral-400 hover:transition-colors shrink-0"
-                :class="line.dnp ? 'text-red-400 hover:text-red-500' : 'hover:text-amber-500'"
-                :title="line.dnp ? 'Remove DNP' : 'Mark as DNP'"
-                @click.stop="toggleDnp(line)"
-              >
-                <UIcon name="i-lucide-circle-slash" class="text-xs" />
-              </button>
-              <button
-                class="text-neutral-400 hover:text-primary transition-colors shrink-0"
-                title="Edit"
-                @click.stop="openEditModal(line)"
-              >
-                <UIcon name="i-lucide-pencil" class="text-xs" />
-              </button>
-            </div>
+            <!-- Edit button -->
+            <button
+              class="text-neutral-400 hover:text-primary transition-colors shrink-0"
+              title="Edit"
+              @click.stop="openEditModal(line)"
+            >
+              <UIcon name="i-lucide-pencil" class="text-xs" />
+            </button>
           </div>
 
           <!-- Expanded detail -->
           <div v-if="expandedIds.has(line.id)" class="px-2.5 pb-2.5 pt-0.5 border-t border-neutral-100 dark:border-neutral-800" :class="{ 'opacity-50': line.dnp }" @click.stop>
+            <!-- PnP mismatch warning -->
+            <div v-if="getMissingInPnP(line).length > 0" class="flex items-start gap-1.5 mb-2 px-2 py-1.5 text-[10px] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded border border-amber-200 dark:border-amber-800">
+              <UIcon name="i-lucide-triangle-alert" class="text-xs shrink-0 mt-0.5" />
+              <div>
+                <span class="font-medium">Not found in Pick &amp; Place:</span>
+                {{ getMissingInPnP(line).join(', ') }}
+              </div>
+            </div>
             <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px] mb-2">
               <div v-if="line.dnp"><span class="text-red-500 font-medium">Do Not Populate</span></div>
               <div v-if="line.package"><span class="text-neutral-400">Package:</span> {{ line.package }}</div>
@@ -351,40 +351,55 @@
                   </span>
                 </div>
 
-                <!-- Supplier offers table -->
-                <div v-if="getSupplierOffers(mfr.manufacturerPart, line.quantity * boardQuantity).length > 0" class="rounded border border-neutral-100 dark:border-neutral-800 overflow-hidden">
-                  <!-- Table header -->
-                  <div class="grid grid-cols-[1fr_60px_60px_70px_70px] gap-1 px-2 py-0.5 bg-neutral-50 dark:bg-neutral-800/80 text-[9px] text-neutral-400 uppercase tracking-wide font-medium">
-                    <span>Supplier</span>
-                    <span class="text-right">Stock</span>
-                    <span class="text-right">MOQ</span>
-                    <span class="text-right">Unit</span>
-                    <span class="text-right">Total</span>
-                  </div>
-                  <!-- Supplier rows -->
-                  <div
-                    v-for="(offer, oi) in getSupplierOffers(mfr.manufacturerPart, line.quantity * boardQuantity)"
-                    :key="oi"
-                    class="grid grid-cols-[1fr_60px_60px_70px_70px] gap-1 px-2 py-0.5 text-[10px] border-t border-neutral-50 dark:border-neutral-800/50"
-                    :class="{ 'bg-green-50/30 dark:bg-green-900/5': oi === 0 }"
+                <!-- Supplier offers table (collapsible) -->
+                <template v-if="getSupplierOffers(mfr.manufacturerPart, line.quantity * boardQuantity).length > 0">
+                  <button
+                    class="flex items-center gap-1 text-[10px] text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors"
+                    @click.stop="togglePriceTable(mfr.manufacturerPart)"
                   >
-                    <span class="text-neutral-600 dark:text-neutral-300 truncate" :title="offer.supplier + (offer.country ? ` (${offer.country})` : '')">
-                      {{ offer.supplier }}
-                    </span>
-                    <span class="text-right tabular-nums" :class="offer.stock > 0 ? 'text-neutral-600 dark:text-neutral-300' : 'text-red-400'">
-                      {{ formatNumber(offer.stock) }}
-                    </span>
-                    <span class="text-right tabular-nums text-neutral-500">
-                      {{ formatNumber(offer.moq) }}
-                    </span>
-                    <span class="text-right tabular-nums font-medium" :class="oi === 0 ? 'text-green-600 dark:text-green-400' : 'text-neutral-600 dark:text-neutral-300'">
-                      {{ formatCurrency(offer.unitPrice, offer.currency) }}
-                    </span>
-                    <span class="text-right tabular-nums text-neutral-500">
-                      {{ formatCurrency(offer.lineValue, offer.currency) }}
-                    </span>
+                    <UIcon
+                      :name="expandedPriceTables.has(mfr.manufacturerPart) ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right'"
+                      class="text-[10px]"
+                    />
+                    {{ getSupplierOffers(mfr.manufacturerPart, line.quantity * boardQuantity).length }} suppliers
+                  </button>
+                  <div v-if="expandedPriceTables.has(mfr.manufacturerPart)" class="rounded border border-neutral-100 dark:border-neutral-800 overflow-hidden">
+                    <!-- Table header -->
+                    <div class="grid grid-cols-[1fr_60px_60px_70px_70px] gap-1 px-2 py-0.5 bg-neutral-50 dark:bg-neutral-800/80 text-[9px] text-neutral-400 uppercase tracking-wide font-medium">
+                      <span>Supplier</span>
+                      <span class="text-right">Stock</span>
+                      <span class="text-right">MOQ</span>
+                      <span class="text-right">Unit</span>
+                      <span class="text-right">Total</span>
+                    </div>
+                    <!-- Supplier rows -->
+                    <div
+                      v-for="(offer, oi) in getSupplierOffers(mfr.manufacturerPart, line.quantity * boardQuantity)"
+                      :key="oi"
+                      class="grid grid-cols-[1fr_60px_60px_70px_70px] gap-1 px-2 py-0.5 text-[10px] border-t border-neutral-50 dark:border-neutral-800/50"
+                      :class="{
+                        'bg-green-50/30 dark:bg-green-900/5': offer.stock >= line.quantity * boardQuantity && oi === 0,
+                        'opacity-40': offer.stock < line.quantity * boardQuantity,
+                      }"
+                    >
+                      <span class="text-neutral-600 dark:text-neutral-300 truncate" :title="offer.supplier + (offer.country ? ` (${offer.country})` : '')">
+                        {{ offer.supplier }}
+                      </span>
+                      <span class="text-right tabular-nums" :class="offer.stock >= line.quantity * boardQuantity ? 'text-neutral-600 dark:text-neutral-300' : 'text-red-400'">
+                        {{ formatNumber(offer.stock) }}
+                      </span>
+                      <span class="text-right tabular-nums text-neutral-500">
+                        {{ formatNumber(offer.moq) }}
+                      </span>
+                      <span class="text-right tabular-nums font-medium" :class="offer.stock >= line.quantity * boardQuantity && oi === 0 ? 'text-green-600 dark:text-green-400' : 'text-neutral-600 dark:text-neutral-300'">
+                        {{ formatCurrency(offer.unitPrice, offer.currency) }}
+                      </span>
+                      <span class="text-right tabular-nums text-neutral-500">
+                        {{ formatCurrency(offer.lineValue, offer.currency) }}
+                      </span>
+                    </div>
                   </div>
-                </div>
+                </template>
 
                 <!-- No pricing data -->
                 <div v-else-if="!pricingCache[mfr.manufacturerPart] && !getQueueStatus(mfr.manufacturerPart)" class="text-[10px] text-neutral-400 italic pl-1">
@@ -440,6 +455,7 @@
     <BomLineEditModal
       v-model:open="showEditModal"
       :line="editingLine"
+      :pnp-designators="pnpDesignators"
       @save="handleLineSave"
       @delete="handleLineDelete"
     />
@@ -460,6 +476,8 @@ const props = defineProps<{
   isFetchingPricing: boolean
   pricingQueue: PricingQueueItem[]
   boardQuantity: number
+  /** Set of designators present in PnP data (SMD + THT, excluding DNP) */
+  pnpDesignators: Set<string>
 }>()
 
 const emit = defineEmits<{
@@ -626,12 +644,6 @@ function cancelQty() {
   editingQtyId.value = null
 }
 
-// ── DNP toggle ──
-
-function toggleDnp(line: BomLine) {
-  emit('updateLine', line.id, { dnp: !line.dnp })
-}
-
 // ── Inline add manufacturer ──
 
 const inlineAddLineId = ref<string | null>(null)
@@ -656,6 +668,17 @@ function confirmInlineAdd(lineId: string) {
   if (!mfr && !mpn) return
   emit('addManufacturer', lineId, { manufacturer: mfr, manufacturerPart: mpn })
   cancelInlineAdd()
+}
+
+// ── Collapsible price tables ──
+
+const expandedPriceTables = ref(new Set<string>())
+
+function togglePriceTable(mpn: string) {
+  const next = new Set(expandedPriceTables.value)
+  if (next.has(mpn)) next.delete(mpn)
+  else next.add(mpn)
+  expandedPriceTables.value = next
 }
 
 // ── Queue computed helpers ──
@@ -693,6 +716,26 @@ function typeClass(type: string) {
     case 'Mounting': return 'border-orange-200 dark:border-orange-800 text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20'
     default: return 'border-neutral-200 dark:border-neutral-700 text-neutral-500'
   }
+}
+
+// ── BOM ↔ PnP mismatch helpers ──
+
+/**
+ * Parse comma-separated references into individual designators.
+ */
+function parseRefs(refs: string): string[] {
+  if (!refs) return []
+  return refs.split(/[,;\s]+/).map(r => r.trim()).filter(Boolean)
+}
+
+/**
+ * Get designators from a BOM line that are missing in PnP data.
+ * DNP lines return empty (no warning needed).
+ * Returns empty when no PnP data is loaded (no false positives).
+ */
+function getMissingInPnP(line: BomLine): string[] {
+  if (line.dnp || props.pnpDesignators.size === 0) return []
+  return parseRefs(line.references).filter(r => !props.pnpDesignators.has(r))
 }
 
 // ── Elexess pricing extraction ──
@@ -766,14 +809,19 @@ function getSupplierOffers(mpn: string, totalQty: number): SupplierOffer[] {
 
 /**
  * Get the cheapest supplier offer across all MPNs for a BOM line.
+ * Only considers suppliers with enough stock to fulfil the total quantity.
  */
 function getLineBestOffer(line: BomLine): SupplierOffer | null {
   const totalQty = line.quantity * props.boardQuantity
   let best: SupplierOffer | null = null
   for (const mfr of line.manufacturers) {
     const offers = getSupplierOffers(mfr.manufacturerPart, totalQty)
-    if (offers.length > 0 && (!best || offers[0].unitPrice < best.unitPrice)) {
-      best = offers[0]
+    for (const offer of offers) {
+      if (offer.stock < totalQty) continue
+      if (!best || offer.unitPrice < best.unitPrice) {
+        best = offer
+      }
+      break // offers are sorted by price, first with stock wins for this MPN
     }
   }
   return best

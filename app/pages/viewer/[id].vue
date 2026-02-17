@@ -82,6 +82,7 @@
           variant="ghost"
           :icon="m.icon"
           :class="[tbBtnBase, activeMode === m.value ? tbBtnActive : tbBtnIdle]"
+          :disabled="sidebarTab === 'panel' && (m.value === 'info' || m.value === 'delete')"
           :title="m.title"
           @click="setMode(m.value)"
         >
@@ -114,10 +115,11 @@
             variant="ghost"
             icon="i-lucide-rotate-ccw"
             :class="[tbBtnBase, tbBtnIdle]"
+            :disabled="sidebarTab === 'panel'"
             title="Rotate 90° counter-clockwise"
             @click="rotateCCW()"
           />
-          <UPopover :content="{ align: 'center', sideOffset: 8 }">
+          <UPopover v-if="sidebarTab !== 'panel'" :content="{ align: 'center', sideOffset: 8 }">
             <button
               class="text-[10px] font-mono px-1.5 py-0.5 rounded min-w-[2.5rem] text-center transition-colors cursor-pointer"
               :class="boardRotation !== 0
@@ -164,25 +166,25 @@
               </div>
             </template>
           </UPopover>
+          <button
+            v-else
+            disabled
+            class="text-[10px] font-mono px-1.5 py-0.5 rounded min-w-[2.5rem] text-center transition-colors cursor-not-allowed text-neutral-400 dark:text-neutral-500 opacity-70"
+            :title="'Board rotation: ' + boardRotation + '° (disabled in panel view)'"
+          >
+            {{ boardRotation }}°
+          </button>
           <UButton
             size="xs"
             color="neutral"
             variant="ghost"
             icon="i-lucide-rotate-cw"
             :class="[tbBtnBase, tbBtnIdle]"
+            :disabled="sidebarTab === 'panel'"
             title="Rotate 90° clockwise"
             @click="rotateCW()"
           />
         </div>
-      </template>
-
-      <!-- Realistic mode controls -->
-      <template v-if="viewMode === 'realistic'">
-        <div class="w-px h-5 bg-neutral-200 dark:bg-neutral-700/80" />
-        <RealisticControls
-          :selected-preset="selectedPreset"
-          @select-preset="selectedPreset = $event"
-        />
       </template>
 
       <!-- Downloads dropdown -->
@@ -274,7 +276,7 @@
         class="border-r border-neutral-200 dark:border-neutral-800 flex flex-col overflow-hidden shrink-0"
         :style="{ width: sidebarWidth + 'px' }"
       >
-        <!-- Sidebar tabs: Files / SMD / THT / BOM / PCB / Pricing -->
+        <!-- Sidebar tabs: Files / PCB / Panel / SMD / THT / BOM / Pricing / Docs -->
         <div
           class="flex items-center gap-0.5 px-3 pt-3 pb-1 flex-wrap"
         >
@@ -286,6 +288,24 @@
             @click="sidebarTab = 'layers'"
           >
             Files
+          </button>
+          <button
+            class="text-[11px] font-medium px-2 py-0.5 rounded transition-colors"
+            :class="sidebarTab === 'pcb'
+              ? 'bg-neutral-200/80 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100'
+              : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'"
+            @click="sidebarTab = 'pcb'"
+          >
+            PCB
+          </button>
+          <button
+            class="text-[11px] font-medium px-2 py-0.5 rounded transition-colors"
+            :class="sidebarTab === 'panel'
+              ? 'bg-neutral-200/80 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100'
+              : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'"
+            @click="sidebarTab = 'panel'"
+          >
+            Panel
           </button>
           <button
             v-if="pnp.hasPnP.value"
@@ -316,15 +336,6 @@
             @click="sidebarTab = 'bom'"
           >
             BOM
-          </button>
-          <button
-            class="text-[11px] font-medium px-2 py-0.5 rounded transition-colors"
-            :class="sidebarTab === 'pcb'
-              ? 'bg-neutral-200/80 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100'
-              : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'"
-            @click="sidebarTab = 'pcb'"
-          >
-            PCB
           </button>
           <button
             class="text-[11px] font-medium px-2 py-0.5 rounded transition-colors"
@@ -390,6 +401,7 @@
           :show-packages="showPackages"
           :pnp-convention="pnp.convention.value"
           :package-options="packageOptions"
+          :bom-designators="bomDesignators"
           @update:search-query="pnp.searchQuery.value = $event"
           @update:show-packages="showPackages = $event"
           @update:pnp-convention="updateConvention"
@@ -423,6 +435,7 @@
           :show-packages="showPackages"
           :pnp-convention="pnp.convention.value"
           :package-options="thtPackageOptions"
+          :bom-designators="bomDesignators"
           @update:search-query="pnp.searchQuery.value = $event"
           @update:show-packages="showPackages = $event"
           @update:pnp-convention="updateConvention"
@@ -452,6 +465,7 @@
           :is-fetching-pricing="elexess.isFetching.value"
           :pricing-queue="(elexess.pricingQueue.value as PricingQueueItem[])"
           :board-quantity="bom.boardQuantity.value"
+          :pnp-designators="pnpDesignators"
           @update:search-query="bom.searchQuery.value = $event"
           @update:board-quantity="bom.boardQuantity.value = $event"
           @add-line="handleBomAddLine"
@@ -468,7 +482,28 @@
           :pcb-data="pcbData"
           :board-size-mm="boardSizeMm"
           :detected-layer-count="detectedLayerCount"
+          :layers="layers"
+          :edited-layers="editedLayers"
+          :selected-preset="selectedPreset"
           @update:pcb-data="handlePcbDataUpdate"
+          @select-preset="selectedPreset = $event"
+          @toggle-visibility="toggleLayerVisibility"
+          @toggle-group-visibility="toggleGroupVisibility"
+          @change-color="changeLayerColor"
+          @change-type="changeLayerType"
+          @reset-layer="resetLayer"
+          @rename-layer="renameLayer"
+          @duplicate-layer="duplicateLayer"
+          @remove-layer="removeLayer"
+        />
+
+        <!-- Panel view -->
+        <PanelPanel
+          v-else-if="sidebarTab === 'panel'"
+          :panel-data="panelData"
+          :board-size-mm="boardSizeMm"
+          @update:panel-data="handlePanelDataUpdate"
+          @update:danger-zone="(dz) => panelDangerZone = dz"
         />
 
         <!-- Pricing view -->
@@ -531,7 +566,33 @@
 
         <!-- Board canvas (hidden when viewing a document) -->
         <div v-show="!showDocumentViewer" class="absolute inset-0">
+          <!-- Panel canvas (shown when panel tab is active) -->
+          <PanelCanvas
+            v-if="sidebarTab === 'panel'"
+            ref="panelCanvasRef"
+            :layers="renderLayers"
+            :all-layers="layers"
+            :interaction="canvasInteraction"
+            :mirrored="mirrored"
+            :active-filter="activeFilter"
+            :view-mode="viewMode"
+            :preset="viewMode === 'realistic' ? selectedPreset : undefined"
+            :project-name="project?.name || 'Untitled'"
+            :pcb-data="pcbData"
+            :panel-config="panelData"
+            :board-size-mm="boardSizeMm"
+            :danger-zone="panelDangerZone"
+            :measure="measureTool"
+            :pnp-components="panelData.showComponents ? pnp.visibleComponents.value : []"
+            :match-package="pkgLib.matchPackage"
+            :match-tht-package="thtPkgLib.matchThtPackage"
+            :show-packages="showPackages"
+            :pnp-convention="pnp.convention.value"
+            @update:panel-config="handlePanelDataUpdate"
+          />
+          <!-- Board canvas (shown for all other tabs) -->
           <BoardCanvas
+            v-else
             ref="boardCanvasRef"
             :layers="renderLayers"
             :all-layers="layers"
@@ -545,7 +606,7 @@
             :delete-tool="deleteTool"
             :view-mode="viewMode"
             :preset="viewMode === 'realistic' ? selectedPreset : undefined"
-            :pnp-components="pnp.visibleComponents.value"
+            :pnp-components="sidebarTab === 'pcb' ? [] : pnp.visibleComponents.value"
             :selected-pnp-designator="pnp.selectedDesignator.value"
             :pnp-origin-x="pnp.originX.value"
             :pnp-origin-y="pnp.originY.value"
@@ -565,8 +626,9 @@
             :measure="measureTool"
             :transform="canvasInteraction.transform.value"
           />
-          <InfoOverlay :info="infoTool" />
+          <InfoOverlay v-if="sidebarTab !== 'panel'" :info="infoTool" />
           <DeleteOverlay
+            v-if="sidebarTab !== 'panel'"
             :delete-tool="deleteTool"
             @confirm-delete="handleConfirmDelete"
           />
@@ -601,7 +663,7 @@
             :view-mode="viewMode"
             @open-settings="showSettings = true"
           />
-          <BoardExtents :dimensions="boardSizeMm ?? null" />
+          <BoardExtents :dimensions="sidebarTab === 'panel' ? panelDimensionsMm : (boardSizeMm ?? null)" />
         </div>
       </main>
     </div>
@@ -633,6 +695,7 @@
       v-model:open="showComponentEdit"
       :component="editingComponent"
       :package-options="editingComponent?.componentType === 'tht' ? thtPackageOptions : packageOptions"
+      :bom-designators="bomDesignators"
       @update:rotation="pnp.setRotationOverride($event.key, $event.rotation)"
       @reset:rotation="pnp.resetRotationOverride($event.key)"
       @toggle:dnp="pnp.toggleDnp($event)"
@@ -668,7 +731,10 @@
 
 <script setup lang="ts">
 import type { GerberFile, LayerInfo, LayerFilter } from '~/utils/gerber-helpers'
-import type { SourceRange } from '@lib/gerber/types'
+import type { SourceRange, ImageTree, BoundingBox } from '@lib/gerber/types'
+import { parseGerber } from '@lib/gerber'
+import { plotImageTree } from '@lib/gerber/plotter'
+import { mergeBounds, emptyBounds, isEmpty } from '@lib/gerber/bounding-box'
 import { sortLayersByPcbOrder, isTopLayer, isBottomLayer, isSharedLayer, getColorForType, isPnPLayer } from '~/utils/gerber-helpers'
 import type { BomLine, BomColumnMapping } from '~/utils/bom-types'
 import type { PricingQueueItem } from '~/composables/useElexessApi'
@@ -687,7 +753,7 @@ const rawId = route.params.id as string
 const isTeamProject = rawId.startsWith('team-')
 const projectId = isTeamProject ? 0 : Number(rawId) // local projects use numeric IDs
 const teamProjectId = isTeamProject ? rawId.replace('team-', '') : null
-const { getProject, getFiles, addFiles, upsertFiles, clearFiles, renameFile, removeFile, getOriginalFiles, storeOriginalFiles, renameOriginalFile, removeOriginalFile, renameProject, updateFileLayerType, updateFileContent, updateProjectOrigin, updateProjectConvention, updateProjectRotationOverrides, updateProjectDnp, updateProjectCadPackageMap, updateProjectPolarizedOverrides, updateProjectComponentNotes, updateProjectFieldOverrides, updateProjectManualComponents, updateProjectDeletedComponents, updateBomLines, updateBomPricingCache, updateBomBoardQuantity, updatePcbData, getDocuments, addDocument, removeDocument: removeDocumentFromDb, updateDocumentType: updateDocumentTypeInDb } = useProject()
+const { getProject, getFiles, addFiles, upsertFiles, clearFiles, renameFile, removeFile, getOriginalFiles, storeOriginalFiles, renameOriginalFile, removeOriginalFile, renameProject, updateFileLayerType, updateFileContent, updateProjectOrigin, updateProjectConvention, updateProjectRotationOverrides, updateProjectDnp, updateProjectCadPackageMap, updateProjectPolarizedOverrides, updateProjectComponentNotes, updateProjectFieldOverrides, updateProjectManualComponents, updateProjectDeletedComponents, updateBomLines, updateBomPricingCache, updateBomBoardQuantity, updatePcbData, updatePanelData, getDocuments, addDocument, removeDocument: removeDocumentFromDb, updateDocumentType: updateDocumentTypeInDb } = useProject()
 
 // ── Team project support ──
 const teamProjectIdRef = ref(teamProjectId)
@@ -735,9 +801,9 @@ const canvasAreaBg = computed(() =>
 )
 const { sidebarWidth, dragging: sidebarDragging, onDragStart: onSidebarDragStart } = useSidebarWidth()
 
-// ── Sidebar tab (Files / SMD Components / THT Components / BOM / PCB / Pricing) ──
-type SidebarTab = 'layers' | 'smd' | 'tht' | 'bom' | 'pcb' | 'pricing' | 'docs'
-const VALID_TABS: SidebarTab[] = ['layers', 'smd', 'tht', 'bom', 'pcb', 'pricing', 'docs']
+// ── Sidebar tab (Files / PCB / Panel / SMD / THT / BOM / Pricing / Docs) ──
+type SidebarTab = 'layers' | 'pcb' | 'panel' | 'smd' | 'tht' | 'bom' | 'pricing' | 'docs'
+const VALID_TABS: SidebarTab[] = ['layers', 'pcb', 'panel', 'smd', 'tht', 'bom', 'pricing', 'docs']
 
 const router = useRouter()
 const initialTab = (route.query.tab as string) || 'layers'
@@ -818,6 +884,13 @@ watch(() => measureTool.active.value, (isActive) => {
 watch(() => deleteTool.active.value, (isActive) => {
   if (!isActive && activeMode.value === 'delete') {
     activeMode.value = 'cursor'
+  }
+})
+
+// Panel view does not support info/delete tools; fall back to cursor.
+watch(sidebarTab, (tab) => {
+  if (tab === 'panel' && (activeMode.value === 'info' || activeMode.value === 'delete')) {
+    setMode('cursor')
   }
 })
 
@@ -959,7 +1032,7 @@ const project = ref<any>(null)
 const layers = ref<LayerInfo[]>([])
 
 // ── PCB parameters for pricing ──
-const pcbData = ref<{ sizeX?: number; sizeY?: number; layerCount?: number; surfaceFinish?: 'ENIG' | 'HAL'; copperWeight?: '1oz' | '2oz' } | null>(null)
+const pcbData = ref<{ sizeX?: number; sizeY?: number; layerCount?: number; surfaceFinish?: 'ENIG' | 'HAL'; copperWeight?: '1oz' | '2oz'; innerCopperWeight?: '0.5oz' | '1oz' | '2oz' } | null>(null)
 
 function handlePcbDataUpdate(data: typeof pcbData.value) {
   pcbData.value = data
@@ -967,6 +1040,22 @@ function handlePcbDataUpdate(data: typeof pcbData.value) {
     persistToProject({ pcbData: data })
   } else {
     updatePcbData(projectId, data)
+  }
+}
+
+// ── Panel configuration ──
+import type { PanelConfig, DangerZoneConfig } from '~/utils/panel-types'
+import { DEFAULT_PANEL_CONFIG, migratePanelConfig } from '~/utils/panel-types'
+
+const panelData = ref<PanelConfig>(DEFAULT_PANEL_CONFIG())
+const panelDangerZone = ref<DangerZoneConfig>({ enabled: false, insetMm: 2 })
+
+function handlePanelDataUpdate(data: PanelConfig) {
+  panelData.value = data
+  if (isTeamProject) {
+    persistToProject({ panelData: data })
+  } else {
+    updatePanelData(projectId, data)
   }
 }
 
@@ -995,16 +1084,89 @@ const selectedPreset = computed({
   set: (p: PcbPreset) => { prefs.presetId.value = p.id },
 })
 const boardCanvasRef = ref<any>(null)
+const panelCanvasRef = ref<any>(null)
+
+const panelDimensionsMm = computed<{ width: number; height: number } | null>(() => {
+  const canvas = panelCanvasRef.value
+  if (!canvas) return null
+  return canvas.panelDimensions ?? null
+})
+
 const showSettings = ref(false)
 const showPnPExport = ref(false)
 const showImageExport = ref(false)
 const showComponentEdit = ref(false)
 const editingComponent = ref<import('~/composables/usePickAndPlace').EditablePnPComponent | null>(null)
 
-const boardSizeMm = computed<{ width: number; height: number } | undefined>(() => {
+// Board dimensions — cached so the value survives when BoardCanvas is unmounted (e.g. panel tab)
+const _cachedBoardSizeMm = ref<{ width: number; height: number } | undefined>(undefined)
+
+const _liveBoardSizeMm = computed<{ width: number; height: number } | undefined>(() => {
   const canvas = boardCanvasRef.value
   if (!canvas) return undefined
   return canvas.boardDimensions ?? canvas.getExportDimensionsMm() ?? undefined
+})
+
+// Keep the cache updated whenever the live value changes
+watch(_liveBoardSizeMm, (dims) => {
+  if (dims) _cachedBoardSizeMm.value = dims
+}, { immediate: true })
+
+// Gerber-based fallback: compute board dimensions directly from layer data.
+// Needed when BoardCanvas has never mounted (e.g. page opened on panel tab).
+const _gerberImageTreeCache = new Map<string, ImageTree>()
+const _gerberBoardSizeMm = computed<{ width: number; height: number } | undefined>(() => {
+  const ls = layers.value
+  if (ls.length === 0) return undefined
+
+  // Prefer outline bounds for accurate physical dimensions
+  const outlineLayer = ls.find(l => l.type === 'Outline') || ls.find(l => l.type === 'Keep-Out')
+  if (outlineLayer && !isPnPLayer(outlineLayer.type)) {
+    const tree = _parseLayerTree(outlineLayer)
+    if (tree && tree.children.length > 0 && !isEmpty(tree.bounds as BoundingBox)) {
+      const b = tree.bounds as BoundingBox
+      const bw = b[2] - b[0]
+      const bh = b[3] - b[1]
+      if (bw > 0 && bh > 0) {
+        const toMm = tree.units === 'in' ? 25.4 : 1
+        return { width: bw * toMm, height: bh * toMm }
+      }
+    }
+  }
+
+  // Fallback: union of all Gerber layer bounds
+  let bounds: BoundingBox = emptyBounds()
+  let units: 'mm' | 'in' = 'mm'
+  for (const layer of ls) {
+    if (isPnPLayer(layer.type)) continue
+    const tree = _parseLayerTree(layer)
+    if (!tree || tree.children.length === 0) continue
+    bounds = mergeBounds(bounds, tree.bounds as BoundingBox)
+    units = tree.units
+  }
+  if (isEmpty(bounds)) return undefined
+  const bw = bounds[2] - bounds[0]
+  const bh = bounds[3] - bounds[1]
+  if (bw <= 0 || bh <= 0) return undefined
+  const toMm = units === 'in' ? 25.4 : 1
+  return { width: bw * toMm, height: bh * toMm }
+})
+
+function _parseLayerTree(layer: LayerInfo): ImageTree | null {
+  const key = layer.file.fileName
+  if (_gerberImageTreeCache.has(key)) return _gerberImageTreeCache.get(key)!
+  try {
+    const ast = parseGerber(layer.file.content)
+    const tree = plotImageTree(ast)
+    _gerberImageTreeCache.set(key, tree)
+    return tree
+  } catch {
+    return null
+  }
+}
+
+const boardSizeMm = computed<{ width: number; height: number } | undefined>(() => {
+  return _liveBoardSizeMm.value ?? _cachedBoardSizeMm.value ?? _gerberBoardSizeMm.value
 })
 
 /** Count copper layers from loaded Gerber files to suggest PCB layer count */
@@ -1018,6 +1180,9 @@ const downloadMenuItems = computed(() => {
   const items: { label: string; icon: string; onSelect: () => void }[] = []
   if (viewMode.value === 'realistic') {
     items.push({ label: 'Export Image', icon: 'i-lucide-image', onSelect: () => { showImageExport.value = true } })
+  }
+  if (sidebarTab.value === 'panel' && layers.value.length > 0) {
+    items.push({ label: 'Export Panel Image', icon: 'i-lucide-grid-2x2', onSelect: handleExportPanelImage })
   }
   if (layers.value.length > 0) {
     items.push({ label: 'Download Gerber', icon: 'i-lucide-file-archive', onSelect: () => { handleDownloadGerber() } })
@@ -1162,6 +1327,31 @@ onUnmounted(() => {
 // ── BOM ──
 const bom = useBom(layers)
 const elexess = useElexessApi()
+
+// ── BOM ↔ PnP cross-reference designator sets ──
+
+/** Designators present in PnP (SMD + THT), excluding DNP components */
+const pnpDesignators = computed(() => {
+  const s = new Set<string>()
+  for (const c of pnp.smdActiveComponents.value) {
+    if (!c.dnp) s.add(c.designator)
+  }
+  for (const c of pnp.thtActiveComponents.value) {
+    if (!c.dnp) s.add(c.designator)
+  }
+  return s
+})
+
+/** Designators present in BOM (all non-DNP lines, split from comma-separated refs) */
+const bomDesignators = computed(() => {
+  const s = new Set<string>()
+  for (const line of bom.bomLines.value) {
+    if (line.dnp) continue
+    const refs = (line.references || '').split(/[,;\s]+/).map(r => r.trim()).filter(Boolean)
+    for (const r of refs) s.add(r)
+  }
+  return s
+})
 
 const showBomFieldMapping = ref(false)
 
@@ -1520,6 +1710,7 @@ onMounted(async () => {
         bomPricingCache: tp.bom_pricing_cache,
         bomBoardQuantity: tp.bom_board_quantity,
         pcbData: tp.pcb_data,
+        panelData: tp.panel_data,
       }
     }
   } else {
@@ -1626,11 +1817,18 @@ onMounted(async () => {
 
   // Restore persisted BOM data
   bom.setBomLines(project.value?.bomLines)
-  bom.setPricingCache(project.value?.bomPricingCache)
+  const restoredCache = project.value?.bomPricingCache
+  if (restoredCache) elexess.cleanPricingCache(restoredCache)
+  bom.setPricingCache(restoredCache)
   bom.setBoardQuantity(project.value?.bomBoardQuantity)
 
   // Restore persisted PCB data
   pcbData.value = project.value?.pcbData ?? null
+
+  // Restore persisted panel data (with backward-compatible migration)
+  if (project.value?.panelData) {
+    panelData.value = migratePanelConfig(project.value.panelData as Record<string, any>)
+  }
 
   // Restore persisted documents (PDFs)
   if (isTeamProject && teamProjectId) {
@@ -2121,6 +2319,20 @@ function handleExportSvg() {
   const svgString = exportRealisticSvg(realisticLayers, selectedPreset.value, side)
   const blob = new Blob([svgString], { type: 'image/svg+xml' })
   triggerDownload(blob, `${project.value?.name || 'pcb'}-${side}.svg`)
+}
+
+async function handleExportPanelImage() {
+  const canvas = panelCanvasRef.value
+  if (!canvas) return
+  const blob = await canvas.exportPng(600)
+  if (!blob) return
+  const projectName = project.value?.name || 'panel'
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${projectName}-panel.png`
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 async function handleExportImage(options: { format: 'png' | 'svg'; componentsMode: 'none' | 'smd' | 'tht' | 'all' | 'both'; sideMode: 'top' | 'bottom' | 'both'; dpi: number }) {

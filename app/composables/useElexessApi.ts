@@ -10,6 +10,19 @@ import type { BomLine, BomPricingCache, BomPricingEntry } from '~/utils/bom-type
 /** Default cache TTL: 24 hours */
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000
 
+/** Suppliers to exclude from all Elexess results */
+const BLOCKED_SUPPLIERS = new Set(['Winsource', 'ChipCart', 'Unikeyic', 'CoreStaff'])
+
+/** Remove blocked suppliers from an Elexess response object (mutates in place). */
+function stripBlockedSuppliers(data: any): any {
+  if (data?.results && Array.isArray(data.results)) {
+    data.results = data.results.filter(
+      (r: any) => !BLOCKED_SUPPLIERS.has(r.supplier),
+    )
+  }
+  return data
+}
+
 /** Delay between sequential API calls (ms) */
 const RATE_LIMIT_DELAY_MS = 500
 
@@ -88,7 +101,8 @@ export function useElexessApi() {
           console.warn(`[Elexess] Search failed for "${partNumber}": ${response.status} ${response.statusText}`)
           return null
         }
-        return await response.json()
+        const json = await response.json()
+        return stripBlockedSuppliers(json)
       } catch (err) {
         console.error(`[Elexess] Search error for "${partNumber}":`, err)
         return null
@@ -188,6 +202,17 @@ export function useElexessApi() {
     return { data, fetchedAt: new Date().toISOString() }
   }
 
+  /**
+   * Strip blocked suppliers from every entry in an existing pricing cache.
+   * Returns a new cache object (existing entries are mutated for efficiency).
+   */
+  function cleanPricingCache(cache: BomPricingCache): BomPricingCache {
+    for (const key of Object.keys(cache)) {
+      if (cache[key]?.data) stripBlockedSuppliers(cache[key].data)
+    }
+    return cache
+  }
+
   return {
     hasCredentials,
     isFetching: readonly(isFetching),
@@ -195,5 +220,6 @@ export function useElexessApi() {
     searchPart,
     fetchAllPricing,
     fetchSinglePricing,
+    cleanPricingCache,
   }
 }
