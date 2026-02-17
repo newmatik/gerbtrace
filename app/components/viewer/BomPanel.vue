@@ -56,7 +56,7 @@
         :class="sortBy === 'price'
           ? 'border-primary/40 text-primary bg-primary/5'
           : 'border-neutral-200 dark:border-neutral-700 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200'"
-        title="Sort by total price (cheapest first)"
+        title="Sort by total price (highest first)"
         @click="sortBy = 'price'"
       >
         <UIcon name="i-lucide-arrow-down-0-1" class="text-[10px]" />
@@ -352,7 +352,8 @@
                 </div>
 
                 <!-- Supplier offers table (collapsible) -->
-                <template v-if="getSupplierOffers(mfr.manufacturerPart, line.quantity * boardQuantity).length > 0">
+                <template v-for="offers in [getSupplierOffers(mfr.manufacturerPart, line.quantity * boardQuantity)]" :key="mfr.manufacturerPart">
+                  <template v-if="offers.length > 0">
                   <button
                     class="flex items-center gap-1 text-[10px] text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors"
                     @click.stop="togglePriceTable(mfr.manufacturerPart)"
@@ -361,7 +362,7 @@
                       :name="expandedPriceTables.has(mfr.manufacturerPart) ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right'"
                       class="text-[10px]"
                     />
-                    {{ getSupplierOffers(mfr.manufacturerPart, line.quantity * boardQuantity).length }} suppliers
+                    {{ offers.length }} suppliers
                   </button>
                   <div v-if="expandedPriceTables.has(mfr.manufacturerPart)" class="rounded border border-neutral-100 dark:border-neutral-800 overflow-hidden">
                     <!-- Table header -->
@@ -374,7 +375,7 @@
                     </div>
                     <!-- Supplier rows -->
                     <div
-                      v-for="(offer, oi) in getSupplierOffers(mfr.manufacturerPart, line.quantity * boardQuantity)"
+                      v-for="(offer, oi) in offers"
                       :key="oi"
                       class="grid grid-cols-[1fr_60px_60px_70px_70px] gap-1 px-2 py-0.5 text-[10px] border-t border-neutral-50 dark:border-neutral-800/50"
                       :class="{
@@ -399,12 +400,12 @@
                       </span>
                     </div>
                   </div>
+                  </template>
+                  <!-- No pricing data -->
+                  <div v-else-if="!pricingCache[mfr.manufacturerPart] && !getQueueStatus(mfr.manufacturerPart)" class="text-[10px] text-neutral-400 italic pl-1">
+                    No pricing data
+                  </div>
                 </template>
-
-                <!-- No pricing data -->
-                <div v-else-if="!pricingCache[mfr.manufacturerPart] && !getQueueStatus(mfr.manufacturerPart)" class="text-[10px] text-neutral-400 italic pl-1">
-                  No pricing data
-                </div>
               </div>
 
               <!-- Inline add manufacturer -->
@@ -517,9 +518,9 @@ function toggleFilter(key: FilterKey) {
 }
 
 function lineHasPrice(line: BomLine): boolean {
+  const totalQty = line.quantity * props.boardQuantity
   for (const mfr of line.manufacturers) {
-    const entry = props.pricingCache[mfr.manufacturerPart]
-    if (entry?.data?.results?.length > 0) return true
+    if (getSupplierOffers(mfr.manufacturerPart, totalQty).length > 0) return true
   }
   return false
 }
@@ -757,7 +758,13 @@ interface SupplierOffer {
  * Returns the tier whose quantity is <= totalQty and closest to it,
  * or the first tier if qty is below all tiers.
  */
-function pickTierPrice(pricebreaks: any[], totalQty: number): { price: number; currency: string } | null {
+interface PriceBreak {
+  quantity?: number
+  price?: number
+  currency?: string
+}
+
+function pickTierPrice(pricebreaks: PriceBreak[], totalQty: number): { price: number; currency: string } | null {
   if (!pricebreaks || pricebreaks.length === 0) return null
   const sorted = [...pricebreaks].sort((a, b) => (a.quantity ?? 0) - (b.quantity ?? 0))
   let best = sorted[0]
@@ -779,7 +786,7 @@ function getSupplierOffers(mpn: string, totalQty: number): SupplierOffer[] {
   const results = entry.data?.results
   if (!Array.isArray(results) || results.length === 0) return []
 
-  const offers: SupplierOffer[] = []
+  const candidates: SupplierOffer[] = []
   const seenSuppliers = new Set<string>()
 
   for (const r of results) {
@@ -787,12 +794,7 @@ function getSupplierOffers(mpn: string, totalQty: number): SupplierOffer[] {
     const tier = pickTierPrice(r.pricebreaks, totalQty)
     if (!tier) continue
 
-    // Deduplicate by supplier — keep cheapest
-    const key = `${r.supplier}-${tier.currency}`
-    if (seenSuppliers.has(key)) continue
-    seenSuppliers.add(key)
-
-    offers.push({
+    candidates.push({
       supplier: r.supplier || 'Unknown',
       country: r.country || '',
       stock: r.current_stock ?? 0,
@@ -802,6 +804,15 @@ function getSupplierOffers(mpn: string, totalQty: number): SupplierOffer[] {
       currency: tier.currency,
       lineValue: tier.price * totalQty,
     })
+  }
+
+  const offers: SupplierOffer[] = []
+  for (const offer of candidates.sort((a, b) => a.unitPrice - b.unitPrice)) {
+    // Deduplicate by supplier/currency — keep cheapest (first after sort)
+    const key = `${offer.supplier}-${offer.currency}`
+    if (seenSuppliers.has(key)) continue
+    seenSuppliers.add(key)
+    offers.push(offer)
   }
 
   return offers.sort((a, b) => a.unitPrice - b.unitPrice)

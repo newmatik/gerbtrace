@@ -204,13 +204,21 @@ export function useElexessApi() {
 
   /**
    * Strip blocked suppliers from every entry in an existing pricing cache.
-   * Returns a new cache object (existing entries are mutated for efficiency).
+   * Returns a new cache object without mutating the original cache.
    */
   function cleanPricingCache(cache: BomPricingCache): BomPricingCache {
-    for (const key of Object.keys(cache)) {
-      if (cache[key]?.data) stripBlockedSuppliers(cache[key].data)
+    const next: BomPricingCache = { ...cache }
+    for (const key of Object.keys(next)) {
+      const entry = next[key]
+      if (!entry) continue
+      const data = entry.data
+      if (!data) continue
+      const clonedData = typeof structuredClone === 'function'
+        ? structuredClone(data)
+        : JSON.parse(JSON.stringify(data))
+      next[key] = { ...entry, data: stripBlockedSuppliers(clonedData) }
     }
-    return cache
+    return next
   }
 
   return {

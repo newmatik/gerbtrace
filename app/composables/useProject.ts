@@ -34,6 +34,18 @@ interface ProjectRecord {
   pnpManualComponents?: { id: string; designator: string; value: string; package: string; x: number; y: number; rotation: number; side: 'top' | 'bottom'; componentType?: 'smd' | 'tht' }[] | null
   /** Component keys deleted by the user (parsed components removed from view) */
   pnpDeletedComponents?: string[] | null
+  /** Persisted sort state for SMD component table */
+  pnpSortSmd?: { key: 'ref' | 'x' | 'y' | 'rot' | 'pol' | 'value' | 'cadPackage' | 'package' | null; asc: boolean } | null
+  /** Persisted sort state for THT component table */
+  pnpSortTht?: { key: 'ref' | 'x' | 'y' | 'rot' | 'pol' | 'value' | 'cadPackage' | 'package' | null; asc: boolean } | null
+  /** Persisted manual row order for SMD component table */
+  pnpManualOrderSmd?: string[] | null
+  /** Persisted manual row order for THT component table */
+  pnpManualOrderTht?: string[] | null
+  /** Persisted user-defined PnP groups for SMD/THT */
+  pnpComponentGroups?: { id: string; componentType: 'smd' | 'tht'; name: string; comment: string; hidden: boolean; collapsed: boolean }[] | null
+  /** Component key -> group id assignment map */
+  pnpGroupAssignments?: Record<string, string> | null
   /** BOM line items */
   bomLines?: BomLine[] | null
   /** Cached Elexess pricing data keyed by manufacturer part number */
@@ -176,6 +188,20 @@ class GerbtraceDB extends Dexie {
     })
     // v17: add panelData to projects (non-indexed, just stored)
     this.version(17).stores({
+      projects: '++id, name, mode, createdAt, updatedAt',
+      files: '++id, projectId, packet, fileName',
+      fileOriginals: '++id, projectId, packet, fileName',
+      documents: '++id, projectId, fileName',
+    })
+    // v18: add persisted PnP sort/group state to projects
+    this.version(18).stores({
+      projects: '++id, name, mode, createdAt, updatedAt',
+      files: '++id, projectId, packet, fileName',
+      fileOriginals: '++id, projectId, packet, fileName',
+      documents: '++id, projectId, fileName',
+    })
+    // v19: add persisted manual PnP order state
+    this.version(19).stores({
       projects: '++id, name, mode, createdAt, updatedAt',
       files: '++id, projectId, packet, fileName',
       fileOriginals: '++id, projectId, packet, fileName',
@@ -334,6 +360,30 @@ export function useProject() {
     await db.projects.update(id, { pnpDeletedComponents: keys, updatedAt: new Date() })
   }
 
+  async function updateProjectSortSmd(id: number, sortState: { key: 'ref' | 'x' | 'y' | 'rot' | 'pol' | 'value' | 'cadPackage' | 'package' | null; asc: boolean }) {
+    await db.projects.update(id, { pnpSortSmd: sortState, updatedAt: new Date() })
+  }
+
+  async function updateProjectSortTht(id: number, sortState: { key: 'ref' | 'x' | 'y' | 'rot' | 'pol' | 'value' | 'cadPackage' | 'package' | null; asc: boolean }) {
+    await db.projects.update(id, { pnpSortTht: sortState, updatedAt: new Date() })
+  }
+
+  async function updateProjectManualOrderSmd(id: number, keys: string[]) {
+    await db.projects.update(id, { pnpManualOrderSmd: keys, updatedAt: new Date() })
+  }
+
+  async function updateProjectManualOrderTht(id: number, keys: string[]) {
+    await db.projects.update(id, { pnpManualOrderTht: keys, updatedAt: new Date() })
+  }
+
+  async function updateProjectComponentGroups(id: number, groups: { id: string; componentType: 'smd' | 'tht'; name: string; comment: string; hidden: boolean; collapsed: boolean }[]) {
+    await db.projects.update(id, { pnpComponentGroups: groups, updatedAt: new Date() })
+  }
+
+  async function updateProjectGroupAssignments(id: number, assignments: Record<string, string>) {
+    await db.projects.update(id, { pnpGroupAssignments: assignments, updatedAt: new Date() })
+  }
+
   async function updateBomLines(id: number, lines: BomLine[]) {
     await db.projects.update(id, { bomLines: lines, updatedAt: new Date() })
   }
@@ -489,6 +539,12 @@ export function useProject() {
     updateProjectFieldOverrides,
     updateProjectManualComponents,
     updateProjectDeletedComponents,
+    updateProjectSortSmd,
+    updateProjectSortTht,
+    updateProjectManualOrderSmd,
+    updateProjectManualOrderTht,
+    updateProjectComponentGroups,
+    updateProjectGroupAssignments,
     updateBomLines,
     updateBomPricingCache,
     updateBomBoardQuantity,

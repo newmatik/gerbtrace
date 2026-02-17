@@ -178,6 +178,21 @@ function unrotateScreenPoint(sx: number, sy: number): { x: number; y: number } {
   }
 }
 
+/** Rotate a screen point around the canvas center by board rotation. */
+function rotateScreenPoint(sx: number, sy: number, cssWidth: number, cssHeight: number): { x: number; y: number } {
+  const deg = props.boardRotation ?? 0
+  if (deg === 0) return { x: sx, y: sy }
+  const cx = cssWidth / 2
+  const cy = cssHeight / 2
+  const rad = getRotationRad()
+  const dx = sx - cx
+  const dy = sy - cy
+  return {
+    x: cx + dx * Math.cos(rad) - dy * Math.sin(rad),
+    y: cy + dx * Math.sin(rad) + dy * Math.cos(rad),
+  }
+}
+
 function invalidateSceneCache() {
   sceneCache = null
 }
@@ -611,7 +626,8 @@ function drawPnPMarkers(
     if (mirrored) {
       screenX = cssWidth - screenX
     }
-    if (!isCircleVisible(screenX, screenY, PNP_DOT_RADIUS + 6, cssWidth, cssHeight)) continue
+    const rotatedDot = rotateScreenPoint(screenX, screenY, cssWidth, cssHeight)
+    if (!isCircleVisible(rotatedDot.x, rotatedDot.y, PNP_DOT_RADIUS + 6, cssWidth, cssHeight)) continue
 
     const isSelected = (options?.selectedDesignator ?? props.selectedPnpDesignator) === comp.designator
 
@@ -783,7 +799,8 @@ function drawPackageFootprints(
 
     const isSelected = (options?.selectedDesignator ?? props.selectedPnpDesignator) === comp.designator
     const extentPx = Math.max(6, computePkgExtent(shapes) * mmToScreen + 12)
-    if (!isCircleVisible(centerSx, centerSy, extentPx, cssWidth, cssHeight)) continue
+    const rotatedCenter = rotateScreenPoint(centerSx, centerSy, cssWidth, cssHeight)
+    if (!isCircleVisible(rotatedCenter.x, rotatedCenter.y, extentPx, cssWidth, cssHeight)) continue
 
     ctx.save()
     ctx.translate(centerSx, centerSy)

@@ -1,6 +1,6 @@
 {
   "name": "gerbtrace",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "private": true,
   "description": "Gerbtrace — View and compare Gerber PCB files in the browser",
   "author": "Newmatik GmbH",

@@ -169,27 +169,46 @@ export function computePanelLayout(
   boardWidth: number,
   boardHeight: number,
 ): PanelLayout {
-  const rot = config.pcbRotation % 360
+  const rot = ((config.pcbRotation % 360) + 360) % 360
   const isRotated = rot === 90 || rot === 270
   const pcbW = isRotated ? boardHeight : boardWidth
   const pcbH = isRotated ? boardWidth : boardHeight
 
   const { countX, countY } = config
   const toolD = config.routingToolDiameter
-  const isScored = config.separationType === 'scored'
+  const hasAnyRoutedSeparation = config.separationType === 'routed'
+    || (config.separationType === 'mixed'
+      && (config.edges.top.type === 'routed'
+        || config.edges.bottom.type === 'routed'
+        || config.edges.left.type === 'routed'
+        || config.edges.right.type === 'routed'))
+  const isScored = !hasAnyRoutedSeparation
+  const edgeRoutedTop = config.separationType === 'routed'
+    || (config.separationType === 'mixed' && config.edges.top.type === 'routed')
+  const edgeRoutedBottom = config.separationType === 'routed'
+    || (config.separationType === 'mixed' && config.edges.bottom.type === 'routed')
+  const edgeRoutedLeft = config.separationType === 'routed'
+    || (config.separationType === 'mixed' && config.edges.left.type === 'routed')
+  const edgeRoutedRight = config.separationType === 'routed'
+    || (config.separationType === 'mixed' && config.edges.right.type === 'routed')
+  const hasVerticalRouted = edgeRoutedLeft || edgeRoutedRight
+  const hasHorizontalRouted = edgeRoutedTop || edgeRoutedBottom
   const supportsEnabled = config.supports.enabled ?? true
   const xSupportGaps = supportsEnabled ? config.supports.xGaps : []
   const ySupportGaps = supportsEnabled ? config.supports.yGaps : []
 
-  // Determine routing gap for frame edges
-  const frameRoutingGap = (isScored ? 0 : toolD)
+  // Determine routing gap for each frame edge independently in mixed mode.
+  const frameGapTop = config.frame.enabled && edgeRoutedTop ? toolD : 0
+  const frameGapBottom = config.frame.enabled && edgeRoutedBottom ? toolD : 0
+  const frameGapLeft = config.frame.enabled && edgeRoutedLeft ? toolD : 0
+  const frameGapRight = config.frame.enabled && edgeRoutedRight ? toolD : 0
 
   // Compute gap for each column gap (between col i and col i+1).
   // supports.width is the actual FR4 rail material width.
   // Routed channels flank that rail with one tool diameter on each side.
   const colGaps: number[] = []
   for (let i = 0; i < countX - 1; i++) {
-    if (isScored) {
+    if (!hasVerticalRouted) {
       colGaps.push(0)
     } else if (xSupportGaps.includes(i)) {
       colGaps.push(config.supports.width + 2 * toolD)
@@ -201,7 +220,7 @@ export function computePanelLayout(
   // Compute gap for each row gap (between row i and row i+1)
   const rowGaps: number[] = []
   for (let i = 0; i < countY - 1; i++) {
-    if (isScored) {
+    if (!hasHorizontalRouted) {
       rowGaps.push(0)
     } else if (ySupportGaps.includes(i)) {
       rowGaps.push(config.supports.width + 2 * toolD)
@@ -212,16 +231,16 @@ export function computePanelLayout(
 
   const frameW = config.frame.enabled ? config.frame.width : 0
 
-  // Inner area = frame routing gap + PCBs + gaps + frame routing gap
-  const innerWidth = frameRoutingGap + countX * pcbW + colGaps.reduce((a, b) => a + b, 0) + frameRoutingGap
-  const innerHeight = frameRoutingGap + countY * pcbH + rowGaps.reduce((a, b) => a + b, 0) + frameRoutingGap
+  // Inner area = per-edge frame routing gap + PCBs + internal gaps
+  const innerWidth = frameGapLeft + countX * pcbW + colGaps.reduce((a, b) => a + b, 0) + frameGapRight
+  const innerHeight = frameGapTop + countY * pcbH + rowGaps.reduce((a, b) => a + b, 0) + frameGapBottom
 
   const totalWidth = innerWidth + 2 * frameW
   const totalHeight = innerHeight + 2 * frameW
 
   // Compute X positions for each column
   const colX: number[] = []
-  let cx = frameW + frameRoutingGap
+  let cx = frameW + frameGapLeft
   for (let col = 0; col < countX; col++) {
     colX.push(cx)
     if (col < countX - 1) cx += pcbW + colGaps[col]
@@ -229,7 +248,7 @@ export function computePanelLayout(
 
   // Compute Y positions for each row
   const rowY: number[] = []
-  let cy = frameW + frameRoutingGap
+  let cy = frameW + frameGapTop
   for (let row = 0; row < countY; row++) {
     rowY.push(cy)
     if (row < countY - 1) cy += pcbH + rowGaps[row]
@@ -272,26 +291,27 @@ export function computePanelLayout(
   const vcutLines: VCutLine[] = []
 
   const isRoutedSep = config.separationType === 'routed'
-  const isScoredSep = config.separationType === 'scored'
+  const isScoredSep = isScored
 
   // Helper: does a given separation act as routed?
   const isEdgeRouted = (edge: 'top' | 'bottom' | 'left' | 'right') => {
-    if (isRoutedSep) return true
-    if (isScoredSep) return false
-    return config.edges[edge].type === 'routed'
+    if (edge === 'top') return edgeRoutedTop
+    if (edge === 'bottom') return edgeRoutedBottom
+    if (edge === 'left') return edgeRoutedLeft
+    return edgeRoutedRight
   }
 
   // Ranges occupied by support-rail material, used to prevent routing
   // channels from cutting through rails.
   const railMaterialForCuts = Math.max(0, config.supports.width)
-  const verticalRailRanges = xSupportGaps
+  const verticalRailRanges = (hasVerticalRouted ? xSupportGaps : [])
     .filter(gi => gi >= 0 && gi < countX - 1)
     .map(gi => {
       const railX = colX[gi] + pcbW + toolD
       return { start: railX, end: railX + railMaterialForCuts }
     })
     .filter(r => r.end > r.start)
-  const horizontalRailRanges = ySupportGaps
+  const horizontalRailRanges = (hasHorizontalRouted ? ySupportGaps : [])
     .filter(gi => gi >= 0 && gi < countY - 1)
     .map(gi => {
       const railY = rowY[gi] + pcbH + toolD
@@ -321,7 +341,7 @@ export function computePanelLayout(
     const y1Full = frameW
     const y2Full = frameW + innerHeight
 
-    if (isScoredSep) {
+    if (!hasVerticalRouted) {
       vcutLines.push({ x1: gapStart, y1: y1Full, x2: gapStart, y2: y2Full })
     } else if (xSupportGaps.includes(i)) {
       // Two routing channels flanking the support bar.
@@ -349,7 +369,7 @@ export function computePanelLayout(
     const x1Full = frameW
     const x2Full = frameW + innerWidth
 
-    if (isScoredSep) {
+    if (!hasHorizontalRouted) {
       vcutLines.push({ x1: x1Full, y1: gapStart, x2: x2Full, y2: gapStart })
     } else if (ySupportGaps.includes(i)) {
       // Two routing channels flanking the support bar.
@@ -372,10 +392,10 @@ export function computePanelLayout(
 
   // Frame-to-PCB routing channels (all four sides)
   if (config.frame.enabled && !isScoredSep) {
-    const innerLeft = frameW + frameRoutingGap / 2
-    const innerRight = totalWidth - frameW - frameRoutingGap / 2
-    const innerTop = frameW + frameRoutingGap / 2
-    const innerBottom = totalHeight - frameW - frameRoutingGap / 2
+    const innerLeft = frameW + frameGapLeft / 2
+    const innerRight = totalWidth - frameW - frameGapRight / 2
+    const innerTop = frameW + frameGapTop / 2
+    const innerBottom = totalHeight - frameW - frameGapBottom / 2
     const edgeStartX = frameW
     const edgeEndX = totalWidth - frameW
     const edgeStartY = frameW
@@ -424,7 +444,7 @@ export function computePanelLayout(
   // The rail FR4 material directly uses supports.width (routing lanes are outside it).
   const railMaterial = Math.max(0, config.supports.width)
   const supportRails: SupportRail[] = []
-  for (const gi of xSupportGaps) {
+  for (const gi of (hasVerticalRouted ? xSupportGaps : [])) {
     if (gi < 0 || gi >= countX - 1) continue
     const railX = colX[gi] + pcbW + toolD
     supportRails.push({
@@ -436,7 +456,7 @@ export function computePanelLayout(
       gapIndex: gi,
     })
   }
-  for (const gi of ySupportGaps) {
+  for (const gi of (hasHorizontalRouted ? ySupportGaps : [])) {
     if (gi < 0 || gi >= countY - 1) continue
     const railY = rowY[gi] + pcbH + toolD
     supportRails.push({
@@ -451,7 +471,7 @@ export function computePanelLayout(
 
   // Tabs
   const tabs: TabMarker[] = []
-  if (!isScoredSep) {
+  if (hasAnyRoutedSeparation) {
     const tabW = config.tabs.width
     const syncTabs = config.tabs.syncAcrossPanel ?? true
     const getOverrideKey = (
@@ -484,7 +504,7 @@ export function computePanelLayout(
         const py = rowY[row]
 
         // Right edge -> connects to next column or frame
-        if (col < countX - 1) {
+        if (col < countX - 1 && hasVerticalRouted) {
           const positionsMain = getTabPositions(col, row, 'right', 'main')
           const gapX = px + pcbW
           const gapW = colGaps[col]
@@ -499,7 +519,7 @@ export function computePanelLayout(
         }
 
         // Bottom edge -> connects to next row or frame
-        if (row < countY - 1) {
+        if (row < countY - 1 && hasHorizontalRouted) {
           const positionsMain = getTabPositions(col, row, 'bottom', 'main')
           const gapY = py + pcbH
           const gapH = rowGaps[row]
@@ -514,29 +534,29 @@ export function computePanelLayout(
         }
 
         // Left edge -> connects to frame (only first column)
-        if (col === 0 && config.frame.enabled && frameRoutingGap > 0) {
+        if (col === 0 && config.frame.enabled && frameGapLeft > 0 && isEdgeRouted('left')) {
           const positions = getTabPositions(col, row, 'left', 'main')
-          placeTabsAtPositions(tabs, positions, tabW, py, pcbH, frameW, frameRoutingGap, 'vertical', col, row, 'left', getOverrideKey(col, row, 'left', 'main'), 'main')
+          placeTabsAtPositions(tabs, positions, tabW, py, pcbH, frameW, frameGapLeft, 'vertical', col, row, 'left', getOverrideKey(col, row, 'left', 'main'), 'main')
         }
 
         // Top edge -> connects to frame (only first row)
-        if (row === 0 && config.frame.enabled && frameRoutingGap > 0) {
+        if (row === 0 && config.frame.enabled && frameGapTop > 0 && isEdgeRouted('top')) {
           const positions = getTabPositions(col, row, 'top', 'main')
-          placeTabsAtPositions(tabs, positions, tabW, px, pcbW, frameW, frameRoutingGap, 'horizontal', col, row, 'top', getOverrideKey(col, row, 'top', 'main'), 'main')
+          placeTabsAtPositions(tabs, positions, tabW, px, pcbW, frameW, frameGapTop, 'horizontal', col, row, 'top', getOverrideKey(col, row, 'top', 'main'), 'main')
         }
 
         // Right edge -> connects to frame (only last column)
-        if (col === countX - 1 && config.frame.enabled && frameRoutingGap > 0) {
+        if (col === countX - 1 && config.frame.enabled && frameGapRight > 0 && isEdgeRouted('right')) {
           const positions = getTabPositions(col, row, 'right', 'main')
           const gapX = px + pcbW
-          placeTabsAtPositions(tabs, positions, tabW, py, pcbH, gapX, frameRoutingGap, 'vertical', col, row, 'right', getOverrideKey(col, row, 'right', 'main'), 'main')
+          placeTabsAtPositions(tabs, positions, tabW, py, pcbH, gapX, frameGapRight, 'vertical', col, row, 'right', getOverrideKey(col, row, 'right', 'main'), 'main')
         }
 
         // Bottom edge -> connects to frame (only last row)
-        if (row === countY - 1 && config.frame.enabled && frameRoutingGap > 0) {
+        if (row === countY - 1 && config.frame.enabled && frameGapBottom > 0 && isEdgeRouted('bottom')) {
           const positions = getTabPositions(col, row, 'bottom', 'main')
           const gapY = py + pcbH
-          placeTabsAtPositions(tabs, positions, tabW, px, pcbW, gapY, frameRoutingGap, 'horizontal', col, row, 'bottom', getOverrideKey(col, row, 'bottom', 'main'), 'main')
+          placeTabsAtPositions(tabs, positions, tabW, px, pcbW, gapY, frameGapBottom, 'horizontal', col, row, 'bottom', getOverrideKey(col, row, 'bottom', 'main'), 'main')
         }
       }
     }
@@ -555,6 +575,10 @@ export function computePanelLayout(
       switch (pos) {
         case 'top-left':
           fx = inset
+          fy = inset
+          break
+        case 'top-right':
+          fx = totalWidth - inset
           fy = inset
           break
         case 'bottom-left':

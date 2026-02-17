@@ -144,7 +144,17 @@ const tabDrag = ref<TabDragState | null>(null)
 const hoveredTab = ref<TabMarker | null>(null)
 const tabEditMode = ref<TabEditMode>('move')
 const addPreview = ref<{ x: number; y: number; width: number; height: number } | null>(null)
-const tabControlEnabled = computed(() => props.panelConfig.separationType !== 'scored')
+
+function hasAnyRoutedSeparation(config: PanelConfig): boolean {
+  if (config.separationType === 'routed') return true
+  if (config.separationType === 'scored') return false
+  return config.edges.top.type === 'routed'
+    || config.edges.bottom.type === 'routed'
+    || config.edges.left.type === 'routed'
+    || config.edges.right.type === 'routed'
+}
+
+const tabControlEnabled = computed(() => hasAnyRoutedSeparation(props.panelConfig))
 
 const canvasCursor = computed(() => {
   if (props.measure?.active.value) return 'crosshair'
@@ -188,6 +198,16 @@ const panelPerf = {
   componentTileBuilds: 0,
   dangerTileHits: 0,
   dangerTileBuilds: 0,
+}
+
+function resetPanelPerf() {
+  panelPerf.draws = 0
+  panelPerf.pcbTileHits = 0
+  panelPerf.pcbTileBuilds = 0
+  panelPerf.componentTileHits = 0
+  panelPerf.componentTileBuilds = 0
+  panelPerf.dangerTileHits = 0
+  panelPerf.dangerTileBuilds = 0
 }
 
 interface CachedTile {
@@ -240,10 +260,13 @@ function panelGeometrySignature(): string {
     countX: cfg.countX,
     countY: cfg.countY,
     separationType: cfg.separationType,
+    edges: cfg.edges,
     route: cfg.routingToolDiameter,
     rotation: cfg.pcbRotation,
     frame,
     supports,
+    fiducials: cfg.fiducials,
+    toolingHoles: cfg.toolingHoles,
     tabs: cfg.tabs,
     showComponents: cfg.showComponents,
   })
@@ -689,7 +712,14 @@ function getPcbAt(panelLayout: PanelLayout, col: number, row: number) {
 
 function buildTabChannels(panelLayout: PanelLayout): TabChannel[] {
   const cfg = props.panelConfig
-  if (cfg.separationType === 'scored') return []
+  if (!hasAnyRoutedSeparation(cfg)) return []
+  const isEdgeRouted = (edge: 'top' | 'bottom' | 'left' | 'right') => {
+    if (cfg.separationType === 'routed') return true
+    if (cfg.separationType === 'scored') return false
+    return cfg.edges[edge].type === 'routed'
+  }
+  const hasVerticalRouted = isEdgeRouted('left') || isEdgeRouted('right')
+  const hasHorizontalRouted = isEdgeRouted('top') || isEdgeRouted('bottom')
   const supportsEnabled = cfg.supports.enabled ?? true
   const channels: TabChannel[] = []
   const pcbW = panelLayout.pcbLayoutWidth
@@ -699,7 +729,7 @@ function buildTabChannels(panelLayout: PanelLayout): TabChannel[] {
   for (const pcb of panelLayout.pcbs) {
     const { col, row, x, y } = pcb
     // Right channel to neighbor
-    if (col < cfg.countX - 1) {
+    if (col < cfg.countX - 1 && hasVerticalRouted) {
       const right = getPcbAt(panelLayout, col + 1, row)
       if (right) {
         const gap = right.x - (x + pcbW)
@@ -725,7 +755,7 @@ function buildTabChannels(panelLayout: PanelLayout): TabChannel[] {
           }
         }
       }
-    } else if (cfg.frame.enabled) {
+    } else if (cfg.frame.enabled && isEdgeRouted('right')) {
       const gap = (panelLayout.totalWidth - frameW) - (x + pcbW)
       if (gap > 0) channels.push({
         col, row, edge: 'right', channelId: 'main',
@@ -735,7 +765,7 @@ function buildTabChannels(panelLayout: PanelLayout): TabChannel[] {
     }
 
     // Bottom channel to neighbor
-    if (row < cfg.countY - 1) {
+    if (row < cfg.countY - 1 && hasHorizontalRouted) {
       const below = getPcbAt(panelLayout, col, row + 1)
       if (below) {
         const gap = below.y - (y + pcbH)
@@ -761,7 +791,7 @@ function buildTabChannels(panelLayout: PanelLayout): TabChannel[] {
           }
         }
       }
-    } else if (cfg.frame.enabled) {
+    } else if (cfg.frame.enabled && isEdgeRouted('bottom')) {
       const gap = (panelLayout.totalHeight - frameW) - (y + pcbH)
       if (gap > 0) channels.push({
         col, row, edge: 'bottom', channelId: 'main',
@@ -771,7 +801,7 @@ function buildTabChannels(panelLayout: PanelLayout): TabChannel[] {
     }
 
     if (cfg.frame.enabled) {
-      if (col === 0) {
+      if (col === 0 && isEdgeRouted('left')) {
         const gap = x - frameW
         if (gap > 0) channels.push({
           col, row, edge: 'left', channelId: 'main',
@@ -779,7 +809,7 @@ function buildTabChannels(panelLayout: PanelLayout): TabChannel[] {
           direction: 'vertical', edgeStart: y, edgeLength: pcbH, gapStart: frameW, gapDepth: gap,
         })
       }
-      if (row === 0) {
+      if (row === 0 && isEdgeRouted('top')) {
         const gap = y - frameW
         if (gap > 0) channels.push({
           col, row, edge: 'top', channelId: 'main',
@@ -1073,7 +1103,7 @@ function drawPanelSilkscreenLabels(oc: OverlayContext, panelLayout: PanelLayout)
 
 function drawPanelBackground(oc: OverlayContext, panelLayout: PanelLayout) {
   const { ctx } = oc
-  const sep = props.panelConfig.separationType
+  const allScored = !hasAnyRoutedSeparation(props.panelConfig)
 
   // Frame
   if (panelLayout.frame) {
@@ -1092,7 +1122,7 @@ function drawPanelBackground(oc: OverlayContext, panelLayout: PanelLayout) {
       const substrateColor = props.preset?.substrate ?? '#c2a366'
       const maskColor = props.preset?.solderMask ?? '#146b3a'
 
-      if (sep === 'scored') {
+      if (allScored) {
         // V-Cut: continuous substrate, fill entire panel
         ctx.fillStyle = substrateColor
         ctx.beginPath()
@@ -1138,7 +1168,7 @@ function drawPanelBackground(oc: OverlayContext, panelLayout: PanelLayout) {
         ctx.fill('evenodd')
       }
     } else {
-      if (sep === 'scored') {
+      if (allScored) {
         ctx.fillStyle = isLight.value ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.04)'
         ctx.beginPath()
         roundedRect(ctx, tl.sx, tl.sy, outerW, outerH, cornerR)
@@ -1204,7 +1234,7 @@ function drawPanelForeground(oc: OverlayContext, panelLayout: PanelLayout) {
     roundedRect(ctx, tl.sx, tl.sy, outerW, outerH, cornerR)
     ctx.stroke()
 
-    if (props.panelConfig.separationType !== 'scored') {
+    if (hasAnyRoutedSeparation(props.panelConfig)) {
       const itl = toScreen(oc, f.innerX, f.innerY)
       const ibr = toScreen(oc, f.innerX + f.innerWidth, f.innerY + f.innerHeight)
       ctx.beginPath()
@@ -1762,7 +1792,7 @@ function drawComponentsOnContext(
         if (!thtPkg) continue
         shapes = getCachedThtFootprint(thtPkg)
         const thtDirection = (props.pnpConvention ?? 'iec61188') === 'mycronic' ? -1 : 1
-        const rotationCCW = thtDirection * comp.rotation
+        const rotationCCW = thtDirection * comp.rotation + 0
         rotRad = (-rotationCCW * Math.PI) / 180
       } else if (props.matchPackage) {
         const pkg = props.matchPackage(pkgName)
@@ -2368,6 +2398,7 @@ watch(
 )
 
 onMounted(() => {
+  resetPanelPerf()
   nextTick(() => draw())
   const observer = new ResizeObserver(() => {
     autoFitDone.value = false
@@ -2384,6 +2415,7 @@ onMounted(() => {
       releaseCanvas(_dzCache.canvas)
       _dzCache = null
     }
+    resetPanelPerf()
   })
 })
 

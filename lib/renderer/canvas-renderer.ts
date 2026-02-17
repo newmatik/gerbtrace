@@ -334,7 +334,7 @@ export function renderOutlineMask(
   const eraseFragments: PathSegment[][] = []
 
   type ShapeDrawFn = () => void
-  const darkShapes: ShapeDrawFn[] = []
+  const darkShapes: Array<{ draw: ShapeDrawFn, area: number }> = []
   const eraseShapes: ShapeDrawFn[] = []
 
   for (const graphic of outlineTree.children) {
@@ -481,21 +481,40 @@ export function renderOuterBoundaryOnly(
         darkFragments.push(graphic.shape.segments)
       } else if (graphic.shape.type === 'circle') {
         const s = graphic.shape
-        darkShapes.push(() => {
-          ctx.moveTo(s.cx + s.r, s.cy)
-          ctx.arc(s.cx, s.cy, s.r, 0, Math.PI * 2)
+        darkShapes.push({
+          draw: () => {
+            ctx.moveTo(s.cx + s.r, s.cy)
+            ctx.arc(s.cx, s.cy, s.r, 0, Math.PI * 2)
+          },
+          area: Math.PI * s.r * s.r,
         })
       } else if (graphic.shape.type === 'rect') {
         const s = graphic.shape
-        darkShapes.push(() => { ctx.rect(s.x, s.y, s.w, s.h) })
+        darkShapes.push({
+          draw: () => { ctx.rect(s.x, s.y, s.w, s.h) },
+          area: Math.abs(s.w * s.h),
+        })
       } else if (graphic.shape.type === 'polygon') {
         const pts = graphic.shape.points
         if (pts.length >= 2) {
-          darkShapes.push(() => {
-            ctx.moveTo(pts[0]![0], pts[0]![1])
-            for (let k = 1; k < pts.length; k++) {
-              ctx.lineTo(pts[k]![0], pts[k]![1])
-            }
+          let minX = Infinity
+          let minY = Infinity
+          let maxX = -Infinity
+          let maxY = -Infinity
+          for (const [x, y] of pts) {
+            if (x < minX) minX = x
+            if (y < minY) minY = y
+            if (x > maxX) maxX = x
+            if (y > maxY) maxY = y
+          }
+          darkShapes.push({
+            draw: () => {
+              ctx.moveTo(pts[0]![0], pts[0]![1])
+              for (let k = 1; k < pts.length; k++) {
+                ctx.lineTo(pts[k]![0], pts[k]![1])
+              }
+            },
+            area: Math.max(0, (maxX - minX) * (maxY - minY)),
           })
         }
       }
@@ -519,8 +538,9 @@ export function renderOuterBoundaryOnly(
     drawContour(ctx, darkContours[outerIdx]!)
     ctx.fill()
   } else if (darkShapes.length > 0) {
+    const largest = darkShapes.reduce((best, shape) => shape.area > best.area ? shape : best)
     ctx.beginPath()
-    darkShapes[0]!()
+    largest.draw()
     ctx.fill()
   }
 

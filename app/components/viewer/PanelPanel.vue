@@ -50,7 +50,15 @@
       </span>
     </div>
 
-    <UTabs :items="panelTabItems" :unmount-on-hide="false" size="sm" variant="link" color="neutral" class="w-full">
+    <UTabs
+      v-model="activePanelSubtab"
+      :items="panelTabItems"
+      :unmount-on-hide="false"
+      size="sm"
+      variant="link"
+      color="neutral"
+      class="w-full"
+    >
       <template #layout>
         <div class="pt-1 space-y-2">
           <div class="rounded border border-neutral-200 dark:border-neutral-800 p-2 space-y-2">
@@ -175,7 +183,7 @@
               </UButton>
             </div>
 
-            <div v-if="local.separationType !== 'scored'" class="grid grid-cols-2 gap-2">
+            <div v-if="hasAnyRoutedSeparation(local)" class="grid grid-cols-2 gap-2">
               <div class="space-y-1">
                 <div class="text-[10px] text-neutral-400">Routing tool (mm)</div>
                 <UInput
@@ -205,7 +213,7 @@
             </div>
           </div>
 
-          <div v-if="local.separationType === 'scored'" class="text-xs text-neutral-400">
+          <div v-if="!hasAnyRoutedSeparation(local)" class="text-xs text-neutral-400">
             Tabs are disabled in V-Cut mode.
           </div>
           <template v-else>
@@ -316,11 +324,43 @@ const separationTypes = [
 ]
 
 const panelTabItems: TabsItem[] = [
-  { label: 'General Info', icon: 'i-lucide-layout-grid', slot: 'layout' },
-  { label: 'Panel Connections', icon: 'i-lucide-link', slot: 'tabs' },
+  { label: 'General Info', icon: 'i-lucide-layout-grid', slot: 'layout', value: 'layout' },
+  { label: 'Panel Connections', icon: 'i-lucide-link', slot: 'tabs', value: 'tabs' },
 ]
 
 const edgeNames = ['top', 'bottom', 'left', 'right'] as const
+type PanelSubtab = 'layout' | 'tabs'
+const route = useRoute()
+const activePanelSubtab = ref<PanelSubtab>('layout')
+const panelSubtabStorageKey = computed(() => `gerbtrace:panel-subtab:${String(route.params.id ?? 'default')}`)
+
+onMounted(() => {
+  if (typeof window === 'undefined') return
+  const saved = window.localStorage.getItem(panelSubtabStorageKey.value)
+  if (saved === 'layout' || saved === 'tabs') {
+    activePanelSubtab.value = saved
+  }
+})
+
+watch(activePanelSubtab, (tab) => {
+  if (typeof window === 'undefined') return
+  window.localStorage.setItem(panelSubtabStorageKey.value, tab)
+})
+
+function hasAnyRoutedSeparation(config: PanelConfig): boolean {
+  if (config.separationType === 'routed') return true
+  if (config.separationType === 'scored') return false
+  return config.edges.top.type === 'routed'
+    || config.edges.bottom.type === 'routed'
+    || config.edges.left.type === 'routed'
+    || config.edges.right.type === 'routed'
+}
+
+function isPanelEdgeRouted(config: PanelConfig, edge: 'top' | 'bottom' | 'left' | 'right'): boolean {
+  if (config.separationType === 'routed') return true
+  if (config.separationType === 'scored') return false
+  return config.edges[edge].type === 'routed'
+}
 
 const fiducialPositionOptions = [
   { label: 'Top-left', value: 'top-left' as FiducialPosition },
@@ -450,7 +490,7 @@ const editorScale = computed(() => {
 const es = computed(() => editorScale.value)
 const cfg = computed(() => local.value)
 const editorFrameW = computed(() => cfg.value.frame.enabled ? cfg.value.frame.width * es.value : 0)
-const editorToolD = computed(() => cfg.value.separationType === 'scored' ? 0 : cfg.value.routingToolDiameter * es.value)
+const editorToolD = computed(() => hasAnyRoutedSeparation(cfg.value) ? cfg.value.routingToolDiameter * es.value : 0)
 const editorPcbW = computed(() => (props.boardSizeMm?.width ?? 30) * es.value)
 const editorPcbH = computed(() => (props.boardSizeMm?.height ?? 20) * es.value)
 const editorCornerR = computed(() => (cfg.value.frame.cornerRadius ?? 3) * es.value)
@@ -458,7 +498,7 @@ const editorPad = 3
 
 function editorColGap(i: number): number {
   const c = cfg.value
-  if (c.separationType === 'scored') return 0
+  if (!hasAnyRoutedSeparation(c)) return 0
   if (!(c.supports.enabled ?? true)) return c.routingToolDiameter * es.value
   if (c.supports.xGaps.includes(i)) return (c.supports.width + 2 * c.routingToolDiameter) * es.value
   return c.routingToolDiameter * es.value
@@ -466,13 +506,13 @@ function editorColGap(i: number): number {
 
 function editorRowGap(i: number): number {
   const c = cfg.value
-  if (c.separationType === 'scored') return 0
+  if (!hasAnyRoutedSeparation(c)) return 0
   if (!(c.supports.enabled ?? true)) return c.routingToolDiameter * es.value
   if (c.supports.yGaps.includes(i)) return (c.supports.width + 2 * c.routingToolDiameter) * es.value
   return c.routingToolDiameter * es.value
 }
 
-const editorFrameRoutingGap = computed(() => cfg.value.separationType === 'scored' ? 0 : editorToolD.value)
+const editorFrameRoutingGap = computed(() => hasAnyRoutedSeparation(cfg.value) ? editorToolD.value : 0)
 
 const editorInnerW = computed(() => {
   let w = editorFrameRoutingGap.value * 2 + cfg.value.countX * editorPcbW.value
@@ -536,7 +576,14 @@ function getTabPositions(col: number, row: number, edge: string, channelId: stri
   if (key in local.value.tabs.edgeOverrides) return local.value.tabs.edgeOverrides[key]
   const legacyEdge = `${col}-${row}-${edge}`
   if (legacyEdge in local.value.tabs.edgeOverrides) return local.value.tabs.edgeOverrides[legacyEdge]
-  return evenTabPositions(local.value.tabs.defaultCountPerEdge)
+  const perEdgeDefault = edge === 'top'
+    ? local.value.tabs.defaultCountTop
+    : edge === 'bottom'
+      ? local.value.tabs.defaultCountBottom
+      : edge === 'left'
+        ? local.value.tabs.defaultCountLeft
+        : local.value.tabs.defaultCountRight
+  return evenTabPositions(perEdgeDefault ?? local.value.tabs.defaultCountPerEdge)
 }
 
 interface EditorChannel {
@@ -556,12 +603,14 @@ interface EditorChannel {
 const editorChannels = computed<EditorChannel[]>(() => {
   const channels: EditorChannel[] = []
   const c = cfg.value
-  if (c.separationType === 'scored') return channels
+  if (!hasAnyRoutedSeparation(c)) return channels
+  const hasVerticalRouted = isPanelEdgeRouted(c, 'left') || isPanelEdgeRouted(c, 'right')
+  const hasHorizontalRouted = isPanelEdgeRouted(c, 'top') || isPanelEdgeRouted(c, 'bottom')
 
   for (let col = 0; col < c.countX; col++) {
     for (let row = 0; row < c.countY; row++) {
       // Right channel (between columns)
-      if (col < c.countX - 1) {
+      if (col < c.countX - 1 && hasVerticalRouted) {
         const gapX = editorColX(col) + editorPcbW.value
         const gapW = editorColGap(col)
         channels.push({
@@ -571,7 +620,7 @@ const editorChannels = computed<EditorChannel[]>(() => {
         })
       }
       // Bottom channel (between rows)
-      if (row < c.countY - 1) {
+      if (row < c.countY - 1 && hasHorizontalRouted) {
         const gapY = editorRowY(row) + editorPcbH.value
         const gapH = editorRowGap(row)
         channels.push({
@@ -582,28 +631,28 @@ const editorChannels = computed<EditorChannel[]>(() => {
       }
       // Frame edges
       if (c.frame.enabled && editorFrameRoutingGap.value > 0) {
-        if (col === 0) {
+        if (col === 0 && isPanelEdgeRouted(c, 'left')) {
           channels.push({
             key: `${col}-${row}-left`, col, row, edge: 'left',
             x: editorFrameW.value, y: editorRowY(row), w: editorFrameRoutingGap.value, h: editorPcbH.value,
             edgeLength: editorPcbH.value, edgeStart: editorRowY(row), isVertical: true,
           })
         }
-        if (row === 0) {
+        if (row === 0 && isPanelEdgeRouted(c, 'top')) {
           channels.push({
             key: `${col}-${row}-top`, col, row, edge: 'top',
             x: editorColX(col), y: editorFrameW.value, w: editorPcbW.value, h: editorFrameRoutingGap.value,
             edgeLength: editorPcbW.value, edgeStart: editorColX(col), isVertical: false,
           })
         }
-        if (col === c.countX - 1) {
+        if (col === c.countX - 1 && isPanelEdgeRouted(c, 'right')) {
           channels.push({
             key: `${col}-${row}-right`, col, row, edge: 'right',
             x: editorColX(col) + editorPcbW.value, y: editorRowY(row), w: editorFrameRoutingGap.value, h: editorPcbH.value,
             edgeLength: editorPcbH.value, edgeStart: editorRowY(row), isVertical: true,
           })
         }
-        if (row === c.countY - 1) {
+        if (row === c.countY - 1 && isPanelEdgeRouted(c, 'bottom')) {
           channels.push({
             key: `${col}-${row}-bottom`, col, row, edge: 'bottom',
             x: editorColX(col), y: editorRowY(row) + editorPcbH.value, w: editorPcbW.value, h: editorFrameRoutingGap.value,
@@ -692,7 +741,7 @@ function onTabEditorMouseMove(e: MouseEvent) {
   }
   t = Math.max(0.05, Math.min(0.95, t))
 
-  const key = `${draggingTab.value.col}-${draggingTab.value.row}-${draggingTab.value.edge}`
+  const key = getTabOverrideKey(draggingTab.value.col, draggingTab.value.row, draggingTab.value.edge)
   const positions = [...getTabPositions(draggingTab.value.col, draggingTab.value.row, draggingTab.value.edge)]
   positions[draggingTab.value.posIndex] = Math.round(t * 100) / 100
   const overrides = { ...local.value.tabs.edgeOverrides, [key]: positions }
@@ -719,14 +768,14 @@ function addTabToEdge(col: number, row: number, edge: string, e: MouseEvent) {
   t = Math.max(0.05, Math.min(0.95, t))
   t = Math.round(t * 100) / 100
 
-  const key = `${col}-${row}-${edge}`
+  const key = getTabOverrideKey(col, row, edge)
   const positions = [...getTabPositions(col, row, edge), t].sort((a, b) => a - b)
   const overrides = { ...local.value.tabs.edgeOverrides, [key]: positions }
   emit('update:panelData', { ...local.value, tabs: { ...local.value.tabs, edgeOverrides: overrides } })
 }
 
 function removeTab(col: number, row: number, edge: string, posIndex: number) {
-  const key = `${col}-${row}-${edge}`
+  const key = getTabOverrideKey(col, row, edge)
   const positions = [...getTabPositions(col, row, edge)]
   positions.splice(posIndex, 1)
 

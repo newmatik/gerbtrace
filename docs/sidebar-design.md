@@ -82,7 +82,7 @@ This keeps local storage and Supabase JSON behavior aligned.
 Use this order inside each tab:
 
 1. Core controls first (high-frequency edits).
-2. Secondary controls next (fine tuning).
+2. Secondary controls next (fine-tuning).
 3. Optional/advanced controls in subcards.
 4. Explanatory helper line at the end if needed.
 
