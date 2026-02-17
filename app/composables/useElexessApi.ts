@@ -213,9 +213,12 @@ export function useElexessApi() {
       if (!entry) continue
       const data = entry.data
       if (!data) continue
-      const clonedData = typeof structuredClone === 'function'
-        ? structuredClone(data)
-        : JSON.parse(JSON.stringify(data))
+      let clonedData: any
+      try {
+        clonedData = structuredClone(data)
+      } catch {
+        clonedData = JSON.parse(JSON.stringify(data))
+      }
       next[key] = { ...entry, data: stripBlockedSuppliers(clonedData) }
     }
     return next

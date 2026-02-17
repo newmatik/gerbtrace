@@ -1087,8 +1087,14 @@ const panelData = ref<PanelConfig>(DEFAULT_PANEL_CONFIG())
 const panelDangerZone = ref<DangerZoneConfig>({ enabled: false, insetMm: 2 })
 const hasLoadedProjectData = ref(false)
 
+function normalizePanelConfig(data: unknown): PanelConfig {
+  // Strip Vue proxies/functions and keep a plain, migrated JSON shape.
+  const plain = JSON.parse(JSON.stringify(data ?? {})) as Record<string, any>
+  return migratePanelConfig(plain)
+}
+
 function handlePanelDataUpdate(data: PanelConfig) {
-  panelData.value = data
+  panelData.value = normalizePanelConfig(data)
 }
 
 // ── Original content tracking (for edit detection + reset) ──
@@ -1681,6 +1687,8 @@ watch(bom.needsFieldMapping, (needs) => {
 
 // Keep group assignments clean when components/groups change.
 watch([() => pnp.allComponents.value.map(c => c.key), pnpComponentGroups], ([keys, groups]) => {
+  if (!hasLoadedProjectData.value) return
+  if (keys.length === 0) return
   const validKeys = new Set(keys)
   const validGroups = new Set(groups.map(g => g.id))
   let changed = false
@@ -1696,6 +1704,8 @@ watch([() => pnp.allComponents.value.map(c => c.key), pnpComponentGroups], ([key
 }, { deep: true })
 
 watch(() => pnp.allComponents.value, (all) => {
+  if (!hasLoadedProjectData.value) return
+  if (all.length === 0) return
   const smdKeys = new Set(all.filter(c => c.componentType === 'smd').map(c => c.key))
   const thtKeys = new Set(all.filter(c => c.componentType === 'tht').map(c => c.key))
 
@@ -1714,7 +1724,7 @@ watch(() => pnp.allComponents.value, (all) => {
   if (nextTht.length !== pnpManualOrderTht.value.length || nextTht.some((k, i) => k !== pnpManualOrderTht.value[i])) {
     pnpManualOrderTht.value = nextTht
   }
-}, { deep: false, immediate: true })
+}, { deep: false })
 
 // Sync toolbar's All/Top/Bot filter with PnP side filter
 watch(activeFilter, (filter) => {
@@ -1726,10 +1736,14 @@ watch(activeFilter, (filter) => {
 // ── Persist PnP data to local DB or Supabase ──────────────────────────
 
 let teamPersistQueue: Promise<void> = Promise.resolve()
+let pendingTeamUpdates: Record<string, any> = {}
 
 function persistToProject(updates: Record<string, any>) {
   if (isTeamProject && teamProjectId) {
-    if (!hasLoadedProjectData.value) return
+    if (!hasLoadedProjectData.value) {
+      pendingTeamUpdates = { ...pendingTeamUpdates, ...updates }
+      return
+    }
     // Serialize writes so stale async responses cannot overwrite newer edits.
     teamPersistQueue = teamPersistQueue.then(async () => {
       const mapped: Record<string, any> = {}
@@ -1746,8 +1760,17 @@ function persistToProject(updates: Record<string, any>) {
   }
 }
 
+watch(hasLoadedProjectData, (loaded) => {
+  if (!loaded || !isTeamProject || !teamProjectId) return
+  if (Object.keys(pendingTeamUpdates).length === 0) return
+  const buffered = { ...pendingTeamUpdates }
+  pendingTeamUpdates = {}
+  persistToProject(buffered)
+})
+
 // Persist PnP origin to database when it changes
 watch([pnp.originX, pnp.originY], ([ox, oy]) => {
+  if (!hasLoadedProjectData.value) return
   if (isTeamProject) {
     persistToProject({ pnpOriginX: ox, pnpOriginY: oy })
   } else {
@@ -1757,6 +1780,7 @@ watch([pnp.originX, pnp.originY], ([ox, oy]) => {
 
 // Persist per-component PnP rotation overrides to database
 watch(pnp.rotationOverridesRecord, (overrides) => {
+  if (!hasLoadedProjectData.value) return
   if (isTeamProject) {
     persistToProject({ pnpRotationOverrides: overrides })
   } else {
@@ -1766,6 +1790,7 @@ watch(pnp.rotationOverridesRecord, (overrides) => {
 
 // Persist DNP component keys to database
 watch(pnp.dnpRecord, (keys) => {
+  if (!hasLoadedProjectData.value) return
   if (isTeamProject) {
     persistToProject({ pnpDnpComponents: keys })
   } else {
@@ -1775,6 +1800,7 @@ watch(pnp.dnpRecord, (keys) => {
 
 // Persist CAD package -> library package mapping
 watch(pnp.cadPackageMapRecord, (map) => {
+  if (!hasLoadedProjectData.value) return
   if (isTeamProject) {
     persistToProject({ pnpCadPackageMap: map })
   } else {
@@ -1784,6 +1810,7 @@ watch(pnp.cadPackageMapRecord, (map) => {
 
 // Persist polarized overrides
 watch(pnp.polarizedOverridesRecord, (overrides) => {
+  if (!hasLoadedProjectData.value) return
   if (isTeamProject) {
     persistToProject({ pnpPolarizedOverrides: overrides })
   } else {
@@ -1793,6 +1820,7 @@ watch(pnp.polarizedOverridesRecord, (overrides) => {
 
 // Persist component notes
 watch(pnp.componentNotesRecord, (notes) => {
+  if (!hasLoadedProjectData.value) return
   if (isTeamProject) {
     persistToProject({ pnpComponentNotes: notes })
   } else {
@@ -1802,6 +1830,7 @@ watch(pnp.componentNotesRecord, (notes) => {
 
 // Persist field overrides
 watch(pnp.fieldOverridesRecord, (overrides) => {
+  if (!hasLoadedProjectData.value) return
   if (isTeamProject) {
     persistToProject({ pnpFieldOverrides: overrides })
   } else {
@@ -1811,6 +1840,7 @@ watch(pnp.fieldOverridesRecord, (overrides) => {
 
 // Persist manual components
 watch(pnp.manualComponentsRecord, (components) => {
+  if (!hasLoadedProjectData.value) return
   if (isTeamProject) {
     persistToProject({ pnpManualComponents: components })
   } else {
@@ -1820,6 +1850,7 @@ watch(pnp.manualComponentsRecord, (components) => {
 
 // Persist deleted component keys to database
 watch(pnp.deletedKeysRecord, (keys) => {
+  if (!hasLoadedProjectData.value) return
   if (isTeamProject) {
     persistToProject({ pnpDeletedComponents: keys })
   } else {
@@ -1829,6 +1860,7 @@ watch(pnp.deletedKeysRecord, (keys) => {
 
 // Persist per-tab sort state
 watch(pnpSortSmd, (state) => {
+  if (!hasLoadedProjectData.value) return
   if (isTeamProject) {
     persistToProject({ pnpSortSmd: state })
   } else {
@@ -1837,6 +1869,7 @@ watch(pnpSortSmd, (state) => {
 }, { deep: true })
 
 watch(pnpSortTht, (state) => {
+  if (!hasLoadedProjectData.value) return
   if (isTeamProject) {
     persistToProject({ pnpSortTht: state })
   } else {
@@ -1845,6 +1878,7 @@ watch(pnpSortTht, (state) => {
 }, { deep: true })
 
 watch(pnpManualOrderSmd, (keys) => {
+  if (!hasLoadedProjectData.value) return
   if (isTeamProject) {
     persistToProject({ pnpManualOrderSmd: keys })
   } else {
@@ -1853,6 +1887,7 @@ watch(pnpManualOrderSmd, (keys) => {
 }, { deep: true })
 
 watch(pnpManualOrderTht, (keys) => {
+  if (!hasLoadedProjectData.value) return
   if (isTeamProject) {
     persistToProject({ pnpManualOrderTht: keys })
   } else {
@@ -1862,6 +1897,7 @@ watch(pnpManualOrderTht, (keys) => {
 
 // Persist PnP grouping (group definitions + assignments)
 watch(pnpComponentGroups, (groups) => {
+  if (!hasLoadedProjectData.value) return
   if (isTeamProject) {
     persistToProject({ pnpComponentGroups: groups })
   } else {
@@ -1870,6 +1906,7 @@ watch(pnpComponentGroups, (groups) => {
 }, { deep: true })
 
 watch(pnpGroupAssignments, (assignments) => {
+  if (!hasLoadedProjectData.value) return
   if (isTeamProject) {
     persistToProject({ pnpGroupAssignments: assignments })
   } else {
@@ -1880,6 +1917,7 @@ watch(pnpGroupAssignments, (assignments) => {
 // ── Persist BOM data ──
 
 watch(bom.bomLinesRecord, (lines) => {
+  if (!hasLoadedProjectData.value) return
   if (isTeamProject) {
     persistToProject({ bomLines: lines })
   } else {
@@ -1888,6 +1926,7 @@ watch(bom.bomLinesRecord, (lines) => {
 }, { deep: true })
 
 watch(bom.pricingCacheRecord, (cache) => {
+  if (!hasLoadedProjectData.value) return
   if (isTeamProject) {
     persistToProject({ bomPricingCache: cache })
   } else {
@@ -1896,6 +1935,7 @@ watch(bom.pricingCacheRecord, (cache) => {
 }, { deep: true })
 
 watch(() => bom.boardQuantity.value, (qty) => {
+  if (!hasLoadedProjectData.value) return
   if (isTeamProject) {
     persistToProject({ bomBoardQuantity: qty })
   } else {
@@ -1914,10 +1954,11 @@ watch(pcbData, (data) => {
 
 watch(panelData, (data) => {
   if (!hasLoadedProjectData.value) return
+  const snapshot = normalizePanelConfig(data)
   if (isTeamProject) {
-    persistToProject({ panelData: data })
+    persistToProject({ panelData: snapshot })
   } else {
-    updatePanelData(projectId, data)
+    updatePanelData(projectId, snapshot)
   }
 }, { deep: true })
 
@@ -2276,7 +2317,11 @@ onMounted(async () => {
   // Restore persisted BOM data
   bom.setBomLines(project.value?.bomLines)
   const restoredCache = project.value?.bomPricingCache
-  if (restoredCache) elexess.cleanPricingCache(restoredCache)
+  try {
+    if (restoredCache) elexess.cleanPricingCache(restoredCache)
+  } catch (e) {
+    console.warn('[viewer] cleanPricingCache failed, using raw cache:', e)
+  }
   bom.setPricingCache(restoredCache)
   bom.setBoardQuantity(project.value?.bomBoardQuantity)
 
@@ -2285,7 +2330,7 @@ onMounted(async () => {
 
   // Restore persisted panel data (with backward-compatible migration)
   if (project.value?.panelData) {
-    panelData.value = migratePanelConfig(project.value.panelData as Record<string, any>)
+    panelData.value = normalizePanelConfig(project.value.panelData)
   }
   hasLoadedProjectData.value = true
 
