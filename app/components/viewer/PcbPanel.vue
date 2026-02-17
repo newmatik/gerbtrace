@@ -133,18 +133,6 @@
           </div>
         </div>
 
-        <!-- Completeness indicator -->
-        <div class="mt-2 pt-2 border-t border-neutral-200 dark:border-neutral-800">
-          <div class="flex items-center gap-2 text-[10px]">
-            <div
-              class="w-1.5 h-1.5 rounded-full"
-              :class="isComplete ? 'bg-green-500' : 'bg-amber-400'"
-            />
-            <span class="text-neutral-400">
-              {{ isComplete ? 'All parameters set' : `${filledCount}/5 parameters set` }}
-            </span>
-          </div>
-        </div>
       </div>
 
       <!-- Section 2: Board Color / Preset Selector -->
@@ -275,18 +263,6 @@ const emit = defineEmits<{
 }>()
 
 const localData = computed<PcbData>(() => props.pcbData ?? {})
-
-const filledCount = computed(() => {
-  let n = 0
-  if (localData.value.sizeX) n++
-  if (localData.value.sizeY) n++
-  if (localData.value.layerCount) n++
-  if (localData.value.surfaceFinish) n++
-  if (localData.value.copperWeight) n++
-  return n
-})
-
-const isComplete = computed(() => filledCount.value === 5)
 
 function updateField(field: keyof PcbData, value: number | string | undefined) {
   const updated = { ...localData.value, [field]: value }

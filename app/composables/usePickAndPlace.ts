@@ -347,17 +347,29 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
   }
 
   /** Active components filtered by toggle filters and search query (for sidebar table) */
+  const searchableComponentText = computed(() => {
+    const index = new Map<string, string>()
+    for (const comp of activeComponents.value) {
+      index.set(
+        comp.key,
+        [
+          comp.designator,
+          comp.value,
+          comp.cadPackage,
+          comp.matchedPackage,
+          comp.note,
+        ].join('\n').toLowerCase(),
+      )
+    }
+    return index
+  })
+
   const filteredComponents = computed<EditablePnPComponent[]>(() => {
     let result = activeComponents.value.filter(matchesActiveFilters)
     const q = searchQuery.value.trim().toLowerCase()
     if (q) {
-      result = result.filter(c =>
-        c.designator.toLowerCase().includes(q)
-        || c.value.toLowerCase().includes(q)
-        || c.cadPackage.toLowerCase().includes(q)
-        || c.matchedPackage.toLowerCase().includes(q)
-        || c.note.toLowerCase().includes(q),
-      )
+      const searchIndex = searchableComponentText.value
+      result = result.filter(c => (searchIndex.get(c.key) ?? '').includes(q))
     }
     return result
   })

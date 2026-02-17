@@ -1,528 +1,291 @@
 <template>
-  <div class="flex-1 flex flex-col overflow-hidden">
-    <!-- Top toolbar: compact toggles -->
-    <div class="flex items-center gap-2 px-4 py-2 border-b border-neutral-200 dark:border-neutral-800">
-      <button
-        class="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border transition-colors"
-        :class="local.showComponents
-          ? 'border-blue-500/70 text-blue-700 bg-blue-50/90 dark:border-blue-400/70 dark:text-blue-200 dark:bg-blue-500/15'
-          : 'border-neutral-200 dark:border-neutral-700 text-neutral-400 hover:border-neutral-400'"
-        title="Show component overlay on each PCB"
+  <div class="flex-1 flex flex-col overflow-hidden p-2 gap-2">
+    <div class="grid grid-cols-2 gap-2">
+      <UButton
+        size="xs"
+        variant="soft"
+        :color="local.showComponents ? 'primary' : 'neutral'"
+        icon="i-lucide-cpu"
+        class="justify-center"
         @click="update('showComponents', !local.showComponents)"
       >
-        <UIcon name="i-lucide-cpu" class="text-[11px]" />
         Components
-      </button>
-      <button
-        class="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border transition-colors"
-        :class="dangerZoneLocal.enabled
-          ? 'border-orange-500/70 text-orange-700 bg-orange-50/90 dark:border-orange-400/70 dark:text-orange-200 dark:bg-orange-500/15'
-          : 'border-neutral-200 dark:border-neutral-700 text-neutral-400 hover:border-neutral-400'"
-        title="Show danger zone clearance overlay"
-        @click="dangerZoneLocal = { ...dangerZoneLocal, enabled: !dangerZoneLocal.enabled }"
-      >
-        <UIcon name="i-lucide-triangle-alert" class="text-[11px]" />
-        Danger Zone
-      </button>
-      <input
-        v-if="dangerZoneLocal.enabled"
-        :value="dangerZoneLocal.insetMm"
-        type="number"
-        min="0.5"
-        max="20"
-        step="0.5"
-        title="Danger zone inset width (mm)"
-        class="w-12 text-[10px] bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded px-1.5 py-0.5 outline-none focus:border-primary transition-colors tabular-nums"
-        @input="dangerZoneLocal = { ...dangerZoneLocal, insetMm: clampFloat(($event.target as HTMLInputElement).value, 0.5, 20) }"
-      />
+      </UButton>
+      <div class="flex items-center gap-2">
+        <UButton
+          size="xs"
+          variant="soft"
+          :color="dangerZoneLocal.enabled ? 'warning' : 'neutral'"
+          icon="i-lucide-triangle-alert"
+          class="flex-1 justify-center"
+          @click="dangerZoneLocal = { ...dangerZoneLocal, enabled: !dangerZoneLocal.enabled }"
+        >
+          Danger
+        </UButton>
+        <UInput
+          v-if="dangerZoneLocal.enabled"
+          :model-value="dangerZoneLocal.insetMm"
+          type="number"
+          size="xs"
+          class="w-20"
+          :min="0.5"
+          :max="20"
+          :step="0.5"
+          placeholder="Inset mm"
+          @update:model-value="dangerZoneLocal = { ...dangerZoneLocal, insetMm: clampFloat(String($event), 0.5, 20) }"
+        />
+      </div>
     </div>
 
-    <div class="flex-1 overflow-y-auto">
-      <!-- Section: Grid Layout -->
-      <div class="p-4 pb-2">
-        <div class="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider mb-2">
-          Grid Layout
-        </div>
-        <div class="grid grid-cols-3 gap-x-2">
-          <div class="space-y-0.5">
-            <label class="text-[10px] text-neutral-400">Count X</label>
-            <input
-              :value="local.countX"
-              type="number"
-              min="1"
-              max="50"
-              step="1"
-              class="w-full text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded px-2 py-1 outline-none focus:border-primary transition-colors tabular-nums"
-              @input="update('countX', clampInt(($event.target as HTMLInputElement).value, 1, 50))"
-            />
+    <div
+      v-if="boardSizeMm && (local.countX > 1 || local.countY > 1 || local.frame.enabled)"
+      class="text-[10px] px-2 py-1 rounded border tabular-nums"
+      :class="panelExceedsLimits
+        ? 'text-orange-500 dark:text-orange-400 border-orange-400/40 bg-orange-500/10'
+        : 'text-neutral-400 border-neutral-200 dark:border-neutral-800'"
+    >
+      Panel: {{ panelWidth.toFixed(2) }} x {{ panelHeight.toFixed(2) }} mm
+      <span v-if="panelExceedsLimits">
+        (max {{ PANEL_MAX_WIDTH }} x {{ PANEL_MAX_HEIGHT }})
+      </span>
+    </div>
+
+    <UTabs :items="panelTabItems" :unmount-on-hide="false" size="sm" variant="link" color="neutral" class="w-full">
+      <template #layout>
+        <div class="pt-1 space-y-2">
+          <div class="rounded border border-neutral-200 dark:border-neutral-800 p-2 space-y-2">
+            <div class="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">General</div>
+            <div class="grid grid-cols-3 gap-2 text-[10px] text-neutral-400">
+              <span>Count X</span>
+              <span>Count Y</span>
+              <span>Rotation</span>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              <UInput :model-value="local.countX" type="number" size="xs" :min="1" :max="50" :step="1" @update:model-value="update('countX', clampInt(String($event), 1, 50))" />
+              <UInput :model-value="local.countY" type="number" size="xs" :min="1" :max="50" :step="1" @update:model-value="update('countY', clampInt(String($event), 1, 50))" />
+              <UButton size="xs" color="neutral" variant="soft" class="justify-center" @click="update('pcbRotation', (local.pcbRotation + 90) % 360)">
+                {{ local.pcbRotation }}deg
+              </UButton>
+            </div>
           </div>
-          <div class="space-y-0.5">
-            <label class="text-[10px] text-neutral-400">Count Y</label>
-            <input
-              :value="local.countY"
-              type="number"
-              min="1"
-              max="50"
-              step="1"
-              class="w-full text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded px-2 py-1 outline-none focus:border-primary transition-colors tabular-nums"
-              @input="update('countY', clampInt(($event.target as HTMLInputElement).value, 1, 50))"
-            />
+
+          <div class="rounded border border-neutral-200 dark:border-neutral-800 p-2 space-y-2">
+            <div class="flex items-center justify-between text-[10px]">
+              <span class="font-semibold uppercase tracking-wider text-neutral-400">Frame</span>
+              <USwitch :model-value="local.frame.enabled" size="sm" @update:model-value="updateFrame('enabled', !!$event)" />
+            </div>
+            <div v-if="local.frame.enabled" class="grid grid-cols-2 gap-2">
+              <div class="space-y-1">
+                <div class="text-[10px] text-neutral-400">Frame width (mm)</div>
+                <UInput :model-value="local.frame.width" type="number" size="xs" :min="2" :max="30" :step="0.5" @update:model-value="updateFrame('width', clampFloat(String($event), 2, 30))" />
+              </div>
+              <div class="space-y-1">
+                <div class="text-[10px] text-neutral-400">Corner R (mm)</div>
+                <UInput :model-value="local.frame.cornerRadius" type="number" size="xs" :min="0" :max="10" :step="0.5" @update:model-value="updateFrame('cornerRadius', clampFloat(String($event), 0, 10))" />
+              </div>
+            </div>
           </div>
-          <div class="space-y-0.5">
-            <label class="text-[10px] text-neutral-400">Rotation</label>
-            <div class="flex">
-              <input
-                :value="local.pcbRotation + '°'"
-                type="text"
-                readonly
-                class="w-full text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-l px-2 py-1 outline-none tabular-nums text-center"
-              />
-              <button
-                class="text-[10px] font-medium px-1.5 py-1 rounded-r border border-l-0 border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors whitespace-nowrap"
-                title="Rotate +90°"
-                @click="update('pcbRotation', (local.pcbRotation + 90) % 360)"
-              >
-                +90
-              </button>
+
+          <div v-if="local.countX > 1 || local.countY > 1" class="rounded border border-neutral-200 dark:border-neutral-800 p-2 space-y-2">
+            <div class="flex items-center justify-between text-[10px]">
+              <span class="font-semibold uppercase tracking-wider text-neutral-400">Support Bars</span>
+              <USwitch :model-value="local.supports.enabled" size="sm" @update:model-value="updateSupports('enabled', !!$event)" />
+            </div>
+            <template v-if="local.supports.enabled">
+              <div class="space-y-1">
+                <div class="text-[10px] text-neutral-400">Rail width (mm)</div>
+                <UInput :model-value="local.supports.width" type="number" size="xs" :min="5" :max="30" :step="0.5" @update:model-value="updateSupports('width', clampFloat(String($event), 5, 30))" />
+              </div>
+              <div class="grid grid-cols-2 gap-2 text-[10px]">
+                <div>
+                  <div class="text-neutral-400 mb-1">Columns</div>
+                  <label v-for="i in (local.countX - 1)" :key="`xgap-${i}`" class="flex items-center gap-1 text-neutral-500">
+                    <input type="checkbox" :checked="local.supports.xGaps.includes(i - 1)" class="rounded border-neutral-300 dark:border-neutral-600 text-primary focus:ring-primary/30 w-3 h-3" @change="toggleSupportGap('x', i - 1)">
+                    Col {{ i }}-{{ i + 1 }}
+                  </label>
+                </div>
+                <div>
+                  <div class="text-neutral-400 mb-1">Rows</div>
+                  <label v-for="i in (local.countY - 1)" :key="`ygap-${i}`" class="flex items-center gap-1 text-neutral-500">
+                    <input type="checkbox" :checked="local.supports.yGaps.includes(i - 1)" class="rounded border-neutral-300 dark:border-neutral-600 text-primary focus:ring-primary/30 w-3 h-3" @change="toggleSupportGap('y', i - 1)">
+                    Row {{ i }}-{{ i + 1 }}
+                  </label>
+                </div>
+              </div>
+            </template>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div class="rounded border border-neutral-200 dark:border-neutral-800 p-2 space-y-2">
+              <div class="flex items-center justify-between text-[10px]">
+                <span class="font-semibold uppercase tracking-wider text-neutral-400">Fiducials</span>
+                <USwitch :model-value="local.fiducials.enabled" size="sm" @update:model-value="updateFiducials('enabled', !!$event)" />
+              </div>
+              <template v-if="local.fiducials.enabled">
+                <div class="text-[10px] text-neutral-400">Diameter (mm)</div>
+                <UInput :model-value="local.fiducials.diameter" type="number" size="xs" :min="0.5" :max="5" :step="0.1" @update:model-value="updateFiducials('diameter', clampFloat(String($event), 0.5, 5))" />
+                <label v-for="pos in fiducialPositionOptions" :key="pos.value" class="flex items-center gap-1 text-[10px] text-neutral-500">
+                  <input type="checkbox" :checked="local.fiducials.positions.includes(pos.value)" class="rounded border-neutral-300 dark:border-neutral-600 text-primary focus:ring-primary/30 w-3 h-3" @change="toggleFiducialPosition(pos.value)">
+                  {{ pos.label }}
+                </label>
+              </template>
+            </div>
+
+            <div class="rounded border border-neutral-200 dark:border-neutral-800 p-2 space-y-2">
+              <div class="flex items-center justify-between text-[10px]">
+                <span class="font-semibold uppercase tracking-wider text-neutral-400">Tooling Holes</span>
+                <USwitch :model-value="local.toolingHoles.enabled" size="sm" @update:model-value="updateToolingHoles('enabled', !!$event)" />
+              </div>
+              <template v-if="local.toolingHoles.enabled">
+                <div class="grid grid-cols-2 gap-2">
+                  <div class="space-y-1">
+                    <div class="text-[10px] text-neutral-400">Dia (mm)</div>
+                    <UInput :model-value="local.toolingHoles.diameter" type="number" size="xs" :min="1" :max="8" :step="0.1" @update:model-value="updateToolingHoles('diameter', clampFloat(String($event), 1, 8))" />
+                  </div>
+                  <div class="space-y-1">
+                    <div class="text-[10px] text-neutral-400">Offset (mm)</div>
+                    <UInput :model-value="local.toolingHoles.offsetMm" type="number" size="xs" :min="0" :max="30" :step="0.5" @update:model-value="updateToolingHoles('offsetMm', clampFloat(String($event), 0, 30))" />
+                  </div>
+                </div>
+                <label v-for="pos in toolingHolePositionOptions" :key="pos.value" class="flex items-center gap-1 text-[10px] text-neutral-500">
+                  <input type="checkbox" :checked="local.toolingHoles.positions.includes(pos.value)" class="rounded border-neutral-300 dark:border-neutral-600 text-primary focus:ring-primary/30 w-3 h-3" @change="toggleToolingHolePosition(pos.value)">
+                  {{ pos.label }}
+                </label>
+              </template>
             </div>
           </div>
         </div>
+      </template>
 
-        <!-- Panel size info with limit warning -->
-        <div
-          v-if="boardSizeMm && (local.countX > 1 || local.countY > 1 || local.frame.enabled)"
-          class="mt-1.5 text-[10px] tabular-nums"
-          :class="panelExceedsLimits ? 'text-orange-500 dark:text-orange-400 font-semibold' : 'text-neutral-400'"
-        >
-          <span>Panel: {{ panelWidth.toFixed(2) }} × {{ panelHeight.toFixed(2) }} mm</span>
-          <span
-            v-if="panelExceedsLimits"
-            class="ml-1"
-            :title="`Max panel size: ${PANEL_MAX_WIDTH}mm (X) × ${PANEL_MAX_HEIGHT}mm (Y)`"
-          >
-            (exceeds {{ PANEL_MAX_WIDTH }}×{{ PANEL_MAX_HEIGHT }}mm limit)
-          </span>
-        </div>
-      </div>
-
-      <!-- Section: Separation -->
-      <div class="px-4 py-2 border-t border-neutral-200 dark:border-neutral-800">
-        <div class="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider mb-2">
-          Separation
-        </div>
-
-        <div class="space-y-2">
-          <div class="space-y-0.5">
-            <label class="text-[10px] text-neutral-400">Type</label>
-            <div class="flex items-center gap-1">
-              <button
+      <template #tabs>
+        <div class="pt-1 space-y-2">
+          <div class="rounded border border-neutral-200 dark:border-neutral-800 p-2 space-y-2">
+            <div class="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">Separation</div>
+            <div class="grid grid-cols-3 gap-1">
+              <UButton
                 v-for="t in separationTypes"
                 :key="t.value"
-                class="flex-1 text-[10px] font-medium px-2 py-1 rounded border transition-colors text-center"
-                :class="local.separationType === t.value
-                  ? 'border-blue-500/70 text-blue-700 bg-blue-50/90 dark:border-blue-400/70 dark:text-blue-200 dark:bg-blue-500/15'
-                  : 'border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:border-neutral-400 dark:hover:border-neutral-500'"
+                size="xs"
+                :color="local.separationType === t.value ? 'primary' : 'neutral'"
+                :variant="local.separationType === t.value ? 'soft' : 'outline'"
+                class="justify-center"
                 @click="updateSeparationType(t.value)"
               >
                 {{ t.label }}
-              </button>
+              </UButton>
             </div>
-          </div>
 
-          <!-- Routing tool diameter -->
-          <div v-if="local.separationType !== 'scored'" class="space-y-0.5">
-            <label class="text-[10px] text-neutral-400">Routing Tool (mm)</label>
-            <input
-              :value="local.routingToolDiameter"
-              type="number"
-              min="0.5"
-              max="5"
-              step="0.1"
-              class="w-full text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded px-2 py-1 outline-none focus:border-primary transition-colors tabular-nums"
-              @input="update('routingToolDiameter', clampFloat(($event.target as HTMLInputElement).value, 0.5, 5))"
-            />
-          </div>
+            <div v-if="local.separationType !== 'scored'" class="grid grid-cols-2 gap-2">
+              <div class="space-y-1">
+                <div class="text-[10px] text-neutral-400">Routing tool (mm)</div>
+                <UInput
+                  :model-value="local.routingToolDiameter"
+                  type="number"
+                  size="xs"
+                  :min="0.5"
+                  :max="5"
+                  :step="0.1"
+                  @update:model-value="update('routingToolDiameter', clampFloat(String($event), 0.5, 5))"
+                />
+              </div>
+              <div class="text-[10px] text-neutral-500 flex items-end pb-1">Tool diameter for routed channels</div>
+            </div>
 
-          <!-- Per-edge separation (mixed mode) -->
-          <template v-if="local.separationType === 'mixed'">
-            <div class="text-[10px] text-neutral-400 mt-1">Edge Types</div>
-            <div class="grid grid-cols-2 gap-x-3 gap-y-1">
-              <div v-for="edge in edgeNames" :key="edge" class="flex items-center gap-1.5">
-                <span class="text-[10px] text-neutral-500 w-10 capitalize">{{ edge }}</span>
-                <select
-                  :value="local.edges[edge].type"
-                  class="flex-1 text-[10px] bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded px-1.5 py-0.5 outline-none focus:border-primary transition-colors"
-                  @change="updateEdge(edge, ($event.target as HTMLSelectElement).value as 'routed' | 'scored')"
-                >
-                  <option value="routed">Routed</option>
-                  <option value="scored">V-Cut</option>
-                </select>
+            <div v-if="local.separationType === 'mixed'" class="grid grid-cols-2 gap-2">
+              <div v-for="edge in edgeNames" :key="edge" class="flex items-center gap-1">
+                <span class="text-[10px] text-neutral-400 w-10 capitalize">{{ edge }}</span>
+                <USelect
+                  :model-value="local.edges[edge].type"
+                  size="xs"
+                  :items="[{ label: 'Routed', value: 'routed' }, { label: 'V-Cut', value: 'scored' }]"
+                  class="flex-1"
+                  @update:model-value="updateEdge(edge, String($event) as 'routed' | 'scored')"
+                />
               </div>
             </div>
+          </div>
+
+          <div v-if="local.separationType === 'scored'" class="text-xs text-neutral-400">
+            Tabs are disabled in V-Cut mode.
+          </div>
+          <template v-else>
+            <div class="grid grid-cols-2 gap-2 text-[10px] text-neutral-400">
+              <span>Tab width (mm)</span>
+              <span>Perforation</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <UInput
+                :model-value="local.tabs.width"
+                type="number"
+                size="xs"
+                :min="0.5"
+                :max="10"
+                :step="0.5"
+                @update:model-value="updateTabs('width', clampFloat(String($event), 0.5, 10))"
+              />
+              <USelect
+                :model-value="local.tabs.perforation"
+                size="xs"
+                :items="[{ label: 'None', value: 'none' }, { label: 'PCB Side', value: 'pcb-side' }, { label: 'Both Sides', value: 'both-sides' }]"
+                @update:model-value="updateTabs('perforation', String($event) as TabPerforationMode)"
+              />
+            </div>
+
+            <div class="flex items-center justify-between text-[10px]">
+              <span class="text-neutral-400">Synchronize tab edits</span>
+              <USwitch :model-value="local.tabs.syncAcrossPanel" size="sm" @update:model-value="updateTabs('syncAcrossPanel', !!$event)" />
+            </div>
+
+            <div class="grid grid-cols-4 gap-2 text-[10px] text-neutral-400">
+              <span>Top</span>
+              <span>Bottom</span>
+              <span>Left</span>
+              <span>Right</span>
+            </div>
+            <div class="grid grid-cols-4 gap-2">
+              <UInput :model-value="local.tabs.defaultCountTop" type="number" size="xs" :min="0" :max="10" :step="1" @update:model-value="updateTabSideCount('defaultCountTop', clampInt(String($event), 0, 10))" />
+              <UInput :model-value="local.tabs.defaultCountBottom" type="number" size="xs" :min="0" :max="10" :step="1" @update:model-value="updateTabSideCount('defaultCountBottom', clampInt(String($event), 0, 10))" />
+              <UInput :model-value="local.tabs.defaultCountLeft" type="number" size="xs" :min="0" :max="10" :step="1" @update:model-value="updateTabSideCount('defaultCountLeft', clampInt(String($event), 0, 10))" />
+              <UInput :model-value="local.tabs.defaultCountRight" type="number" size="xs" :min="0" :max="10" :step="1" @update:model-value="updateTabSideCount('defaultCountRight', clampInt(String($event), 0, 10))" />
+            </div>
+
+            <div v-if="local.tabs.perforation !== 'none'" class="grid grid-cols-2 gap-2 text-[10px] text-neutral-400">
+              <span>Hole dia (mm)</span>
+              <span>Spacing (mm)</span>
+            </div>
+            <div v-if="local.tabs.perforation !== 'none'" class="grid grid-cols-2 gap-2">
+              <UInput
+                :model-value="local.tabs.perforationHoleDiameter"
+                type="number"
+                size="xs"
+                :min="0.2"
+                :max="2"
+                :step="0.1"
+                @update:model-value="updateTabs('perforationHoleDiameter', clampFloat(String($event), 0.2, 2))"
+              />
+              <UInput
+                :model-value="local.tabs.perforationHoleSpacing"
+                type="number"
+                size="xs"
+                :min="0.3"
+                :max="3"
+                :step="0.1"
+                @update:model-value="updateTabs('perforationHoleSpacing', clampFloat(String($event), 0.3, 3))"
+              />
+            </div>
+            <p class="text-[10px] text-neutral-400">
+              Move/Add/Delete tab placement directly on the canvas.
+            </p>
           </template>
         </div>
-      </div>
+      </template>
 
-      <!-- Section: Tabs (only for routed/mixed) -->
-      <div v-if="local.separationType !== 'scored'" class="px-4 py-2 border-t border-neutral-200 dark:border-neutral-800">
-        <div class="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider mb-2">
-          Tabs
-        </div>
-        <div class="grid grid-cols-2 gap-x-3 gap-y-2 mb-2">
-          <div class="space-y-0.5">
-            <label class="text-[10px] text-neutral-400">Width (mm)</label>
-            <input
-              :value="local.tabs.width"
-              type="number"
-              min="0.5"
-              max="10"
-              step="0.5"
-              class="w-full text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded px-2 py-1 outline-none focus:border-primary transition-colors tabular-nums"
-              @input="updateTabs('width', clampFloat(($event.target as HTMLInputElement).value, 0.5, 10))"
-            />
-          </div>
-          <div class="space-y-0.5">
-            <label class="text-[10px] text-neutral-400">Perforation</label>
-            <select
-              :value="local.tabs.perforation"
-              class="w-full text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded px-2 py-1 outline-none focus:border-primary transition-colors"
-              @change="updateTabs('perforation', ($event.target as HTMLSelectElement).value as TabPerforationMode)"
-            >
-              <option value="none">None</option>
-              <option value="pcb-side">PCB Side</option>
-              <option value="both-sides">Both Sides</option>
-            </select>
-          </div>
-        </div>
-        <div class="mb-2 flex items-center justify-between">
-          <label class="text-[10px] text-neutral-400">Synchronize Tab Edits</label>
-          <button
-            class="text-[10px] px-1.5 py-0.5 rounded border transition-colors"
-            :class="local.tabs.syncAcrossPanel
-              ? 'border-blue-500/70 text-blue-700 bg-blue-50/90 dark:border-blue-400/70 dark:text-blue-200 dark:bg-blue-500/15'
-              : 'border-neutral-200 dark:border-neutral-700 text-neutral-400 hover:border-neutral-400'"
-            @click="updateTabs('syncAcrossPanel', !local.tabs.syncAcrossPanel)"
-          >
-            {{ local.tabs.syncAcrossPanel ? 'ON' : 'OFF' }}
-          </button>
-        </div>
-        <div class="grid grid-cols-4 gap-x-2 gap-y-1">
-          <div class="space-y-0.5">
-            <label class="text-[10px] text-neutral-400">Top</label>
-            <input
-              :value="local.tabs.defaultCountTop"
-              type="number"
-              min="0"
-              max="10"
-              step="1"
-              class="w-full text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded px-2 py-1 outline-none focus:border-primary transition-colors tabular-nums"
-              @input="updateTabSideCount('defaultCountTop', clampInt(($event.target as HTMLInputElement).value, 0, 10))"
-            />
-          </div>
-          <div class="space-y-0.5">
-            <label class="text-[10px] text-neutral-400">Bottom</label>
-            <input
-              :value="local.tabs.defaultCountBottom"
-              type="number"
-              min="0"
-              max="10"
-              step="1"
-              class="w-full text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded px-2 py-1 outline-none focus:border-primary transition-colors tabular-nums"
-              @input="updateTabSideCount('defaultCountBottom', clampInt(($event.target as HTMLInputElement).value, 0, 10))"
-            />
-          </div>
-          <div class="space-y-0.5">
-            <label class="text-[10px] text-neutral-400">Left</label>
-            <input
-              :value="local.tabs.defaultCountLeft"
-              type="number"
-              min="0"
-              max="10"
-              step="1"
-              class="w-full text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded px-2 py-1 outline-none focus:border-primary transition-colors tabular-nums"
-              @input="updateTabSideCount('defaultCountLeft', clampInt(($event.target as HTMLInputElement).value, 0, 10))"
-            />
-          </div>
-          <div class="space-y-0.5">
-            <label class="text-[10px] text-neutral-400">Right</label>
-            <input
-              :value="local.tabs.defaultCountRight"
-              type="number"
-              min="0"
-              max="10"
-              step="1"
-              class="w-full text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded px-2 py-1 outline-none focus:border-primary transition-colors tabular-nums"
-              @input="updateTabSideCount('defaultCountRight', clampInt(($event.target as HTMLInputElement).value, 0, 10))"
-            />
-          </div>
-        </div>
-
-        <!-- Perforation (Mouse Bites) -->
-        <div class="mt-2 space-y-2">
-          <div v-if="local.tabs.perforation !== 'none'" class="grid grid-cols-2 gap-x-3 gap-y-2">
-            <div class="space-y-0.5">
-              <label class="text-[10px] text-neutral-400">Hole Dia (mm)</label>
-              <input
-                :value="local.tabs.perforationHoleDiameter"
-                type="number"
-                min="0.2"
-                max="2"
-                step="0.1"
-                class="w-full text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded px-2 py-1 outline-none focus:border-primary transition-colors tabular-nums"
-                @input="updateTabs('perforationHoleDiameter', clampFloat(($event.target as HTMLInputElement).value, 0.2, 2))"
-              />
-            </div>
-            <div class="space-y-0.5">
-              <label class="text-[10px] text-neutral-400">Spacing (mm)</label>
-              <input
-                :value="local.tabs.perforationHoleSpacing"
-                type="number"
-                min="0.3"
-                max="3"
-                step="0.1"
-                class="w-full text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded px-2 py-1 outline-none focus:border-primary transition-colors tabular-nums"
-                @input="updateTabs('perforationHoleSpacing', clampFloat(($event.target as HTMLInputElement).value, 0.3, 3))"
-              />
-            </div>
-          </div>
-        </div>
-
-        <p class="mt-2 text-[10px] text-neutral-400">
-          Tab placement is edited directly on the canvas using the Move/Add/Delete controls.
-        </p>
-      </div>
-
-      <!-- Section: Frame -->
-      <div class="px-4 py-2 border-t border-neutral-200 dark:border-neutral-800">
-        <div class="flex items-center justify-between mb-2">
-          <div class="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
-            Frame
-          </div>
-          <button
-            class="text-[10px] px-1.5 py-0.5 rounded border transition-colors"
-            :class="local.frame.enabled
-              ? 'border-blue-500/70 text-blue-700 bg-blue-50/90 dark:border-blue-400/70 dark:text-blue-200 dark:bg-blue-500/15'
-              : 'border-neutral-200 dark:border-neutral-700 text-neutral-400 hover:border-neutral-400'"
-            @click="updateFrame('enabled', !local.frame.enabled)"
-          >
-            {{ local.frame.enabled ? 'ON' : 'OFF' }}
-          </button>
-        </div>
-
-        <template v-if="local.frame.enabled">
-          <div class="grid grid-cols-2 gap-x-3 gap-y-2">
-            <div class="space-y-0.5">
-              <label class="text-[10px] text-neutral-400">Width (mm)</label>
-              <input
-                :value="local.frame.width"
-                type="number"
-                min="2"
-                max="30"
-                step="0.5"
-                class="w-full text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded px-2 py-1 outline-none focus:border-primary transition-colors tabular-nums"
-                @input="updateFrame('width', clampFloat(($event.target as HTMLInputElement).value, 2, 30))"
-              />
-            </div>
-            <div class="space-y-0.5">
-              <label class="text-[10px] text-neutral-400">Corner R (mm)</label>
-              <input
-                :value="local.frame.cornerRadius"
-                type="number"
-                min="0"
-                max="10"
-                step="0.5"
-                class="w-full text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded px-2 py-1 outline-none focus:border-primary transition-colors tabular-nums"
-                @input="updateFrame('cornerRadius', clampFloat(($event.target as HTMLInputElement).value, 0, 10))"
-              />
-            </div>
-          </div>
-        </template>
-      </div>
-
-      <!-- Section: Support Bars -->
-      <div v-if="local.countX > 1 || local.countY > 1" class="px-4 py-2 border-t border-neutral-200 dark:border-neutral-800">
-        <div class="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider mb-2">
-          Support Bars
-        </div>
-
-        <div class="grid grid-cols-2 gap-x-3 gap-y-2">
-          <div class="space-y-0.5">
-            <label class="text-[10px] text-neutral-400">Rail Width (mm)</label>
-            <input
-              :value="local.supports.width"
-              type="number"
-              min="5"
-              max="30"
-              step="0.5"
-              class="w-full text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded px-2 py-1 outline-none focus:border-primary transition-colors tabular-nums"
-              @change="updateSupports('width', clampFloat(($event.target as HTMLInputElement).value, 5, 30))"
-              @blur="updateSupports('width', clampFloat(($event.target as HTMLInputElement).value, 5, 30))"
-            />
-          </div>
-
-          <div />
-
-          <!-- Column gaps -->
-          <div v-if="local.countX > 1" class="space-y-1">
-            <div class="text-[10px] text-neutral-400">Column Gaps</div>
-            <label
-              v-for="i in (local.countX - 1)"
-              :key="`xgap-${i}`"
-              class="flex items-center gap-1.5 text-[10px] text-neutral-500 cursor-pointer select-none"
-            >
-              <input
-                type="checkbox"
-                :checked="local.supports.xGaps.includes(i - 1)"
-                class="rounded border-neutral-300 dark:border-neutral-600 text-primary focus:ring-primary/30 w-3 h-3"
-                @change="toggleSupportGap('x', i - 1)"
-              />
-              Col {{ i }}-{{ i + 1 }}
-            </label>
-          </div>
-
-          <!-- Row gaps -->
-          <div v-if="local.countY > 1" class="space-y-1">
-            <div class="text-[10px] text-neutral-400">Row Gaps</div>
-            <label
-              v-for="i in (local.countY - 1)"
-              :key="`ygap-${i}`"
-              class="flex items-center gap-1.5 text-[10px] text-neutral-500 cursor-pointer select-none"
-            >
-              <input
-                type="checkbox"
-                :checked="local.supports.yGaps.includes(i - 1)"
-                class="rounded border-neutral-300 dark:border-neutral-600 text-primary focus:ring-primary/30 w-3 h-3"
-                @change="toggleSupportGap('y', i - 1)"
-              />
-              Row {{ i }}-{{ i + 1 }}
-            </label>
-          </div>
-        </div>
-      </div>
-
-      <!-- Section: Fiducials -->
-      <div class="px-4 py-2 border-t border-neutral-200 dark:border-neutral-800">
-        <div class="flex items-center justify-between mb-2">
-          <div class="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
-            Fiducials
-          </div>
-          <button
-            class="text-[10px] px-1.5 py-0.5 rounded border transition-colors"
-            :class="local.fiducials.enabled
-              ? 'border-blue-500/70 text-blue-700 bg-blue-50/90 dark:border-blue-400/70 dark:text-blue-200 dark:bg-blue-500/15'
-              : 'border-neutral-200 dark:border-neutral-700 text-neutral-400 hover:border-neutral-400'"
-            @click="updateFiducials('enabled', !local.fiducials.enabled)"
-          >
-            {{ local.fiducials.enabled ? 'ON' : 'OFF' }}
-          </button>
-        </div>
-
-        <template v-if="local.fiducials.enabled">
-          <div class="grid grid-cols-2 gap-x-3">
-            <div class="space-y-0.5">
-              <label class="text-[10px] text-neutral-400">Diameter (mm)</label>
-              <input
-                :value="local.fiducials.diameter"
-                type="number"
-                min="0.5"
-                max="5"
-                step="0.1"
-                class="w-full text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded px-2 py-1 outline-none focus:border-primary transition-colors tabular-nums"
-                @input="updateFiducials('diameter', clampFloat(($event.target as HTMLInputElement).value, 0.5, 5))"
-              />
-            </div>
-            <div class="space-y-0.5">
-              <label class="text-[10px] text-neutral-400">Positions</label>
-              <div class="flex flex-col gap-0.5 mt-0.5">
-                <label
-                  v-for="pos in fiducialPositionOptions"
-                  :key="pos.value"
-                  class="flex items-center gap-1 text-[10px] text-neutral-500 cursor-pointer select-none"
-                >
-                  <input
-                    type="checkbox"
-                    :checked="local.fiducials.positions.includes(pos.value)"
-                    class="rounded border-neutral-300 dark:border-neutral-600 text-primary focus:ring-primary/30 w-3 h-3"
-                    @change="toggleFiducialPosition(pos.value)"
-                  />
-                  {{ pos.label }}
-                </label>
-              </div>
-            </div>
-          </div>
-        </template>
-      </div>
-
-      <!-- Section: Tooling Holes -->
-      <div class="px-4 py-2 border-t border-neutral-200 dark:border-neutral-800">
-        <div class="flex items-center justify-between mb-2">
-          <div class="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
-            Tooling Holes
-          </div>
-          <button
-            class="text-[10px] px-1.5 py-0.5 rounded border transition-colors"
-            :class="local.toolingHoles.enabled
-              ? 'border-blue-500/70 text-blue-700 bg-blue-50/90 dark:border-blue-400/70 dark:text-blue-200 dark:bg-blue-500/15'
-              : 'border-neutral-200 dark:border-neutral-700 text-neutral-400 hover:border-neutral-400'"
-            @click="updateToolingHoles('enabled', !local.toolingHoles.enabled)"
-          >
-            {{ local.toolingHoles.enabled ? 'ON' : 'OFF' }}
-          </button>
-        </div>
-
-        <template v-if="local.toolingHoles.enabled">
-          <div class="grid grid-cols-2 gap-x-3 gap-y-2">
-            <div class="space-y-0.5">
-              <label class="text-[10px] text-neutral-400">Diameter (mm)</label>
-              <input
-                :value="local.toolingHoles.diameter"
-                type="number"
-                min="1"
-                max="8"
-                step="0.1"
-                class="w-full text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded px-2 py-1 outline-none focus:border-primary transition-colors tabular-nums"
-                @input="updateToolingHoles('diameter', clampFloat(($event.target as HTMLInputElement).value, 1, 8))"
-              />
-            </div>
-            <div class="space-y-0.5">
-              <label class="text-[10px] text-neutral-400">Offset (mm)</label>
-              <input
-                :value="local.toolingHoles.offsetMm"
-                type="number"
-                min="0"
-                max="30"
-                step="0.5"
-                class="w-full text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded px-2 py-1 outline-none focus:border-primary transition-colors tabular-nums"
-                @input="updateToolingHoles('offsetMm', clampFloat(($event.target as HTMLInputElement).value, 0, 30))"
-              />
-            </div>
-          </div>
-          <div class="mt-2 space-y-0.5">
-            <label class="text-[10px] text-neutral-400">Positions</label>
-            <div class="grid grid-cols-2 gap-x-3 gap-y-0.5">
-              <label
-                v-for="pos in toolingHolePositionOptions"
-                :key="pos.value"
-                class="flex items-center gap-1 text-[10px] text-neutral-500 cursor-pointer select-none"
-              >
-                <input
-                  type="checkbox"
-                  :checked="local.toolingHoles.positions.includes(pos.value)"
-                  class="rounded border-neutral-300 dark:border-neutral-600 text-primary focus:ring-primary/30 w-3 h-3"
-                  @change="toggleToolingHolePosition(pos.value)"
-                />
-                {{ pos.label }}
-              </label>
-            </div>
-          </div>
-        </template>
-      </div>
-
-    </div>
+    </UTabs>
   </div>
 </template>
 
 <script setup lang="ts">
+import type { TabsItem } from '@nuxt/ui'
 import type { PanelConfig, FiducialPosition, DangerZoneConfig, TabPerforationMode, ToolingHolePosition } from '~/utils/panel-types'
 import { DEFAULT_PANEL_CONFIG, PANEL_MAX_WIDTH, PANEL_MAX_HEIGHT } from '~/utils/panel-types'
 import { computePanelLayout } from '~/utils/panel-geometry'
@@ -550,6 +313,11 @@ const separationTypes = [
   { label: 'Routed', value: 'routed' as const },
   { label: 'V-Cut', value: 'scored' as const },
   { label: 'Mixed', value: 'mixed' as const },
+]
+
+const panelTabItems: TabsItem[] = [
+  { label: 'General Info', icon: 'i-lucide-layout-grid', slot: 'layout' },
+  { label: 'Panel Connections', icon: 'i-lucide-link', slot: 'tabs' },
 ]
 
 const edgeNames = ['top', 'bottom', 'left', 'right'] as const
@@ -691,6 +459,7 @@ const editorPad = 3
 function editorColGap(i: number): number {
   const c = cfg.value
   if (c.separationType === 'scored') return 0
+  if (!(c.supports.enabled ?? true)) return c.routingToolDiameter * es.value
   if (c.supports.xGaps.includes(i)) return (c.supports.width + 2 * c.routingToolDiameter) * es.value
   return c.routingToolDiameter * es.value
 }
@@ -698,6 +467,7 @@ function editorColGap(i: number): number {
 function editorRowGap(i: number): number {
   const c = cfg.value
   if (c.separationType === 'scored') return 0
+  if (!(c.supports.enabled ?? true)) return c.routingToolDiameter * es.value
   if (c.supports.yGaps.includes(i)) return (c.supports.width + 2 * c.routingToolDiameter) * es.value
   return c.routingToolDiameter * es.value
 }
@@ -741,6 +511,7 @@ const editorPcbs = computed(() => {
 const editorSupportRails = computed(() => {
   const rails: { x: number; y: number; w: number; h: number }[] = []
   const c = cfg.value
+  if (!(c.supports.enabled ?? true)) return rails
   const railMat = Math.max(0, c.supports.width)
   for (const gi of c.supports.xGaps) {
     if (gi < 0 || gi >= c.countX - 1) continue

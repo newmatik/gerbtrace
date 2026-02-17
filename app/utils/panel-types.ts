@@ -66,6 +66,8 @@ export interface TabConfig {
 }
 
 export interface SupportBarConfig {
+  /** Enable/disable support bars entirely */
+  enabled: boolean
   /** Support bar rail width in mm (default 5) */
   width: number
   /** Which column gaps (0-indexed) have a support bar */
@@ -177,6 +179,7 @@ export function DEFAULT_PANEL_CONFIG(): PanelConfig {
       perforationHoleSpacing: 0.6,
     },
     supports: {
+      enabled: true,
       width: 10,
       xGaps: [],
       yGaps: [],
@@ -198,12 +201,14 @@ export function migratePanelConfig(raw: Record<string, any>): PanelConfig {
   if (raw.supports) {
     if ('xGaps' in raw.supports || 'yGaps' in raw.supports) {
       supports = {
+        enabled: raw.supports.enabled ?? defaults.supports.enabled,
         width: raw.supports.width ?? defaults.supports.width,
         xGaps: raw.supports.xGaps ?? [],
         yGaps: raw.supports.yGaps ?? [],
       }
     } else {
       supports = {
+        enabled: raw.supports.enabled ?? defaults.supports.enabled,
         width: raw.supports.width ?? defaults.supports.width,
         xGaps: [],
         yGaps: [],

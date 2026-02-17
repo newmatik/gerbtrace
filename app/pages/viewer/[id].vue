@@ -669,7 +669,15 @@
     </div>
 
     <!-- Settings modal -->
-    <AppSettingsModal v-model:open="showSettings" />
+    <AppSettingsModal
+      v-model:open="showSettings"
+      @open-performance="showPerformanceMonitor = true"
+    />
+    <PerformanceMonitorModal
+      v-model:open="showPerformanceMonitor"
+      :snapshot="performanceSnapshot"
+      @refresh="refreshPerformanceSnapshot"
+    />
 
     <!-- PnP export modal -->
     <PnPExportModal
@@ -686,7 +694,7 @@
     <ImageExportModal
       v-model:open="showImageExport"
       :has-pn-p="pnp.hasPnP.value"
-      :board-size-mm="boardSizeMm"
+      :board-size-mm="imageExportTarget === 'panel' ? (panelDimensionsMm ?? undefined) : boardSizeMm"
       @export="handleExportImage"
     />
 
@@ -889,6 +897,10 @@ watch(() => deleteTool.active.value, (isActive) => {
 
 // Panel view does not support info/delete tools; fall back to cursor.
 watch(sidebarTab, (tab) => {
+  // Leaving the docs tab should always close any open document preview.
+  if (tab !== 'docs' && selectedDocumentId.value) {
+    selectedDocumentId.value = null
+  }
   if (tab === 'panel' && (activeMode.value === 'info' || activeMode.value === 'delete')) {
     setMode('cursor')
   }
@@ -1093,10 +1105,163 @@ const panelDimensionsMm = computed<{ width: number; height: number } | null>(() 
 })
 
 const showSettings = ref(false)
+const showPerformanceMonitor = ref(false)
 const showPnPExport = ref(false)
 const showImageExport = ref(false)
+const imageExportTarget = ref<'board' | 'panel'>('board')
 const showComponentEdit = ref(false)
 const editingComponent = ref<import('~/composables/usePickAndPlace').EditablePnPComponent | null>(null)
+const performanceSnapshot = ref<{
+  fpsApprox: number
+  frameMs: number
+  longTaskCount30s: number
+  memorySupported: boolean
+  heapUsedBytes: number
+  heapTotalBytes: number
+  heapLimitBytes: number
+  storageUsageBytes: number
+  storageQuotaBytes: number
+  projectEstimateBytes: number
+  logicalCores: number
+  deviceMemoryGb: number | null
+  gpuRenderer: string | null
+  board: { sceneCacheBytes: number, canvasPoolSize: number, draws: number }
+  panel: { tileBytesTotal: number, canvasPoolSize: number, draws: number }
+} | null>(null)
+
+const documentSizeById = ref<Record<string, number>>({})
+let perfFrameReq = 0
+let perfRefreshTimer: ReturnType<typeof setInterval> | null = null
+let perfLastRafTs = 0
+let perfFrameMs = 0
+const longTaskTimestamps: number[] = []
+let longTaskObserver: PerformanceObserver | null = null
+
+function estimateProjectBytes(): number {
+  const encoder = new TextEncoder()
+  const layerBytes = layers.value.reduce((sum, layer) => sum + encoder.encode(layer.file.content).length, 0)
+  const docsBytes = Object.values(documentSizeById.value).reduce((sum, size) => sum + size, 0)
+  const pnpBytes = encoder.encode(JSON.stringify({
+    all: pnp.allComponents.value,
+    manual: pnp.manualComponentsRecord.value,
+    mapping: pnp.cadPackageMapRecord.value,
+  })).length
+  const bomBytes = encoder.encode(JSON.stringify({
+    lines: bom.bomLines.value,
+    pricing: bom.pricingCache.value,
+  })).length
+  const panelBytes = encoder.encode(JSON.stringify(panelData.value)).length
+  const pcbBytes = encoder.encode(JSON.stringify(pcbData.value ?? {})).length
+  return layerBytes + docsBytes + pnpBytes + bomBytes + panelBytes + pcbBytes
+}
+
+function getGpuRenderer(): string | null {
+  try {
+    const canvas = document.createElement('canvas')
+    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl')
+    if (!gl) return null
+    const ext = (gl as WebGLRenderingContext).getExtension('WEBGL_debug_renderer_info') as any
+    if (!ext) return null
+    return (gl as WebGLRenderingContext).getParameter(ext.UNMASKED_RENDERER_WEBGL) as string
+  } catch {
+    return null
+  }
+}
+
+function startPerfFrameLoop() {
+  const tick = (ts: number) => {
+    if (perfLastRafTs > 0) perfFrameMs = ts - perfLastRafTs
+    perfLastRafTs = ts
+    perfFrameReq = requestAnimationFrame(tick)
+  }
+  if (!perfFrameReq) perfFrameReq = requestAnimationFrame(tick)
+}
+
+function stopPerfFrameLoop() {
+  if (perfFrameReq) {
+    cancelAnimationFrame(perfFrameReq)
+    perfFrameReq = 0
+  }
+  perfLastRafTs = 0
+}
+
+function startLongTaskObserver() {
+  if (longTaskObserver || typeof PerformanceObserver === 'undefined') return
+  try {
+    longTaskObserver = new PerformanceObserver((list) => {
+      const now = performance.now()
+      for (const entry of list.getEntries()) {
+        if (entry.entryType === 'longtask') longTaskTimestamps.push(now)
+      }
+      while (longTaskTimestamps.length && now - longTaskTimestamps[0]! > 30000) {
+        longTaskTimestamps.shift()
+      }
+    })
+    longTaskObserver.observe({ entryTypes: ['longtask'] })
+  } catch {
+    longTaskObserver = null
+  }
+}
+
+function stopLongTaskObserver() {
+  if (longTaskObserver) {
+    longTaskObserver.disconnect()
+    longTaskObserver = null
+  }
+}
+
+async function refreshPerformanceSnapshot() {
+  const mem = ((performance as any).memory ?? null) as { usedJSHeapSize: number, totalJSHeapSize: number, jsHeapSizeLimit: number } | null
+  const storageEstimate = await navigator.storage?.estimate?.().catch(() => null)
+  const boardStats = boardCanvasRef.value?.getPerformanceStats?.()
+  const panelStats = panelCanvasRef.value?.getPerformanceStats?.()
+
+  performanceSnapshot.value = {
+    fpsApprox: perfFrameMs > 0 ? 1000 / perfFrameMs : 0,
+    frameMs: perfFrameMs,
+    longTaskCount30s: longTaskTimestamps.length,
+    memorySupported: !!mem,
+    heapUsedBytes: mem?.usedJSHeapSize ?? 0,
+    heapTotalBytes: mem?.totalJSHeapSize ?? 0,
+    heapLimitBytes: mem?.jsHeapSizeLimit ?? 0,
+    storageUsageBytes: storageEstimate?.usage ?? 0,
+    storageQuotaBytes: storageEstimate?.quota ?? 0,
+    projectEstimateBytes: estimateProjectBytes(),
+    logicalCores: navigator.hardwareConcurrency ?? 0,
+    deviceMemoryGb: (navigator as any).deviceMemory ?? null,
+    gpuRenderer: getGpuRenderer(),
+    board: {
+      sceneCacheBytes: boardStats?.sceneCache?.estimatedBytes ?? 0,
+      canvasPoolSize: boardStats?.canvasPoolSize ?? 0,
+      draws: boardStats?.draws ?? 0,
+    },
+    panel: {
+      tileBytesTotal: (panelStats?.pcbTile?.estimatedBytes ?? 0)
+        + (panelStats?.componentTile?.estimatedBytes ?? 0)
+        + (panelStats?.dangerTile?.estimatedBytes ?? 0),
+      canvasPoolSize: panelStats?.canvasPoolSize ?? 0,
+      draws: panelStats?.draws ?? 0,
+    },
+  }
+}
+
+watch(showPerformanceMonitor, (open) => {
+  if (!open) {
+    if (perfRefreshTimer) {
+      clearInterval(perfRefreshTimer)
+      perfRefreshTimer = null
+    }
+    stopPerfFrameLoop()
+    stopLongTaskObserver()
+    return
+  }
+  startPerfFrameLoop()
+  startLongTaskObserver()
+  refreshPerformanceSnapshot()
+  perfRefreshTimer = setInterval(() => {
+    refreshPerformanceSnapshot()
+  }, 1000)
+})
 
 // Board dimensions — cached so the value survives when BoardCanvas is unmounted (e.g. panel tab)
 const _cachedBoardSizeMm = ref<{ width: number; height: number } | undefined>(undefined)
@@ -1179,10 +1344,24 @@ const detectedLayerCount = computed<number | null>(() => {
 const downloadMenuItems = computed(() => {
   const items: { label: string; icon: string; onSelect: () => void }[] = []
   if (viewMode.value === 'realistic') {
-    items.push({ label: 'Export Image', icon: 'i-lucide-image', onSelect: () => { showImageExport.value = true } })
+    items.push({
+      label: 'Export Image',
+      icon: 'i-lucide-image',
+      onSelect: () => {
+        imageExportTarget.value = 'board'
+        showImageExport.value = true
+      },
+    })
   }
   if (sidebarTab.value === 'panel' && layers.value.length > 0) {
-    items.push({ label: 'Export Panel Image', icon: 'i-lucide-grid-2x2', onSelect: handleExportPanelImage })
+    items.push({
+      label: 'Export Panel Image',
+      icon: 'i-lucide-grid-2x2',
+      onSelect: () => {
+        imageExportTarget.value = 'panel'
+        showImageExport.value = true
+      },
+    })
   }
   if (layers.value.length > 0) {
     items.push({ label: 'Download Gerber', icon: 'i-lucide-file-archive', onSelect: () => { handleDownloadGerber() } })
@@ -1262,6 +1441,7 @@ async function handleDocumentsAdd(files: File[]) {
     const docType = guessDocumentType(file.name)
     const blobUrl = URL.createObjectURL(file)
     const entry: ProjectDocument = { id, name: file.name, type: docType, blobUrl }
+    documentSizeById.value[id] = file.size
     // Persist
     if (isTeamProject && teamProjectId) {
       const teamId = currentTeamId.value || await waitForTeamId()
@@ -1287,6 +1467,7 @@ async function handleDocumentRemove(id: string) {
   const idx = documents.value.findIndex(d => d.id === id)
   if (idx < 0) return
   const doc = documents.value[idx]
+  delete documentSizeById.value[id]
   URL.revokeObjectURL(doc.blobUrl)
   documents.value.splice(idx, 1)
   if (selectedDocumentId.value === id) {
@@ -1322,6 +1503,9 @@ function handleDocumentTypeUpdate(id: string, type: DocumentType) {
 // Clean up all blob URLs on unmount
 onUnmounted(() => {
   for (const doc of documents.value) URL.revokeObjectURL(doc.blobUrl)
+  if (perfRefreshTimer) clearInterval(perfRefreshTimer)
+  stopPerfFrameLoop()
+  stopLongTaskObserver()
 })
 
 // ── BOM ──
@@ -1838,6 +2022,7 @@ onMounted(async () => {
       if (!blob) continue
       const id = `doc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
       const blobUrl = URL.createObjectURL(blob)
+      documentSizeById.value[id] = blob.size
       documents.value.push({ id, name: td.file_name, type: td.doc_type as DocumentType, blobUrl, dbId: td.id, storagePath: td.storage_path })
     }
   } else if (!isTeamProject) {
@@ -1845,6 +2030,7 @@ onMounted(async () => {
     for (const doc of storedDocs) {
       const id = `doc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
       const blobUrl = URL.createObjectURL(doc.data)
+      documentSizeById.value[id] = doc.data.size
       documents.value.push({ id, name: doc.fileName, type: doc.docType, blobUrl })
     }
   }
@@ -2321,21 +2507,15 @@ function handleExportSvg() {
   triggerDownload(blob, `${project.value?.name || 'pcb'}-${side}.svg`)
 }
 
-async function handleExportPanelImage() {
-  const canvas = panelCanvasRef.value
-  if (!canvas) return
-  const blob = await canvas.exportPng(600)
-  if (!blob) return
-  const projectName = project.value?.name || 'panel'
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `${projectName}-panel.png`
-  a.click()
-  URL.revokeObjectURL(url)
+async function handleExportImage(options: { format: 'png' | 'svg'; componentsMode: 'none' | 'smd' | 'tht' | 'all' | 'both'; sideMode: 'top' | 'bottom' | 'both'; dpi: number }) {
+  if (imageExportTarget.value === 'panel') {
+    await handleExportPanelImage(options)
+    return
+  }
+  await handleExportBoardImage(options)
 }
 
-async function handleExportImage(options: { format: 'png' | 'svg'; componentsMode: 'none' | 'smd' | 'tht' | 'all' | 'both'; sideMode: 'top' | 'bottom' | 'both'; dpi: number }) {
+async function handleExportBoardImage(options: { format: 'png' | 'svg'; componentsMode: 'none' | 'smd' | 'tht' | 'all' | 'both'; sideMode: 'top' | 'bottom' | 'both'; dpi: number }) {
   const canvas = boardCanvasRef.value
   if (!canvas) return
   // Ensure SVG exporter uses fresh footprint shapes (not stale cached data)
@@ -2421,6 +2601,92 @@ async function handleExportImage(options: { format: 'png' | 'svg'; componentsMod
   }
   const zipBlob = await zip.generateAsync({ type: 'blob' })
   triggerDownload(zipBlob, `${projectName}-images.zip`)
+}
+
+function panelPngBlobToSvgBlob(pngBlob: Blob, panelSizeMm?: { width: number; height: number } | null): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader()
+    fr.onerror = () => reject(new Error('Failed to read PNG export'))
+    fr.onload = () => {
+      const dataUrl = String(fr.result || '')
+      const dims = panelSizeMm && panelSizeMm.width > 0 && panelSizeMm.height > 0
+      const widthMm = dims ? panelSizeMm.width : 100
+      const heightMm = dims ? panelSizeMm.height : 100
+      const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${widthMm}mm" height="${heightMm}mm" viewBox="0 0 ${widthMm} ${heightMm}">
+  <image href="${dataUrl}" x="0" y="0" width="${widthMm}" height="${heightMm}" preserveAspectRatio="none"/>
+</svg>`
+      resolve(new Blob([svg], { type: 'image/svg+xml' }))
+    }
+    fr.readAsDataURL(pngBlob)
+  })
+}
+
+async function handleExportPanelImage(options: { format: 'png' | 'svg'; componentsMode: 'none' | 'smd' | 'tht' | 'all' | 'both'; sideMode: 'top' | 'bottom' | 'both'; dpi: number }) {
+  const canvas = panelCanvasRef.value
+  if (!canvas) return
+
+  const projectName = project.value?.name || 'panel'
+  const sides: Array<'top' | 'bottom'> = options.sideMode === 'both' ? ['top', 'bottom'] : [options.sideMode]
+  const canRenderComponents = pnp.hasPnP.value
+  const variants: boolean[] =
+    (options.componentsMode === 'both' && canRenderComponents) ? [false, true]
+      : (options.componentsMode !== 'none' && canRenderComponents) ? [true]
+        : [false]
+
+  const buildComponentsForSide = (side: 'top' | 'bottom') => {
+    if (!canRenderComponents) return []
+    let list = pnp.allComponents.value
+      .filter(c => !c.dnp)
+      .filter(c => c.side === side)
+    if (options.componentsMode === 'smd') {
+      list = list.filter(c => c.componentType === 'smd')
+    } else if (options.componentsMode === 'tht') {
+      list = list.filter(c => c.componentType === 'tht')
+    }
+    return list
+  }
+
+  const ext = options.format === 'png' ? '.png' : '.svg'
+  const fileNameFor = (side: 'top' | 'bottom', withComponents: boolean) => {
+    const sideSuffix = `-panel-${side}`
+    const compSuffix = variants.length === 1
+      ? ''
+      : (withComponents ? '-with-components' : '-no-components')
+    return `${projectName}${sideSuffix}${compSuffix}${ext}`
+  }
+
+  const renderOne = async (side: 'top' | 'bottom', withComponents: boolean): Promise<Blob | null> => {
+    const comps = withComponents ? buildComponentsForSide(side) : []
+    const pngBlob = await canvas.exportPngForSide(side, {
+      dpi: options.dpi,
+      includeComponents: withComponents,
+      components: comps,
+      includePackages: showPackages.value,
+    })
+    if (!pngBlob) return null
+    if (options.format === 'png') return pngBlob
+    return await panelPngBlobToSvgBlob(pngBlob, panelDimensionsMm.value)
+  }
+
+  const fileCount = sides.length * variants.length
+  if (fileCount === 1) {
+    const blob = await renderOne(sides[0]!, variants[0]!)
+    if (!blob) return
+    triggerDownload(blob, fileNameFor(sides[0]!, variants[0]!))
+    return
+  }
+
+  const zip = new JSZip()
+  for (const side of sides) {
+    for (const withComponents of variants) {
+      const blob = await renderOne(side, withComponents)
+      if (!blob) continue
+      zip.file(fileNameFor(side, withComponents), blob)
+    }
+  }
+  const zipBlob = await zip.generateAsync({ type: 'blob' })
+  triggerDownload(zipBlob, `${projectName}-panel-images.zip`)
 }
 
 async function handleExportPnP(options: { convention: PnPConvention; format: PnPExportFormat; sideMode: PnPExportSideMode; componentMode: string; excludeDnp: boolean }) {

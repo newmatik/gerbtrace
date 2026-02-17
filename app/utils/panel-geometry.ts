@@ -177,6 +177,9 @@ export function computePanelLayout(
   const { countX, countY } = config
   const toolD = config.routingToolDiameter
   const isScored = config.separationType === 'scored'
+  const supportsEnabled = config.supports.enabled ?? true
+  const xSupportGaps = supportsEnabled ? config.supports.xGaps : []
+  const ySupportGaps = supportsEnabled ? config.supports.yGaps : []
 
   // Determine routing gap for frame edges
   const frameRoutingGap = (isScored ? 0 : toolD)
@@ -188,7 +191,7 @@ export function computePanelLayout(
   for (let i = 0; i < countX - 1; i++) {
     if (isScored) {
       colGaps.push(0)
-    } else if (config.supports.xGaps.includes(i)) {
+    } else if (xSupportGaps.includes(i)) {
       colGaps.push(config.supports.width + 2 * toolD)
     } else {
       colGaps.push(toolD)
@@ -200,7 +203,7 @@ export function computePanelLayout(
   for (let i = 0; i < countY - 1; i++) {
     if (isScored) {
       rowGaps.push(0)
-    } else if (config.supports.yGaps.includes(i)) {
+    } else if (ySupportGaps.includes(i)) {
       rowGaps.push(config.supports.width + 2 * toolD)
     } else {
       rowGaps.push(toolD)
@@ -281,14 +284,14 @@ export function computePanelLayout(
   // Ranges occupied by support-rail material, used to prevent routing
   // channels from cutting through rails.
   const railMaterialForCuts = Math.max(0, config.supports.width)
-  const verticalRailRanges = config.supports.xGaps
+  const verticalRailRanges = xSupportGaps
     .filter(gi => gi >= 0 && gi < countX - 1)
     .map(gi => {
       const railX = colX[gi] + pcbW + toolD
       return { start: railX, end: railX + railMaterialForCuts }
     })
     .filter(r => r.end > r.start)
-  const horizontalRailRanges = config.supports.yGaps
+  const horizontalRailRanges = ySupportGaps
     .filter(gi => gi >= 0 && gi < countY - 1)
     .map(gi => {
       const railY = rowY[gi] + pcbH + toolD
@@ -320,7 +323,7 @@ export function computePanelLayout(
 
     if (isScoredSep) {
       vcutLines.push({ x1: gapStart, y1: y1Full, x2: gapStart, y2: y2Full })
-    } else if (config.supports.xGaps.includes(i)) {
+    } else if (xSupportGaps.includes(i)) {
       // Two routing channels flanking the support bar.
       // Only run between PCB rows, not into the frame (support bar connects to frame directly).
       const chX1 = gapStart + toolD / 2
@@ -348,7 +351,7 @@ export function computePanelLayout(
 
     if (isScoredSep) {
       vcutLines.push({ x1: x1Full, y1: gapStart, x2: x2Full, y2: gapStart })
-    } else if (config.supports.yGaps.includes(i)) {
+    } else if (ySupportGaps.includes(i)) {
       // Two routing channels flanking the support bar.
       // Only run between PCB columns, not into the frame.
       const chY1 = gapStart + toolD / 2
@@ -421,7 +424,7 @@ export function computePanelLayout(
   // The rail FR4 material directly uses supports.width (routing lanes are outside it).
   const railMaterial = Math.max(0, config.supports.width)
   const supportRails: SupportRail[] = []
-  for (const gi of config.supports.xGaps) {
+  for (const gi of xSupportGaps) {
     if (gi < 0 || gi >= countX - 1) continue
     const railX = colX[gi] + pcbW + toolD
     supportRails.push({
@@ -433,7 +436,7 @@ export function computePanelLayout(
       gapIndex: gi,
     })
   }
-  for (const gi of config.supports.yGaps) {
+  for (const gi of ySupportGaps) {
     if (gi < 0 || gi >= countY - 1) continue
     const railY = rowY[gi] + pcbH + toolD
     supportRails.push({
@@ -485,7 +488,7 @@ export function computePanelLayout(
           const positionsMain = getTabPositions(col, row, 'right', 'main')
           const gapX = px + pcbW
           const gapW = colGaps[col]
-          if (config.supports.xGaps.includes(col)) {
+          if (xSupportGaps.includes(col)) {
             const positionsNear = getTabPositions(col, row, 'right', 'pcb-side')
             const positionsFar = getTabPositions(col, row, 'right', 'opposite-side')
             placeTabsAtPositions(tabs, positionsNear, tabW, py, pcbH, gapX, toolD, 'vertical', col, row, 'right', getOverrideKey(col, row, 'right', 'pcb-side'), 'pcb-side')
@@ -500,7 +503,7 @@ export function computePanelLayout(
           const positionsMain = getTabPositions(col, row, 'bottom', 'main')
           const gapY = py + pcbH
           const gapH = rowGaps[row]
-          if (config.supports.yGaps.includes(row)) {
+          if (ySupportGaps.includes(row)) {
             const positionsNear = getTabPositions(col, row, 'bottom', 'pcb-side')
             const positionsFar = getTabPositions(col, row, 'bottom', 'opposite-side')
             placeTabsAtPositions(tabs, positionsNear, tabW, px, pcbW, gapY, toolD, 'horizontal', col, row, 'bottom', getOverrideKey(col, row, 'bottom', 'pcb-side'), 'pcb-side')

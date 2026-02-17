@@ -55,6 +55,21 @@
           </div>
         </div>
 
+        <!-- Diagnostics section -->
+        <div class="space-y-3 border-t border-neutral-200 dark:border-neutral-700 pt-3">
+          <h4 class="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Diagnostics</h4>
+          <UButton
+            size="sm"
+            color="neutral"
+            variant="soft"
+            icon="i-lucide-activity"
+            class="justify-start"
+            @click="$emit('openPerformance')"
+          >
+            Performance Monitor
+          </UButton>
+        </div>
+
         <div class="border-t border-neutral-200 dark:border-neutral-700 pt-3">
           <button
             class="text-xs text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors"
@@ -70,6 +85,7 @@
 
 <script setup lang="ts">
 const open = defineModel<boolean>('open', { default: false })
+defineEmits<{ openPerformance: [] }>()
 const { settings, resetDefaults } = useAppSettings()
 
 const gridPresets = [1, 2.54, 5, 10, 25]

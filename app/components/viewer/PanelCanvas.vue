@@ -176,6 +176,78 @@ function releaseCanvas(c: HTMLCanvasElement) { _canvasPool.push(c) }
 
 // Gerber parsing cache
 const imageTreeCache = new Map<string, ImageTree>()
+const PERF_ENABLED = import.meta.dev
+  && typeof window !== 'undefined'
+  && !!(window as any).__GERBTRACE_PERF__
+
+const panelPerf = {
+  draws: 0,
+  pcbTileHits: 0,
+  pcbTileBuilds: 0,
+  componentTileHits: 0,
+  componentTileBuilds: 0,
+  dangerTileHits: 0,
+  dangerTileBuilds: 0,
+}
+
+interface CachedTile {
+  key: string
+  canvas: HTMLCanvasElement
+}
+
+let pcbTileCache: CachedTile | null = null
+let componentTileCache: CachedTile | null = null
+
+function cleanupTileCache(cache: CachedTile | null): null {
+  if (cache) releaseCanvas(cache.canvas)
+  return null
+}
+
+function invalidatePanelRenderCaches() {
+  pcbTileCache = cleanupTileCache(pcbTileCache)
+  componentTileCache = cleanupTileCache(componentTileCache)
+}
+
+function layerSignature(layers: LayerInfo[]): string {
+  return layers.map(layer => `${layer.file.fileName}:${layer.visible ? 1 : 0}:${layer.color}`).join('|')
+}
+
+function allLayerSignature(layers: LayerInfo[] | undefined): string {
+  if (!layers || layers.length === 0) return ''
+  return layers.map(layer => `${layer.file.fileName}:${layer.color}`).join('|')
+}
+
+function componentSignature(components: EditablePnPComponent[] | undefined): string {
+  if (!components || components.length === 0) return ''
+  return components.map(comp => [
+    comp.key,
+    comp.matchedPackage || comp.package,
+    comp.x,
+    comp.y,
+    comp.rotation,
+    comp.side,
+    comp.componentType,
+    comp.polarized ? 1 : 0,
+  ].join(':')).join('|')
+}
+
+function panelGeometrySignature(): string {
+  const cfg = props.panelConfig
+  const supports = cfg.supports ?? { enabled: true, xGaps: [], yGaps: [], width: 0 }
+  const frame = cfg.frame ?? { enabled: false, width: 0, side: 'all' }
+  return JSON.stringify({
+    board: props.boardSizeMm,
+    countX: cfg.countX,
+    countY: cfg.countY,
+    separationType: cfg.separationType,
+    route: cfg.routingToolDiameter,
+    rotation: cfg.pcbRotation,
+    frame,
+    supports,
+    tabs: cfg.tabs,
+    showComponents: cfg.showComponents,
+  })
+}
 
 function getImageTree(layer: LayerInfo): ImageTree | null {
   if (isPnPLayer(layer.type)) return null
@@ -539,6 +611,8 @@ interface OverlayContext {
   toMm: number
   isRealistic: boolean
   exportTransparent?: boolean
+  mirrored?: boolean
+  side?: 'top' | 'bottom'
 }
 
 function toScreen(oc: OverlayContext, xMm: number, yMm: number): { sx: number; sy: number } {
@@ -552,6 +626,14 @@ function toScreen(oc: OverlayContext, xMm: number, yMm: number): { sx: number; s
 
 function mmToPx(oc: OverlayContext, mm: number): number {
   return (mm / oc.toMm) * oc.transform.scale * oc.dpr
+}
+
+function rotationAnchorOffsetPx(rotationDeg: number, widthPx: number, heightPx: number): { dx: number; dy: number } {
+  const rot = ((rotationDeg % 360) + 360) % 360
+  if (rot === 90 || rot === 270) {
+    return { dx: (heightPx - widthPx) / 2, dy: (widthPx - heightPx) / 2 }
+  }
+  return { dx: 0, dy: 0 }
 }
 
 function applyMirrorX(ctx: CanvasRenderingContext2D, widthPx: number) {
@@ -608,6 +690,7 @@ function getPcbAt(panelLayout: PanelLayout, col: number, row: number) {
 function buildTabChannels(panelLayout: PanelLayout): TabChannel[] {
   const cfg = props.panelConfig
   if (cfg.separationType === 'scored') return []
+  const supportsEnabled = cfg.supports.enabled ?? true
   const channels: TabChannel[] = []
   const pcbW = panelLayout.pcbLayoutWidth
   const pcbH = panelLayout.pcbLayoutHeight
@@ -621,7 +704,7 @@ function buildTabChannels(panelLayout: PanelLayout): TabChannel[] {
       if (right) {
         const gap = right.x - (x + pcbW)
         if (gap > 0) {
-          if (cfg.supports.xGaps.includes(col) && gap >= 2 * cfg.routingToolDiameter) {
+          if (supportsEnabled && cfg.supports.xGaps.includes(col) && gap >= 2 * cfg.routingToolDiameter) {
             const d = cfg.routingToolDiameter
             channels.push({
               col, row, edge: 'right', channelId: 'pcb-side',
@@ -657,7 +740,7 @@ function buildTabChannels(panelLayout: PanelLayout): TabChannel[] {
       if (below) {
         const gap = below.y - (y + pcbH)
         if (gap > 0) {
-          if (cfg.supports.yGaps.includes(row) && gap >= 2 * cfg.routingToolDiameter) {
+          if (supportsEnabled && cfg.supports.yGaps.includes(row) && gap >= 2 * cfg.routingToolDiameter) {
             const d = cfg.routingToolDiameter
             channels.push({
               col, row, edge: 'bottom', channelId: 'pcb-side',
@@ -810,6 +893,8 @@ function getPanelSilkscreenColor(isRealistic: boolean): string {
 
 function drawPanelSilkscreenLabels(oc: OverlayContext, panelLayout: PanelLayout) {
   const { ctx } = oc
+  const effectiveMirrored = oc.mirrored ?? !!props.mirrored
+  const effectiveSide = oc.side ?? (props.activeFilter === 'bot' ? 'bottom' : 'top')
   const w = panelLayout.totalWidth
   const h = panelLayout.totalHeight
 
@@ -835,12 +920,12 @@ function drawPanelSilkscreenLabels(oc: OverlayContext, panelLayout: PanelLayout)
     ctx.save()
     // When mirrored text is counter-flipped, left/right alignment semantics swap.
     let effectiveAlign = align
-    if (props.mirrored) {
+    if (effectiveMirrored) {
       if (align === 'left') effectiveAlign = 'right'
       else if (align === 'right') effectiveAlign = 'left'
     }
     ctx.textAlign = effectiveAlign
-    if (props.mirrored) {
+    if (effectiveMirrored) {
       // Global panel mirror is active for bottom view. Counter-flip text locally
       // so it remains readable while all geometry stays mirrored.
       ctx.translate(x, y)
@@ -888,7 +973,7 @@ function drawPanelSilkscreenLabels(oc: OverlayContext, panelLayout: PanelLayout)
   const centerX = w / 2
   const topY = hasFrame ? frameW / 2 : 2.5
   const bottomY = hasFrame ? (h - frameW / 2) : (h - 2.5)
-  const isBottomView = props.activeFilter === 'bot' || (props.activeFilter !== 'top' && !!props.mirrored)
+  const isBottomView = effectiveSide === 'bottom'
 
   ctx.font = `600 ${titleFontPx}px ${monoFont}`
 
@@ -905,7 +990,7 @@ function drawPanelSilkscreenLabels(oc: OverlayContext, panelLayout: PanelLayout)
     const padY = titleFontPx * 0.3
 
     ctx.save()
-    if (props.mirrored) {
+    if (effectiveMirrored) {
       ctx.translate(tp.sx, tp.sy)
       ctx.scale(-1, 1)
       ctx.translate(-tp.sx, -tp.sy)
@@ -1419,7 +1504,13 @@ function drawPanelForeground(oc: OverlayContext, panelLayout: PanelLayout) {
 // ─── Danger zone overlay ───
 
 // Cache the danger zone tile so we don't recompute on every frame at the same zoom
-let _dzCache: { scale: number; insetMm: number; canvas: HTMLCanvasElement } | null = null
+let _dzCache: {
+  key: string
+  insetMm: number
+  width: number
+  height: number
+  canvas: HTMLCanvasElement
+} | null = null
 
 function drawDangerZone(oc: OverlayContext, panelLayout: PanelLayout, insetMm: number) {
   const { ctx } = oc
@@ -1442,16 +1533,22 @@ function drawDangerZone(oc: OverlayContext, panelLayout: PanelLayout, insetMm: n
   if (insetPx < 1) return
 
   // Check cache
-  const cacheKey = oc.transform.scale
+  const outlineKey = `${outlineBounds[0]},${outlineBounds[1]},${outlineBounds[2]},${outlineBounds[3]}`
+  const cacheKey = `${oc.transform.scale}|${oc.dpr}|${outlineKey}|${tileW}|${tileH}`
   let dangerTile: HTMLCanvasElement
 
-  if (_dzCache && _dzCache.scale === cacheKey && _dzCache.insetMm === insetMm
-    && _dzCache.canvas.width === tileW && _dzCache.canvas.height === tileH) {
+  if (_dzCache
+    && _dzCache.key === cacheKey
+    && _dzCache.insetMm === insetMm
+    && _dzCache.width === tileW
+    && _dzCache.height === tileH) {
     dangerTile = _dzCache.canvas
+    panelPerf.dangerTileHits++
   } else {
     dangerTile = buildDangerZoneTile(tileW, tileH, outlineBounds, oc, insetPx)
     if (_dzCache) releaseCanvas(_dzCache.canvas)
-    _dzCache = { scale: cacheKey, insetMm, canvas: dangerTile }
+    _dzCache = { key: cacheKey, insetMm, width: tileW, height: tileH, canvas: dangerTile }
+    panelPerf.dangerTileBuilds++
   }
 
   // Stamp the danger zone tile onto each PCB instance
@@ -1462,16 +1559,19 @@ function drawDangerZone(oc: OverlayContext, panelLayout: PanelLayout, insetMm: n
     const gerberY = panelHeightGerber - mmToGerber(pcb.y)
     const screenX = (gerberX * oc.transform.scale + oc.transform.offsetX) * oc.dpr
     const screenY = (-gerberY * oc.transform.scale + oc.transform.offsetY) * oc.dpr
+    const { dx, dy } = rotationAnchorOffsetPx(pcb.rotation, tileW, tileH)
+    const drawX = screenX + dx
+    const drawY = screenY + dy
 
     ctx.save()
     if (pcb.rotation !== 0) {
-      const cx = screenX + tileW / 2
-      const cy = screenY + tileH / 2
+      const cx = drawX + tileW / 2
+      const cy = drawY + tileH / 2
       ctx.translate(cx, cy)
       ctx.rotate((pcb.rotation * Math.PI) / 180)
       ctx.translate(-cx, -cy)
     }
-    ctx.drawImage(dangerTile, screenX, screenY)
+    ctx.drawImage(dangerTile, drawX, drawY)
     ctx.restore()
   }
 }
@@ -1630,10 +1730,15 @@ function drawComponentsOnContext(
   tileTransform: { offsetX: number; offsetY: number; scale: number },
   outlineBounds: BoundingBox,
   dpr: number,
+  options?: {
+    components?: EditablePnPComponent[]
+    includePackages?: boolean
+  },
 ) {
-  const components = props.pnpComponents
+  const components = options?.components ?? props.pnpComponents
   if (!components || components.length === 0) return
-  if (!props.showPackages && !props.panelConfig.showComponents) return
+  const includePackages = options?.includePackages ?? !!props.showPackages
+  if (!includePackages && !props.panelConfig.showComponents) return
 
   const units = detectUnits()
   const { ox, oy } = getEffectivePnpOrigin(outlineBounds)
@@ -1644,7 +1749,7 @@ function drawComponentsOnContext(
   if (dpr !== 1) tileCtx.scale(dpr, dpr)
 
   // Draw package footprints first (underneath dots)
-  if (props.matchPackage || props.matchThtPackage) {
+  if (includePackages && (props.matchPackage || props.matchThtPackage)) {
     for (const comp of components) {
       const pkgName = comp.matchedPackage || comp.package
       const isTht = comp.componentType === 'tht'
@@ -1692,9 +1797,9 @@ function drawComponentsOnContext(
     const pkgName = comp.matchedPackage || comp.package
     const isTht = comp.componentType === 'tht'
     let hasPkg = false
-    if (isTht && props.matchThtPackage) {
+    if (includePackages && isTht && props.matchThtPackage) {
       hasPkg = !!props.matchThtPackage(pkgName)
-    } else if (props.matchPackage) {
+    } else if (includePackages && props.matchPackage) {
       hasPkg = !!(pkgName ? props.matchPackage(pkgName) : undefined)
     }
     if (hasPkg) continue
@@ -1718,13 +1823,62 @@ function drawComponentsOnContext(
  * This avoids clipping components to the board outline/tile bounds so packages
  * can protrude into gaps, tabs, and frame regions.
  */
+function computeShapeExtentMm(shapes: FootprintShape[]): number {
+  let maxDist = 0
+  for (const shape of shapes) {
+    if (shape.kind === 'circle') {
+      maxDist = Math.max(maxDist, Math.hypot(shape.cx, shape.cy) + shape.r)
+      continue
+    }
+    const hw = shape.w / 2
+    const hh = shape.h / 2
+    const corners = [
+      [shape.cx - hw, shape.cy - hh],
+      [shape.cx + hw, shape.cy - hh],
+      [shape.cx - hw, shape.cy + hh],
+      [shape.cx + hw, shape.cy + hh],
+    ]
+    for (const [x, y] of corners) maxDist = Math.max(maxDist, Math.hypot(x, y))
+  }
+  return maxDist
+}
+
+function computeComponentPaddingPx(
+  components: EditablePnPComponent[],
+  scalePx: number,
+): number {
+  let maxMm = 0.7 // Keep at least center dot + small margin
+  for (const comp of components) {
+    const pkgName = comp.matchedPackage || comp.package
+    const isTht = comp.componentType === 'tht'
+    if (isTht && props.matchThtPackage) {
+      const pkg = props.matchThtPackage(pkgName)
+      if (!pkg) continue
+      maxMm = Math.max(maxMm, computeShapeExtentMm(getCachedThtFootprint(pkg)))
+      continue
+    }
+    if (!props.matchPackage) continue
+    const pkg = props.matchPackage(pkgName)
+    if (!pkg) continue
+    maxMm = Math.max(maxMm, computeShapeExtentMm(getCachedFootprint(pkg)))
+  }
+  const px = Math.ceil(maxMm * scalePx + 10)
+  return Math.min(256, Math.max(12, px))
+}
+
 function drawPanelComponents(
   oc: OverlayContext,
   panelLayout: PanelLayout,
   outlineBounds: BoundingBox,
+  options?: {
+    components?: EditablePnPComponent[]
+    includePackages?: boolean
+    enabled?: boolean
+  },
 ) {
-  if (!props.panelConfig.showComponents) return
-  const components = props.pnpComponents
+  const enabled = options?.enabled ?? props.panelConfig.showComponents
+  if (!enabled) return
+  const components = options?.components ?? props.pnpComponents
   if (!components || components.length === 0) return
 
   const outGerberW = outlineBounds[2] - outlineBounds[0]
@@ -1734,10 +1888,39 @@ function drawPanelComponents(
   const tileH = Math.ceil(outGerberH * scalePx) + 2
   if (tileW <= 0 || tileH <= 0) return
 
-  const tileTransformPx = {
-    offsetX: -outlineBounds[0] * scalePx,
-    offsetY: outlineBounds[3] * scalePx,
-    scale: scalePx,
+  const paddingPx = computeComponentPaddingPx(components, scalePx)
+  const cacheKey = [
+    tileW,
+    tileH,
+    paddingPx,
+    scalePx.toFixed(4),
+    oc.side ?? 'top',
+    options?.includePackages ? '1' : '0',
+    props.pnpConvention ?? 'iec61188',
+    componentSignature(components),
+  ].join('|')
+
+  let componentTile: HTMLCanvasElement
+  if (componentTileCache?.key === cacheKey
+    && componentTileCache.canvas.width === tileW + paddingPx * 2
+    && componentTileCache.canvas.height === tileH + paddingPx * 2) {
+    componentTile = componentTileCache.canvas
+    panelPerf.componentTileHits++
+  } else {
+    componentTile = acquireCanvas(tileW + paddingPx * 2, tileH + paddingPx * 2)
+    const componentCtx = componentTile.getContext('2d')!
+    const tileTransformPx = {
+      offsetX: -outlineBounds[0] * scalePx + paddingPx,
+      offsetY: outlineBounds[3] * scalePx + paddingPx,
+      scale: scalePx,
+    }
+    drawComponentsOnContext(componentCtx, tileTransformPx, outlineBounds, 1, {
+      components,
+      includePackages: options?.includePackages,
+    })
+    if (componentTileCache) releaseCanvas(componentTileCache.canvas)
+    componentTileCache = { key: cacheKey, canvas: componentTile }
+    panelPerf.componentTileBuilds++
   }
 
   const panelHeightGerber = panelLayout.totalHeight / oc.toMm
@@ -1747,19 +1930,20 @@ function drawPanelComponents(
     const gerberY = panelHeightGerber - mmToGerber(pcb.y)
     const screenX = (gerberX * oc.transform.scale + oc.transform.offsetX) * oc.dpr
     const screenY = (-gerberY * oc.transform.scale + oc.transform.offsetY) * oc.dpr
+    const { dx, dy } = rotationAnchorOffsetPx(pcb.rotation, tileW, tileH)
+    const drawX = screenX + dx
+    const drawY = screenY + dy
 
     oc.ctx.save()
-    oc.ctx.translate(screenX, screenY)
-
     if (pcb.rotation !== 0) {
-      const cx = tileW / 2
-      const cy = tileH / 2
+      const cx = drawX + tileW / 2
+      const cy = drawY + tileH / 2
       oc.ctx.translate(cx, cy)
       oc.ctx.rotate((pcb.rotation * Math.PI) / 180)
       oc.ctx.translate(-cx, -cy)
     }
 
-    drawComponentsOnContext(oc.ctx, tileTransformPx, outlineBounds, 1)
+    oc.ctx.drawImage(componentTile, drawX - paddingPx, drawY - paddingPx)
     oc.ctx.restore()
   }
 }
@@ -1860,6 +2044,7 @@ function withAlpha(color: string, alpha: number): string {
 // ─── Main draw ───
 
 function draw() {
+  const perfStart = PERF_ENABLED ? performance.now() : 0
   const canvas = canvasEl.value
   if (!canvas) return
   const dpr = sizeCanvas()
@@ -1899,7 +2084,8 @@ function draw() {
   currentBounds.value = panelBounds
 
   const transform = props.interaction.transform.value
-  const oc: OverlayContext = { ctx, dpr, transform, panelHeightGerber, toMm, isRealistic }
+  const currentSide: 'top' | 'bottom' = props.activeFilter === 'bot' ? 'bottom' : 'top'
+  const oc: OverlayContext = { ctx, dpr, transform, panelHeightGerber, toMm, isRealistic, mirrored: !!props.mirrored, side: currentSide }
 
   if (props.mirrored) {
     ctx.save()
@@ -1933,45 +2119,68 @@ function draw() {
         offsetY: outlineBounds[3] * transform.scale,
         scale: transform.scale,
       }
+      const side = props.activeFilter === 'bot' ? 'bottom' : 'top'
+      const tileKey = [
+        pcbPixW,
+        pcbPixH,
+        transform.scale.toFixed(5),
+        dpr,
+        side,
+        isRealistic ? 'realistic' : 'layers',
+        props.preset?.name ?? '',
+        layerSignature(props.layers),
+        allLayerSignature(props.allLayers),
+        findOutlineLayer()?.file.fileName ?? '',
+        `${outlineBounds[0]},${outlineBounds[1]},${outlineBounds[2]},${outlineBounds[3]}`,
+      ].join('|')
 
       let tileCanvas: HTMLCanvasElement
-      if (isRealistic) {
-        const side = props.activeFilter === 'bot' ? 'bottom' : 'top'
-        const realisticLayers = gatherRealisticLayers(side)
-        tileCanvas = acquireCanvas(pcbPixW, pcbPixH)
-        renderRealisticView(realisticLayers, tileCanvas, {
-          preset: props.preset!,
-          transform: tileTransform,
-          dpr,
-          side,
-        })
+      if (pcbTileCache?.key === tileKey
+        && pcbTileCache.canvas.width === pcbPixW
+        && pcbTileCache.canvas.height === pcbPixH) {
+        tileCanvas = pcbTileCache.canvas
+        panelPerf.pcbTileHits++
       } else {
         tileCanvas = acquireCanvas(pcbPixW, pcbPixH)
-        const tileCtx = tileCanvas.getContext('2d')!
-        for (const layer of props.layers) {
-          if (!layer.visible) continue
-          const tree = getImageTree(layer)
-          if (!tree || tree.children.length === 0) continue
-          const tempCanvas = acquireCanvas(pcbPixW, pcbPixH)
-          renderToCanvas(tree, tempCanvas, { color: layer.color, transform: tileTransform, dpr })
-          tileCtx.drawImage(tempCanvas, 0, 0)
-          releaseCanvas(tempCanvas)
-        }
-      }
-
-      // Crop tile to outline
-      const outlineLayer = findOutlineLayer()
-      if (outlineLayer) {
-        const outlineTree = getImageTree(outlineLayer)
-        if (outlineTree && outlineTree.children.length > 0) {
-          const maskCanvas = acquireCanvas(pcbPixW, pcbPixH)
-          renderOutlineMask(outlineTree, maskCanvas, { color: '#ffffff', transform: tileTransform, dpr })
+        if (isRealistic) {
+          const realisticLayers = gatherRealisticLayers(side)
+          renderRealisticView(realisticLayers, tileCanvas, {
+            preset: props.preset!,
+            transform: tileTransform,
+            dpr,
+            side,
+          })
+        } else {
           const tileCtx = tileCanvas.getContext('2d')!
-          tileCtx.globalCompositeOperation = 'destination-in'
-          tileCtx.drawImage(maskCanvas, 0, 0)
-          tileCtx.globalCompositeOperation = 'source-over'
-          releaseCanvas(maskCanvas)
+          for (const layer of props.layers) {
+            if (!layer.visible) continue
+            const tree = getImageTree(layer)
+            if (!tree || tree.children.length === 0) continue
+            const tempCanvas = acquireCanvas(pcbPixW, pcbPixH)
+            renderToCanvas(tree, tempCanvas, { color: layer.color, transform: tileTransform, dpr })
+            tileCtx.drawImage(tempCanvas, 0, 0)
+            releaseCanvas(tempCanvas)
+          }
         }
+
+        // Crop tile to outline
+        const outlineLayer = findOutlineLayer()
+        if (outlineLayer) {
+          const outlineTree = getImageTree(outlineLayer)
+          if (outlineTree && outlineTree.children.length > 0) {
+            const maskCanvas = acquireCanvas(pcbPixW, pcbPixH)
+            renderOutlineMask(outlineTree, maskCanvas, { color: '#ffffff', transform: tileTransform, dpr })
+            const tileCtx = tileCanvas.getContext('2d')!
+            tileCtx.globalCompositeOperation = 'destination-in'
+            tileCtx.drawImage(maskCanvas, 0, 0)
+            tileCtx.globalCompositeOperation = 'source-over'
+            releaseCanvas(maskCanvas)
+          }
+        }
+
+        if (pcbTileCache) releaseCanvas(pcbTileCache.canvas)
+        pcbTileCache = { key: tileKey, canvas: tileCanvas }
+        panelPerf.pcbTileBuilds++
       }
 
       // Stamp tiles
@@ -1980,20 +2189,22 @@ function draw() {
         const gerberY = panelHeightGerber - mmToGerber(pcb.y)
         const screenX = (gerberX * transform.scale + transform.offsetX) * dpr
         const screenY = (-gerberY * transform.scale + transform.offsetY) * dpr
+        const { dx, dy } = rotationAnchorOffsetPx(pcb.rotation, pcbPixW, pcbPixH)
+        const drawX = screenX + dx
+        const drawY = screenY + dy
 
         ctx.save()
         if (pcb.rotation !== 0) {
-          const pcbCenterX = screenX + pcbPixW / 2
-          const pcbCenterY = screenY + pcbPixH / 2
+          const pcbCenterX = drawX + pcbPixW / 2
+          const pcbCenterY = drawY + pcbPixH / 2
           ctx.translate(pcbCenterX, pcbCenterY)
           ctx.rotate((pcb.rotation * Math.PI) / 180)
           ctx.translate(-pcbCenterX, -pcbCenterY)
         }
-        ctx.drawImage(tileCanvas, screenX, screenY)
+        ctx.drawImage(tileCanvas, drawX, drawY)
         ctx.restore()
       }
 
-      releaseCanvas(tileCanvas)
     }
   }
 
@@ -2008,6 +2219,22 @@ function draw() {
 
   if (props.mirrored) {
     ctx.restore()
+  }
+  if (PERF_ENABLED) {
+    panelPerf.draws++
+    if (panelPerf.draws % 120 === 0) {
+      const took = performance.now() - perfStart
+      console.debug('[PanelCanvas][perf]', {
+        drawMs: Number(took.toFixed(2)),
+        draws: panelPerf.draws,
+        pcbTileHits: panelPerf.pcbTileHits,
+        pcbTileBuilds: panelPerf.pcbTileBuilds,
+        componentTileHits: panelPerf.componentTileHits,
+        componentTileBuilds: panelPerf.componentTileBuilds,
+        dangerTileHits: panelPerf.dangerTileHits,
+        dangerTileBuilds: panelPerf.dangerTileBuilds,
+      })
+    }
   }
 }
 
@@ -2106,29 +2333,38 @@ function scheduleRedraw() {
 }
 
 watch(
-  () => [
-    props.layers, props.allLayers, props.interaction.transform.value,
-    props.mirrored, props.viewMode, props.preset, bgColor.value,
-    appSettings.gridEnabled, appSettings.gridSpacingMm,
-    props.panelConfig, props.boardSizeMm, props.activeFilter,
-    props.pnpComponents, props.showPackages, props.dangerZone,
-  ],
+  () => `${props.interaction.transform.value.offsetX}|${props.interaction.transform.value.offsetY}|${props.interaction.transform.value.scale}|${props.mirrored ? 1 : 0}|${appSettings.gridEnabled ? 1 : 0}|${appSettings.gridSpacingMm}|${bgColor.value}|${tabEditMode.value}`,
   () => scheduleRedraw(),
-  { deep: true },
 )
 
 watch(
-  () => [
-    props.panelConfig.countX, props.panelConfig.countY,
-    props.panelConfig.frame.enabled, props.panelConfig.frame.width,
-    props.panelConfig.routingToolDiameter, props.panelConfig.pcbRotation,
-    props.panelConfig.separationType,
-    props.panelConfig.supports.xGaps, props.panelConfig.supports.yGaps,
-    props.panelConfig.supports.width,
-  ],
+  () => `${props.viewMode ?? 'layers'}|${props.preset?.name ?? ''}|${props.activeFilter ?? 'all'}|${layerSignature(props.layers)}|${allLayerSignature(props.allLayers)}`,
   () => {
+    invalidatePanelRenderCaches()
     scheduleRedraw()
   },
+)
+
+watch(
+  () => panelGeometrySignature(),
+  () => {
+    invalidatePanelRenderCaches()
+    autoFitDone.value = false
+    scheduleRedraw()
+  },
+)
+
+watch(
+  () => `${componentSignature(props.pnpComponents)}|${props.showPackages ? 1 : 0}|${props.pnpConvention ?? 'iec61188'}`,
+  () => {
+    componentTileCache = cleanupTileCache(componentTileCache)
+    scheduleRedraw()
+  },
+)
+
+watch(
+  () => `${props.dangerZone?.enabled ? 1 : 0}|${props.dangerZone?.insetMm ?? 0}`,
+  () => scheduleRedraw(),
 )
 
 onMounted(() => {
@@ -2143,13 +2379,12 @@ onMounted(() => {
   onUnmounted(() => {
     observer.disconnect()
     if (rafId) { cancelAnimationFrame(rafId); rafId = 0 }
+    invalidatePanelRenderCaches()
+    if (_dzCache) {
+      releaseCanvas(_dzCache.canvas)
+      _dzCache = null
+    }
   })
-})
-
-watch(() => props.boardSizeMm, (dims) => {
-  if (dims) {
-    scheduleRedraw()
-  }
 })
 
 watch(tabControlEnabled, (enabled) => {
@@ -2160,7 +2395,17 @@ watch(tabControlEnabled, (enabled) => {
   tabEditMode.value = 'move'
 })
 
-function exportPng(dpi: number = 600): Promise<Blob | null> {
+function exportPng(
+  dpi: number = 600,
+  options?: {
+    side?: 'top' | 'bottom'
+    includeComponents?: boolean
+    components?: EditablePnPComponent[]
+    includePackages?: boolean
+  },
+): Promise<Blob | null> {
+  const exportSide = options?.side ?? (props.activeFilter === 'bot' ? 'bottom' : 'top')
+  const includeComponents = options?.includeComponents ?? true
   return new Promise((resolve) => {
     const panelLayout = layout.value
     if (!panelLayout || !props.boardSizeMm) return resolve(null)
@@ -2187,10 +2432,21 @@ function exportPng(dpi: number = 600): Promise<Blob | null> {
     const isRealistic = !!(props.viewMode === 'realistic' && props.preset)
     exportCtx.clearRect(0, 0, canvasW, canvasH)
 
+    const shouldMirror = exportSide === 'bottom'
     const exportTransform = { offsetX: 0, offsetY: panelHeightGerber * scaleFactor, scale: scaleFactor }
-    const oc: OverlayContext = { ctx: exportCtx, dpr: 1, transform: exportTransform, panelHeightGerber, toMm, isRealistic, exportTransparent: true }
+    const oc: OverlayContext = {
+      ctx: exportCtx,
+      dpr: 1,
+      transform: exportTransform,
+      panelHeightGerber,
+      toMm,
+      isRealistic,
+      exportTransparent: true,
+      mirrored: shouldMirror,
+      side: exportSide,
+    }
 
-    if (props.mirrored) {
+    if (shouldMirror) {
       exportCtx.save()
       applyMirrorX(exportCtx, exportCanvas.width)
     }
@@ -2208,9 +2464,13 @@ function exportPng(dpi: number = 600): Promise<Blob | null> {
 
     let tileCanvas: HTMLCanvasElement
     if (isRealistic) {
-      const side = props.activeFilter === 'bot' ? 'bottom' : 'top'
       tileCanvas = acquireCanvas(tileW, tileH)
-      renderRealisticView(gatherRealisticLayers(side), tileCanvas, { preset: props.preset!, transform: tileTransform, dpr: 1, side })
+      renderRealisticView(gatherRealisticLayers(exportSide), tileCanvas, {
+        preset: props.preset!,
+        transform: tileTransform,
+        dpr: 1,
+        side: exportSide,
+      })
     } else {
       tileCanvas = acquireCanvas(tileW, tileH)
       const tileCtx = tileCanvas.getContext('2d')!
@@ -2242,15 +2502,18 @@ function exportPng(dpi: number = 600): Promise<Blob | null> {
     for (const pcb of panelLayout.pcbs) {
       const screenX = (pcb.x / toMm) * scaleFactor
       const screenY = (pcb.y / toMm) * scaleFactor
+      const { dx, dy } = rotationAnchorOffsetPx(pcb.rotation, tileW, tileH)
+      const drawX = screenX + dx
+      const drawY = screenY + dy
       exportCtx.save()
       if (pcb.rotation !== 0) {
-        const cx = screenX + tileW / 2
-        const cy = screenY + tileH / 2
+        const cx = drawX + tileW / 2
+        const cy = drawY + tileH / 2
         exportCtx.translate(cx, cy)
         exportCtx.rotate((pcb.rotation * Math.PI) / 180)
         exportCtx.translate(-cx, -cy)
       }
-      exportCtx.drawImage(tileCanvas, screenX, screenY)
+      exportCtx.drawImage(tileCanvas, drawX, drawY)
       exportCtx.restore()
     }
 
@@ -2259,14 +2522,63 @@ function exportPng(dpi: number = 600): Promise<Blob | null> {
     // Foreground (no danger zone in export)
     const exportOc: OverlayContext = { ...oc }
     drawPanelForeground(exportOc, panelLayout)
-    drawPanelComponents(exportOc, panelLayout, outlineBounds)
+    drawPanelComponents(exportOc, panelLayout, outlineBounds, {
+      enabled: includeComponents,
+      components: options?.components,
+      includePackages: options?.includePackages,
+    })
 
-    if (props.mirrored) {
+    if (shouldMirror) {
       exportCtx.restore()
     }
 
     exportCanvas.toBlob((blob) => resolve(blob), 'image/png')
   })
+}
+
+function exportPngForSide(
+  side: 'top' | 'bottom',
+  options?: {
+    dpi?: number
+    includeComponents?: boolean
+    components?: EditablePnPComponent[]
+    includePackages?: boolean
+  },
+): Promise<Blob | null> {
+  return exportPng(options?.dpi ?? 600, {
+    side,
+    includeComponents: options?.includeComponents,
+    components: options?.components,
+    includePackages: options?.includePackages,
+  })
+}
+
+function getPerformanceStats() {
+  const pcbBytes = pcbTileCache ? pcbTileCache.canvas.width * pcbTileCache.canvas.height * 4 : 0
+  const componentBytes = componentTileCache ? componentTileCache.canvas.width * componentTileCache.canvas.height * 4 : 0
+  const dangerBytes = _dzCache ? _dzCache.canvas.width * _dzCache.canvas.height * 4 : 0
+  return {
+    draws: panelPerf.draws,
+    pcbTileHits: panelPerf.pcbTileHits,
+    pcbTileBuilds: panelPerf.pcbTileBuilds,
+    componentTileHits: panelPerf.componentTileHits,
+    componentTileBuilds: panelPerf.componentTileBuilds,
+    dangerTileHits: panelPerf.dangerTileHits,
+    dangerTileBuilds: panelPerf.dangerTileBuilds,
+    pcbTile: pcbTileCache
+      ? { width: pcbTileCache.canvas.width, height: pcbTileCache.canvas.height, estimatedBytes: pcbBytes }
+      : null,
+    componentTile: componentTileCache
+      ? { width: componentTileCache.canvas.width, height: componentTileCache.canvas.height, estimatedBytes: componentBytes }
+      : null,
+    dangerTile: _dzCache
+      ? { width: _dzCache.canvas.width, height: _dzCache.canvas.height, estimatedBytes: dangerBytes }
+      : null,
+    canvasPoolSize: _canvasPool.length,
+    parsedLayerCacheSize: imageTreeCache.size,
+    footprintCacheSize: footprintCache.size,
+    thtFootprintCacheSize: thtFootprintCache.size,
+  }
 }
 
 defineExpose({
@@ -2275,6 +2587,8 @@ defineExpose({
     draw()
   },
   exportPng,
+  exportPngForSide,
+  getPerformanceStats,
   panelDimensions,
   getImageTree,
 })
