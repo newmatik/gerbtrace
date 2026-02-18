@@ -96,6 +96,7 @@
       label-key="label"
       size="xs"
       class="shrink-0 max-w-[8rem]"
+      :ui="{ content: 'min-w-[14rem] max-w-[20rem]', itemLabel: 'whitespace-normal leading-tight' }"
       @click.stop
       @pointerdown.stop
       @update:model-value="(value) => $emit('typeChange', String(value))"

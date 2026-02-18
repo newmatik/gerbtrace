@@ -19,6 +19,9 @@
             Invite
           </UButton>
         </div>
+        <p v-if="passwordActionMessage" class="mb-4 text-xs" :class="passwordActionError ? 'text-red-500' : 'text-green-600 dark:text-green-400'">
+          {{ passwordActionMessage }}
+        </p>
 
         <!-- Search -->
         <div class="mb-4">
@@ -189,6 +192,51 @@
         </div>
       </template>
     </UModal>
+
+    <!-- Reset Password Modal -->
+    <UModal v-model:open="resetPasswordModalOpen">
+      <template #content>
+        <div class="p-5 space-y-4">
+          <h3 class="text-sm font-semibold">Reset Member Password</h3>
+          <p class="text-sm text-neutral-500">
+            Set a new password for <strong>{{ resettingMemberName }}</strong>.
+          </p>
+          <form @submit.prevent="handleConfirmPasswordReset" class="space-y-3">
+            <UFormField label="New password">
+              <UInput
+                v-model="resetPasswordValue"
+                type="password"
+                placeholder="At least 8 characters"
+                required
+                autofocus
+              />
+            </UFormField>
+            <UFormField label="Confirm password">
+              <UInput
+                v-model="resetPasswordConfirmValue"
+                type="password"
+                placeholder="Repeat password"
+                required
+              />
+            </UFormField>
+            <p v-if="resetPasswordError" class="text-xs text-red-500">{{ resetPasswordError }}</p>
+            <div class="flex justify-end gap-2 pt-2">
+              <UButton size="sm" variant="outline" color="neutral" @click="resetPasswordModalOpen = false">
+                Cancel
+              </UButton>
+              <UButton
+                type="submit"
+                size="sm"
+                :loading="resetPasswordSaving"
+                :disabled="!resetPasswordValue || resetPasswordValue.length < 8 || resetPasswordValue !== resetPasswordConfirmValue"
+              >
+                Reset Password
+              </UButton>
+            </div>
+          </form>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>
 
@@ -208,6 +256,7 @@ const {
   removeMember,
   cancelInvitation,
   updateMemberName,
+  resetMemberPassword,
 } = useTeamMembers()
 
 watch(isAuthenticated, (authed) => {
@@ -284,6 +333,22 @@ const removingMemberName = ref('')
 const removing = ref(false)
 const removeError = ref('')
 
+// ── Password action feedback ────────────────────────────────────────
+const passwordActionMessage = ref('')
+const passwordActionError = ref(false)
+let passwordActionTimer: ReturnType<typeof setTimeout> | null = null
+
+// ── Reset Password Modal ────────────────────────────────────────────
+const resetPasswordModalOpen = ref(false)
+const resetPasswordSaving = ref(false)
+const resetPasswordError = ref('')
+const resetPasswordValue = ref('')
+const resetPasswordConfirmValue = ref('')
+const resettingMember = ref<TeamMember | null>(null)
+const resettingMemberName = computed(() =>
+  resettingMember.value?.profile?.name ?? resettingMember.value?.profile?.email ?? 'this member',
+)
+
 function openConfirmRemove(member: TeamMember) {
   removingMemberId.value = member.id
   removingMemberName.value = member.profile?.name ?? member.profile?.email ?? 'this member'
@@ -333,6 +398,13 @@ function memberActions(member: TeamMember) {
     ],
     [
       {
+        label: 'Reset Password',
+        icon: 'i-lucide-key-round',
+        onSelect: () => openResetPassword(member),
+      },
+    ],
+    [
+      {
         label: member.status === 'active' ? 'Disable' : 'Enable',
         icon: member.status === 'active' ? 'i-lucide-ban' : 'i-lucide-check-circle',
         onSelect: () => toggleStatus(member.id),
@@ -340,6 +412,49 @@ function memberActions(member: TeamMember) {
       { label: 'Remove', icon: 'i-lucide-user-minus', color: 'error' as const, onSelect: () => openConfirmRemove(member) },
     ],
   ]
+}
+
+function openResetPassword(member: TeamMember) {
+  resettingMember.value = member
+  resetPasswordValue.value = ''
+  resetPasswordConfirmValue.value = ''
+  resetPasswordError.value = ''
+  resetPasswordModalOpen.value = true
+}
+
+async function handleConfirmPasswordReset() {
+  if (!resettingMember.value) return
+  if (resetPasswordValue.value.length < 8) {
+    resetPasswordError.value = 'Password must be at least 8 characters.'
+    return
+  }
+  if (resetPasswordValue.value !== resetPasswordConfirmValue.value) {
+    resetPasswordError.value = 'Passwords do not match.'
+    return
+  }
+
+  resetPasswordError.value = ''
+  resetPasswordSaving.value = true
+  passwordActionMessage.value = ''
+  passwordActionError.value = false
+  try {
+    const { error } = await resetMemberPassword(resettingMember.value.user_id, resetPasswordValue.value)
+    if (error) {
+      resetPasswordError.value = (error as any).message ?? 'Failed to reset password'
+      return
+    }
+
+    const target = resettingMember.value.profile?.email || resettingMember.value.profile?.name || 'member'
+    passwordActionMessage.value = `Password reset for ${target}.`
+    if (passwordActionTimer) clearTimeout(passwordActionTimer)
+    passwordActionTimer = setTimeout(() => {
+      passwordActionMessage.value = ''
+      passwordActionError.value = false
+    }, 5000)
+    resetPasswordModalOpen.value = false
+  } finally {
+    resetPasswordSaving.value = false
+  }
 }
 
 async function handleInvite() {

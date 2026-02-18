@@ -15,7 +15,6 @@
     <!-- Canvas tab-edit controls -->
     <div
       class="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 p-1.5 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-100/90 dark:bg-neutral-900/85 backdrop-blur-sm"
-      :class="!tabControlEnabled ? 'opacity-60' : ''"
     >
       <span class="text-[10px] uppercase tracking-wide font-semibold text-neutral-500 dark:text-neutral-400 px-1">
         Tab Control
@@ -28,7 +27,7 @@
           : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:border-neutral-300/80 dark:hover:border-neutral-600/70 disabled:hover:border-transparent disabled:text-neutral-400 dark:disabled:text-neutral-500'"
         title="Move tabs"
         @mousedown.stop
-        @click.stop="tabControlEnabled && (tabEditMode = 'move')"
+        @click.stop="activateTabMode('move')"
       >
         Move
       </button>
@@ -40,7 +39,7 @@
           : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:border-neutral-300/80 dark:hover:border-neutral-600/70 disabled:hover:border-transparent disabled:text-neutral-400 dark:disabled:text-neutral-500'"
         title="Add tabs"
         @mousedown.stop
-        @click.stop="tabControlEnabled && (tabEditMode = 'add')"
+        @click.stop="activateTabMode('add')"
       >
         Add
       </button>
@@ -52,7 +51,7 @@
           : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:border-neutral-300/80 dark:hover:border-neutral-600/70 disabled:hover:border-transparent disabled:text-neutral-400 dark:disabled:text-neutral-500'"
         title="Delete tabs"
         @mousedown.stop
-        @click.stop="tabControlEnabled && (tabEditMode = 'delete')"
+        @click.stop="activateTabMode('delete')"
       >
         Delete
       </button>
@@ -63,25 +62,25 @@
       </span>
       <button
         class="text-[11px] font-medium px-2 py-1 rounded border transition-colors"
-        :class="addedRoutingEditMode === 'add'
-          ? 'border-blue-500/70 text-blue-700 bg-blue-50/90 dark:border-blue-400/70 dark:text-blue-200 dark:bg-blue-500/15'
-          : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:border-neutral-300/80 dark:hover:border-neutral-600/70'"
-        title="Add milling path"
-        @mousedown.stop
-        @click.stop="addedRoutingEditMode = addedRoutingEditMode === 'add' ? 'off' : 'add'"
-      >
-        Add
-      </button>
-      <button
-        class="text-[11px] font-medium px-2 py-1 rounded border transition-colors"
         :class="addedRoutingEditMode === 'move'
           ? 'border-blue-500/70 text-blue-700 bg-blue-50/90 dark:border-blue-400/70 dark:text-blue-200 dark:bg-blue-500/15'
           : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:border-neutral-300/80 dark:hover:border-neutral-600/70'"
         title="Move milling path"
         @mousedown.stop
-        @click.stop="addedRoutingEditMode = addedRoutingEditMode === 'move' ? 'off' : 'move'"
+        @click.stop="activateRoutingMode('move')"
       >
         Move
+      </button>
+      <button
+        class="text-[11px] font-medium px-2 py-1 rounded border transition-colors"
+        :class="addedRoutingEditMode === 'add'
+          ? 'border-blue-500/70 text-blue-700 bg-blue-50/90 dark:border-blue-400/70 dark:text-blue-200 dark:bg-blue-500/15'
+          : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:border-neutral-300/80 dark:hover:border-neutral-600/70'"
+        title="Add milling path"
+        @mousedown.stop
+        @click.stop="activateRoutingMode('add')"
+      >
+        Add
       </button>
       <button
         class="text-[11px] font-medium px-2 py-1 rounded border transition-colors"
@@ -90,7 +89,7 @@
           : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:border-neutral-300/80 dark:hover:border-neutral-600/70'"
         title="Delete milling path"
         @mousedown.stop
-        @click.stop="addedRoutingEditMode = addedRoutingEditMode === 'delete' ? 'off' : 'delete'"
+        @click.stop="activateRoutingMode('delete')"
       >
         Delete
       </button>
@@ -100,7 +99,7 @@
 
 <script setup lang="ts">
 import type { LayerInfo } from '~/utils/gerber-helpers'
-import { isPnPLayer } from '~/utils/gerber-helpers'
+import { isPnPLayer, getColorForType } from '~/utils/gerber-helpers'
 import { drawCanvasGrid } from '~/utils/canvas-grid'
 import type { PcbPreset } from '~/utils/pcb-presets'
 import type { ImageTree, BoundingBox } from '@lib/gerber/types'
@@ -113,7 +112,6 @@ import { mergeBounds, emptyBounds, isEmpty } from '@lib/gerber/bounding-box'
 import type { PanelConfig, DangerZoneConfig, AddedRoutingPath } from '~/utils/panel-types'
 import { evenTabPositions } from '~/utils/panel-types'
 import { computePanelLayout, type PanelLayout, type TabMarker } from '~/utils/panel-geometry'
-import { extractSmdPads, DANGER_INSET_MM, type SmdPadRect } from '~/utils/panel-vcut-pad-protection'
 import type { EditablePnPComponent } from '~/composables/usePickAndPlace'
 import type { PackageDefinition, FootprintShape } from '~/utils/package-types'
 import { computeFootprint, getConventionRotationTransform } from '~/utils/package-types'
@@ -185,14 +183,37 @@ interface RoutingSnapGuide {
   rangeEndMm: number
 }
 
-type TabEditMode = 'move' | 'add' | 'delete'
+type TabEditMode = 'off' | 'move' | 'add' | 'delete'
 type AddedRoutingEditMode = 'off' | 'add' | 'move' | 'delete'
 
 const tabDrag = ref<TabDragState | null>(null)
 const hoveredTab = ref<TabMarker | null>(null)
-const tabEditMode = ref<TabEditMode>('move')
+const tabEditMode = ref<TabEditMode>('off')
 const addPreview = ref<{ x: number; y: number; width: number; height: number } | null>(null)
 const addedRoutingEditMode = ref<AddedRoutingEditMode>('off')
+
+function activateTabMode(mode: 'move' | 'add' | 'delete') {
+  if (!tabControlEnabled.value) return
+  tabEditMode.value = tabEditMode.value === mode ? 'off' : mode
+  if (tabEditMode.value !== 'off') addedRoutingEditMode.value = 'off'
+}
+
+function activateRoutingMode(mode: 'move' | 'add' | 'delete') {
+  addedRoutingEditMode.value = addedRoutingEditMode.value === mode ? 'off' : mode
+  if (addedRoutingEditMode.value !== 'off') tabEditMode.value = 'off'
+}
+
+function deactivateAllControls() {
+  tabEditMode.value = 'off'
+  addedRoutingEditMode.value = 'off'
+  addedRoutingStart.value = null
+  addedRoutingPreview.value = null
+  addedRoutingSnapHover.value = null
+  addedRoutingCursorMm.value = null
+  hoveredAddedRoutingId.value = null
+  addPreview.value = null
+  hoveredTab.value = null
+}
 const addedRoutingStart = ref<{ xMm: number; yMm: number; guide: RoutingSnapGuide } | null>(null)
 const addedRoutingPreview = ref<{ x1: number; y1: number; x2: number; y2: number } | null>(null)
 const addedRoutingSnapHover = ref<{ xMm: number; yMm: number; guide: RoutingSnapGuide } | null>(null)
@@ -227,7 +248,7 @@ const canvasCursor = computed(() => {
     return hoveredAddedRoutingId.value ? 'grab' : 'default'
   }
   if (addedRoutingEditMode.value === 'delete') return hoveredAddedRoutingId.value ? 'not-allowed' : 'default'
-  if (!tabControlEnabled.value) return ''
+  if (!tabControlEnabled.value || tabEditMode.value === 'off') return ''
   if (tabEditMode.value === 'add') return 'copy'
   if (tabEditMode.value === 'delete') return hoveredTab.value ? 'not-allowed' : 'default'
   if (tabDrag.value) return 'grabbing'
@@ -322,8 +343,8 @@ function componentSignature(components: EditablePnPComponent[] | undefined): str
 
 function panelGeometrySignature(): string {
   const cfg = props.panelConfig
-  const supports = cfg.supports ?? { enabled: true, xGaps: [], yGaps: [], width: 0 }
-  const frame = cfg.frame ?? { enabled: false, width: 0, side: 'all' }
+  const supports = cfg.supports ?? { enabled: true, xGaps: [], yGaps: [], widthColumns: 0, widthRows: 0 }
+  const frame = cfg.frame ?? { enabled: false, widthTop: 0, widthBottom: 0, widthLeft: 0, widthRight: 0 }
   return JSON.stringify({
     board: props.boardSizeMm,
     countX: cfg.countX,
@@ -596,7 +617,7 @@ function onMouseMove(e: MouseEvent) {
   if (canvasEl.value && props.measure?.active.value) {
     props.measure.handleMouseMove(e, canvasEl.value, props.interaction.transform.value)
   }
-  props.interaction.handleMouseMove(e)
+  props.interaction.handleMouseMove(e, { invertPanX: !!props.mirrored })
 }
 function onMouseUp(_e: MouseEvent) {
   if (tabDrag.value) {
@@ -664,6 +685,7 @@ function commitTabDrag() {
     ...config,
     tabs: {
       ...config.tabs,
+      manualPlacement: true,
       edgeOverrides: {
         ...config.tabs.edgeOverrides,
         [tab.overrideKey]: positions,
@@ -681,6 +703,7 @@ function removeTab(tab: TabMarker) {
     ...props.panelConfig,
     tabs: {
       ...props.panelConfig.tabs,
+      manualPlacement: true,
       edgeOverrides: {
         ...props.panelConfig.tabs.edgeOverrides,
         [tab.overrideKey]: positions,
@@ -709,6 +732,7 @@ function addTab(channel: TabChannel, xMm: number, yMm: number) {
     ...props.panelConfig,
     tabs: {
       ...props.panelConfig.tabs,
+      manualPlacement: true,
       edgeOverrides: {
         ...props.panelConfig.tabs.edgeOverrides,
         [channel.overrideKey]: current,
@@ -955,7 +979,10 @@ function buildTabChannels(panelLayout: PanelLayout): TabChannel[] {
   const channels: TabChannel[] = []
   const pcbW = panelLayout.pcbLayoutWidth
   const pcbH = panelLayout.pcbLayoutHeight
-  const frameW = panelLayout.frame?.railWidth ?? 0
+  const frameLeft = panelLayout.frame?.railLeft ?? 0
+  const frameTop = panelLayout.frame?.railTop ?? 0
+  const frameRight = panelLayout.frame?.railRight ?? 0
+  const frameBottom = panelLayout.frame?.railBottom ?? 0
 
   for (const pcb of panelLayout.pcbs) {
     const { col, row, x, y } = pcb
@@ -987,7 +1014,7 @@ function buildTabChannels(panelLayout: PanelLayout): TabChannel[] {
         }
       }
     } else if (cfg.frame.enabled && isEdgeRouted('right')) {
-      const gap = (panelLayout.totalWidth - frameW) - (x + pcbW)
+      const gap = (panelLayout.totalWidth - frameRight) - (x + pcbW)
       if (gap > 0) channels.push({
         col, row, edge: 'right', channelId: 'main',
         overrideKey: getTabOverrideKey(cfg, col, row, 'right', 'main'),
@@ -1023,7 +1050,7 @@ function buildTabChannels(panelLayout: PanelLayout): TabChannel[] {
         }
       }
     } else if (cfg.frame.enabled && isEdgeRouted('bottom')) {
-      const gap = (panelLayout.totalHeight - frameW) - (y + pcbH)
+      const gap = (panelLayout.totalHeight - frameBottom) - (y + pcbH)
       if (gap > 0) channels.push({
         col, row, edge: 'bottom', channelId: 'main',
         overrideKey: getTabOverrideKey(cfg, col, row, 'bottom', 'main'),
@@ -1033,19 +1060,19 @@ function buildTabChannels(panelLayout: PanelLayout): TabChannel[] {
 
     if (cfg.frame.enabled) {
       if (col === 0 && isEdgeRouted('left')) {
-        const gap = x - frameW
+        const gap = x - frameLeft
         if (gap > 0) channels.push({
           col, row, edge: 'left', channelId: 'main',
           overrideKey: getTabOverrideKey(cfg, col, row, 'left', 'main'),
-          direction: 'vertical', edgeStart: y, edgeLength: pcbH, gapStart: frameW, gapDepth: gap,
+          direction: 'vertical', edgeStart: y, edgeLength: pcbH, gapStart: frameLeft, gapDepth: gap,
         })
       }
       if (row === 0 && isEdgeRouted('top')) {
-        const gap = y - frameW
+        const gap = y - frameTop
         if (gap > 0) channels.push({
           col, row, edge: 'top', channelId: 'main',
           overrideKey: getTabOverrideKey(cfg, col, row, 'top', 'main'),
-          direction: 'horizontal', edgeStart: x, edgeLength: pcbW, gapStart: frameW, gapDepth: gap,
+          direction: 'horizontal', edgeStart: x, edgeLength: pcbW, gapStart: frameTop, gapDepth: gap,
         })
       }
     }
@@ -1091,7 +1118,10 @@ function buildRoutingSnapGuides(panelLayout: PanelLayout): RoutingSnapGuide[] {
   const guides: RoutingSnapGuide[] = []
   const cfg = props.panelConfig
   const toolR = Math.max(0.1, cfg.routingToolDiameter / 2)
-  const frameW = cfg.frame.enabled ? cfg.frame.width : 0
+  const frameTop = panelLayout.frame?.railTop ?? 0
+  const frameBottom = panelLayout.frame?.railBottom ?? 0
+  const frameLeft = panelLayout.frame?.railLeft ?? 0
+  const frameRight = panelLayout.frame?.railRight ?? 0
 
   const pushVertical = (id: string, x: number, y1: number, y2: number) => {
     if (y2 - y1 < 0.5) return
@@ -1114,23 +1144,23 @@ function buildRoutingSnapGuides(panelLayout: PanelLayout): RoutingSnapGuide[] {
     })
   }
 
-  if (cfg.frame.enabled && frameW > toolR) {
-    const topY = toolR
-    const topInnerY = frameW - toolR
-    const botY = panelLayout.totalHeight - toolR
-    const botInnerY = panelLayout.totalHeight - frameW + toolR
-    const leftX = toolR
-    const leftInnerX = frameW - toolR
-    const rightX = panelLayout.totalWidth - toolR
-    const rightInnerX = panelLayout.totalWidth - frameW + toolR
-    pushHorizontal('frame-top-outer', topY, 0, panelLayout.totalWidth)
-    pushHorizontal('frame-top-inner', topInnerY, 0, panelLayout.totalWidth)
-    pushHorizontal('frame-bottom-outer', botY, 0, panelLayout.totalWidth)
-    pushHorizontal('frame-bottom-inner', botInnerY, 0, panelLayout.totalWidth)
-    pushVertical('frame-left-outer', leftX, 0, panelLayout.totalHeight)
-    pushVertical('frame-left-inner', leftInnerX, 0, panelLayout.totalHeight)
-    pushVertical('frame-right-outer', rightX, 0, panelLayout.totalHeight)
-    pushVertical('frame-right-inner', rightInnerX, 0, panelLayout.totalHeight)
+  if (cfg.frame.enabled) {
+    if (frameTop > toolR) {
+      pushHorizontal('frame-top-outer', toolR, 0, panelLayout.totalWidth)
+      pushHorizontal('frame-top-inner', frameTop - toolR, 0, panelLayout.totalWidth)
+    }
+    if (frameBottom > toolR) {
+      pushHorizontal('frame-bottom-outer', panelLayout.totalHeight - toolR, 0, panelLayout.totalWidth)
+      pushHorizontal('frame-bottom-inner', panelLayout.totalHeight - frameBottom + toolR, 0, panelLayout.totalWidth)
+    }
+    if (frameLeft > toolR) {
+      pushVertical('frame-left-outer', toolR, 0, panelLayout.totalHeight)
+      pushVertical('frame-left-inner', frameLeft - toolR, 0, panelLayout.totalHeight)
+    }
+    if (frameRight > toolR) {
+      pushVertical('frame-right-outer', panelLayout.totalWidth - toolR, 0, panelLayout.totalHeight)
+      pushVertical('frame-right-inner', panelLayout.totalWidth - frameRight + toolR, 0, panelLayout.totalHeight)
+    }
   }
 
   for (const rail of panelLayout.supportRails) {
@@ -1397,6 +1427,86 @@ function getPanelSilkscreenColor(isRealistic: boolean): string {
   return isLight.value ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.55)'
 }
 
+function parseCssColorToRgb(color: string): { r: number, g: number, b: number } | null {
+  const c = color.trim()
+  const hex = c.match(/^#([0-9a-f]{6})$/i)
+  if (hex) {
+    const raw = hex[1]!
+    return {
+      r: parseInt(raw.slice(0, 2), 16),
+      g: parseInt(raw.slice(2, 4), 16),
+      b: parseInt(raw.slice(4, 6), 16),
+    }
+  }
+  const shortHex = c.match(/^#([0-9a-f]{3})$/i)
+  if (shortHex) {
+    const raw = shortHex[1]!
+    return {
+      r: parseInt(raw[0]! + raw[0]!, 16),
+      g: parseInt(raw[1]! + raw[1]!, 16),
+      b: parseInt(raw[2]! + raw[2]!, 16),
+    }
+  }
+  const rgb = c.match(/^rgba?\(\s*(\d+(?:\.\d+)?)\s*[, ]\s*(\d+(?:\.\d+)?)\s*[, ]\s*(\d+(?:\.\d+)?)/i)
+  if (rgb) {
+    return {
+      r: Math.max(0, Math.min(255, Math.round(Number(rgb[1])))),
+      g: Math.max(0, Math.min(255, Math.round(Number(rgb[2])))),
+      b: Math.max(0, Math.min(255, Math.round(Number(rgb[3])))),
+    }
+  }
+  return null
+}
+
+function rgbToHex(r: number, g: number, b: number): string {
+  const toHex = (v: number) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`
+}
+
+function mixRgb(
+  a: { r: number, g: number, b: number },
+  b: { r: number, g: number, b: number },
+  t: number,
+): { r: number, g: number, b: number } {
+  return {
+    r: a.r + (b.r - a.r) * t,
+    g: a.g + (b.g - a.g) * t,
+    b: a.b + (b.b - a.b) * t,
+  }
+}
+
+function getActiveSolderMaskColor(side: 'top' | 'bottom', isRealistic: boolean): string {
+  if (isRealistic) return props.preset?.solderMask ?? '#146b3a'
+  const maskType = side === 'bottom' ? 'Bottom Solder Mask' : 'Top Solder Mask'
+  const fromVisibleLayers = props.layers.find(layer => layer.type === maskType)?.color
+  if (fromVisibleLayers) return fromVisibleLayers
+  const fromAllLayers = props.allLayers?.find(layer => layer.type === maskType)?.color
+  if (fromAllLayers) return fromAllLayers
+  return getColorForType(maskType)
+}
+
+function getVcutLineStrokeColor(oc: OverlayContext): string {
+  const side = oc.side ?? (props.activeFilter === 'bot' ? 'bottom' : 'top')
+  const baseMask = getActiveSolderMaskColor(side, oc.isRealistic)
+  const baseRgb = parseCssColorToRgb(baseMask)
+  if (!baseRgb) return '#1a1a1a'
+
+  const luminance = (0.299 * baseRgb.r + 0.587 * baseRgb.g + 0.114 * baseRgb.b) / 255
+  if (luminance >= 0.58) {
+    // Light solder mask -> darkened shade of the same mask hue (muted contrast).
+    const shaded = mixRgb(baseRgb, { r: 0, g: 0, b: 0 }, 0.62)
+    return rgbToHex(shaded.r, shaded.g, shaded.b)
+  }
+  // Dark solder mask -> brightened shade of the same mask hue (muted contrast).
+  const shaded = mixRgb(baseRgb, { r: 255, g: 255, b: 255 }, 0.64)
+  return rgbToHex(shaded.r, shaded.g, shaded.b)
+}
+
+function getVcutLineWidthPx(oc: OverlayContext): number {
+  // Keep V-cut visually stable: physical target width with a tight on-screen clamp.
+  return Math.max(2.25 * oc.dpr, Math.min(3.75 * oc.dpr, mmToPx(oc, 0.22)))
+}
+
 function drawPanelSilkscreenLabels(oc: OverlayContext, panelLayout: PanelLayout) {
   const { ctx } = oc
   const effectiveMirrored = oc.mirrored ?? !!props.mirrored
@@ -1404,7 +1514,9 @@ function drawPanelSilkscreenLabels(oc: OverlayContext, panelLayout: PanelLayout)
   const w = panelLayout.totalWidth
   const h = panelLayout.totalHeight
 
-  const frameW = panelLayout.frame?.railWidth ?? 0
+  const frameTop = panelLayout.frame?.railTop ?? 0
+  const frameBottom = panelLayout.frame?.railBottom ?? 0
+  const frameRight = panelLayout.frame?.railRight ?? 0
   const hasFrame = !!panelLayout.frame
 
   // Physical text sizing in panel mm so labels scale with zoom/object transform.
@@ -1477,8 +1589,8 @@ function drawPanelSilkscreenLabels(oc: OverlayContext, panelLayout: PanelLayout)
 
   // --- Frame titles: top-center project name, bottom-center panel size ---
   const centerX = w / 2
-  const topY = hasFrame ? frameW / 2 : 2.5
-  const bottomY = hasFrame ? (h - frameW / 2) : (h - 2.5)
+  const topY = hasFrame ? Math.max(2.5, frameTop / 2) : 2.5
+  const bottomY = hasFrame ? Math.min(h - 2.5, h - frameBottom / 2) : (h - 2.5)
   const isBottomView = effectiveSide === 'bottom'
 
   ctx.font = `600 ${titleFontPx}px ${monoFont}`
@@ -1550,7 +1662,7 @@ function drawPanelSilkscreenLabels(oc: OverlayContext, panelLayout: PanelLayout)
     }
 
     if (infoLine) {
-      const infoX = w - (hasFrame ? frameW * 0.45 : 2.5)
+      const infoX = w - (hasFrame ? Math.max(2.5, frameRight * 0.45) : 2.5)
       const infoY = topY
       const ip = toScreen(oc, infoX, infoY)
       drawReadableText(infoLine, ip.sx, ip.sy, 'right')
@@ -1901,9 +2013,11 @@ function drawPanelForeground(oc: OverlayContext, panelLayout: PanelLayout) {
     const p1 = toScreen(oc, vcut.x1, vcut.y1)
     const p2 = toScreen(oc, vcut.x2, vcut.y2)
     ctx.save()
-    ctx.strokeStyle = isLight.value ? 'rgba(200,0,0,0.5)' : 'rgba(255,100,100,0.5)'
-    ctx.lineWidth = 1.5 * oc.dpr
-    ctx.setLineDash([6 * oc.dpr, 4 * oc.dpr])
+    ctx.setLineDash([])
+    ctx.lineCap = 'butt'
+    ctx.lineJoin = 'miter'
+    ctx.strokeStyle = getVcutLineStrokeColor(oc)
+    ctx.lineWidth = getVcutLineWidthPx(oc)
     ctx.beginPath()
     ctx.moveTo(p1.sx, p1.sy)
     ctx.lineTo(p2.sx, p2.sy)
@@ -2001,7 +2115,6 @@ function drawPanelForeground(oc: OverlayContext, panelLayout: PanelLayout) {
   const dz = props.dangerZone
   if (dz?.enabled && dz.insetMm > 0 && panelLayout.pcbs.length > 0) {
     drawDangerZone(oc, panelLayout, dz.insetMm)
-    drawDangerZonePads(oc, panelLayout)
   }
 
   // Silkscreen-style labels (reference points + panel info)
@@ -2059,16 +2172,11 @@ function drawDangerZone(oc: OverlayContext, panelLayout: PanelLayout, insetMm: n
   }
 
   // Stamp the danger zone tile onto each PCB instance
-  const panelHeightGerber = panelLayout.totalHeight / oc.toMm
-
   for (const pcb of panelLayout.pcbs) {
-    const gerberX = mmToGerber(pcb.x)
-    const gerberY = panelHeightGerber - mmToGerber(pcb.y)
-    const screenX = (gerberX * oc.transform.scale + oc.transform.offsetX) * oc.dpr
-    const screenY = (-gerberY * oc.transform.scale + oc.transform.offsetY) * oc.dpr
+    const tl = toScreen(oc, pcb.x, pcb.y)
     const { dx, dy } = rotationAnchorOffsetPx(pcb.rotation, tileW, tileH)
-    const drawX = screenX + dx
-    const drawY = screenY + dy
+    const drawX = tl.sx + dx
+    const drawY = tl.sy + dy
 
     ctx.save()
     if (pcb.rotation !== 0) {
@@ -2083,83 +2191,6 @@ function drawDangerZone(oc: OverlayContext, panelLayout: PanelLayout, insetMm: n
   }
 }
 
-let _dangerPadCache: { key: string; pads: SmdPadRect[] } | null = null
-
-/**
- * Extract SMD pads with coordinates rebased relative to the board outline
- * origin (bottom-left corner of the outline bounds becomes 0,0).
- */
-function getDangerPads(): SmdPadRect[] {
-  const source = props.allLayers ?? props.layers
-  const copperTypes = new Set(['Top Copper', 'Bottom Copper'])
-  const copperLayers = source.filter(l => copperTypes.has(l.type))
-
-  const outlineBounds = getOutlineBoundsGerber()
-  const boundsKey = outlineBounds ? outlineBounds.join(',') : 'none'
-  const key = copperLayers.map(l => l.file.fileName).join('|') + '|' + boundsKey
-  if (_dangerPadCache?.key === key) return _dangerPadCache.pads
-
-  const units = detectUnits()
-  const toMm = units === 'in' ? 25.4 : 1
-  const originXMm = outlineBounds ? outlineBounds[0] * toMm : 0
-  const originYMm = outlineBounds ? outlineBounds[1] * toMm : 0
-
-  const allPads: SmdPadRect[] = []
-  for (const layer of copperLayers) {
-    const tree = getImageTree(layer)
-    if (!tree) continue
-    for (const raw of extractSmdPads(tree)) {
-      allPads.push({
-        xMm: raw.xMm - originXMm,
-        yMm: raw.yMm - originYMm,
-        wMm: raw.wMm,
-        hMm: raw.hMm,
-      })
-    }
-  }
-  _dangerPadCache = { key, pads: allPads }
-  return allPads
-}
-
-function drawDangerZonePads(oc: OverlayContext, panelLayout: PanelLayout) {
-  if (!props.boardSizeMm) return
-  const boardW = props.boardSizeMm.width
-  const boardH = props.boardSizeMm.height
-  const pads = getDangerPads()
-  if (!pads.length) return
-
-  const inset = DANGER_INSET_MM
-  const endangered: SmdPadRect[] = []
-  for (const pad of pads) {
-    const padRight = pad.xMm + pad.wMm
-    const padTop = pad.yMm + pad.hMm
-    if (pad.yMm < inset || padTop > boardH - inset || pad.xMm < inset || padRight > boardW - inset) {
-      endangered.push(pad)
-    }
-  }
-  if (!endangered.length) return
-
-  const { ctx } = oc
-  ctx.save()
-  ctx.fillStyle = 'rgba(239, 68, 68, 0.45)'
-  ctx.strokeStyle = 'rgba(239, 68, 68, 0.9)'
-  ctx.lineWidth = 1.5 * oc.dpr
-
-  for (const pcb of panelLayout.pcbs) {
-    for (const pad of endangered) {
-      const p1 = toScreen(oc, pcb.x + pad.xMm, pcb.y + pad.yMm)
-      const p2 = toScreen(oc, pcb.x + pad.xMm + pad.wMm, pcb.y + pad.yMm + pad.hMm)
-      const sx = Math.min(p1.sx, p2.sx)
-      const sy = Math.min(p1.sy, p2.sy)
-      const w = Math.abs(p2.sx - p1.sx)
-      const h = Math.abs(p2.sy - p1.sy)
-      if (w < 0.5 && h < 0.5) continue
-      ctx.fillRect(sx, sy, w, h)
-      ctx.strokeRect(sx, sy, w, h)
-    }
-  }
-  ctx.restore()
-}
 
 /**
  * Build the danger zone tile: a semi-transparent red ring that follows the
@@ -3068,9 +3099,18 @@ watch(
   () => scheduleRedraw(),
 )
 
+function onKeyDown(e: KeyboardEvent) {
+  if (e.key === 'Escape') {
+    deactivateAllControls()
+    ;(document.activeElement as HTMLElement)?.blur()
+    scheduleRedraw()
+  }
+}
+
 onMounted(() => {
   resetPanelPerf()
   nextTick(() => draw())
+  window.addEventListener('keydown', onKeyDown)
   const observer = new ResizeObserver(() => {
     autoFitDone.value = false
     scheduleRedraw()
@@ -3079,6 +3119,7 @@ onMounted(() => {
     observer.observe(canvasEl.value.parentElement)
   }
   onUnmounted(() => {
+    window.removeEventListener('keydown', onKeyDown)
     observer.disconnect()
     if (rafId) { cancelAnimationFrame(rafId); rafId = 0 }
     invalidatePanelRenderCaches()
@@ -3095,7 +3136,7 @@ watch(tabControlEnabled, (enabled) => {
   tabDrag.value = null
   hoveredTab.value = null
   addPreview.value = null
-  tabEditMode.value = 'move'
+  tabEditMode.value = 'off'
 })
 
 watch(addedRoutingEditMode, (mode) => {

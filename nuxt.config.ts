@@ -4,7 +4,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      appVersion: '1.0.13',
+      appVersion: '1.0.14',
       supabaseUrl: process.env.SUPABASE_URL || 'http://localhost:54321',
       supabaseAnonKey: process.env.SUPABASE_ANON_KEY || '',
       elexessUrl: process.env.ELEXESS_URL || 'https://api.dev.elexess.com/api',
@@ -18,12 +18,15 @@ export default defineNuxtConfig({
   modules: ['@nuxt/ui', '@sentry/nuxt/module'],
 
   sentry: {
-    org: process.env.SENTRY_ORG || 'newmatik',
-    project: process.env.SENTRY_PROJECT || 'gerbtrace',
+    org: 'newmatik',
+    project: 'gerbtrace',
     authToken: process.env.SENTRY_AUTH_TOKEN,
+    sourcemaps: {
+      filesToDeleteAfterUpload: ['.*/**/*.map'],
+    },
   },
 
-  sourcemap: { client: true, server: false },
+  sourcemap: { client: 'hidden', server: false },
 
   icon: {
     clientBundle: {

@@ -113,6 +113,17 @@
                 >
                   <UIcon name="i-lucide-x" class="text-xs" />
                 </button>
+                <USelect
+                  :model-value="doc.type"
+                  :items="documentTypeItems"
+                  value-key="value"
+                  label-key="label"
+                  size="xs"
+                  class="shrink-0 w-28"
+                  @click.stop
+                  @pointerdown.stop
+                  @update:model-value="emit('updateDocumentType', doc.id, String($event) as DocumentType)"
+                />
               </div>
             </template>
           </template>
@@ -125,7 +136,7 @@
 <script setup lang="ts">
 import type { LayerInfo } from '~/utils/gerber-helpers'
 import { getLayerGroup, LAYER_GROUP_ORDER, LAYER_GROUP_LABELS, type LayerGroupKey } from '~/utils/gerber-helpers'
-import type { ProjectDocument } from '~/utils/document-types'
+import type { DocumentType, ProjectDocument } from '~/utils/document-types'
 
 interface LayerGroupData {
   key: LayerGroupKey
@@ -152,7 +163,11 @@ const emit = defineEmits<{
   removeLayer: [index: number]
   selectDocument: [id: string]
   removeDocument: [id: string]
+  updateDocumentType: [id: string, type: DocumentType]
 }>()
+
+const documentTypes: DocumentType[] = ['Schematics', 'Drawings', 'Datasheets', 'Instructions']
+const documentTypeItems = documentTypes.map((t) => ({ label: t, value: t }))
 
 // ── Collapsible groups ──
 

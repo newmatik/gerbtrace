@@ -138,32 +138,50 @@
               <span class="font-semibold uppercase tracking-wider text-neutral-400">Frame</span>
               <USwitch :model-value="local.frame.enabled" size="sm" @update:model-value="updateFrame('enabled', !!$event)" />
             </div>
-            <div v-if="local.frame.enabled" class="grid grid-cols-2 gap-2">
-              <div class="space-y-1">
-                <div class="text-[10px] text-neutral-400">Frame width (mm)</div>
-                <UInput :model-value="local.frame.width" type="number" size="xs" :min="2" :max="30" :step="0.5" @update:model-value="updateFrame('width', clampFloat(String($event), 2, 30))" />
-              </div>
-              <div class="space-y-1">
-                <div class="text-[10px] text-neutral-400">Corner R (mm)</div>
-                <UInput :model-value="local.frame.cornerRadius" type="number" size="xs" :min="0" :max="10" :step="0.5" @update:model-value="updateFrame('cornerRadius', clampFloat(String($event), 0, 10))" />
+            <div v-if="local.frame.enabled" class="space-y-2">
+              <div class="grid grid-cols-5 gap-2">
+                <div class="space-y-1">
+                  <div class="text-[10px] text-neutral-400">Top (mm)</div>
+                  <UInput :model-value="local.frame.widthTop" type="number" size="xs" :min="0" :max="30" :step="0.5" @update:model-value="updateFrame('widthTop', clampFloat(String($event), 0, 30))" />
+                </div>
+                <div class="space-y-1">
+                  <div class="text-[10px] text-neutral-400">Bottom (mm)</div>
+                  <UInput :model-value="local.frame.widthBottom" type="number" size="xs" :min="0" :max="30" :step="0.5" @update:model-value="updateFrame('widthBottom', clampFloat(String($event), 0, 30))" />
+                </div>
+                <div class="space-y-1">
+                  <div class="text-[10px] text-neutral-400">Left (mm)</div>
+                  <UInput :model-value="local.frame.widthLeft" type="number" size="xs" :min="0" :max="30" :step="0.5" @update:model-value="updateFrame('widthLeft', clampFloat(String($event), 0, 30))" />
+                </div>
+                <div class="space-y-1">
+                  <div class="text-[10px] text-neutral-400">Right (mm)</div>
+                  <UInput :model-value="local.frame.widthRight" type="number" size="xs" :min="0" :max="30" :step="0.5" @update:model-value="updateFrame('widthRight', clampFloat(String($event), 0, 30))" />
+                </div>
+                <div class="space-y-1">
+                  <div class="text-[10px] text-neutral-400">Corner R (mm)</div>
+                  <UInput :model-value="local.frame.cornerRadius" type="number" size="xs" :min="0" :max="10" :step="0.5" @update:model-value="updateFrame('cornerRadius', clampFloat(String($event), 0, 10))" />
+                </div>
               </div>
             </div>
           </div>
 
           <div v-if="local.countX > 1 || local.countY > 1" class="rounded border border-neutral-200 dark:border-neutral-800 p-2 space-y-2">
             <div class="flex items-center justify-between text-[10px]">
-              <span class="font-semibold uppercase tracking-wider text-neutral-400">Support Bars</span>
+              <span class="font-semibold uppercase tracking-wider text-neutral-500/75">Support Bars</span>
               <USwitch :model-value="local.supports.enabled" size="sm" @update:model-value="updateSupports('enabled', !!$event)" />
             </div>
             <template v-if="local.supports.enabled">
-              <div class="space-y-1">
-                <div class="text-[10px] text-neutral-400">Rail width (mm)</div>
-                <UInput :model-value="local.supports.width" type="number" size="xs" :min="5" :max="30" :step="0.5" @update:model-value="updateSupports('width', clampFloat(String($event), 5, 30))" />
-              </div>
-              <div class="grid grid-cols-2 gap-2 text-[10px]">
-                <div>
-                  <div class="text-neutral-400 mb-1">Columns</div>
-                  <label v-for="i in (local.countX - 1)" :key="`xgap-${i}`" class="flex items-center gap-1 text-neutral-500">
+              <div class="grid grid-cols-4 gap-2 text-[10px]">
+                <div class="space-y-1">
+                  <div class="text-[10px] text-neutral-500/70">Column rail (mm)</div>
+                  <UInput :model-value="local.supports.widthColumns" type="number" size="xs" :min="0" :max="30" :step="0.5" @update:model-value="updateSupports('widthColumns', clampFloat(String($event), 0, 30))" />
+                </div>
+                <div class="space-y-1">
+                  <div class="text-[10px] text-neutral-500/70">Row rail (mm)</div>
+                  <UInput :model-value="local.supports.widthRows" type="number" size="xs" :min="0" :max="30" :step="0.5" @update:model-value="updateSupports('widthRows', clampFloat(String($event), 0, 30))" />
+                </div>
+                <div class="space-y-1">
+                  <div class="text-neutral-500/70">Columns</div>
+                  <label v-for="i in (local.countX - 1)" :key="`xgap-${i}`" class="flex items-center gap-1 text-neutral-500/65">
                     <USwitch
                       :model-value="local.supports.xGaps.includes(i - 1)"
                       size="sm"
@@ -172,9 +190,9 @@
                     Col {{ i }}-{{ i + 1 }}
                   </label>
                 </div>
-                <div>
-                  <div class="text-neutral-400 mb-1">Rows</div>
-                  <label v-for="i in (local.countY - 1)" :key="`ygap-${i}`" class="flex items-center gap-1 text-neutral-500">
+                <div class="space-y-1">
+                  <div class="text-neutral-500/70">Rows</div>
+                  <label v-for="i in (local.countY - 1)" :key="`ygap-${i}`" class="flex items-center gap-1 text-neutral-500/65">
                     <USwitch
                       :model-value="local.supports.yGaps.includes(i - 1)"
                       size="sm"
@@ -286,6 +304,7 @@
                 />
               </div>
             </div>
+
           </div>
 
           <div v-if="!hasAnyRoutedSeparation(local)" class="text-xs text-neutral-400">
@@ -319,28 +338,41 @@
               <USwitch :model-value="local.tabs.syncAcrossPanel" size="sm" @update:model-value="updateTabs('syncAcrossPanel', !!$event)" />
             </div>
 
-            <div
-              class="grid gap-2 text-[10px] text-neutral-400"
-              :style="{ gridTemplateColumns: `repeat(${tabEdgeControlFields.length}, minmax(0, 1fr))` }"
-            >
-              <span v-for="item in tabEdgeControlFields" :key="`${item.edge}-label`">{{ item.label }}</span>
-            </div>
-            <div
-              class="grid gap-2"
-              :style="{ gridTemplateColumns: `repeat(${tabEdgeControlFields.length}, minmax(0, 1fr))` }"
-            >
-              <UInput
-                v-for="item in tabEdgeControlFields"
-                :key="`${item.edge}-input`"
-                :model-value="getTabSideCount(item.field)"
-                type="number"
-                size="xs"
-                :min="0"
-                :max="10"
-                :step="1"
-                @update:model-value="updateTabSideCount(item.field, clampInt(String($event), 0, 10))"
-              />
-            </div>
+            <template v-if="hasManualPlacement">
+              <div class="rounded border border-neutral-200 dark:border-neutral-700 p-2 space-y-2">
+                <p class="text-[10px] text-neutral-400">
+                  Tab positions are managed in the visual editor.
+                  Use the canvas tab controls to add, move or delete tabs.
+                </p>
+                <UButton size="xs" color="neutral" variant="outline" @click="resetTabPlacement">
+                  Reset to default positions
+                </UButton>
+              </div>
+            </template>
+            <template v-else>
+              <div
+                class="grid gap-2 text-[10px] text-neutral-400"
+                :style="{ gridTemplateColumns: `repeat(${tabEdgeControlFields.length}, minmax(0, 1fr))` }"
+              >
+                <span v-for="item in tabEdgeControlFields" :key="`${item.edge}-label`">{{ item.label }}</span>
+              </div>
+              <div
+                class="grid gap-2"
+                :style="{ gridTemplateColumns: `repeat(${tabEdgeControlFields.length}, minmax(0, 1fr))` }"
+              >
+                <UInput
+                  v-for="item in tabEdgeControlFields"
+                  :key="`${item.edge}-input`"
+                  :model-value="getTabSideCount(item.field)"
+                  type="number"
+                  size="xs"
+                  :min="0"
+                  :max="10"
+                  :step="1"
+                  @update:model-value="updateTabSideCount(item.field, clampInt(String($event), 0, 10))"
+                />
+              </div>
+            </template>
 
             <div v-if="local.tabs.perforation !== 'none'" class="grid grid-cols-2 gap-2 text-[10px] text-neutral-400">
               <span>Hole dia (mm)</span>
@@ -383,8 +415,6 @@ import type { PanelConfig, FiducialPosition, DangerZoneConfig, TabPerforationMod
 import { DEFAULT_PANEL_CONFIG, PANEL_MAX_WIDTH, PANEL_MAX_HEIGHT } from '~/utils/panel-types'
 import { computePanelLayout } from '~/utils/panel-geometry'
 import { generatePanelSuggestions, type PanelSuggestion, type PanelSuggestionLimits, type PanelSuggestionEdgeConstraints } from '~/utils/panel-suggestions'
-import { generateVcutPadProtectionRoutes } from '~/utils/panel-vcut-pad-protection'
-import type { ImageTree } from '@lib/gerber/types'
 
 const props = defineProps<{
   panelData: PanelConfig
@@ -392,8 +422,6 @@ const props = defineProps<{
   teamPanelLimits?: PanelSuggestionLimits | null
   thicknessMm?: number | null
   edgeConstraints?: PanelSuggestionEdgeConstraints | null
-  copperTrees?: ImageTree[] | null
-  outlineOriginMm?: { x: number; y: number } | null
 }>()
 
 const emit = defineEmits<{
@@ -533,23 +561,6 @@ function generateSuggestions() {
 
 function applySuggestion(suggestion: PanelSuggestion) {
   const fullSnapshot = JSON.parse(JSON.stringify(suggestion.config)) as PanelConfig
-
-  if (props.boardSizeMm && props.copperTrees?.length) {
-    const protectionRoutes = generateVcutPadProtectionRoutes(
-      fullSnapshot,
-      props.boardSizeMm.width,
-      props.boardSizeMm.height,
-      props.copperTrees,
-      props.outlineOriginMm ?? undefined,
-    )
-    if (protectionRoutes.length) {
-      fullSnapshot.addedRoutings = [
-        ...(fullSnapshot.addedRoutings ?? []),
-        ...protectionRoutes,
-      ]
-    }
-  }
-
   emit('update:panelData', fullSnapshot)
 }
 
@@ -622,26 +633,21 @@ function updateTabs<K extends keyof PanelConfig['tabs']>(field: K, value: PanelC
   emit('update:panelData', { ...local.value, tabs: { ...local.value.tabs, [field]: value } })
 }
 
+const hasManualPlacement = computed(() => !!local.value.tabs.manualPlacement)
+
 function getTabSideCount(field: TabSideCountField): number {
-  const tabs = local.value.tabs
-  const fallbackCount = tabs[field] ?? tabs.defaultCountPerEdge
-  if (!tabs.syncAcrossPanel) return fallbackCount
-  const edge = tabCountFieldToEdge[field]
-  const syncKey = `sync-${edge}-main`
-  const syncedPositions = tabs.edgeOverrides[syncKey]
-  return Array.isArray(syncedPositions) ? syncedPositions.length : fallbackCount
+  return local.value.tabs[field] ?? local.value.tabs.defaultCountPerEdge
 }
 
-function updateTabSideCount(field: 'defaultCountTop' | 'defaultCountBottom' | 'defaultCountLeft' | 'defaultCountRight', value: number) {
-  const nextTabs: PanelConfig['tabs'] = { ...local.value.tabs, [field]: value }
-  if (nextTabs.syncAcrossPanel) {
-    const edge = tabCountFieldToEdge[field]
-    nextTabs.edgeOverrides = {
-      ...nextTabs.edgeOverrides,
-      [`sync-${edge}-main`]: evenTabPositions(value),
-    }
-  }
-  emit('update:panelData', { ...local.value, tabs: nextTabs })
+function updateTabSideCount(field: TabSideCountField, value: number) {
+  emit('update:panelData', { ...local.value, tabs: { ...local.value.tabs, [field]: value } })
+}
+
+function resetTabPlacement() {
+  emit('update:panelData', {
+    ...local.value,
+    tabs: { ...local.value.tabs, manualPlacement: false, edgeOverrides: {} },
+  })
 }
 
 function updateFiducials<K extends keyof PanelConfig['fiducials']>(field: K, value: PanelConfig['fiducials'][K]) {
@@ -698,7 +704,10 @@ const editorScale = computed(() => {
 
 const es = computed(() => editorScale.value)
 const cfg = computed(() => local.value)
-const editorFrameW = computed(() => cfg.value.frame.enabled ? cfg.value.frame.width * es.value : 0)
+const editorFrameTop = computed(() => cfg.value.frame.enabled ? (cfg.value.frame.widthTop ?? 0) * es.value : 0)
+const editorFrameBottom = computed(() => cfg.value.frame.enabled ? (cfg.value.frame.widthBottom ?? 0) * es.value : 0)
+const editorFrameLeft = computed(() => cfg.value.frame.enabled ? (cfg.value.frame.widthLeft ?? 0) * es.value : 0)
+const editorFrameRight = computed(() => cfg.value.frame.enabled ? (cfg.value.frame.widthRight ?? 0) * es.value : 0)
 const editorToolD = computed(() => hasAnyRoutedSeparation(cfg.value) ? cfg.value.routingToolDiameter * es.value : 0)
 const editorPcbW = computed(() => (props.boardSizeMm?.width ?? 30) * es.value)
 const editorPcbH = computed(() => (props.boardSizeMm?.height ?? 20) * es.value)
@@ -709,7 +718,7 @@ function editorColGap(i: number): number {
   const c = cfg.value
   if (!hasAnyRoutedSeparation(c)) return 0
   if (!(c.supports.enabled ?? true)) return c.routingToolDiameter * es.value
-  if (c.supports.xGaps.includes(i)) return (c.supports.width + 2 * c.routingToolDiameter) * es.value
+  if (c.supports.xGaps.includes(i)) return ((c.supports.widthColumns ?? 0) + 2 * c.routingToolDiameter) * es.value
   return c.routingToolDiameter * es.value
 }
 
@@ -717,7 +726,7 @@ function editorRowGap(i: number): number {
   const c = cfg.value
   if (!hasAnyRoutedSeparation(c)) return 0
   if (!(c.supports.enabled ?? true)) return c.routingToolDiameter * es.value
-  if (c.supports.yGaps.includes(i)) return (c.supports.width + 2 * c.routingToolDiameter) * es.value
+  if (c.supports.yGaps.includes(i)) return ((c.supports.widthRows ?? 0) + 2 * c.routingToolDiameter) * es.value
   return c.routingToolDiameter * es.value
 }
 
@@ -733,16 +742,16 @@ const editorInnerH = computed(() => {
   for (let i = 0; i < cfg.value.countY - 1; i++) h += editorRowGap(i)
   return h
 })
-const editorTotalW = computed(() => editorInnerW.value + 2 * editorFrameW.value)
-const editorTotalH = computed(() => editorInnerH.value + 2 * editorFrameW.value)
+const editorTotalW = computed(() => editorInnerW.value + editorFrameLeft.value + editorFrameRight.value)
+const editorTotalH = computed(() => editorInnerH.value + editorFrameTop.value + editorFrameBottom.value)
 
 function editorColX(col: number): number {
-  let x = editorFrameW.value + editorFrameRoutingGap.value
+  let x = editorFrameLeft.value + editorFrameRoutingGap.value
   for (let c = 0; c < col; c++) x += editorPcbW.value + editorColGap(c)
   return x
 }
 function editorRowY(row: number): number {
-  let y = editorFrameW.value + editorFrameRoutingGap.value
+  let y = editorFrameTop.value + editorFrameRoutingGap.value
   for (let r = 0; r < row; r++) y += editorPcbH.value + editorRowGap(r)
   return y
 }
@@ -761,16 +770,17 @@ const editorSupportRails = computed(() => {
   const rails: { x: number; y: number; w: number; h: number }[] = []
   const c = cfg.value
   if (!(c.supports.enabled ?? true)) return rails
-  const railMat = Math.max(0, c.supports.width)
+  const colRailMat = Math.max(0, c.supports.widthColumns ?? 0)
+  const rowRailMat = Math.max(0, c.supports.widthRows ?? 0)
   for (const gi of c.supports.xGaps) {
     if (gi < 0 || gi >= c.countX - 1) continue
     const rx = editorColX(gi) + editorPcbW.value + editorToolD.value
-    rails.push({ x: rx, y: 0, w: railMat * es.value, h: editorTotalH.value })
+    rails.push({ x: rx, y: 0, w: colRailMat * es.value, h: editorTotalH.value })
   }
   for (const gi of c.supports.yGaps) {
     if (gi < 0 || gi >= c.countY - 1) continue
     const ry = editorRowY(gi) + editorPcbH.value + editorToolD.value
-    rails.push({ x: 0, y: ry, w: editorTotalW.value, h: railMat * es.value })
+    rails.push({ x: 0, y: ry, w: editorTotalW.value, h: rowRailMat * es.value })
   }
   return rails
 })
@@ -847,14 +857,14 @@ const editorChannels = computed<EditorChannel[]>(() => {
         if (col === 0 && isPanelEdgeRouted(c, 'left')) {
           channels.push({
             key: `${col}-${row}-left`, col, row, edge: 'left',
-            x: editorFrameW.value, y: editorRowY(row), w: editorFrameRoutingGap.value, h: editorPcbH.value,
+            x: editorFrameLeft.value, y: editorRowY(row), w: editorFrameRoutingGap.value, h: editorPcbH.value,
             edgeLength: editorPcbH.value, edgeStart: editorRowY(row), isVertical: true,
           })
         }
         if (row === 0 && isPanelEdgeRouted(c, 'top')) {
           channels.push({
             key: `${col}-${row}-top`, col, row, edge: 'top',
-            x: editorColX(col), y: editorFrameW.value, w: editorPcbW.value, h: editorFrameRoutingGap.value,
+            x: editorColX(col), y: editorFrameTop.value, w: editorPcbW.value, h: editorFrameRoutingGap.value,
             edgeLength: editorPcbW.value, edgeStart: editorColX(col), isVertical: false,
           })
         }
@@ -958,7 +968,7 @@ function onTabEditorMouseMove(e: MouseEvent) {
   const positions = [...getTabPositions(draggingTab.value.col, draggingTab.value.row, draggingTab.value.edge)]
   positions[draggingTab.value.posIndex] = Math.round(t * 100) / 100
   const overrides = { ...local.value.tabs.edgeOverrides, [key]: positions }
-  emit('update:panelData', { ...local.value, tabs: { ...local.value.tabs, edgeOverrides: overrides } })
+  emit('update:panelData', { ...local.value, tabs: { ...local.value.tabs, manualPlacement: true, edgeOverrides: overrides } })
 }
 
 function onTabEditorMouseUp() {
@@ -984,7 +994,7 @@ function addTabToEdge(col: number, row: number, edge: string, e: MouseEvent) {
   const key = getTabOverrideKey(col, row, edge)
   const positions = [...getTabPositions(col, row, edge), t].sort((a, b) => a - b)
   const overrides = { ...local.value.tabs.edgeOverrides, [key]: positions }
-  emit('update:panelData', { ...local.value, tabs: { ...local.value.tabs, edgeOverrides: overrides } })
+  emit('update:panelData', { ...local.value, tabs: { ...local.value.tabs, manualPlacement: true, edgeOverrides: overrides } })
 }
 
 function removeTab(col: number, row: number, edge: string, posIndex: number) {
@@ -998,7 +1008,7 @@ function removeTab(col: number, row: number, edge: string, posIndex: number) {
   } else {
     overrides[key] = positions
   }
-  emit('update:panelData', { ...local.value, tabs: { ...local.value.tabs, edgeOverrides: overrides } })
+  emit('update:panelData', { ...local.value, tabs: { ...local.value.tabs, manualPlacement: true, edgeOverrides: overrides } })
 }
 
 function clampInt(val: string, min: number, max: number): number {
