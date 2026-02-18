@@ -63,6 +63,8 @@ interface ProjectRecord {
     thicknessMm?: number
     solderMaskColor?: 'green' | 'black' | 'blue' | 'red' | 'white' | 'purple'
     panelizationMode?: 'single' | 'panelized'
+    pricingQuantities?: number[]
+    selectedPricingQuantity?: number
   } | null
   /** Panel configuration for panelization */
   panelData?: PanelConfig | null

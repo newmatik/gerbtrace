@@ -13,17 +13,22 @@ import type { BomLine, BomManufacturer, BomColumnMapping, BomPricingCache, BomLi
 
 export function useBom(layers: Ref<LayerInfo[]>) {
   // ── Core state ──
+  /** The current (editable) BOM lines (may be persisted / modified). */
   const bomLines = ref<BomLine[]>([])
+  /** Parsed BOM lines from customer-provided BOM files (baseline for diff-highlighting). */
+  const customerBomLines = ref<BomLine[]>([])
   const pricingCache = ref<BomPricingCache>({})
   const boardQuantity = ref(1)
 
   // ── Field mapping state (for when auto-detect fails) ──
   const needsFieldMapping = ref(false)
   const pendingParseResult = ref<BomParseResult | null>(null)
+  const hasPersistedBomLines = ref(false)
 
   // ── Derived state ──
   const hasBom = computed(() => {
-    return bomLines.value.length > 0 || layers.value.some(l => isBomLayer(l.type) || isBomFile(l.file.fileName))
+    return (bomLines.value.length > 0 || customerBomLines.value.length > 0)
+      || layers.value.some(l => isBomLayer(l.type) || isBomFile(l.file.fileName))
   })
 
   const bomLayers = computed(() =>
@@ -50,18 +55,21 @@ export function useBom(layers: Ref<LayerInfo[]>) {
   })
 
   // ── Watch layers for BOM files and auto-parse ──
-  const parsedFileNames = new Set<string>()
+  const parsedCustomerFileNames = new Set<string>()
 
   watch(bomLayers, (current) => {
     for (const layer of current) {
-      if (parsedFileNames.has(layer.file.fileName)) continue
-      parsedFileNames.add(layer.file.fileName)
+      if (parsedCustomerFileNames.has(layer.file.fileName)) continue
+      parsedCustomerFileNames.add(layer.file.fileName)
 
       const result = parseBomFile(layer.file.fileName, layer.file.content)
 
       if (result.lines) {
-        // Auto-mapping succeeded — merge lines (avoid duplicates by references)
-        mergeParsedLines(result.lines)
+        // Auto-mapping succeeded — merge into baseline, and into editable BOM only if not restored from persistence yet.
+        mergeParsedCustomerLines(result.lines)
+        if (!hasPersistedBomLines.value) {
+          mergeParsedLines(result.lines)
+        }
       } else if (result.headers.length > 0 && result.rows.length > 0) {
         // Auto-mapping failed — prompt for field mapping
         pendingParseResult.value = result
@@ -69,6 +77,14 @@ export function useBom(layers: Ref<LayerInfo[]>) {
       }
     }
   }, { immediate: true })
+
+  function mergeParsedCustomerLines(newLines: BomLine[]) {
+    const existingKeys = new Set(customerBomLines.value.map(l => l.references))
+    for (const line of newLines) {
+      if (line.references && existingKeys.has(line.references)) continue
+      customerBomLines.value.push(line)
+    }
+  }
 
   function mergeParsedLines(newLines: BomLine[]) {
     const existingRefs = new Set(bomLines.value.map(l => l.references))
@@ -82,7 +98,10 @@ export function useBom(layers: Ref<LayerInfo[]>) {
   function applyFieldMapping(mapping: BomColumnMapping) {
     if (!pendingParseResult.value) return
     const lines = buildBomLines(pendingParseResult.value.rows, mapping)
-    mergeParsedLines(lines)
+    mergeParsedCustomerLines(lines)
+    if (!hasPersistedBomLines.value) {
+      mergeParsedLines(lines)
+    }
     pendingParseResult.value = null
     needsFieldMapping.value = false
   }
@@ -158,6 +177,7 @@ export function useBom(layers: Ref<LayerInfo[]>) {
   // ── Persistence helpers (plain records for watcher serialization) ──
 
   const bomLinesRecord = computed<BomLine[]>(() => bomLines.value.map(l => ({ ...l })))
+  const customerBomLinesRecord = computed<BomLine[]>(() => customerBomLines.value.map(l => ({ ...l })))
   const pricingCacheRecord = computed<BomPricingCache>(() => ({ ...pricingCache.value }))
 
   // ── Restore from persisted data ──
@@ -168,11 +188,8 @@ export function useBom(layers: Ref<LayerInfo[]>) {
       // Do NOT mark files as parsed here; the watcher callback is still queued and needs to run.
       return
     }
+    hasPersistedBomLines.value = true
     bomLines.value = [...lines]
-    // Mark existing file names as already parsed to avoid re-parsing
-    for (const layer of bomLayers.value) {
-      parsedFileNames.add(layer.file.fileName)
-    }
   }
 
   function setPricingCache(cache: BomPricingCache | null | undefined) {
@@ -192,16 +209,19 @@ export function useBom(layers: Ref<LayerInfo[]>) {
 
   function resetBom() {
     bomLines.value = []
+    customerBomLines.value = []
     pricingCache.value = {}
-    parsedFileNames.clear()
+    parsedCustomerFileNames.clear()
     needsFieldMapping.value = false
     pendingParseResult.value = null
     searchQuery.value = ''
+    hasPersistedBomLines.value = false
   }
 
   return {
     // State
     bomLines: readonly(bomLines),
+    customerBomLines: readonly(customerBomLines),
     pricingCache: readonly(pricingCache),
     boardQuantity,
     hasBom,
@@ -227,6 +247,7 @@ export function useBom(layers: Ref<LayerInfo[]>) {
 
     // Persistence
     bomLinesRecord,
+    customerBomLinesRecord,
     pricingCacheRecord,
     setBomLines,
     setPricingCache,

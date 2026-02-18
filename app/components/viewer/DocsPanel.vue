@@ -16,26 +16,8 @@
             <p class="text-xs font-medium truncate" :class="selectedId === doc.id ? 'text-blue-700 dark:text-blue-300' : 'text-neutral-700 dark:text-neutral-300'">
               {{ doc.name }}
             </p>
-            <div class="mt-0.5">
-              <USelect
-                :model-value="doc.type"
-                :items="documentTypeItems"
-                value-key="value"
-                label-key="label"
-                size="xs"
-                class="w-36"
-                @click.stop
-                @update:model-value="emit('update-type', doc.id, String($event) as DocumentType)"
-              />
-            </div>
+            <p class="mt-0.5 text-[10px] text-neutral-400">{{ doc.type }}</p>
           </div>
-          <button
-            class="opacity-0 group-hover:opacity-100 text-neutral-400 hover:text-red-500 transition-all p-0.5 rounded shrink-0"
-            title="Remove document"
-            @click.stop="emit('remove', doc.id)"
-          >
-            <UIcon name="i-lucide-x" class="text-sm" />
-          </button>
         </div>
       </div>
     </div>
@@ -43,10 +25,7 @@
 </template>
 
 <script setup lang="ts">
-import type { DocumentType, ProjectDocument } from '~/utils/document-types'
-
-const documentTypes: DocumentType[] = ['Schematics', 'Drawings', 'Datasheets', 'Instructions']
-const documentTypeItems = documentTypes.map((t) => ({ label: t, value: t }))
+import type { ProjectDocument } from '~/utils/document-types'
 
 defineProps<{
   documents: ProjectDocument[]
@@ -55,7 +34,5 @@ defineProps<{
 
 const emit = defineEmits<{
   select: [id: string]
-  remove: [id: string]
-  'update-type': [id: string, type: DocumentType]
 }>()
 </script>

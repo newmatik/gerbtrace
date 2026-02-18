@@ -44,6 +44,7 @@
       <button
         class="text-[10px] px-1.5 py-0.5 rounded-full border border-neutral-200 dark:border-neutral-700 text-neutral-400 hover:text-green-600 dark:hover:text-green-400 hover:border-green-300 dark:hover:border-green-600 transition-colors flex items-center gap-0.5"
         title="Add component — click to place, click again to confirm or pick two points for center"
+        :disabled="locked"
         @click="emit('addComponent')"
       >
         <UIcon name="i-lucide-plus" class="text-[10px]" />
@@ -52,6 +53,7 @@
       <button
         class="text-[10px] px-1.5 py-0.5 rounded-full border border-neutral-200 dark:border-neutral-700 text-neutral-400 hover:text-indigo-600 dark:hover:text-indigo-300 hover:border-indigo-300 dark:hover:border-indigo-600 transition-colors flex items-center gap-0.5"
         title="Create a component group"
+        :disabled="locked"
         @click="createGroup"
       >
         <UIcon name="i-lucide-folder-plus" class="text-[10px]" />
@@ -97,6 +99,7 @@
         :model-value="pnpConvention"
         size="xs"
         class="w-36"
+        :disabled="locked"
         :items="conventionSelectItems"
         value-key="value"
         label-key="label"
@@ -122,6 +125,7 @@
           v-if="hasOrigin"
           class="text-[10px] text-neutral-400 hover:text-red-400 transition-colors"
           title="Reset alignment"
+          :disabled="locked"
           @click="$emit('resetOrigin')"
         >
           <UIcon name="i-lucide-x" class="text-[10px]" />
@@ -132,6 +136,7 @@
           v-if="selectedDesignator && !isAligning"
           class="text-[10px] px-1.5 py-0.5 rounded transition-colors flex items-center gap-1 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800"
           :title="`Align using ${selectedDesignator}`"
+          :disabled="locked"
           @click="$emit('startComponentAlign')"
         >
           <UIcon name="i-lucide-locate" class="text-[11px]" />
@@ -155,6 +160,7 @@
             ? 'text-green-600 dark:text-green-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
             : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'"
           title="Set the 0/0 coordinate on the PCB"
+          :disabled="locked"
           @click="$emit('startSetOrigin')"
         >
           <UIcon name="i-lucide-crosshair" class="text-[11px]" />
@@ -428,6 +434,7 @@
             <span class="truncate text-neutral-500" :title="groupedRows[vRow.index].component.cadPackage">{{ groupedRows[vRow.index].component.cadPackage || '—' }}</span>
             <!-- Package (our matched package) -->
             <USelectMenu
+              v-if="!locked"
               :model-value="groupedRows[vRow.index].component.matchedPackage || undefined"
               v-model:search-term="pkgSearchTerm"
               :items="packageSelectItems"
@@ -457,6 +464,14 @@
                 </div>
               </template>
             </USelectMenu>
+            <button
+              v-else
+              class="w-full min-w-0 text-left truncate rounded px-1.5 py-1 text-[11px] text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              :title="groupedRows[vRow.index].component.matchedPackage || '—'"
+              @click.stop="emit('edit', groupedRows[vRow.index].component)"
+            >
+              {{ groupedRows[vRow.index].component.matchedPackage || '—' }}
+            </button>
             <!-- Note indicator / edit button -->
             <div class="flex items-center justify-center" @click.stop>
               <button
@@ -516,7 +531,10 @@ const props = defineProps<{
   groupAssignments: Record<string, string>
   /** Set of designators present in BOM data (excluding DNP lines) */
   bomDesignators?: Set<string>
+  locked?: boolean
 }>()
+
+const locked = computed(() => !!props.locked)
 
 const emit = defineEmits<{
   'update:searchQuery': [value: string]

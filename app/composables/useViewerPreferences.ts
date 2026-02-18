@@ -6,6 +6,13 @@
 
 const STORAGE_PREFIX = 'gerbtrace:viewer:'
 
+interface TabVisibility {
+  panel: boolean
+  pnp: boolean
+  bom: boolean
+  docs: boolean
+}
+
 interface ViewerPrefs {
   viewMode: 'layers' | 'realistic'
   activeFilter: 'all' | 'top' | 'bot'
@@ -14,6 +21,14 @@ interface ViewerPrefs {
   mirrored: boolean
   presetId: string
   boardRotation: number
+  tabVisibility: TabVisibility
+}
+
+const TAB_VIS_DEFAULTS: TabVisibility = {
+  panel: false,
+  pnp: false,
+  bom: false,
+  docs: false,
 }
 
 const DEFAULTS: ViewerPrefs = {
@@ -24,6 +39,7 @@ const DEFAULTS: ViewerPrefs = {
   mirrored: false,
   presetId: 'green-enig',
   boardRotation: 0,
+  tabVisibility: { ...TAB_VIS_DEFAULTS },
 }
 
 export function useViewerPreferences(projectId: number | string) {
@@ -47,6 +63,14 @@ export function useViewerPreferences(projectId: number | string) {
           mirrored: typeof p.mirrored === 'boolean' ? p.mirrored : DEFAULTS.mirrored,
           presetId: typeof p.presetId === 'string' ? p.presetId : DEFAULTS.presetId,
           boardRotation: typeof p.boardRotation === 'number' && isFinite(p.boardRotation) ? p.boardRotation : DEFAULTS.boardRotation,
+          tabVisibility: p.tabVisibility && typeof p.tabVisibility === 'object'
+            ? {
+                panel: !!p.tabVisibility.panel,
+                pnp: !!p.tabVisibility.pnp,
+                bom: !!p.tabVisibility.bom,
+                docs: !!p.tabVisibility.docs,
+              }
+            : { ...TAB_VIS_DEFAULTS },
           },
           hasStoredCropToOutline,
         }
@@ -69,11 +93,12 @@ export function useViewerPreferences(projectId: number | string) {
   const mirrored = ref(stored.prefs.mirrored)
   const presetId = ref(stored.prefs.presetId)
   const boardRotation = ref(stored.prefs.boardRotation)
+  const tabVisibility = ref<TabVisibility>({ ...stored.prefs.tabVisibility })
   const hasStoredCropToOutline = ref(stored.hasStoredCropToOutline)
 
   // Auto-save whenever any preference changes
   watch(
-    [viewMode, activeFilter, activeMode, cropToOutline, mirrored, presetId, boardRotation],
+    [viewMode, activeFilter, activeMode, cropToOutline, mirrored, presetId, boardRotation, tabVisibility],
     () => {
       save({
         viewMode: viewMode.value,
@@ -83,8 +108,10 @@ export function useViewerPreferences(projectId: number | string) {
         mirrored: mirrored.value,
         presetId: presetId.value,
         boardRotation: boardRotation.value,
+        tabVisibility: { ...tabVisibility.value },
       })
     },
+    { deep: true },
   )
 
   return {
@@ -96,5 +123,6 @@ export function useViewerPreferences(projectId: number | string) {
     mirrored,
     presetId,
     boardRotation,
+    tabVisibility,
   }
 }
