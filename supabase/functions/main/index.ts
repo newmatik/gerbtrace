@@ -6,6 +6,7 @@ const FRONTEND_URL = Deno.env.get('FRONTEND_URL') ?? 'https://gerbtrace.com'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Content-Type': 'application/json',
 }
@@ -169,7 +170,7 @@ async function handleSendInvitation(req: Request): Promise<Response> {
 
   if (invError || !invitation) return jsonResponse({ error: 'Invitation not found' }, 404)
 
-  const { data: membership } = await supabaseAdmin
+  const { data: membership, error: membershipError } = await supabaseAdmin
     .from('team_members')
     .select('id')
     .eq('team_id', (invitation as any).team_id)
@@ -177,6 +178,10 @@ async function handleSendInvitation(req: Request): Promise<Response> {
     .eq('role', 'admin')
     .eq('status', 'active')
     .maybeSingle()
+  if (membershipError) {
+    console.error('send-invitation membership lookup error:', membershipError)
+    return jsonResponse({ error: 'Failed to verify admin status' }, 500)
+  }
   if (!membership) return jsonResponse({ error: 'Only team admins can send invitations' }, 403)
 
   const team = invitation.team as { name: string; slug: string }

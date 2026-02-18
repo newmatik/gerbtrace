@@ -189,6 +189,7 @@ const dragging = ref(false)
 const attachments = ref<Attachment[]>([])
 const fileInputRef = ref<HTMLInputElement | null>(null)
 
+const toast = useToast()
 const canSubmit = computed(() => normalizeText(description.value).length > 0)
 
 function normalizeText(value: unknown): string {
@@ -204,7 +205,10 @@ function formatFileSize(bytes: number): string {
 
 async function addFiles(files: FileList | File[]) {
   for (const file of Array.from(files)) {
-    if (file.size > MAX_FILE_SIZE) continue
+    if (file.size > MAX_FILE_SIZE) {
+      toast.add({ title: `${file.name} exceeds 10 MB limit`, color: 'warning' })
+      continue
+    }
     const data = new Uint8Array(await file.arrayBuffer())
     const preview = file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined
     attachments.value.push({ name: file.name, size: file.size, type: file.type, data, preview })
@@ -267,6 +271,9 @@ async function submit() {
     )
 
     sent.value = true
+  } catch (err) {
+    console.error('[BugReport] Failed to send feedback:', err)
+    toast.add({ title: 'Failed to send report. Please try again.', color: 'error' })
   } finally {
     sending.value = false
   }

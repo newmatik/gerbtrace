@@ -517,6 +517,10 @@ export function useTeamProjects() {
       fileTextCache.clear()
       projectDocumentsCache.clear()
       documentBlobCache.clear()
+      inFlightByTeam.clear()
+      projects.value = []
+      projectsByTeam.value = {}
+      fetchedAtByTeam.value = {}
     }
   })
 
