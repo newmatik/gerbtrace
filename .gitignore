@@ -38,3 +38,5 @@ dist/
 
 .local
 public/mycenter-packages/
+# Sentry Config File
+.env.sentry-build-plugin

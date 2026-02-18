@@ -916,8 +916,8 @@ function conversionRate(from: string, to: string): number | null {
 function normalizeCurrencyCode(raw: string | null | undefined): 'USD' | 'EUR' | null {
   const v = String(raw ?? '').trim().toUpperCase()
   if (!v) return null
-  if (v === 'USD' || v === 'US$' || v === '$' || v.includes('USD') || v.includes('$')) return 'USD'
-  if (v === 'EUR' || v === 'EURO' || v === '€' || v.includes('EUR') || v.includes('EURO') || v.includes('€')) return 'EUR'
+  if (v === 'USD' || v === 'US$' || v === '$') return 'USD'
+  if (v === 'EUR' || v === 'EURO' || v === '€') return 'EUR'
   return null
 }
 

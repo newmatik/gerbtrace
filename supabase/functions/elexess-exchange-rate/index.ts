@@ -24,12 +24,15 @@ serve(async (req: Request) => {
   }
 
   try {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10_000)
+
     const response = await fetch(`${ELEXESS_URL}/exchange-rate`, {
       method: 'GET',
-      headers: {
-        Accept: 'application/json',
-      },
+      headers: { Accept: 'application/json' },
+      signal: controller.signal,
     })
+    clearTimeout(timeoutId)
 
     if (!response.ok) {
       return new Response(JSON.stringify({ error: `Upstream error ${response.status}` }), {
@@ -38,7 +41,15 @@ serve(async (req: Request) => {
       })
     }
 
-    const payload = await response.json()
+    let payload
+    try {
+      payload = await response.json()
+    } catch {
+      return new Response(JSON.stringify({ error: 'Invalid JSON from upstream' }), {
+        status: 502,
+        headers: corsHeaders,
+      })
+    }
     return new Response(JSON.stringify(payload), {
       status: 200,
       headers: corsHeaders,

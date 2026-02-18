@@ -336,6 +336,7 @@ const removeError = ref('')
 // ── Password action feedback ────────────────────────────────────────
 const passwordActionMessage = ref('')
 const passwordActionError = ref(false)
+let passwordActionTimer: ReturnType<typeof setTimeout> | null = null
 
 // ── Reset Password Modal ────────────────────────────────────────────
 const resetPasswordModalOpen = ref(false)
@@ -445,6 +446,11 @@ async function handleConfirmPasswordReset() {
 
     const target = resettingMember.value.profile?.email || resettingMember.value.profile?.name || 'member'
     passwordActionMessage.value = `Password reset for ${target}.`
+    if (passwordActionTimer) clearTimeout(passwordActionTimer)
+    passwordActionTimer = setTimeout(() => {
+      passwordActionMessage.value = ''
+      passwordActionError.value = false
+    }, 5000)
     resetPasswordModalOpen.value = false
   } finally {
     resetPasswordSaving.value = false

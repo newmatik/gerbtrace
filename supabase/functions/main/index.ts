@@ -49,7 +49,7 @@ async function handleAdminPasswordReset(req: Request): Promise<Response> {
   const { data: { user }, error: userError } = await supabaseUser.auth.getUser()
   if (userError || !user) return jsonResponse({ error: 'Invalid authentication' }, 401)
 
-  const { data: callerMembership } = await supabaseAdmin
+  const { data: callerMembership, error: callerError } = await supabaseAdmin
     .from('team_members')
     .select('id')
     .eq('team_id', team_id)
@@ -58,17 +58,25 @@ async function handleAdminPasswordReset(req: Request): Promise<Response> {
     .eq('status', 'active')
     .maybeSingle()
 
+  if (callerError) {
+    console.error('admin-password-reset caller lookup error:', callerError)
+    return jsonResponse({ error: 'Failed to verify admin status' }, 500)
+  }
   if (!callerMembership) {
     return jsonResponse({ error: 'Only team admins can reset member passwords' }, 403)
   }
 
-  const { data: targetMembership } = await supabaseAdmin
+  const { data: targetMembership, error: targetError } = await supabaseAdmin
     .from('team_members')
     .select('id')
     .eq('team_id', team_id)
     .eq('user_id', user_id)
     .maybeSingle()
 
+  if (targetError) {
+    console.error('admin-password-reset target lookup error:', targetError)
+    return jsonResponse({ error: 'Failed to verify target membership' }, 500)
+  }
   if (!targetMembership) {
     return jsonResponse({ error: 'Target user is not a member of this team' }, 404)
   }
@@ -137,15 +145,22 @@ async function handleTeamJoin(req: Request): Promise<Response> {
 async function handleSendInvitation(req: Request): Promise<Response> {
   if (req.method !== 'POST') return jsonResponse({ error: 'Method not allowed' }, 405)
 
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader) return jsonResponse({ error: 'Not authenticated' }, 401)
+
   const { invitation_id } = await req.json()
   if (!invitation_id) return jsonResponse({ error: 'invitation_id is required' }, 400)
 
   const supabaseAdmin = getSupabaseAdmin()
+  const supabaseUser = getSupabaseUser(authHeader)
+
+  const { data: { user }, error: userError } = await supabaseUser.auth.getUser()
+  if (userError || !user) return jsonResponse({ error: 'Invalid authentication' }, 401)
 
   const { data: invitation, error: invError } = await supabaseAdmin
     .from('team_invitations')
     .select(`
-      id, email, role, token, expires_at,
+      id, team_id, email, role, token, expires_at,
       team:teams(name, slug),
       inviter:profiles!invited_by(name, email)
     `)
@@ -153,6 +168,16 @@ async function handleSendInvitation(req: Request): Promise<Response> {
     .single()
 
   if (invError || !invitation) return jsonResponse({ error: 'Invitation not found' }, 404)
+
+  const { data: membership } = await supabaseAdmin
+    .from('team_members')
+    .select('id')
+    .eq('team_id', (invitation as any).team_id)
+    .eq('user_id', user.id)
+    .eq('role', 'admin')
+    .eq('status', 'active')
+    .maybeSingle()
+  if (!membership) return jsonResponse({ error: 'Only team admins can send invitations' }, 403)
 
   const team = invitation.team as { name: string; slug: string }
   const inviter = invitation.inviter as { name: string; email: string } | null
@@ -199,10 +224,12 @@ serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
-    const path = new URL(req.url).pathname
+    const segments = new URL(req.url).pathname
       .replace(/^\/+/, '')
       .replace(/^functions\/v1\//, '')
-    const fn = path.split('/')[0]
+      .split('/')
+      .filter(Boolean)
+    const fn = segments[0] === 'main' ? segments[1] : segments[0]
 
     if (fn === 'admin-password-reset') return await handleAdminPasswordReset(req)
     if (fn === 'handle-team-join') return await handleTeamJoin(req)

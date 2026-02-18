@@ -18,12 +18,15 @@ export default defineNuxtConfig({
   modules: ['@nuxt/ui', '@sentry/nuxt/module'],
 
   sentry: {
-    org: process.env.SENTRY_ORG || 'newmatik',
-    project: process.env.SENTRY_PROJECT || 'gerbtrace',
+    org: 'newmatik',
+    project: 'gerbtrace',
     authToken: process.env.SENTRY_AUTH_TOKEN,
+    sourcemaps: {
+      filesToDeleteAfterUpload: ['.*/**/*.map'],
+    },
   },
 
-  sourcemap: { client: true, server: false },
+  sourcemap: { client: 'hidden', server: false },
 
   icon: {
     clientBundle: {

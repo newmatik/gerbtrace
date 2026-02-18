@@ -377,50 +377,27 @@ export function renderOutlineMask(
   const darkContours = chainFragmentsIntoContours(darkFragments)
   const eraseContours = chainFragmentsIntoContours(eraseFragments)
 
-  // ── Identify the outer boundary (largest bounding-box area) ──
-  let outerIdx = 0
-  let outerArea = 0
-  for (let i = 0; i < darkContours.length; i++) {
-    const a = contourBBoxArea(darkContours[i]!)
-    if (a > outerArea) { outerArea = a; outerIdx = i }
-  }
-  // Also consider dark shapes — compare with largest contour
-  // (shapes are rare for boundaries, but handle for completeness)
-
-  // ── Phase 1: Fill the outer boundary ──
+  // ── Phase 1: Fill all dark contours and shapes using even-odd rule ──
+  // Even-odd correctly fills the outer boundary while creating holes for any
+  // enclosed cutouts (mounting holes, slots).  It is also robust to fragmented
+  // outer boundaries: if the outline edges fail to chain into a single closed
+  // contour (common with hand-edited files), each fragment is filled
+  // individually and the even-odd overlap rule avoids double-fill artefacts.
   ctx.fillStyle = '#ffffff'
-  if (darkContours.length > 0) {
-    ctx.beginPath()
-    drawContour(ctx, darkContours[outerIdx]!)
-    ctx.fill()
-  } else if (darkShapes.length > 0) {
-    // Fallback: fill the first dark shape
-    ctx.beginPath()
-    darkShapes[0]!()
-    ctx.fill()
+  ctx.beginPath()
+  for (const contour of darkContours) {
+    drawContour(ctx, contour)
+    ctx.closePath()
   }
+  for (const fn of darkShapes) {
+    fn()
+    ctx.closePath()
+  }
+  ctx.fill('evenodd')
 
-  // ── Phase 2: Punch out all cutout contours ──
+  // ── Phase 2: Erase clear-polarity features ──
   ctx.globalCompositeOperation = 'destination-out'
   ctx.fillStyle = '#ffffff'
-
-  // Dark contours that are NOT the outer boundary → same-polarity cutouts
-  for (let i = 0; i < darkContours.length; i++) {
-    if (i === outerIdx) continue
-    ctx.beginPath()
-    drawContour(ctx, darkContours[i]!)
-    ctx.fill()
-  }
-  // Dark shapes that are NOT the outer boundary (if boundary was a contour)
-  if (darkContours.length > 0) {
-    for (const fn of darkShapes) {
-      ctx.beginPath()
-      fn()
-      ctx.fill()
-    }
-  }
-
-  // Erase-polarity contours and shapes → polarity-based cutouts
   for (const contour of eraseContours) {
     ctx.beginPath()
     drawContour(ctx, contour)

@@ -19,7 +19,7 @@ export type ToolingHolePosition = 'top-left' | 'top-right' | 'bottom-left' | 'bo
 
 export interface ToolingHoleConfig {
   enabled: boolean
-  /** Tooling hole diameter in mm (default 3.2, typical M3 mounting hole) */
+  /** Tooling hole diameter in mm (default 3) */
   diameter: number
   /** Positions on the panel frame corners */
   positions: ToolingHolePosition[]
@@ -63,13 +63,19 @@ export interface TabConfig {
   perforationHoleDiameter: number
   /** Mouse bite hole center-to-center spacing in mm (default 0.8) */
   perforationHoleSpacing: number
+  /** True once the user has added/removed/moved tabs on the canvas.
+   *  Hides the per-edge count inputs in the form so the two editing
+   *  modes cannot conflict. */
+  manualPlacement?: boolean
 }
 
 export interface SupportBarConfig {
   /** Enable/disable support bars entirely */
   enabled: boolean
-  /** Support bar rail width in mm (default 5) */
-  width: number
+  /** Support bar rail width for column gaps (vertical rails), in mm */
+  widthColumns: number
+  /** Support bar rail width for row gaps (horizontal rails), in mm */
+  widthRows: number
   /** Which column gaps (0-indexed) have a support bar */
   xGaps: number[]
   /** Which row gaps (0-indexed) have a support bar */
@@ -109,8 +115,14 @@ export interface PanelConfig {
   /** Panel frame settings */
   frame: {
     enabled: boolean
-    /** Frame rail width in mm */
-    width: number
+    /** Top frame rail width in mm */
+    widthTop: number
+    /** Bottom frame rail width in mm */
+    widthBottom: number
+    /** Left frame rail width in mm */
+    widthLeft: number
+    /** Right frame rail width in mm */
+    widthRight: number
     /** Corner rounding radius in mm */
     cornerRadius: number
   }
@@ -161,7 +173,10 @@ export function DEFAULT_PANEL_CONFIG(): PanelConfig {
     },
     frame: {
       enabled: true,
-      width: 10,
+      widthTop: 10,
+      widthBottom: 10,
+      widthLeft: 10,
+      widthRight: 10,
       cornerRadius: 3,
     },
     fiducials: {
@@ -171,9 +186,9 @@ export function DEFAULT_PANEL_CONFIG(): PanelConfig {
     },
     toolingHoles: {
       enabled: true,
-      diameter: 3.2,
+      diameter: 3,
       positions: ['top-left', 'top-right', 'bottom-left', 'bottom-right'],
-      offsetMm: 5,
+      offsetMm: 10,
     },
     tabs: {
       width: 5,
@@ -187,10 +202,12 @@ export function DEFAULT_PANEL_CONFIG(): PanelConfig {
       perforation: 'pcb-side',
       perforationHoleDiameter: 0.3,
       perforationHoleSpacing: 0.6,
+      manualPlacement: false,
     },
     supports: {
       enabled: true,
-      width: 10,
+      widthColumns: 10,
+      widthRows: 10,
       xGaps: [],
       yGaps: [],
     },
@@ -207,23 +224,42 @@ export function DEFAULT_PANEL_CONFIG(): PanelConfig {
 export function migratePanelConfig(raw: Record<string, any>): PanelConfig {
   const defaults = DEFAULT_PANEL_CONFIG()
 
-  // Migrate old supports shape { enabled, width } -> { width, xGaps, yGaps }
+  // Migrate old supports shape { enabled, width } -> { widthColumns, widthRows, xGaps, yGaps }
   let supports = defaults.supports
   if (raw.supports) {
+    const legacyWidth = raw.supports.width ?? defaults.supports.widthColumns
+    const widthColumns = raw.supports.widthColumns ?? legacyWidth
+    const widthRows = raw.supports.widthRows ?? legacyWidth
     if ('xGaps' in raw.supports || 'yGaps' in raw.supports) {
       supports = {
         enabled: raw.supports.enabled ?? defaults.supports.enabled,
-        width: raw.supports.width ?? defaults.supports.width,
+        widthColumns,
+        widthRows,
         xGaps: raw.supports.xGaps ?? [],
         yGaps: raw.supports.yGaps ?? [],
       }
     } else {
       supports = {
         enabled: raw.supports.enabled ?? defaults.supports.enabled,
-        width: raw.supports.width ?? defaults.supports.width,
+        widthColumns,
+        widthRows,
         xGaps: [],
         yGaps: [],
       }
+    }
+  }
+
+  // Migrate old frame shape { enabled, width, cornerRadius } -> per-side widths.
+  let frame = defaults.frame
+  if (raw.frame) {
+    const legacyWidth = raw.frame.width ?? defaults.frame.widthTop
+    frame = {
+      enabled: raw.frame.enabled ?? defaults.frame.enabled,
+      widthTop: raw.frame.widthTop ?? legacyWidth,
+      widthBottom: raw.frame.widthBottom ?? legacyWidth,
+      widthLeft: raw.frame.widthLeft ?? legacyWidth,
+      widthRight: raw.frame.widthRight ?? legacyWidth,
+      cornerRadius: raw.frame.cornerRadius ?? defaults.frame.cornerRadius,
     }
   }
 
@@ -256,6 +292,7 @@ export function migratePanelConfig(raw: Record<string, any>): PanelConfig {
       perforation: raw.tabs.perforation ?? defaults.tabs.perforation,
       perforationHoleDiameter: raw.tabs.perforationHoleDiameter ?? defaults.tabs.perforationHoleDiameter,
       perforationHoleSpacing: raw.tabs.perforationHoleSpacing ?? defaults.tabs.perforationHoleSpacing,
+      manualPlacement: raw.tabs.manualPlacement ?? hasLegacyOverrides,
     }
   }
 
@@ -265,7 +302,7 @@ export function migratePanelConfig(raw: Record<string, any>): PanelConfig {
     separationType: raw.separationType ?? defaults.separationType,
     routingToolDiameter: raw.routingToolDiameter ?? defaults.routingToolDiameter,
     edges: raw.edges ?? defaults.edges,
-    frame: raw.frame ?? defaults.frame,
+    frame,
     fiducials: raw.fiducials ?? defaults.fiducials,
     toolingHoles: raw.toolingHoles ?? defaults.toolingHoles,
     tabs,

@@ -74,7 +74,7 @@ serve(async (req: Request) => {
     }
 
     // Ensure caller is an active admin of this team.
-    const { data: callerMembership } = await supabaseAdmin
+    const { data: callerMembership, error: callerError } = await supabaseAdmin
       .from('team_members')
       .select('id')
       .eq('team_id', team_id)
@@ -83,6 +83,13 @@ serve(async (req: Request) => {
       .eq('status', 'active')
       .maybeSingle()
 
+    if (callerError) {
+      console.error('admin-password-reset caller lookup error:', callerError)
+      return new Response(JSON.stringify({ error: 'Failed to verify admin status' }), {
+        status: 500,
+        headers: corsHeaders,
+      })
+    }
     if (!callerMembership) {
       return new Response(JSON.stringify({ error: 'Only team admins can reset member passwords' }), {
         status: 403,
@@ -91,13 +98,20 @@ serve(async (req: Request) => {
     }
 
     // Ensure target user belongs to the same team.
-    const { data: targetMembership } = await supabaseAdmin
+    const { data: targetMembership, error: targetError } = await supabaseAdmin
       .from('team_members')
       .select('id')
       .eq('team_id', team_id)
       .eq('user_id', user_id)
       .maybeSingle()
 
+    if (targetError) {
+      console.error('admin-password-reset target lookup error:', targetError)
+      return new Response(JSON.stringify({ error: 'Failed to verify target membership' }), {
+        status: 500,
+        headers: corsHeaders,
+      })
+    }
     if (!targetMembership) {
       return new Response(JSON.stringify({ error: 'Target user is not a member of this team' }), {
         status: 404,

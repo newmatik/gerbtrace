@@ -71,7 +71,7 @@ export function useTeam() {
 
       if (memError) {
         console.warn('[useTeam] Failed to fetch memberships:', memError.message)
-        // Keep existing team state on transient fetch errors.
+        teamsLoaded.value = true
         return
       }
 
@@ -92,7 +92,7 @@ export function useTeam() {
 
       if (teamError) {
         console.warn('[useTeam] Failed to fetch teams:', teamError.message)
-        // Keep existing team state on transient fetch errors.
+        teamsLoaded.value = true
         return
       } else {
         teams.value = (teamData ?? []) as Team[]

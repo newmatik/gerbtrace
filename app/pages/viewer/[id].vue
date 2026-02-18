@@ -282,10 +282,10 @@
         >
           <button
             class="text-[11px] font-medium px-2 py-0.5 rounded transition-colors"
-            :class="sidebarTab === 'layers'
+            :class="sidebarTab === 'files'
               ? 'bg-neutral-200/80 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100'
               : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'"
-            @click="sidebarTab = 'layers'"
+            @click="sidebarTab = 'files'"
           >
             Files
           </button>
@@ -360,7 +360,7 @@
         </div>
 
         <!-- Files view (Gerber layers + Documents) -->
-        <template v-if="sidebarTab === 'layers'">
+        <template v-if="sidebarTab === 'files'">
           <div class="p-4 pt-2">
             <ImportPanel
               :packet="1"
@@ -384,6 +384,7 @@
             @remove-layer="removeLayer"
             @select-document="handleDocumentSelect"
             @remove-document="handleDocumentRemove"
+            @update-document-type="handleDocumentTypeUpdate"
           />
         </template>
 
@@ -534,8 +535,6 @@
           :team-panel-limits="teamPanelLimits"
           :thickness-mm="pcbData?.thicknessMm ?? 1.6"
           :edge-constraints="panelEdgeConstraints"
-          :copper-trees="copperTrees"
-          :outline-origin-mm="_outlineOriginMm"
           @update:panel-data="handlePanelDataUpdate"
           @update:danger-zone="(dz) => panelDangerZone = dz"
         />
@@ -863,15 +862,18 @@ const canvasAreaBg = computed(() =>
 const { sidebarWidth, dragging: sidebarDragging, onDragStart: onSidebarDragStart } = useSidebarWidth()
 
 // ── Sidebar tab (Files / PCB / Panel / SMD / THT / BOM / Pricing / Docs) ──
-type SidebarTab = 'layers' | 'pcb' | 'panel' | 'smd' | 'tht' | 'bom' | 'pricing' | 'docs'
-const VALID_TABS: SidebarTab[] = ['layers', 'pcb', 'panel', 'smd', 'tht', 'bom', 'pricing', 'docs']
+type SidebarTab = 'files' | 'pcb' | 'panel' | 'smd' | 'tht' | 'bom' | 'pricing' | 'docs'
+const VALID_TABS: SidebarTab[] = ['files', 'pcb', 'panel', 'smd', 'tht', 'bom', 'pricing', 'docs']
 
 const router = useRouter()
-const initialTab = (route.query.tab as string) || 'layers'
-const sidebarTab = ref<SidebarTab>(VALID_TABS.includes(initialTab as SidebarTab) ? initialTab as SidebarTab : 'layers')
+const initialTabRaw = (route.query.tab as string) || 'files'
+// Back-compat: old URLs used `tab=layers` for the Files tab.
+const initialTab = initialTabRaw === 'layers' ? 'files' : initialTabRaw
+const sidebarTab = ref<SidebarTab>(VALID_TABS.includes(initialTab as SidebarTab) ? initialTab as SidebarTab : 'files')
 
 onMounted(() => {
-  const clientTab = new URLSearchParams(window.location.search).get('tab') || 'layers'
+  const raw = new URLSearchParams(window.location.search).get('tab') || 'files'
+  const clientTab = raw === 'layers' ? 'files' : raw
   if (VALID_TABS.includes(clientTab as SidebarTab) && clientTab !== sidebarTab.value) {
     sidebarTab.value = clientTab as SidebarTab
   }
@@ -880,11 +882,12 @@ onMounted(() => {
 // Sync sidebar tab to URL query parameter
 watch(sidebarTab, (tab) => {
   const query = { ...route.query }
-  if (tab === 'layers') {
-    delete query.tab
-  } else {
-    query.tab = tab
-  }
+  // Keep URLs clean for first-load defaults, but persist an explicit "layers" tab
+  // once the user is already using the `tab` query param (so reload preserves Files).
+  if (tab === 'files') {
+    if (route.query.tab) query.tab = 'files'
+    else delete query.tab
+  } else query.tab = tab
   router.replace({ query })
 })
 
@@ -1400,33 +1403,6 @@ const _gerberBoardSizeMm = computed<{ width: number; height: number } | undefine
   return { width: bw * toMm, height: bh * toMm }
 })
 
-const _outlineOriginMm = computed<{ x: number; y: number } | null>(() => {
-  const ls = layers.value
-  if (ls.length === 0) return null
-
-  const outlineLayer = ls.find(l => l.type === 'Outline') || ls.find(l => l.type === 'Keep-Out')
-  if (outlineLayer && !isPnPLayer(outlineLayer.type)) {
-    const tree = _parseLayerTree(outlineLayer)
-    if (tree && tree.children.length > 0 && !isEmpty(tree.bounds as BoundingBox)) {
-      const b = tree.bounds as BoundingBox
-      const toMm = tree.units === 'in' ? 25.4 : 1
-      return { x: b[0] * toMm, y: b[1] * toMm }
-    }
-  }
-
-  let bounds: BoundingBox = emptyBounds()
-  let units: 'mm' | 'in' = 'mm'
-  for (const layer of ls) {
-    if (isPnPLayer(layer.type)) continue
-    const tree = _parseLayerTree(layer)
-    if (!tree || tree.children.length === 0) continue
-    bounds = mergeBounds(bounds, tree.bounds as BoundingBox)
-    units = tree.units
-  }
-  if (isEmpty(bounds)) return null
-  const toMm = units === 'in' ? 25.4 : 1
-  return { x: bounds[0] * toMm, y: bounds[1] * toMm }
-})
 
 function _parseLayerTree(layer: LayerInfo): ImageTree | null {
   const key = layer.file.fileName
@@ -1485,17 +1461,6 @@ const downloadMenuItems = computed(() => {
 
 const outlineLayer = computed(() => layers.value.find(l => l.type === 'Outline') || undefined)
 const hasOutline = computed(() => layers.value.some(l => l.type === 'Outline'))
-
-const copperTrees = computed(() => {
-  const copperTypes = new Set(['Top Copper', 'Bottom Copper'])
-  const trees: import('@lib/gerber/types').ImageTree[] = []
-  for (const layer of layers.value) {
-    if (!copperTypes.has(layer.type)) continue
-    const tree = _parseLayerTree(layer)
-    if (tree) trees.push(tree)
-  }
-  return trees.length ? trees : null
-})
 
 // ── Pick & Place ──
 const pnp = usePickAndPlace(layers)
@@ -1807,7 +1772,7 @@ async function handleDocumentRemove(id: string) {
   }
   // Switch away from docs tab when all documents are removed
   if (documents.value.length === 0 && sidebarTab.value === 'docs') {
-    sidebarTab.value = 'layers'
+    sidebarTab.value = 'files'
   }
   // Remove from storage
   if (isTeamProject && doc.dbId && doc.storagePath) {
@@ -1876,7 +1841,7 @@ const showBomFieldMapping = ref(false)
 const hadExplicitTab = !!route.query.tab
 
 watch(pnp.hasPnP, (has) => {
-  if (has && sidebarTab.value === 'layers' && !hadExplicitTab) {
+  if (has && sidebarTab.value === 'files' && !hadExplicitTab) {
     sidebarTab.value = 'smd'
   }
 })
@@ -1889,7 +1854,7 @@ watch(isPanelizedMode, (enabled) => {
 
 // Auto-switch to BOM tab when BOM data appears and no PnP
 watch(bom.hasBom, (has) => {
-  if (has && sidebarTab.value === 'layers' && !pnp.hasPnP.value && !hadExplicitTab) {
+  if (has && sidebarTab.value === 'files' && !pnp.hasPnP.value && !hadExplicitTab) {
     sidebarTab.value = 'bom'
   }
 })

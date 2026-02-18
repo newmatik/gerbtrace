@@ -41,6 +41,7 @@
             autoresize
             :disabled="sending"
             :ui="{ root: 'w-full' }"
+            @paste="onPaste"
           />
 
           <!-- Attachments drop zone -->
@@ -57,7 +58,6 @@
             @dragover.prevent="dragging = true"
             @dragleave.prevent="dragging = false"
             @drop.prevent="onDrop"
-            @paste="onPaste"
           >
             <div
               v-if="attachments.length === 0"
@@ -277,6 +277,7 @@ watch(open, (isOpen) => {
     description.value = ''
     email.value = ''
     sent.value = false
+    dragging.value = false
     attachments.value.forEach((a) => { if (a.preview) URL.revokeObjectURL(a.preview) })
     attachments.value = []
   }

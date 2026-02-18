@@ -508,6 +508,18 @@ export function useTeamProjects() {
     return { error }
   }
 
+  // Clear module-scoped caches on logout to prevent cross-session data leaks.
+  const { isAuthenticated } = useAuth()
+  watch(isAuthenticated, (authed) => {
+    if (!authed) {
+      projectByIdCache.clear()
+      projectFilesByPacketCache.clear()
+      fileTextCache.clear()
+      projectDocumentsCache.clear()
+      documentBlobCache.clear()
+    }
+  })
+
   // Auto-fetch when team changes
   watch(currentTeamId, () => {
     if (!currentTeamId.value) {
