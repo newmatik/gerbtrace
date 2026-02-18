@@ -35,7 +35,6 @@ src-tauri/.tauri-private-key.pub
 
 # Generated output
 dist/
-public/packages/libraries/_tree.json
 
 .local
 public/mycenter-packages/

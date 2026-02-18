@@ -18,7 +18,7 @@
     "packages:tree:manifest": "node scripts/build-packages-manifest.mjs",
     "packages:tree:check": "node scripts/check-packages.mjs",
     "packages:extract-mycenter": "node scripts/extract-mycenter-packages.mjs",
-    "precommit": "npm run packages:manifest && npm run packages:check",
+    "precommit": "npm run packages:manifest && npm run packages:check && git add -u public/packages/libraries/_tree.json public/packages/_manifest.json 2>/dev/null || true",
     "dev": "npm run precommit && nuxt dev",
     "build": "nuxt build",
     "generate": "nuxt generate",
