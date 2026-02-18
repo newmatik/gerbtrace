@@ -21,9 +21,6 @@ export default defineNuxtConfig({
     org: process.env.SENTRY_ORG || 'newmatik',
     project: process.env.SENTRY_PROJECT || 'gerbtrace',
     authToken: process.env.SENTRY_AUTH_TOKEN,
-    sourcemaps: {
-      enabled: process.env.NODE_ENV === 'production',
-    },
   },
 
   sourcemap: { client: true, server: false },
