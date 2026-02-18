@@ -7,7 +7,7 @@ import type { User, Session, AuthError } from '@supabase/supabase-js'
  * sign-out, and reactive user/session refs. Token refresh is automatic.
  */
 
-const WEB_ORIGIN = 'https://www.gerbtrace.com'
+const WEB_ORIGIN = 'https://gerbtrace.com'
 
 /**
  * Return the origin to use for email-based auth redirects (magic link,

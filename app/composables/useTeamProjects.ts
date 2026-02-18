@@ -74,41 +74,106 @@ export interface TeamProjectDocument {
   updated_at: string
 }
 
+const TEAM_PROJECTS_CACHE_TTL_MS = 60_000
+const inFlightByTeam = new Map<string, Promise<TeamProject[]>>()
+const projectByIdCache = new Map<string, TeamProject>()
+const projectFilesByPacketCache = new Map<string, TeamProjectFile[]>()
+const fileTextCache = new Map<string, string>()
+const projectDocumentsCache = new Map<string, TeamProjectDocument[]>()
+const documentBlobCache = new Map<string, Blob>()
+
+function getProjectPacketKey(projectId: string, packet: number) {
+  return `${projectId}:${packet}`
+}
+
 export function useTeamProjects() {
   const supabase = useSupabase()
   const { currentTeamId } = useTeam()
 
-  const projects = ref<TeamProject[]>([])
-  const projectsLoading = ref(false)
+  const projects = useState<TeamProject[]>('team-projects:list', () => [])
+  const projectsLoading = useState<boolean>('team-projects:loading', () => false)
+  const projectsByTeam = useState<Record<string, TeamProject[]>>('team-projects:by-team', () => ({}))
+  const fetchedAtByTeam = useState<Record<string, number>>('team-projects:fetched-at', () => ({}))
+
+  function setProjectsForTeam(teamId: string, nextProjects: TeamProject[]) {
+    projectsByTeam.value = {
+      ...projectsByTeam.value,
+      [teamId]: nextProjects,
+    }
+    fetchedAtByTeam.value = {
+      ...fetchedAtByTeam.value,
+      [teamId]: Date.now(),
+    }
+    if (currentTeamId.value === teamId) {
+      projects.value = nextProjects
+    }
+  }
 
   /** Fetch all projects for the current team */
-  async function fetchProjects() {
-    if (!currentTeamId.value) {
+  async function fetchProjects(options?: { force?: boolean; background?: boolean }): Promise<TeamProject[]> {
+    const teamId = currentTeamId.value
+    if (!teamId) {
       projects.value = []
-      return
+      return []
     }
 
-    projectsLoading.value = true
-    try {
+    const cached = projectsByTeam.value[teamId]
+    const fetchedAt = fetchedAtByTeam.value[teamId] ?? 0
+    const isFresh = Date.now() - fetchedAt < TEAM_PROJECTS_CACHE_TTL_MS
+    const hasCached = Array.isArray(cached)
+
+    if (!options?.force && hasCached && isFresh) {
+      if (currentTeamId.value === teamId) {
+        projects.value = cached
+      }
+      return cached
+    }
+
+    const inFlight = inFlightByTeam.get(teamId)
+    if (inFlight) return inFlight
+
+    if (!options?.background || !hasCached) {
+      projectsLoading.value = true
+    }
+
+    const request = (async () => {
       const { data, error } = await supabase
         .from('projects')
         .select('*')
-        .eq('team_id', currentTeamId.value)
+        .eq('team_id', teamId)
         .order('updated_at', { ascending: false })
 
       if (error) {
         console.warn('[useTeamProjects] Failed to fetch:', error.message)
-        projects.value = []
-      } else {
-        projects.value = (data ?? []) as TeamProject[]
+        return hasCached ? cached : []
       }
+
+      const nextProjects = (data ?? []) as TeamProject[]
+      setProjectsForTeam(teamId, nextProjects)
+      return nextProjects
+    })()
+
+    inFlightByTeam.set(teamId, request)
+
+    try {
+      const result = await request
+      if (currentTeamId.value === teamId) {
+        projects.value = result
+      }
+      return result
     } finally {
-      projectsLoading.value = false
+      inFlightByTeam.delete(teamId)
+      if (currentTeamId.value === teamId) {
+        projectsLoading.value = false
+      }
     }
   }
 
   /** Get a single project by ID */
   async function getProject(projectId: string): Promise<TeamProject | null> {
+    const cached = projectByIdCache.get(projectId)
+    if (cached) return cached
+
     const { data, error } = await supabase
       .from('projects')
       .select('*')
@@ -116,12 +181,15 @@ export function useTeamProjects() {
       .single()
 
     if (error) return null
-    return data as TeamProject
+    const project = data as TeamProject
+    projectByIdCache.set(projectId, project)
+    return project
   }
 
   /** Create a new team project */
   async function createProject(mode: 'viewer' | 'compare', name?: string) {
-    if (!currentTeamId.value) return { project: null, error: new Error('No team selected') }
+    const teamId = currentTeamId.value
+    if (!teamId) return { project: null, error: new Error('No team selected') }
 
     const userId = (await supabase.auth.getUser()).data.user?.id
     if (!userId) return { project: null, error: new Error('Not authenticated') }
@@ -129,7 +197,7 @@ export function useTeamProjects() {
     const { data, error } = await supabase
       .from('projects')
       .insert({
-        team_id: currentTeamId.value,
+        team_id: teamId,
         name: name ?? `New ${mode === 'viewer' ? 'Viewer' : 'Compare'} Project`,
         mode,
         created_by: userId,
@@ -138,7 +206,9 @@ export function useTeamProjects() {
       .single()
 
     if (!error && data) {
-      projects.value.unshift(data as TeamProject)
+      projectByIdCache.set((data as TeamProject).id, data as TeamProject)
+      const nextProjects = [data as TeamProject, ...projects.value]
+      setProjectsForTeam(teamId, nextProjects)
     }
 
     return { project: data as TeamProject | null, error }
@@ -146,6 +216,9 @@ export function useTeamProjects() {
 
   /** Update project metadata */
   async function updateProject(projectId: string, updates: Partial<TeamProject>) {
+    const teamId = currentTeamId.value
+    if (!teamId) return { data: null, error: new Error('No team selected') }
+
     const { data, error } = await supabase
       .from('projects')
       .update(updates)
@@ -154,8 +227,13 @@ export function useTeamProjects() {
       .maybeSingle()
 
     if (!error && data) {
+      projectByIdCache.set(projectId, data as TeamProject)
       const idx = projects.value.findIndex(p => p.id === projectId)
-      if (idx >= 0) projects.value[idx] = data as TeamProject
+      if (idx >= 0) {
+        const nextProjects = [...projects.value]
+        nextProjects[idx] = data as TeamProject
+        setProjectsForTeam(teamId, nextProjects)
+      }
     }
 
     return { data: data as TeamProject | null, error }
@@ -163,13 +241,22 @@ export function useTeamProjects() {
 
   /** Delete a project (admin only) */
   async function deleteProject(projectId: string) {
+    const teamId = currentTeamId.value
+    if (!teamId) return { error: new Error('No team selected') }
+
     const { error } = await supabase
       .from('projects')
       .delete()
       .eq('id', projectId)
 
     if (!error) {
-      projects.value = projects.value.filter(p => p.id !== projectId)
+      projectByIdCache.delete(projectId)
+      projectFilesByPacketCache.forEach((_, key) => {
+        if (key.startsWith(`${projectId}:`)) projectFilesByPacketCache.delete(key)
+      })
+      projectDocumentsCache.delete(projectId)
+      const nextProjects = projects.value.filter(p => p.id !== projectId)
+      setProjectsForTeam(teamId, nextProjects)
     }
 
     return { error }
@@ -206,6 +293,10 @@ export function useTeamProjects() {
 
   /** Get files for a project */
   async function getProjectFiles(projectId: string, packet = 0): Promise<TeamProjectFile[]> {
+    const key = getProjectPacketKey(projectId, packet)
+    const cached = projectFilesByPacketCache.get(key)
+    if (cached) return cached
+
     const { data, error } = await supabase
       .from('project_files')
       .select('*')
@@ -217,7 +308,9 @@ export function useTeamProjects() {
       console.error('[useTeamProjects] Failed to fetch project files:', projectId, error.message)
       return []
     }
-    return (data ?? []) as TeamProjectFile[]
+    const files = (data ?? []) as TeamProjectFile[]
+    projectFilesByPacketCache.set(key, files)
+    return files
   }
 
   /** Upload a file to a team project */
@@ -257,6 +350,10 @@ export function useTeamProjects() {
 
     if (error) {
       console.error('[useTeamProjects] File record upsert failed:', fileName, error.message)
+    } else if (data) {
+      const key = getProjectPacketKey(projectId, packet)
+      projectFilesByPacketCache.delete(key)
+      fileTextCache.set(storagePath, content)
     }
 
     return { file: data as TeamProjectFile | null, error }
@@ -264,6 +361,9 @@ export function useTeamProjects() {
 
   /** Download a file's content */
   async function downloadFile(storagePath: string): Promise<string | null> {
+    const cached = fileTextCache.get(storagePath)
+    if (typeof cached === 'string') return cached
+
     const { data, error } = await supabase.storage
       .from('gerber-files')
       .download(storagePath)
@@ -272,11 +372,16 @@ export function useTeamProjects() {
       console.error('[useTeamProjects] File download failed:', storagePath, error?.message)
       return null
     }
-    return await data.text()
+    const text = await data.text()
+    fileTextCache.set(storagePath, text)
+    return text
   }
 
   /** Delete a file */
   async function deleteFile(fileId: string, storagePath: string) {
+    const maybeProjectId = storagePath.split('/')[1]
+    const maybePacket = Number(storagePath.split('/')[2])
+
     // Delete from storage
     await supabase.storage.from('gerber-files').remove([storagePath])
 
@@ -286,6 +391,13 @@ export function useTeamProjects() {
       .delete()
       .eq('id', fileId)
 
+    if (!error) {
+      fileTextCache.delete(storagePath)
+      if (maybeProjectId && Number.isFinite(maybePacket)) {
+        projectFilesByPacketCache.delete(getProjectPacketKey(maybeProjectId, maybePacket))
+      }
+    }
+
     return { error }
   }
 
@@ -293,6 +405,9 @@ export function useTeamProjects() {
 
   /** Get documents for a project */
   async function getProjectDocuments(projectId: string): Promise<TeamProjectDocument[]> {
+    const cached = projectDocumentsCache.get(projectId)
+    if (cached) return cached
+
     const { data, error } = await supabase
       .from('project_documents')
       .select('*')
@@ -303,7 +418,9 @@ export function useTeamProjects() {
       console.error('[useTeamProjects] Failed to fetch project documents:', projectId, error.message)
       return []
     }
-    return (data ?? []) as TeamProjectDocument[]
+    const docs = (data ?? []) as TeamProjectDocument[]
+    projectDocumentsCache.set(projectId, docs)
+    return docs
   }
 
   /** Upload a PDF document to a team project */
@@ -338,6 +455,9 @@ export function useTeamProjects() {
 
     if (error) {
       console.error('[useTeamProjects] Document record upsert failed:', fileName, error.message)
+    } else {
+      projectDocumentsCache.delete(projectId)
+      documentBlobCache.set(storagePath, data)
     }
 
     return { doc: record as TeamProjectDocument | null, error }
@@ -345,6 +465,9 @@ export function useTeamProjects() {
 
   /** Download a document's binary content */
   async function downloadDocument(storagePath: string): Promise<Blob | null> {
+    const cached = documentBlobCache.get(storagePath)
+    if (cached) return cached
+
     const { data, error } = await supabase.storage
       .from('gerber-files')
       .download(storagePath)
@@ -353,6 +476,7 @@ export function useTeamProjects() {
       console.error('[useTeamProjects] Document download failed:', storagePath, error?.message)
       return null
     }
+    documentBlobCache.set(storagePath, data)
     return data
   }
 
@@ -368,6 +492,7 @@ export function useTeamProjects() {
 
   /** Delete a document */
   async function deleteDocument(docId: string, storagePath: string) {
+    const maybeProjectId = storagePath.split('/')[1]
     await supabase.storage.from('gerber-files').remove([storagePath])
 
     const { error } = await supabase
@@ -375,12 +500,29 @@ export function useTeamProjects() {
       .delete()
       .eq('id', docId)
 
+    if (!error) {
+      documentBlobCache.delete(storagePath)
+      if (maybeProjectId) projectDocumentsCache.delete(maybeProjectId)
+    }
+
     return { error }
   }
 
   // Auto-fetch when team changes
   watch(currentTeamId, () => {
-    fetchProjects()
+    if (!currentTeamId.value) {
+      projects.value = []
+      return
+    }
+
+    const cached = projectsByTeam.value[currentTeamId.value]
+    if (cached) {
+      projects.value = cached
+      void fetchProjects({ background: true })
+      return
+    }
+
+    void fetchProjects()
   }, { immediate: true })
 
   return {

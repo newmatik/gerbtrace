@@ -1,4 +1,4 @@
-import type { ImageTree, RectShape } from '@lib/gerber/types'
+import type { ImageTree } from '@lib/gerber/types'
 import type { PanelConfig, AddedRoutingPath } from './panel-types'
 import { computePanelLayout, type PanelLayout } from './panel-geometry'
 
@@ -18,8 +18,9 @@ export const DANGER_INSET_MM = 2.0
 const ROUTE_MARGIN_MM = 1.0
 
 /**
- * Extract rectangular SMD pads from a Gerber copper ImageTree.
- * SMD pads are square/rectangular aperture flashes — never circular or oval.
+ * Extract rectangular SMD pad bounding boxes from a Gerber copper ImageTree.
+ * Only rect shapes qualify (square/rectangular aperture flashes, including
+ * obrounds). Circles, polygons, and layered (THT) shapes are excluded.
  */
 export function extractSmdPads(tree: ImageTree): SmdPadRect[] {
   const pads: SmdPadRect[] = []
@@ -28,24 +29,45 @@ export function extractSmdPads(tree: ImageTree): SmdPadRect[] {
   for (const graphic of tree.children) {
     if (graphic.type !== 'shape' || graphic.erase) continue
     const shape = graphic.shape
-    if (shape.type !== 'rect') continue
 
-    const rect = shape as RectShape
-    const w = rect.w * toMm
-    const h = rect.h * toMm
+    let resolved = shape
+    if (shape.type === 'layered') {
+      const sub = shape.shapes.find(s => !(s as any).erase)
+      if (!sub) continue
+      resolved = sub
+    }
 
-    if (w < 0.1 || h < 0.1) continue
-    if (w > 10 || h > 10) continue
-
-    const aspect = Math.max(w, h) / Math.min(w, h)
-    if (aspect > 8) continue
-
-    pads.push({
-      xMm: rect.x * toMm,
-      yMm: rect.y * toMm,
-      wMm: w,
-      hMm: h,
-    })
+    if (resolved.type === 'rect') {
+      const w = resolved.w * toMm
+      const h = resolved.h * toMm
+      if (w < 0.1 || h < 0.1 || w > 10 || h > 10) continue
+      if (Math.max(w, h) / Math.min(w, h) > 8) continue
+      pads.push({ xMm: resolved.x * toMm, yMm: resolved.y * toMm, wMm: w, hMm: h })
+    } else if (resolved.type === 'polygon') {
+      const pts = resolved.points
+      if (pts.length < 3 || pts.length > 8) continue
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+      for (const [px, py] of pts) {
+        if (px < minX) minX = px
+        if (py < minY) minY = py
+        if (px > maxX) maxX = px
+        if (py > maxY) maxY = py
+      }
+      const w = (maxX - minX) * toMm
+      const h = (maxY - minY) * toMm
+      if (w < 0.1 || h < 0.1 || w > 10 || h > 10) continue
+      if (Math.max(w, h) / Math.min(w, h) > 8) continue
+      const bboxArea = w * h
+      let crossSum = 0
+      for (let i = 0; i < pts.length; i++) {
+        const [x1, y1] = pts[i]
+        const [x2, y2] = pts[(i + 1) % pts.length]
+        crossSum += (x1 * y2 - x2 * y1)
+      }
+      const polyArea = Math.abs(crossSum) * 0.5 * toMm * toMm
+      if (polyArea < bboxArea * 0.7) continue
+      pads.push({ xMm: minX * toMm, yMm: minY * toMm, wMm: w, hMm: h })
+    }
   }
   return pads
 }

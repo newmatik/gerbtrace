@@ -152,9 +152,19 @@ function computeSceneCacheKey(): string {
 
 // ── Board rotation helpers ──
 
+/**
+ * Effective visual rotation in degrees.
+ * When mirrored, we invert the rotation sign so the composed transform behaves
+ * like "rotate first, then mirror", matching 0° mirror behaviour at all angles.
+ */
+function getEffectiveRotationDeg(): number {
+  const deg = props.boardRotation ?? 0
+  return props.mirrored ? -deg : deg
+}
+
 /** Current board rotation in radians */
 function getRotationRad(): number {
-  const deg = props.boardRotation ?? 0
+  const deg = getEffectiveRotationDeg()
   return (deg * Math.PI) / 180
 }
 
@@ -164,7 +174,7 @@ function getRotationRad(): number {
  * system used by the transform, accounting for the visual rotation.
  */
 function unrotateScreenPoint(sx: number, sy: number): { x: number; y: number } {
-  const deg = props.boardRotation ?? 0
+  const deg = getEffectiveRotationDeg()
   if (deg === 0) return { x: sx, y: sy }
   const { cssWidth, cssHeight } = getCssDimensions()
   const cx = cssWidth / 2
@@ -180,7 +190,7 @@ function unrotateScreenPoint(sx: number, sy: number): { x: number; y: number } {
 
 /** Rotate a screen point around the canvas center by board rotation. */
 function rotateScreenPoint(sx: number, sy: number, cssWidth: number, cssHeight: number): { x: number; y: number } {
-  const deg = props.boardRotation ?? 0
+  const deg = getEffectiveRotationDeg()
   if (deg === 0) return { x: sx, y: sy }
   const cx = cssWidth / 2
   const cy = cssHeight / 2
@@ -278,7 +288,7 @@ function getImageTree(layer: LayerInfo): ImageTree | null {
 
 function onWheel(e: WheelEvent) {
   if (canvasEl.value) {
-    props.interaction.handleWheel(e, canvasEl.value, props.boardRotation ?? 0)
+    props.interaction.handleWheel(e, canvasEl.value, getEffectiveRotationDeg())
     markWheelActivity()
   }
 }
@@ -360,7 +370,7 @@ function onDblClick(e: MouseEvent) {
 
 function onMouseMove(e: MouseEvent) {
   // Always update pan if dragging (right-click drag)
-  props.interaction.handleMouseMove(e, { invertPanX: !!props.mirrored, rotationDeg: props.boardRotation ?? 0 })
+  props.interaction.handleMouseMove(e, { invertPanX: !!props.mirrored, rotationDeg: getEffectiveRotationDeg() })
 
   // Alignment mode: track cursor with snap
   if (props.alignMode && props.alignMode !== 'idle' && canvasEl.value) {
@@ -1433,7 +1443,7 @@ function draw() {
   }
 
   // Auto-fit on first render, when bounds change, or when reset is requested (scale <= 0)
-  const rotDeg = props.boardRotation ?? 0
+  const rotDeg = getEffectiveRotationDeg()
   const rotRad = getRotationRad()
   const needsAutoFit = !autoFitDone.value || props.interaction.transform.value.scale <= 0
   const boundsChanged = fitBounds.join(',') !== currentBounds.value?.join(',')

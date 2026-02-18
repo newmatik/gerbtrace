@@ -494,6 +494,8 @@
           :is-fetching-pricing="elexess.isFetching.value"
           :pricing-queue="(elexess.pricingQueue.value as PricingQueueItem[])"
           :board-quantity="bom.boardQuantity.value"
+          :team-currency="stableTeamCurrency"
+          :exchange-rate="elexess.exchangeRate.value"
           :pnp-designators="pnpDesignators"
           @update:search-query="bom.searchQuery.value = $event"
           @update:board-quantity="bom.boardQuantity.value = $event"
@@ -811,6 +813,12 @@ const { getProject, getFiles, addFiles, upsertFiles, clearFiles, renameFile, rem
 // ── Team project support ──
 const teamProjectIdRef = ref(teamProjectId)
 const { currentTeam, currentTeamRole, currentTeamId, isAdmin: isTeamAdmin } = useTeam()
+const stableTeamCurrency = ref<'USD' | 'EUR'>('EUR')
+watch(() => currentTeam.value?.default_currency, (currency) => {
+  if (currency === 'USD' || currency === 'EUR') {
+    stableTeamCurrency.value = currency
+  }
+}, { immediate: true })
 
 /** Resolves with the team ID once it becomes available (for async write paths). */
 function waitForTeamId(): Promise<string> {

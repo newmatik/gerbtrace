@@ -273,12 +273,14 @@
             <template v-if="!line.dnp">
               <template v-for="offer in [getLineBestOffer(line)]" :key="'price'">
                 <template v-if="offer">
-                  <span class="text-[10px] text-green-600 dark:text-green-400 font-medium shrink-0 tabular-nums">
-                    {{ formatCurrency(offer.unitPrice, offer.currency) }}/pc
-                  </span>
-                  <span class="text-[10px] text-neutral-400 shrink-0 tabular-nums">
-                    {{ formatCurrency(offer.lineValue, offer.currency) }}
-                  </span>
+                  <template v-for="display in [getDisplayOffer(offer)]" :key="`${line.id}-${display.currency}`">
+                    <span class="text-[10px] text-green-600 dark:text-green-400 font-medium shrink-0 tabular-nums">
+                      {{ formatCurrency(display.unitPrice, display.currency) }}/pc
+                    </span>
+                    <span class="text-[10px] text-neutral-400 shrink-0 tabular-nums">
+                      {{ formatCurrency(display.lineValue, display.currency) }}
+                    </span>
+                  </template>
                 </template>
               </template>
             </template>
@@ -392,12 +394,14 @@
                       <span class="text-right tabular-nums text-neutral-500">
                         {{ formatNumber(offer.moq) }}
                       </span>
-                      <span class="text-right tabular-nums font-medium" :class="offer.stock >= line.quantity * boardQuantity && oi === 0 ? 'text-green-600 dark:text-green-400' : 'text-neutral-600 dark:text-neutral-300'">
-                        {{ formatCurrency(offer.unitPrice, offer.currency) }}
-                      </span>
-                      <span class="text-right tabular-nums text-neutral-500">
-                        {{ formatCurrency(offer.lineValue, offer.currency) }}
-                      </span>
+                      <template v-for="display in [getDisplayOffer(offer)]" :key="`${offer.supplier}-${oi}-${display.currency}`">
+                        <span class="text-right tabular-nums font-medium" :class="offer.stock >= line.quantity * boardQuantity && oi === 0 ? 'text-green-600 dark:text-green-400' : 'text-neutral-600 dark:text-neutral-300'">
+                          {{ formatCurrency(display.unitPrice, display.currency) }}
+                        </span>
+                        <span class="text-right tabular-nums text-neutral-500">
+                          {{ formatCurrency(display.lineValue, display.currency) }}
+                        </span>
+                      </template>
                     </div>
                   </div>
                   </template>
@@ -466,7 +470,7 @@
 <script setup lang="ts">
 import type { BomLine, BomPricingCache } from '~/utils/bom-types'
 import { BOM_LINE_TYPES } from '~/utils/bom-types'
-import type { PricingQueueItem } from '~/composables/useElexessApi'
+import type { ExchangeRateSnapshot, PricingQueueItem } from '~/composables/useElexessApi'
 
 const props = defineProps<{
   bomLines: BomLine[]
@@ -477,6 +481,8 @@ const props = defineProps<{
   isFetchingPricing: boolean
   pricingQueue: PricingQueueItem[]
   boardQuantity: number
+  teamCurrency: 'USD' | 'EUR'
+  exchangeRate: ExchangeRateSnapshot | null
   /** Set of designators present in PnP data (SMD + THT, excluding DNP) */
   pnpDesignators: Set<string>
 }>()
@@ -753,6 +759,12 @@ interface SupplierOffer {
   lineValue: number
 }
 
+interface DisplayOffer {
+  unitPrice: number
+  lineValue: number
+  currency: string
+}
+
 /**
  * Pick the best price tier for a given quantity from an array of pricebreaks.
  * Returns the tier whose quantity is <= totalQty and closest to it,
@@ -807,15 +819,15 @@ function getSupplierOffers(mpn: string, totalQty: number): SupplierOffer[] {
   }
 
   const offers: SupplierOffer[] = []
-  for (const offer of candidates.sort((a, b) => a.unitPrice - b.unitPrice)) {
-    // Deduplicate by supplier/currency — keep cheapest (first after sort)
-    const key = `${offer.supplier}-${offer.currency}`
+  for (const offer of candidates.sort((a, b) => comparableUnitPrice(a) - comparableUnitPrice(b))) {
+    // Deduplicate by supplier after conversion to the team currency.
+    const key = offer.supplier
     if (seenSuppliers.has(key)) continue
     seenSuppliers.add(key)
     offers.push(offer)
   }
 
-  return offers.sort((a, b) => a.unitPrice - b.unitPrice)
+  return offers.sort((a, b) => comparableUnitPrice(a) - comparableUnitPrice(b))
 }
 
 /**
@@ -829,7 +841,7 @@ function getLineBestOffer(line: BomLine): SupplierOffer | null {
     const offers = getSupplierOffers(mfr.manufacturerPart, totalQty)
     for (const offer of offers) {
       if (offer.stock < totalQty) continue
-      if (!best || offer.unitPrice < best.unitPrice) {
+      if (!best || comparableUnitPrice(offer) < comparableUnitPrice(best)) {
         best = offer
       }
       break // offers are sorted by price, first with stock wins for this MPN
@@ -839,10 +851,74 @@ function getLineBestOffer(line: BomLine): SupplierOffer | null {
 }
 
 function formatCurrency(value: number, currency: string): string {
-  if (value < 0.01) {
-    return `${currency} ${value.toFixed(4)}`
+  const normalizedCurrency = currency.toUpperCase()
+  const isTiny = value > 0 && value < 0.01
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: normalizedCurrency,
+      minimumFractionDigits: isTiny ? 4 : 2,
+      maximumFractionDigits: isTiny ? 4 : 2,
+    }).format(value)
+  } catch {
+    return `${normalizedCurrency} ${value.toFixed(isTiny ? 4 : 2)}`
   }
-  return `${currency} ${value.toFixed(2)}`
+}
+
+function comparableUnitPrice(offer: SupplierOffer): number {
+  const converted = convertAmount(offer.unitPrice, offer.currency, props.teamCurrency)
+  return converted ?? offer.unitPrice
+}
+
+function getDisplayOffer(offer: SupplierOffer): DisplayOffer {
+  const unitPrice = convertAmount(offer.unitPrice, offer.currency, props.teamCurrency)
+  const lineValue = convertAmount(offer.lineValue, offer.currency, props.teamCurrency)
+  if (unitPrice == null || lineValue == null) {
+    return {
+      unitPrice: offer.unitPrice,
+      lineValue: offer.lineValue,
+      currency: offer.currency,
+    }
+  }
+  return {
+    unitPrice,
+    lineValue,
+    currency: props.teamCurrency,
+  }
+}
+
+function convertAmount(value: number, fromCurrency: string, toCurrency: 'USD' | 'EUR'): number | null {
+  if (!Number.isFinite(value)) return null
+  const from = normalizeCurrencyCode(fromCurrency)
+  const to = toCurrency.toUpperCase()
+  if (!from) return null
+  if (from === to) return value
+
+  const rate = conversionRate(from, to)
+  if (rate == null) return null
+  return value * rate
+}
+
+function conversionRate(from: string, to: string): number | null {
+  const snapshot = props.exchangeRate
+  if (!snapshot) return null
+  const source = normalizeCurrencyCode(snapshot.sourceCurrency)
+  const target = normalizeCurrencyCode(snapshot.targetCurrency)
+  if (!source || !target) return null
+  const rate = Number(snapshot.rate)
+  if (!Number.isFinite(rate) || rate <= 0) return null
+
+  if (source === from && target === to) return rate
+  if (source === to && target === from) return 1 / rate
+  return null
+}
+
+function normalizeCurrencyCode(raw: string | null | undefined): 'USD' | 'EUR' | null {
+  const v = String(raw ?? '').trim().toUpperCase()
+  if (!v) return null
+  if (v === 'USD' || v === 'US$' || v === '$' || v.includes('USD') || v.includes('$')) return 'USD'
+  if (v === 'EUR' || v === 'EURO' || v === '€' || v.includes('EUR') || v.includes('EURO') || v.includes('€')) return 'EUR'
+  return null
 }
 
 function formatAge(fetchedAt: string | undefined): string {

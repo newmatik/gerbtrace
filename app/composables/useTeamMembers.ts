@@ -196,6 +196,24 @@ export function useTeamMembers() {
     return { error }
   }
 
+  /** Set a member password directly (admin only) */
+  async function resetMemberPassword(userId: string, newPassword: string) {
+    if (!currentTeamId.value) return { error: new Error('No team selected') }
+
+    try {
+      const { error } = await supabase.functions.invoke('admin-password-reset', {
+        body: {
+          team_id: currentTeamId.value,
+          user_id: userId,
+          new_password: newPassword,
+        },
+      })
+      return { error }
+    } catch (error) {
+      return { error: error as Error }
+    }
+  }
+
   // Auto-fetch when team changes
   watch(currentTeamId, () => {
     fetchMembers()
@@ -212,5 +230,6 @@ export function useTeamMembers() {
     removeMember,
     cancelInvitation,
     updateMemberName,
+    resetMemberPassword,
   }
 }

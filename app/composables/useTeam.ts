@@ -10,6 +10,7 @@ export interface Team {
   name: string
   slug: string
   auto_join_domain: string | null
+  default_currency: 'USD' | 'EUR'
   elexess_username: string | null
   elexess_password: string | null
   preferred_panel_width_mm: number | null
@@ -68,7 +69,13 @@ export function useTeam() {
         .eq('user_id', user.value.id)
         .eq('status', 'active')
 
-      if (memError || !memberships?.length) {
+      if (memError) {
+        console.warn('[useTeam] Failed to fetch memberships:', memError.message)
+        // Keep existing team state on transient fetch errors.
+        return
+      }
+
+      if (!memberships?.length) {
         teams.value = []
         currentTeamId.value = null
         teamsLoaded.value = true
@@ -85,7 +92,8 @@ export function useTeam() {
 
       if (teamError) {
         console.warn('[useTeam] Failed to fetch teams:', teamError.message)
-        teams.value = []
+        // Keep existing team state on transient fetch errors.
+        return
       } else {
         teams.value = (teamData ?? []) as Team[]
       }
@@ -161,6 +169,7 @@ export function useTeam() {
   async function updateTeam(updates: {
     name?: string
     auto_join_domain?: string | null
+    default_currency?: 'USD' | 'EUR'
     elexess_username?: string | null
     elexess_password?: string | null
     preferred_panel_width_mm?: number | null

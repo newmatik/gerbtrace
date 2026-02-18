@@ -596,7 +596,7 @@ function onMouseMove(e: MouseEvent) {
   if (canvasEl.value && props.measure?.active.value) {
     props.measure.handleMouseMove(e, canvasEl.value, props.interaction.transform.value)
   }
-  props.interaction.handleMouseMove(e)
+  props.interaction.handleMouseMove(e, { invertPanX: !!props.mirrored })
 }
 function onMouseUp(_e: MouseEvent) {
   if (tabDrag.value) {
@@ -2086,7 +2086,35 @@ function drawDangerZone(oc: OverlayContext, panelLayout: PanelLayout, insetMm: n
 let _dangerPadCache: { key: string; pads: SmdPadRect[] } | null = null
 
 /**
- * Extract SMD pads with coordinates rebased relative to the board outline
+ * Get the board outline origin in mm, using the outline tree's own units
+ * (not detectUnits() which may return a different layer's units).
+ */
+function getOutlineOriginMm(): { x: number; y: number } {
+  const outLayer = findOutlineLayer()
+  if (outLayer) {
+    const tree = getImageTree(outLayer)
+    if (tree && tree.children.length > 0 && !isEmpty(tree.bounds as BoundingBox)) {
+      const b = tree.bounds as BoundingBox
+      const toMm = tree.units === 'in' ? 25.4 : 1
+      return { x: b[0] * toMm, y: b[1] * toMm }
+    }
+  }
+  const source = props.allLayers ?? props.layers
+  let bounds: BoundingBox = emptyBounds()
+  let units: 'mm' | 'in' = 'mm'
+  for (const layer of source) {
+    const tree = getImageTree(layer)
+    if (!tree || tree.children.length === 0) continue
+    bounds = mergeBounds(bounds, tree.bounds as BoundingBox)
+    units = tree.units
+  }
+  if (isEmpty(bounds)) return { x: 0, y: 0 }
+  const toMm = units === 'in' ? 25.4 : 1
+  return { x: bounds[0] * toMm, y: bounds[1] * toMm }
+}
+
+/**
+ * Extract pads with coordinates rebased relative to the board outline
  * origin (bottom-left corner of the outline bounds becomes 0,0).
  */
 function getDangerPads(): SmdPadRect[] {
@@ -2094,30 +2122,29 @@ function getDangerPads(): SmdPadRect[] {
   const copperTypes = new Set(['Top Copper', 'Bottom Copper'])
   const copperLayers = source.filter(l => copperTypes.has(l.type))
 
-  const outlineBounds = getOutlineBoundsGerber()
-  const boundsKey = outlineBounds ? outlineBounds.join(',') : 'none'
-  const key = copperLayers.map(l => l.file.fileName).join('|') + '|' + boundsKey
+  const origin = getOutlineOriginMm()
+  const key = copperLayers.map(l => l.file.fileName).join('|') + `|${origin.x},${origin.y}`
   if (_dangerPadCache?.key === key) return _dangerPadCache.pads
-
-  const units = detectUnits()
-  const toMm = units === 'in' ? 25.4 : 1
-  const originXMm = outlineBounds ? outlineBounds[0] * toMm : 0
-  const originYMm = outlineBounds ? outlineBounds[1] * toMm : 0
 
   const allPads: SmdPadRect[] = []
   for (const layer of copperLayers) {
     const tree = getImageTree(layer)
     if (!tree) continue
+
     for (const raw of extractSmdPads(tree)) {
       allPads.push({
-        xMm: raw.xMm - originXMm,
-        yMm: raw.yMm - originYMm,
+        xMm: raw.xMm - origin.x,
+        yMm: raw.yMm - origin.y,
         wMm: raw.wMm,
         hMm: raw.hMm,
       })
     }
   }
   _dangerPadCache = { key, pads: allPads }
+  console.log(`[DangerPads] extracted ${allPads.length} pads, origin=(${origin.x.toFixed(2)},${origin.y.toFixed(2)})`)
+  if (allPads.length && allPads.length < 30) {
+    for (const p of allPads.slice(0, 10)) console.log(`  pad: (${p.xMm.toFixed(2)},${p.yMm.toFixed(2)}) ${p.wMm.toFixed(2)}x${p.hMm.toFixed(2)}`)
+  }
   return allPads
 }
 
@@ -2137,6 +2164,7 @@ function drawDangerZonePads(oc: OverlayContext, panelLayout: PanelLayout) {
       endangered.push(pad)
     }
   }
+  console.log(`[DangerPads] board=${boardW.toFixed(1)}x${boardH.toFixed(1)}, inset=${inset}, total=${pads.length}, endangered=${endangered.length}`)
   if (!endangered.length) return
 
   const { ctx } = oc

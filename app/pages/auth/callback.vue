@@ -115,6 +115,7 @@ onMounted(async () => {
   try {
     // Check for error parameters in the URL hash (GoTrue error redirects)
     const hashParams = new URLSearchParams(window.location.hash.substring(1))
+    const hashType = hashParams.get('type')
     const urlError = hashParams.get('error_description') || hashParams.get('error')
     if (urlError) {
       const errorCode = hashParams.get('error_code') || ''
@@ -168,7 +169,7 @@ onMounted(async () => {
     }
 
     // If we already have a session and this is a recovery flow, show the form
-    if (session && route.query.type === 'recovery') {
+    if (session && (route.query.type === 'recovery' || hashType === 'recovery')) {
       processing.value = false
       showPasswordReset.value = true
       subscription.unsubscribe()
