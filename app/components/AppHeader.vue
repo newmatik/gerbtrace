@@ -145,10 +145,15 @@ const userMenuItems = computed(() => [
     {
       label: profile.value?.name ?? profile.value?.email ?? 'Account',
       icon: 'i-lucide-user',
-      type: 'label' as const,
+      onSelect: () => router.push('/profile'),
     },
   ],
   [
+    {
+      label: 'Profile',
+      icon: 'i-lucide-user-cog',
+      onSelect: () => router.push('/profile'),
+    },
     {
       label: 'Sign Out',
       icon: 'i-lucide-log-out',

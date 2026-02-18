@@ -54,6 +54,20 @@
             </template>
           </UFormField>
 
+          <UFormField label="Default Currency">
+            <USelect
+              v-model="defaultCurrency"
+              :items="currencyOptions"
+              size="lg"
+              :disabled="saving"
+            />
+            <template #help>
+              <span class="text-xs text-neutral-400">
+                BOM prices are converted and displayed in this currency.
+              </span>
+            </template>
+          </UFormField>
+
           <div class="space-y-3">
             <div class="text-sm font-medium">Panel Defaults</div>
             <div class="grid grid-cols-2 gap-3">
@@ -190,10 +204,11 @@ watch(isAuthenticated, (authed) => {
 
 const teamName = ref('')
 const autoJoinDomain = ref('')
-const preferredPanelWidthInput = ref('')
-const preferredPanelHeightInput = ref('')
-const maxPanelWidthInput = ref('')
-const maxPanelHeightInput = ref('')
+const defaultCurrency = ref<'USD' | 'EUR'>('EUR')
+const preferredPanelWidthInput = ref<string | number>('')
+const preferredPanelHeightInput = ref<string | number>('')
+const maxPanelWidthInput = ref<string | number>('')
+const maxPanelHeightInput = ref<string | number>('')
 const saving = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
@@ -205,11 +220,17 @@ const savingElexess = ref(false)
 const elexessErrorMessage = ref('')
 const elexessSuccessMessage = ref('')
 
+const currencyOptions = [
+  { label: 'EUR', value: 'EUR' as const },
+  { label: 'USD', value: 'USD' as const },
+]
+
 // Init from current team
 watch(currentTeam, (team) => {
   if (team) {
     teamName.value = team.name
     autoJoinDomain.value = team.auto_join_domain ?? ''
+    defaultCurrency.value = team.default_currency ?? 'EUR'
     elexessUsername.value = team.elexess_username ?? ''
     elexessPassword.value = team.elexess_password ?? ''
     preferredPanelWidthInput.value = toInputValue(team.preferred_panel_width_mm)
@@ -227,6 +248,7 @@ const hasChanges = computed(() => {
   const maxPanelHeight = parseOptionalMm(maxPanelHeightInput.value)
   return teamName.value !== currentTeam.value.name
     || autoJoinDomain.value !== (currentTeam.value.auto_join_domain ?? '')
+    || defaultCurrency.value !== (currentTeam.value.default_currency ?? 'EUR')
     || preferredPanelWidth !== currentTeam.value.preferred_panel_width_mm
     || preferredPanelHeight !== currentTeam.value.preferred_panel_height_mm
     || maxPanelWidth !== currentTeam.value.max_panel_width_mm
@@ -261,6 +283,7 @@ async function handleSave() {
     const { error } = await updateTeam({
       name: teamName.value.trim(),
       auto_join_domain: autoJoinDomain.value.trim() || null,
+      default_currency: defaultCurrency.value,
       preferred_panel_width_mm: preferredPanelWidth,
       preferred_panel_height_mm: preferredPanelHeight,
       max_panel_width_mm: maxPanelWidth,
@@ -278,7 +301,13 @@ async function handleSave() {
   }
 }
 
-function parseOptionalMm(value: string): number | null {
+function parseOptionalMm(value: string | number | null | undefined): number | null {
+  if (value == null) return null
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value) || value <= 0) return null
+    return Math.round(value * 100) / 100
+  }
+
   const trimmed = value.trim()
   if (!trimmed) return null
   const n = Number(trimmed)

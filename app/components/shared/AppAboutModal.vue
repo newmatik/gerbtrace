@@ -31,7 +31,7 @@
             target="_blank"
             rel="noopener noreferrer"
             class="flex items-center gap-1.5 text-xs text-neutral-500 hover:text-primary transition-colors"
-            @click="openExternal($event, 'https://www.newmatik.com')"
+            @click.prevent="openExternal('https://www.newmatik.com')"
           >
             <UIcon name="i-lucide-building-2" class="text-sm" />
             <span>Newmatik GmbH</span>
@@ -40,7 +40,7 @@
           <a
             href="mailto:software@newmatik.com"
             class="flex items-center gap-1.5 text-xs text-neutral-500 hover:text-primary transition-colors"
-            @click="openExternal($event, 'mailto:software@newmatik.com')"
+            @click.prevent="openExternal('mailto:software@newmatik.com')"
           >
             <UIcon name="i-lucide-mail" class="text-sm" />
             <span>software@newmatik.com</span>
@@ -50,7 +50,7 @@
             target="_blank"
             rel="noopener noreferrer"
             class="flex items-center gap-1.5 text-xs text-neutral-500 hover:text-primary transition-colors"
-            @click="openExternal($event, 'https://github.com/newmatik/gerbtrace')"
+            @click.prevent="openExternal('https://github.com/newmatik/gerbtrace')"
           >
             <UIcon name="i-lucide-github" class="text-sm" />
             <span>GitHub</span>
@@ -99,10 +99,22 @@ const { status: updaterStatus, isTauri, checkForUpdate, downloadAndInstall } = u
 
 const appVersion = useRuntimeConfig().public.appVersion as string
 
-function openExternal(event: MouseEvent, url: string) {
-  if (!isTauri) return
-  event.preventDefault()
-  import('@tauri-apps/plugin-opener').then(({ openUrl }) => openUrl(url))
+async function openExternal(url: string) {
+  // Try the native Tauri opener first; this is the canonical desktop behavior.
+  try {
+    const { openUrl } = await import('@tauri-apps/plugin-opener')
+    await openUrl(url)
+    return
+  } catch (error) {
+    console.warn('[about] Failed to open via Tauri opener, falling back to web behavior:', error)
+  }
+
+  // Web fallback (and desktop fallback if opener plugin fails).
+  if (url.startsWith('mailto:')) {
+    window.location.href = url
+    return
+  }
+  window.open(url, '_blank', 'noopener,noreferrer')
 }
 
 const updateButtonLabel = computed(() => {

@@ -101,10 +101,22 @@ async function buildTreeManifest() {
 
   libraries.sort((a, b) => sortCaseInsensitive(a.id, b.id))
   const payload = {
-    generatedAt: new Date().toISOString(),
+    generatedAt: null,
     root: 'public/packages/libraries',
     libraries,
   }
+
+  // Only rewrite the file when the data (ignoring generatedAt) actually changed.
+  const nextJson = JSON.stringify(payload, null, 2) + '\n'
+  let prevJson = ''
+  try {
+    prevJson = await fs.readFile(TREE_MANIFEST_PATH, 'utf8')
+  } catch { /* first run */ }
+
+  const strip = (s) => s.replace(/"generatedAt":\s*"[^"]*"/, '"generatedAt": null')
+  if (strip(prevJson) === strip(nextJson)) return
+
+  payload.generatedAt = new Date().toISOString()
   await fs.writeFile(TREE_MANIFEST_PATH, JSON.stringify(payload, null, 2) + '\n', 'utf8')
 }
 

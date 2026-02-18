@@ -92,6 +92,15 @@ watch(whatsNewOpen, (open) => {
 })
 
 onMounted(() => {
+  const hashParams = new URLSearchParams(window.location.hash.substring(1))
+  const hashType = hashParams.get('type')
+  // Recovery links can occasionally land on "/" (e.g. legacy Site URL).
+  // Redirect to callback while preserving the hash token payload.
+  if (hashType === 'recovery' && window.location.pathname !== '/auth/callback') {
+    window.location.replace(`/auth/callback${window.location.hash}`)
+    return
+  }
+
   checkForUpdateOnStartup()
 })
 </script>
