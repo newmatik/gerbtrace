@@ -1,0 +1,23 @@
+{
+  "name": "NXP-XSON_16",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 3.02,
+    "width": 2.84
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 16,
+    "widthOverLeads": 2.84,
+    "leadPitch": 0.4,
+    "leadWidth": 0.22,
+    "leadLength": 1.07
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_SON.pretty/NXP_XSON-16.kicad_mod",
+    "sourceFootprint": "NXP_XSON-16"
+  }
+}

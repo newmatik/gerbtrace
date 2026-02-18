@@ -17,14 +17,16 @@
               {{ doc.name }}
             </p>
             <div class="mt-0.5">
-              <select
-                :value="doc.type"
-                class="text-[10px] bg-transparent border border-neutral-200 dark:border-neutral-700 rounded px-1 py-0 text-neutral-500 dark:text-neutral-400 outline-none hover:border-neutral-400 dark:hover:border-neutral-500 transition-colors cursor-pointer"
+              <USelect
+                :model-value="doc.type"
+                :items="documentTypeItems"
+                value-key="value"
+                label-key="label"
+                size="xs"
+                class="w-36"
                 @click.stop
-                @change="emit('update-type', doc.id, ($event.target as HTMLSelectElement).value as DocumentType)"
-              >
-                <option v-for="t in documentTypes" :key="t" :value="t">{{ t }}</option>
-              </select>
+                @update:model-value="emit('update-type', doc.id, String($event) as DocumentType)"
+              />
             </div>
           </div>
           <button
@@ -44,6 +46,7 @@
 import type { DocumentType, ProjectDocument } from '~/utils/document-types'
 
 const documentTypes: DocumentType[] = ['Schematics', 'Drawings', 'Datasheets', 'Instructions']
+const documentTypeItems = documentTypes.map((t) => ({ label: t, value: t }))
 
 defineProps<{
   documents: ProjectDocument[]

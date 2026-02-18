@@ -1,0 +1,22 @@
+{
+  "name": "SC-90",
+  "type": "PT_OUTLINE",
+  "body": {
+    "length": 2,
+    "width": 2.1
+  },
+  "outline": {
+    "length": 2,
+    "width": 2.1
+  },
+  "aliases": [
+    "SC90"
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/SC-90.json",
+    "sourceFootprint": "SC-90"
+  }
+}

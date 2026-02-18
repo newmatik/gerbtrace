@@ -1,0 +1,22 @@
+{
+  "name": "SOT-89-3_HANDSOLDERING",
+  "type": "PT_THREE_POLE",
+  "body": {
+    "length": 2.73,
+    "width": 1.732
+  },
+  "threePole": {
+    "widthOverLeads": 3.9,
+    "ccDistance": 1.237,
+    "leadWidth": 0.9,
+    "leadLength": 2.358
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_TO_SOT_SMD.pretty/SOT-89-3_Handsoldering.kicad_mod",
+    "sourceFootprint": "SOT-89-3_Handsoldering"
+  }
+}

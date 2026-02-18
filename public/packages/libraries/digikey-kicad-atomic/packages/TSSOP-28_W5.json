@@ -1,0 +1,23 @@
+{
+  "name": "TSSOP-28_W5",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 8.9,
+    "width": 8.65
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 28,
+    "widthOverLeads": 8.65,
+    "leadPitch": 0.65,
+    "leadWidth": 0.45,
+    "leadLength": 1.5
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/TSSOP-28_W5.60mm.kicad_mod",
+    "sourceFootprint": "TSSOP-28_W5.60mm"
+  }
+}

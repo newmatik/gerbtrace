@@ -1,0 +1,309 @@
+{
+  "name": "RELAY-1P1T_NO_10X24X18.8MM_PANASONIC_ADW11XXXX_W_THT",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 3.625,
+      "y": 10.375,
+      "width": 11.35,
+      "height": 25.35,
+      "cornerRadius": 0.908,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 8.75,
+      "y1": 22.5,
+      "x2": 8.75,
+      "y2": -1.5,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.25,
+      "y1": 0,
+      "x2": -1.25,
+      "y2": 22.5,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.4,
+      "y1": 1.31,
+      "x2": -1.4,
+      "y2": 20.49,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 8.9,
+      "y1": 0.51,
+      "x2": 8.9,
+      "y2": 16.99,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 8.9,
+      "y1": -1.65,
+      "x2": -1.4,
+      "y2": -1.65,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 8.9,
+      "y1": 22.65,
+      "x2": -1.4,
+      "y2": 22.65,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 8.75,
+      "y1": 22.5,
+      "x2": -1.25,
+      "y2": 22.5,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 8.75,
+      "y1": -1.5,
+      "x2": 0,
+      "y2": -1.5,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 8.89,
+      "y1": 18.05,
+      "x2": 8.9,
+      "y2": 22.65,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 1.55,
+      "y1": -0.4,
+      "x2": 6.05,
+      "y2": -0.4,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.65,
+      "y1": -1.9,
+      "x2": 0.75,
+      "y2": -1.9,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.65,
+      "y1": 0.44,
+      "x2": -1.65,
+      "y2": -1.9,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.25,
+      "y1": 0,
+      "x2": 0,
+      "y2": -1.5,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.15,
+      "y1": 0.2,
+      "x2": 4.15,
+      "y2": -1,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.45,
+      "y1": -1,
+      "x2": 3.45,
+      "y2": 0.2,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 8.9,
+      "y1": -1.65,
+      "x2": 8.9,
+      "y2": -0.51,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.4,
+      "y1": 22.65,
+      "x2": -1.4,
+      "y2": 21.51,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.45,
+      "y1": -0.2,
+      "x2": 4.15,
+      "y2": -0.6,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.15,
+      "y1": -1,
+      "x2": 3.45,
+      "y2": -1,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.45,
+      "y1": 0.2,
+      "x2": 4.15,
+      "y2": 0.2,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.4,
+      "y1": -1.65,
+      "x2": -1.4,
+      "y2": -1.31,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "rect",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "width": 2.5,
+      "height": 2.5
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.6,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 0,
+      "y": 21,
+      "width": 2.5,
+      "height": 2.5,
+      "cornerRadius": 1.125
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 21,
+      "radius": 0.6,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 7.5,
+      "y": 17.5,
+      "width": 2.5,
+      "height": 2.5,
+      "cornerRadius": 1.125
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 7.5,
+      "y": 17.5,
+      "radius": 0.6,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 7.5,
+      "y": 0,
+      "width": 2.5,
+      "height": 2.5,
+      "cornerRadius": 1.125
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 7.5,
+      "y": 0,
+      "radius": 0.6,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Relay_THT.pretty/Relay_1P1T_NO_10x24x18.8mm_Panasonic_ADW11xxxxW_THT.kicad_mod",
+    "sourceFootprint": "Relay_1P1T_NO_10x24x18.8mm_Panasonic_ADW11xxxxW_THT"
+  }
+}

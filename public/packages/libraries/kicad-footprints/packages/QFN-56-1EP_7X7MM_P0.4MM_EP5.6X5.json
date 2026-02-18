@@ -1,0 +1,23 @@
+{
+  "name": "QFN-56-1EP_7X7MM_P0.4MM_EP5.6X5",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 7,
+    "width": 7
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 56,
+    "widthOverLeads": 7.75,
+    "leadPitch": 0.4,
+    "leadWidth": 0.2,
+    "leadLength": 0.875
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_DFN_QFN.pretty/QFN-56-1EP_7x7mm_P0.4mm_EP5.6x5.6mm.kicad_mod",
+    "sourceFootprint": "QFN-56-1EP_7x7mm_P0.4mm_EP5.6x5.6mm"
+  }
+}

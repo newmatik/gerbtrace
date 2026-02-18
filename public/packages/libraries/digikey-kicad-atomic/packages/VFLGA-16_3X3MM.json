@@ -1,0 +1,23 @@
+{
+  "name": "VFLGA-16_3X3MM",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 3,
+    "width": 3
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 16,
+    "widthOverLeads": 3.2,
+    "leadPitch": 0.5,
+    "leadWidth": 0.347,
+    "leadLength": 0.75
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/VFLGA-16_3x3mm.kicad_mod",
+    "sourceFootprint": "VFLGA-16_3x3mm"
+  }
+}

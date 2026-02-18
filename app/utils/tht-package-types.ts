@@ -77,6 +77,14 @@ export type THTShape = THTRectShape | THTCircleShape | THTRoundedRectShape | THT
 
 // ── THT package definition (the JSON schema) ──
 
+export interface THTPackageProvenance {
+  owner?: string
+  sourceLibrary?: string
+  sourceType?: string
+  sourceFile?: string
+  sourceFootprint?: string
+}
+
 export interface THTPackageDefinition {
   name: string
   aliases?: string[]
@@ -90,6 +98,7 @@ export interface THTPackageDefinition {
   pinStrokeColor?: string
   /** All primitive shapes that make up this package */
   shapes: THTShape[]
+  provenance?: THTPackageProvenance
 }
 
 // ── Footprint conversion ──
@@ -224,7 +233,10 @@ function applyColors(
   if (role === 'body') {
     target.fillColor = srcColor || pkg.bodyColor
     target.strokeColorOverride = srcStroke || pkg.bodyStrokeColor
-  } else if (role === 'pin' || role === 'pin1') {
+  } else if (role === 'pin1') {
+    target.fillColor = srcColor || '#dc2626'
+    target.strokeColorOverride = srcStroke || '#991b1b'
+  } else if (role === 'pin') {
     target.fillColor = srcColor || pkg.pinColor
     target.strokeColorOverride = srcStroke || pkg.pinStrokeColor
   } else if (role === 'polarity-marker') {

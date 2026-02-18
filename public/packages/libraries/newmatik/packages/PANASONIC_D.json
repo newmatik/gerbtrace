@@ -1,0 +1,33 @@
+{
+  "name": "PANASONIC_D",
+  "type": "PT_TWO_POLE",
+  "aliases": [
+    "CP_Elec_6.3x5.8",
+    "ELEC_D",
+    "CAP_ELEC_D",
+    "CHEMI-CON_F",
+    "CHEMI-CON_F61",
+    "CAPAE660X580"
+  ],
+  "body": {
+    "length": 5,
+    "width": 3.2
+  },
+  "chip": {
+    "chipLength": 5,
+    "leadWidth": 3.2,
+    "leadLength": 1.6
+  },
+  "height": {
+    "nominal": 5.8,
+    "max": 6.1,
+    "min": 5.5
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/PANASONIC_D.json",
+    "sourceFootprint": "PANASONIC_D"
+  }
+}

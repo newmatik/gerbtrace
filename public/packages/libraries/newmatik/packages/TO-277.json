@@ -1,0 +1,77 @@
+{
+  "name": "TO-277",
+  "type": "PT_OUTLINE",
+  "aliases": [
+    "TO277"
+  ],
+  "body": {
+    "length": 6.5,
+    "width": 4.6
+  },
+  "outline": {
+    "length": 6.5,
+    "width": 4.6
+  },
+  "height": {
+    "nominal": 1.12,
+    "max": 1.176,
+    "min": 1.064
+  },
+  "searchArea": {
+    "x": 6.714,
+    "y": 4.934
+  },
+  "machine": {
+    "mountTools": [
+      "A23"
+    ],
+    "pickWaitTime": 100,
+    "placeWaitTime": 100,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "low",
+      "y": "high",
+      "tape": "low",
+      "theta": "high",
+      "z": "highest",
+      "hydraTheta": "low",
+      "hydraZ": "lowest"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false,
+    "markingPositions": [
+      {
+        "x": 1,
+        "y": 0,
+        "dotType": "DOT0.8mm"
+      },
+      {
+        "x": -1,
+        "y": 0,
+        "dotType": "DOT0.8mm"
+      }
+    ]
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/TO-277.json",
+    "sourceFootprint": "TO-277"
+  }
+}

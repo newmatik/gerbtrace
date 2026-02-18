@@ -42,11 +42,11 @@
         class="flex items-center gap-2 px-3 py-2 border-b border-neutral-100 dark:border-neutral-700/50 last:border-b-0 hover:bg-neutral-50 dark:hover:bg-neutral-700/30 transition-colors cursor-pointer"
         @click="deleteTool.toggleLayerSelection(li)"
       >
-        <input
-          type="checkbox"
-          :checked="layer.selected"
-          class="rounded border-neutral-300 dark:border-neutral-600 text-red-500 focus:ring-red-500/30 cursor-pointer"
-          @click.stop="deleteTool.toggleLayerSelection(li)"
+        <USwitch
+          :model-value="layer.selected"
+          size="sm"
+          @click.stop
+          @update:model-value="deleteTool.toggleLayerSelection(li)"
         />
         <span
           class="w-2.5 h-2.5 rounded-full shrink-0"

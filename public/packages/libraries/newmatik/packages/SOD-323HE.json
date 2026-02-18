@@ -1,0 +1,88 @@
+{
+  "name": "SOD-323HE",
+  "type": "PT_GENERIC",
+  "aliases": [
+    "SOD323HE",
+    "SC-108B",
+    "SC108B",
+    "TUMD-2",
+    "TUMD2",
+    "TUMD2M"
+  ],
+  "body": {
+    "length": 1.9,
+    "width": 1.3
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "FLAT",
+        "numLeads": 1,
+        "distFromCenter": 0.65,
+        "ccHalf": 0,
+        "angleMilliDeg": 90000,
+        "padLength": 2,
+        "padWidth": 1.1
+      },
+      {
+        "shape": "FLAT",
+        "numLeads": 1,
+        "distFromCenter": -1.25,
+        "ccHalf": 0,
+        "angleMilliDeg": 270000,
+        "padLength": 0.8,
+        "padWidth": 1.1
+      }
+    ]
+  },
+  "height": {
+    "nominal": 0.95,
+    "max": 1.05,
+    "min": 0.85
+  },
+  "searchArea": {
+    "x": 2.472,
+    "y": 0.97
+  },
+  "machine": {
+    "mountTools": [
+      "A12"
+    ],
+    "pickWaitTime": 100,
+    "placeWaitTime": 100,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "high",
+      "y": "high",
+      "tape": "high",
+      "theta": "high",
+      "z": "high",
+      "hydraTheta": "high",
+      "hydraZ": "high"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/SOD-323HE.json",
+    "sourceFootprint": "SOD-323HE"
+  }
+}

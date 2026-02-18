@@ -1,0 +1,23 @@
+{
+  "name": "INVEN-SENSE_QFN_24_3X3MM_P0.4MM_NO_MASK",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 3,
+    "width": 3
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 24,
+    "widthOverLeads": 3.55,
+    "leadPitch": 0.4,
+    "leadWidth": 0.2,
+    "leadLength": 0.55
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Sensor_Motion.pretty/InvenSense_QFN-24_3x3mm_P0.4mm_NoMask.kicad_mod",
+    "sourceFootprint": "InvenSense_QFN-24_3x3mm_P0.4mm_NoMask"
+  }
+}

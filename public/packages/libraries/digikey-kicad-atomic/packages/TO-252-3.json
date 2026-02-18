@@ -1,0 +1,23 @@
+{
+  "name": "TO-252-3",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 6.17,
+    "width": 11.77
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 252,
+    "widthOverLeads": 11.16,
+    "leadPitch": 4.57,
+    "leadWidth": 1.6,
+    "leadLength": 3
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/TO-252-3.kicad_mod",
+    "sourceFootprint": "TO-252-3"
+  }
+}

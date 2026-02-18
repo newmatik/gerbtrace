@@ -1,0 +1,31 @@
+{
+  "name": "PANASONIC_E",
+  "type": "PT_TWO_POLE",
+  "aliases": [
+    "CP_Elec_8x6.2",
+    "ELEC_E",
+    "CAP_ELEC_E",
+    "CAPAE830X620"
+  ],
+  "body": {
+    "length": 5.4,
+    "width": 4
+  },
+  "chip": {
+    "chipLength": 5.4,
+    "leadWidth": 4,
+    "leadLength": 1.6
+  },
+  "height": {
+    "nominal": 6.2,
+    "max": 6.5,
+    "min": 5.9
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/PANASONIC_E.json",
+    "sourceFootprint": "PANASONIC_E"
+  }
+}

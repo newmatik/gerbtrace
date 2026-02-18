@@ -1,0 +1,95 @@
+{
+  "name": "PLCC-68",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 24,
+    "width": 24
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 68,
+    "widthOverLeads": 28,
+    "leadPitch": 1.27,
+    "leadWidth": 0.6,
+    "leadLength": 1
+  },
+  "aliases": [
+    "PLCC68"
+  ],
+  "height": {
+    "nominal": 4.64,
+    "max": 5.3,
+    "min": 4
+  },
+  "searchArea": {
+    "x": 25.15,
+    "y": 25.15
+  },
+  "machine": {
+    "mountTools": [
+      "C23"
+    ],
+    "pickWaitTime": 500,
+    "placeWaitTime": 250,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "lowest",
+      "y": "lowest",
+      "tape": "lowest",
+      "theta": "lowest",
+      "z": "lowest",
+      "hydraTheta": "lowest",
+      "hydraZ": "lowest"
+    },
+    "hydraFinePitch": true,
+    "centering": [
+      {
+        "method": "mechanical",
+        "mechanical": {
+          "angle": 0,
+          "position": "POS_MIDDLE",
+          "force": "HIGH_FORCE"
+        },
+        "jaw": {
+          "nominal": 25.15,
+          "max": 26,
+          "min": 24.82
+        }
+      },
+      {
+        "method": "mechanical",
+        "mechanical": {
+          "angle": 90000,
+          "position": "POS_MIDDLE",
+          "force": "HIGH_FORCE"
+        },
+        "jaw": {
+          "nominal": 25.15,
+          "max": 26,
+          "min": 24.82
+        }
+      },
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/PLCC-68.json",
+    "sourceFootprint": "PLCC-68"
+  }
+}

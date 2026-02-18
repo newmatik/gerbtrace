@@ -89,10 +89,10 @@
         <!-- DNP option -->
         <div v-if="dnpCount > 0" class="flex items-center gap-2">
           <label class="flex items-center gap-2 cursor-pointer">
-            <input
-              v-model="excludeDnp"
-              type="checkbox"
-              class="rounded border-neutral-300 dark:border-neutral-600 text-primary focus:ring-primary/50 cursor-pointer"
+            <USwitch
+              :model-value="excludeDnp"
+              size="sm"
+              @update:model-value="excludeDnp = !!$event"
             />
             <span class="text-xs text-neutral-600 dark:text-neutral-400">
               Exclude {{ dnpCount }} DNP component{{ dnpCount !== 1 ? 's' : '' }}

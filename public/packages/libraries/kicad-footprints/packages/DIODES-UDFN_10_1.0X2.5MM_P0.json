@@ -1,0 +1,23 @@
+{
+  "name": "DIODES-UDFN_10_1.0X2.5MM_P0",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 2.5,
+    "width": 1
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 10,
+    "widthOverLeads": 1.075,
+    "leadPitch": 0.5,
+    "leadWidth": 0.625,
+    "leadLength": 0.25
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_DFN_QFN.pretty/Diodes_UDFN-10_1.0x2.5mm_P0.5mm.kicad_mod",
+    "sourceFootprint": "Diodes_UDFN-10_1.0x2.5mm_P0.5mm"
+  }
+}

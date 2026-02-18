@@ -1,0 +1,23 @@
+{
+  "name": "X2SON-8_1.4X1MM_P0",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 1,
+    "width": 1.4
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 8,
+    "widthOverLeads": 0.87,
+    "leadPitch": 0.35,
+    "leadWidth": 0.53,
+    "leadLength": 0.2
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_SON.pretty/X2SON-8_1.4x1mm_P0.35mm.kicad_mod",
+    "sourceFootprint": "X2SON-8_1.4x1mm_P0.35mm"
+  }
+}

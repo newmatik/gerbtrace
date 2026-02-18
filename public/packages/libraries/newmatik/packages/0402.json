@@ -1,0 +1,478 @@
+{
+  "name": "0402",
+  "type": "PT_TWO_POLE",
+  "aliases": [
+    "C0402",
+    "CAP0402",
+    "CHIP-0402",
+    "L0402",
+    "R0402",
+    "RES0402"
+  ],
+  "body": {
+    "length": 1,
+    "width": 0.5
+  },
+  "chip": {
+    "chipLength": 1,
+    "leadWidth": 0.5,
+    "leadLength": 0.2
+  },
+  "height": {
+    "nominal": 0.69,
+    "max": 0.725,
+    "min": 0.655
+  },
+  "searchArea": {
+    "x": 1.096,
+    "y": 0.626
+  },
+  "machine": {
+    "mountTools": [
+      "C14"
+    ],
+    "pickWaitTime": 100,
+    "placeWaitTime": 100,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "low",
+      "y": "high",
+      "tape": "lowest",
+      "theta": "high",
+      "z": "lowest",
+      "hydraTheta": "low",
+      "hydraZ": "low"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false,
+    "markingPositions": [
+      {
+        "x": 0,
+        "y": 0,
+        "dotType": "DOT0.5mm"
+      }
+    ]
+  },
+  "variations": [
+    {
+      "id": "03",
+      "label": "H0.3",
+      "height": {
+        "nominal": 0.3,
+        "max": 0.315,
+        "min": 0.285
+      }
+    },
+    {
+      "id": "04",
+      "label": "H0.4",
+      "height": {
+        "nominal": 0.4,
+        "max": 0.5,
+        "min": 0.3
+      }
+    },
+    {
+      "id": "04",
+      "label": "H0.3",
+      "height": {
+        "nominal": 0.3,
+        "max": 0.315,
+        "min": 0.285
+      }
+    },
+    {
+      "id": "04",
+      "label": "H0.3",
+      "height": {
+        "nominal": 0.33,
+        "max": 0.346,
+        "min": 0.314
+      }
+    },
+    {
+      "id": "04",
+      "label": "H0.5",
+      "height": {
+        "nominal": 0.5,
+        "max": 0.525,
+        "min": 0.475
+      }
+    },
+    {
+      "id": "04",
+      "label": "H0.5",
+      "height": {
+        "nominal": 0.54,
+        "max": 0.567,
+        "min": 0.513
+      }
+    },
+    {
+      "id": "04",
+      "label": "H0.4",
+      "height": {
+        "nominal": 0.4,
+        "max": 0.5,
+        "min": 0.3
+      }
+    },
+    {
+      "id": "04",
+      "label": "H0.3",
+      "height": {
+        "nominal": 0.32,
+        "max": 0.336,
+        "min": 0.304
+      }
+    },
+    {
+      "id": "04",
+      "label": "H0.4",
+      "height": {
+        "nominal": 0.4,
+        "max": 0.5,
+        "min": 0.3
+      }
+    },
+    {
+      "id": "04",
+      "label": "H0.4",
+      "height": {
+        "nominal": 0.4,
+        "max": 0.5,
+        "min": 0.3
+      }
+    },
+    {
+      "id": "04",
+      "label": "H0.4",
+      "height": {
+        "nominal": 0.4,
+        "max": 0.5,
+        "min": 0.3
+      }
+    },
+    {
+      "id": "04",
+      "label": "H0.4",
+      "height": {
+        "nominal": 0.4,
+        "max": 0.5,
+        "min": 0.3
+      }
+    },
+    {
+      "id": "04",
+      "label": "H0.4",
+      "height": {
+        "nominal": 0.4,
+        "max": 0.5,
+        "min": 0.3
+      }
+    },
+    {
+      "id": "04",
+      "label": "H0.4",
+      "height": {
+        "nominal": 0.4,
+        "max": 0.5,
+        "min": 0.3
+      }
+    },
+    {
+      "id": "05",
+      "label": "H0.6",
+      "height": {
+        "nominal": 0.6,
+        "max": 0.63,
+        "min": 0.57
+      }
+    },
+    {
+      "id": "05",
+      "label": "H0.5",
+      "height": {
+        "nominal": 0.5,
+        "max": 0.52,
+        "min": 0.48
+      }
+    },
+    {
+      "id": "05",
+      "label": "H0.3",
+      "height": {
+        "nominal": 0.29,
+        "max": 0.305,
+        "min": 0.275
+      }
+    },
+    {
+      "id": "05",
+      "label": "H0.5",
+      "height": {
+        "nominal": 0.5,
+        "max": 0.52,
+        "min": 0.48
+      }
+    },
+    {
+      "id": "05",
+      "label": "H0.5",
+      "height": {
+        "nominal": 0.5,
+        "max": 0.53,
+        "min": 0.47
+      }
+    },
+    {
+      "id": "slow",
+      "label": "Slow (no Hydra)",
+      "height": {
+        "nominal": 0.5,
+        "max": 0.52,
+        "min": 0.48
+      },
+      "machine": {
+        "centering": [
+          {
+            "method": "optical",
+            "tools": [
+              "Z_TOOL"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "05",
+      "label": "H0.5",
+      "height": {
+        "nominal": 0.5,
+        "max": 0.52,
+        "min": 0.48
+      }
+    },
+    {
+      "id": "06",
+      "label": "H0.6",
+      "height": {
+        "nominal": 0.6,
+        "max": 0.63,
+        "min": 0.57
+      }
+    },
+    {
+      "id": "06",
+      "label": "H0.7",
+      "height": {
+        "nominal": 0.65,
+        "max": 0.683,
+        "min": 0.617
+      }
+    },
+    {
+      "id": "06",
+      "label": "H0.6",
+      "height": {
+        "nominal": 0.6,
+        "max": 0.63,
+        "min": 0.57
+      }
+    },
+    {
+      "id": "06",
+      "label": "H0.5",
+      "height": {
+        "nominal": 0.5,
+        "max": 0.525,
+        "min": 0.475
+      }
+    },
+    {
+      "id": "06",
+      "label": "H0.5",
+      "height": {
+        "nominal": 0.5,
+        "max": 0.525,
+        "min": 0.475
+      }
+    },
+    {
+      "id": "06",
+      "label": "H0.6",
+      "height": {
+        "nominal": 0.6,
+        "max": 0.63,
+        "min": 0.57
+      }
+    },
+    {
+      "id": "07",
+      "label": "H0.7",
+      "height": {
+        "nominal": 0.66,
+        "max": 0.693,
+        "min": 0.627
+      }
+    },
+    {
+      "id": "07",
+      "label": "H0.7",
+      "height": {
+        "nominal": 0.7,
+        "max": 0.735,
+        "min": 0.665
+      }
+    },
+    {
+      "id": "07",
+      "label": "H0.7",
+      "height": {
+        "nominal": 0.7,
+        "max": 0.735,
+        "min": 0.665
+      }
+    },
+    {
+      "id": "08",
+      "label": "H0.8",
+      "height": {
+        "nominal": 0.8,
+        "max": 0.84,
+        "min": 0.76
+      }
+    },
+    {
+      "id": "08",
+      "label": "H0.8",
+      "height": {
+        "nominal": 0.8,
+        "max": 0.84,
+        "min": 0.76
+      }
+    },
+    {
+      "id": "08",
+      "label": "H0.8",
+      "height": {
+        "nominal": 0.8,
+        "max": 0.84,
+        "min": 0.76
+      }
+    },
+    {
+      "id": "08",
+      "label": "H0.8",
+      "height": {
+        "nominal": 0.8,
+        "max": 0.84,
+        "min": 0.76
+      }
+    },
+    {
+      "id": "08",
+      "label": "H0.7",
+      "height": {
+        "nominal": 0.74,
+        "max": 0.777,
+        "min": 0.703
+      }
+    },
+    {
+      "id": "08",
+      "label": "H0.8",
+      "height": {
+        "nominal": 0.8,
+        "max": 0.84,
+        "min": 0.76
+      }
+    },
+    {
+      "id": "08",
+      "label": "H0.8",
+      "height": {
+        "nominal": 0.8,
+        "max": 0.84,
+        "min": 0.76
+      }
+    },
+    {
+      "id": "08",
+      "label": "H0.8",
+      "height": {
+        "nominal": 0.8,
+        "max": 0.84,
+        "min": 0.76
+      }
+    },
+    {
+      "id": "slow",
+      "label": "Slow (no Hydra)",
+      "height": {
+        "nominal": 0.8,
+        "max": 0.84,
+        "min": 0.76
+      },
+      "machine": {
+        "centering": [
+          {
+            "method": "optical",
+            "tools": [
+              "Z_TOOL"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "08",
+      "label": "H0.8",
+      "height": {
+        "nominal": 0.8,
+        "max": 0.84,
+        "min": 0.76
+      }
+    },
+    {
+      "id": "09",
+      "label": "H1.0",
+      "height": {
+        "nominal": 1,
+        "max": 1.05,
+        "min": 0.95
+      }
+    },
+    {
+      "id": "10",
+      "label": "H1.0",
+      "height": {
+        "nominal": 1,
+        "max": 1.05,
+        "min": 0.95
+      }
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/0402.json",
+    "sourceFootprint": "0402"
+  }
+}

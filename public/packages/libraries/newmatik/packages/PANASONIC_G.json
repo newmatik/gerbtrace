@@ -1,0 +1,33 @@
+{
+  "name": "PANASONIC_G",
+  "type": "PT_TWO_POLE",
+  "aliases": [
+    "CP_Elec_10x10.2",
+    "ELEC_G",
+    "CAP_ELEC_G",
+    "CHEMI-CON_J",
+    "CHEMI-CON_JA0",
+    "CAPAE1030X1020"
+  ],
+  "body": {
+    "length": 8.6,
+    "width": 4.1
+  },
+  "chip": {
+    "chipLength": 8.6,
+    "leadWidth": 4.1,
+    "leadLength": 2
+  },
+  "height": {
+    "nominal": 10.2,
+    "max": 10.5,
+    "min": 9.9
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/PANASONIC_G.json",
+    "sourceFootprint": "PANASONIC_G"
+  }
+}

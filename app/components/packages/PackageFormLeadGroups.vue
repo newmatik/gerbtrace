@@ -174,6 +174,7 @@
 
 <script setup lang="ts">
 import type { PackageDefinition, TpsysGenericLeadGroup } from '~/utils/package-types'
+import { PACKAGE_TYPE_LABELS } from '~/utils/package-types'
 import { usePackageFormContext, type PackageType, type PackageFormData } from '~/composables/usePackageFormContext'
 
 const { form, readonly: isReadonly, updateForm, toNumber } = usePackageFormContext()
@@ -196,17 +197,7 @@ interface TypeMeta {
   fields: TypeNumericField[]
 }
 
-const typeOptions = [
-  { label: 'Chip (2-terminal)', value: 'Chip' },
-  { label: 'Three-Pole (SOT-23)', value: 'ThreePole' },
-  { label: 'Two-Symmetric (SOIC, SSOP)', value: 'TwoSymmetricLeadGroups' },
-  { label: 'Four-Symmetric (QFP, QFN)', value: 'FourSymmetricLeadGroups' },
-  { label: 'Two-Plus-Two (asymmetric quad)', value: 'TwoPlusTwo' },
-  { label: 'Four-On-Two (4 groups on 2 sides)', value: 'FourOnTwo' },
-  { label: 'BGA (Ball Grid Array)', value: 'BGA' },
-  { label: 'TPSys Generic (P051 + P055)', value: 'PT_GENERIC' },
-  { label: 'Outline (body only)', value: 'Outline' },
-]
+const typeOptions = Object.entries(PACKAGE_TYPE_LABELS).map(([value, label]) => ({ label, value }))
 
 const leadShapeOptions = [
   { label: 'GULLWING', value: 'GULLWING' },
@@ -215,8 +206,8 @@ const leadShapeOptions = [
 ]
 
 const typeMeta: Record<PackageType, TypeMeta> = {
-  Chip: {
-    title: 'Chip Parameters (mm)',
+  PT_TWO_POLE: {
+    title: 'PT_TWO_POLE Parameters (mm)',
     description: 'Two-terminal passive with lead 1 at top in TPSys 0°.',
     tpsysType: 'PT_TWO_POLE',
     group: 'chip',
@@ -226,8 +217,8 @@ const typeMeta: Record<PackageType, TypeMeta> = {
       { key: 'leadLength', label: 'Lead Length', step: '0.05', min: 0 },
     ],
   },
-  ThreePole: {
-    title: 'Three-Pole Parameters (mm)',
+  PT_THREE_POLE: {
+    title: 'PT_THREE_POLE Parameters (mm)',
     description: 'SOT-like geometry with 2 leads on one side and 1 on the opposite side.',
     tpsysType: 'PT_THREE_POLE',
     group: 'threePole',
@@ -238,8 +229,8 @@ const typeMeta: Record<PackageType, TypeMeta> = {
       { key: 'leadLength', label: 'Lead Length', step: '0.05', min: 0 },
     ],
   },
-  TwoSymmetricLeadGroups: {
-    title: 'Two-Symmetric Parameters (mm)',
+  PT_TWO_SYM: {
+    title: 'PT_TWO_SYM Parameters (mm)',
     description: 'Dual-row package with symmetric left/right lead groups.',
     tpsysType: 'PT_TWO_SYM',
     group: 'twoSymmetric',
@@ -251,8 +242,8 @@ const typeMeta: Record<PackageType, TypeMeta> = {
       { key: 'leadLength', label: 'Lead Length', step: '0.05', min: 0 },
     ],
   },
-  FourSymmetricLeadGroups: {
-    title: 'Four-Symmetric Parameters (mm)',
+  PT_FOUR_SYM: {
+    title: 'PT_FOUR_SYM Parameters (mm)',
     description: 'QFP/QFN-like geometry with leads on all four sides.',
     tpsysType: 'PT_FOUR_SYM',
     group: 'fourSymmetric',
@@ -264,8 +255,8 @@ const typeMeta: Record<PackageType, TypeMeta> = {
       { key: 'leadLength', label: 'Lead Length', step: '0.05', min: 0 },
     ],
   },
-  TwoPlusTwo: {
-    title: 'Two-Plus-Two Parameters (mm)',
+  PT_TWO_PLUS_TWO: {
+    title: 'PT_TWO_PLUS_TWO Parameters (mm)',
     description: 'Asymmetric quad with different lead counts on long vs short sides.',
     tpsysType: 'PT_TWO_PLUS_TWO',
     group: 'twoPlusTwo',
@@ -279,8 +270,8 @@ const typeMeta: Record<PackageType, TypeMeta> = {
       { key: 'leadLength', label: 'Lead Length', step: '0.05', min: 0 },
     ],
   },
-  FourOnTwo: {
-    title: 'Four-On-Two Parameters (mm)',
+  PT_FOUR_ON_TWO: {
+    title: 'PT_FOUR_ON_TWO Parameters (mm)',
     description: '4 lead groups arranged on 2 sides with a gap between groups on each side.',
     tpsysType: 'PT_FOUR_ON_TWO',
     group: 'fourOnTwo',
@@ -293,10 +284,10 @@ const typeMeta: Record<PackageType, TypeMeta> = {
       { key: 'groupGap', label: 'Group Gap (C-C)', step: '0.1', min: 0 },
     ],
   },
-  BGA: {
-    title: 'BGA Parameters (mm)',
+  PT_BGA: {
+    title: 'PT_BGA Parameters (mm)',
     description: 'Grid package definition with optional center hole region.',
-    tpsysType: 'PT_BGA / PT_GENERIC_BGA',
+    tpsysType: 'PT_BGA',
     group: 'bga',
     fields: [
       { key: 'leadsPerRow', label: 'Leads Per Row', step: '1', min: 1, integer: true },
@@ -308,14 +299,14 @@ const typeMeta: Record<PackageType, TypeMeta> = {
     ],
   },
   PT_GENERIC: {
-    title: 'TPSys Generic Parameters',
+    title: 'PT_GENERIC Parameters',
     description: 'Catch-all TPSys model using explicit lead-group geometry.',
     tpsysType: 'PT_GENERIC',
     group: null,
     fields: [],
   },
-  Outline: {
-    title: 'Outline Parameters (mm)',
+  PT_OUTLINE: {
+    title: 'PT_OUTLINE Parameters (mm)',
     description: 'Body outline only, no explicit lead geometry.',
     tpsysType: 'PT_OUTLINE',
     group: 'outline',
@@ -329,31 +320,31 @@ const typeMeta: Record<PackageType, TypeMeta> = {
 const currentTypeMeta = computed(() => typeMeta[form.value.type])
 
 const typeDefaults: Record<PackageType, Partial<PackageFormData>> = {
-  Chip: {
+  PT_TWO_POLE: {
     body: { length: 1.0, width: 0.5 },
     chip: { chipLength: 1.0, leadWidth: 0.5, leadLength: 0.25 },
   },
-  ThreePole: {
+  PT_THREE_POLE: {
     body: { length: 2.9, width: 1.3 },
     threePole: { widthOverLeads: 2.4, ccDistance: 1.9, leadWidth: 0.4, leadLength: 0.4 },
   },
-  TwoSymmetricLeadGroups: {
+  PT_TWO_SYM: {
     body: { length: 5.0, width: 4.0 },
     twoSymmetric: { numberOfLeads: 8, widthOverLeads: 6.0, leadPitch: 1.27, leadWidth: 0.4, leadLength: 0.8 },
   },
-  FourSymmetricLeadGroups: {
+  PT_FOUR_SYM: {
     body: { length: 7.0, width: 7.0 },
     fourSymmetric: { numberOfLeads: 32, widthOverLeads: 9.0, leadPitch: 0.5, leadWidth: 0.25, leadLength: 0.5 },
   },
-  TwoPlusTwo: {
+  PT_TWO_PLUS_TWO: {
     body: { length: 7.0, width: 5.0 },
     twoPlusTwo: { leadsLong: 8, leadsShort: 4, widthOverLeadsX: 8.0, widthOverLeadsY: 6.0, leadPitch: 0.65, leadWidth: 0.25, leadLength: 0.5 },
   },
-  FourOnTwo: {
+  PT_FOUR_ON_TWO: {
     body: { length: 5.0, width: 4.0 },
     fourOnTwo: { leadsPerGroup: 4, widthOverLeads: 6.0, leadPitch: 0.65, leadWidth: 0.3, leadLength: 0.5, groupGap: 2.0 },
   },
-  BGA: {
+  PT_BGA: {
     body: { length: 7.0, width: 7.0 },
     bga: { leadsPerRow: 8, leadsPerColumn: 8, leadPitch: 0.8, leadDiameter: 0.4, leadsPerRowInHole: 0, leadsPerColumnInHole: 0 },
   },
@@ -365,7 +356,7 @@ const typeDefaults: Record<PackageType, Partial<PackageFormData>> = {
       ],
     },
   },
-  Outline: {
+  PT_OUTLINE: {
     body: { length: 3.0, width: 2.0 },
     outline: { length: 3.0, width: 2.0 },
   },

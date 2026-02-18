@@ -1,0 +1,29 @@
+{
+  "name": "WFQFN-38-1EP_5X7MM",
+  "type": "PT_GENERIC",
+  "body": {
+    "length": 5.25,
+    "width": 3.85
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "GULLWING",
+        "numLeads": 38,
+        "distFromCenter": 0,
+        "ccHalf": 3.75,
+        "angleMilliDeg": 0,
+        "padLength": 0.534,
+        "padWidth": 0.416
+      }
+    ]
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/WFQFN-38-1EP_5x7mm.kicad_mod",
+    "sourceFootprint": "WFQFN-38-1EP_5x7mm"
+  }
+}

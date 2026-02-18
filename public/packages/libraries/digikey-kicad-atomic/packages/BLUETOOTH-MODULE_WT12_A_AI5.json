@@ -1,0 +1,29 @@
+{
+  "name": "BLUETOOTH-MODULE_WT12_A_AI5",
+  "type": "PT_GENERIC",
+  "body": {
+    "length": 17.871,
+    "width": 10.5
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "GULLWING",
+        "numLeads": 31,
+        "distFromCenter": 0,
+        "ccHalf": 12.765,
+        "angleMilliDeg": 0,
+        "padLength": 1.574,
+        "padWidth": 0.868
+      }
+    ]
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/Bluetooth_Module_WT12-A-AI5.kicad_mod",
+    "sourceFootprint": "Bluetooth_Module_WT12-A-AI5"
+  }
+}

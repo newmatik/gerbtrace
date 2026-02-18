@@ -1,0 +1,23 @@
+{
+  "name": "TQFP-144_16X16MM_P0",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 16,
+    "width": 16
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 144,
+    "widthOverLeads": 18.85,
+    "leadPitch": 0.4,
+    "leadWidth": 0.2,
+    "leadLength": 1.45
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_QFP.pretty/TQFP-144_16x16mm_P0.4mm.kicad_mod",
+    "sourceFootprint": "TQFP-144_16x16mm_P0.4mm"
+  }
+}

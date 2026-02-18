@@ -1,0 +1,23 @@
+{
+  "name": "AMS-LGA_20_4.7X4.5MM_P0",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 4.5,
+    "width": 4.7
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 20,
+    "widthOverLeads": 5.7,
+    "leadPitch": 0.65,
+    "leadWidth": 0.3,
+    "leadLength": 1.1
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_LGA.pretty/AMS_LGA-20_4.7x4.5mm_P0.65mm.kicad_mod",
+    "sourceFootprint": "AMS_LGA-20_4.7x4.5mm_P0.65mm"
+  }
+}

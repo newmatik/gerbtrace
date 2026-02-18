@@ -1,0 +1,23 @@
+{
+  "name": "SOT23-6L",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 1.75,
+    "width": 2.45
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 6,
+    "widthOverLeads": 3.5,
+    "leadPitch": 1.25,
+    "leadWidth": 0.6,
+    "leadLength": 1.2
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/SOT23-6L.kicad_mod",
+    "sourceFootprint": "SOT23-6L"
+  }
+}

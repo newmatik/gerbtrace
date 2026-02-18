@@ -1,0 +1,23 @@
+{
+  "name": "LSSOP-24_W5",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 7.45,
+    "width": 8.15
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 24,
+    "widthOverLeads": 8.15,
+    "leadPitch": 0.64,
+    "leadWidth": 0.4,
+    "leadLength": 1
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/LSSOP-24_W5.6mm.kicad_mod",
+    "sourceFootprint": "LSSOP-24_W5.6mm"
+  }
+}

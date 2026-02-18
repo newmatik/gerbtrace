@@ -1,0 +1,70 @@
+{
+  "name": "BGA-484",
+  "type": "PT_BGA",
+  "aliases": [
+    "BGA484"
+  ],
+  "body": {
+    "length": 23,
+    "width": 23
+  },
+  "bga": {
+    "leadsPerRow": 22,
+    "leadsPerColumn": 22,
+    "leadPitch": 1,
+    "leadDiameter": 0.45,
+    "leadsPerRowInHole": 0,
+    "leadsPerColumnInHole": 0
+  },
+  "height": {
+    "nominal": 2.3,
+    "max": 2.415,
+    "min": 2.185
+  },
+  "searchArea": {
+    "x": 23,
+    "y": 23
+  },
+  "machine": {
+    "mountTools": [
+      "C23"
+    ],
+    "pickWaitTime": 150,
+    "placeWaitTime": 150,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "low",
+      "y": "highest",
+      "tape": "high",
+      "theta": "highest",
+      "z": "high",
+      "hydraTheta": "low",
+      "hydraZ": "high"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "standard",
+      "linescan"
+    ],
+    "coplanarityCheck": false
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/BGA-484.json",
+    "sourceFootprint": "BGA-484"
+  }
+}

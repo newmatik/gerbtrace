@@ -1,0 +1,23 @@
+{
+  "name": "LGA-16_3X3MM_P0.5MM_LAYOUT_BORDER3X5Y",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 3,
+    "width": 3
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 16,
+    "widthOverLeads": 3,
+    "leadPitch": 0.5,
+    "leadWidth": 0.35,
+    "leadLength": 0.55
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_LGA.pretty/LGA-16_3x3mm_P0.5mm_LayoutBorder3x5y.kicad_mod",
+    "sourceFootprint": "LGA-16_3x3mm_P0.5mm_LayoutBorder3x5y"
+  }
+}

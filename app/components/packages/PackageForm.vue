@@ -5,6 +5,14 @@
         <PackageFormGeneral />
       </div>
     </template>
+    <template #attribution>
+      <div class="pt-4">
+        <PackageFormAttribution
+          :provenance="props.modelValue.provenance"
+          :library-attribution="props.libraryAttribution ?? undefined"
+        />
+      </div>
+    </template>
     <template #accelerations>
       <div class="pt-4">
         <PackageFormAccelerations />
@@ -43,9 +51,17 @@ import type { TabsItem } from '@nuxt/ui'
 import type { PackageDefinition, TpsysGenericLeadGroup, PackageVariation, MachineSettings } from '~/utils/package-types'
 import { PACKAGE_FORM_KEY, type PackageFormData, type PackageType } from '~/composables/usePackageFormContext'
 
+interface PackageLibraryAttribution {
+  upstreamOwner?: string
+  upstreamRepo?: string
+  upstreamUrl?: string
+  notice?: string
+}
+
 const props = defineProps<{
   modelValue: PackageDefinition
   readonly?: boolean
+  libraryAttribution?: PackageLibraryAttribution | null
 }>()
 
 const emit = defineEmits<{
@@ -60,6 +76,7 @@ const tabItems: TabsItem[] = [
   { label: 'Centering', icon: 'i-lucide-focus', slot: 'centering' },
   { label: 'Glue Dots', icon: 'i-lucide-droplet', slot: 'glue-dots' },
   { label: 'Variations', icon: 'i-lucide-copy', slot: 'variations' },
+  { label: 'Attribution', icon: 'i-lucide-bookmark', slot: 'attribution' },
 ]
 
 // ── Form data (decompose PackageDefinition into form fields) ──
@@ -78,15 +95,15 @@ const form = computed<PackageFormData>(() => {
     variations: pkg.variations ? JSON.parse(JSON.stringify(pkg.variations)) : undefined,
   }
   switch (pkg.type) {
-    case 'Chip': base.chip = { ...pkg.chip }; break
-    case 'ThreePole': base.threePole = { ...pkg.threePole }; break
-    case 'TwoSymmetricLeadGroups': base.twoSymmetric = { ...pkg.twoSymmetric }; break
-    case 'FourSymmetricLeadGroups': base.fourSymmetric = { ...pkg.fourSymmetric }; break
-    case 'TwoPlusTwo': base.twoPlusTwo = { ...pkg.twoPlusTwo }; break
-    case 'FourOnTwo': base.fourOnTwo = { ...pkg.fourOnTwo }; break
-    case 'BGA': base.bga = { ...pkg.bga }; break
+    case 'PT_TWO_POLE': base.chip = { ...pkg.chip }; break
+    case 'PT_THREE_POLE': base.threePole = { ...pkg.threePole }; break
+    case 'PT_TWO_SYM': base.twoSymmetric = { ...pkg.twoSymmetric }; break
+    case 'PT_FOUR_SYM': base.fourSymmetric = { ...pkg.fourSymmetric }; break
+    case 'PT_TWO_PLUS_TWO': base.twoPlusTwo = { ...pkg.twoPlusTwo }; break
+    case 'PT_FOUR_ON_TWO': base.fourOnTwo = { ...pkg.fourOnTwo }; break
+    case 'PT_BGA': base.bga = { ...pkg.bga }; break
     case 'PT_GENERIC': base.generic = { leadGroups: pkg.generic.leadGroups.map(g => ({ ...g })) }; break
-    case 'Outline': base.outline = { ...pkg.outline }; break
+    case 'PT_OUTLINE': base.outline = { ...pkg.outline }; break
   }
   return base
 })
@@ -109,6 +126,7 @@ function buildPackageDefinition(data: PackageFormData): PackageDefinition {
     name: data.name,
     aliases: data.aliases,
     body: data.body,
+    provenance: props.modelValue.provenance,
   }
   // Attach optional physical / machine / variation properties
   if (data.height) base.height = data.height
@@ -118,26 +136,26 @@ function buildPackageDefinition(data: PackageFormData): PackageDefinition {
   if (data.variations?.length) base.variations = data.variations
 
   switch (data.type) {
-    case 'Chip':
-      return { ...base, type: 'Chip', chip: data.chip! }
-    case 'ThreePole':
-      return { ...base, type: 'ThreePole', threePole: data.threePole! }
-    case 'TwoSymmetricLeadGroups':
-      return { ...base, type: 'TwoSymmetricLeadGroups', twoSymmetric: data.twoSymmetric! }
-    case 'FourSymmetricLeadGroups':
-      return { ...base, type: 'FourSymmetricLeadGroups', fourSymmetric: data.fourSymmetric! }
-    case 'TwoPlusTwo':
-      return { ...base, type: 'TwoPlusTwo', twoPlusTwo: data.twoPlusTwo! }
-    case 'FourOnTwo':
-      return { ...base, type: 'FourOnTwo', fourOnTwo: data.fourOnTwo! }
-    case 'BGA':
-      return { ...base, type: 'BGA', bga: data.bga! }
+    case 'PT_TWO_POLE':
+      return { ...base, type: 'PT_TWO_POLE', chip: data.chip! }
+    case 'PT_THREE_POLE':
+      return { ...base, type: 'PT_THREE_POLE', threePole: data.threePole! }
+    case 'PT_TWO_SYM':
+      return { ...base, type: 'PT_TWO_SYM', twoSymmetric: data.twoSymmetric! }
+    case 'PT_FOUR_SYM':
+      return { ...base, type: 'PT_FOUR_SYM', fourSymmetric: data.fourSymmetric! }
+    case 'PT_TWO_PLUS_TWO':
+      return { ...base, type: 'PT_TWO_PLUS_TWO', twoPlusTwo: data.twoPlusTwo! }
+    case 'PT_FOUR_ON_TWO':
+      return { ...base, type: 'PT_FOUR_ON_TWO', fourOnTwo: data.fourOnTwo! }
+    case 'PT_BGA':
+      return { ...base, type: 'PT_BGA', bga: data.bga! }
     case 'PT_GENERIC':
       return { ...base, type: 'PT_GENERIC', generic: data.generic ?? { leadGroups: [] } }
-    case 'Outline':
-      return { ...base, type: 'Outline', outline: data.outline! }
+    case 'PT_OUTLINE':
+      return { ...base, type: 'PT_OUTLINE', outline: data.outline! }
     default:
-      return { ...base, type: 'Outline', outline: { length: 1, width: 1 } }
+      return { ...base, type: 'PT_OUTLINE', outline: { length: 1, width: 1 } }
   }
 }
 

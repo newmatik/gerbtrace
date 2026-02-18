@@ -42,39 +42,30 @@ function accStr(level: AccLevel | undefined): string {
 }
 
 // ── Type mapping ──
+// Package type discriminators are already TPSys names, so identity mapping.
 
 function tpsysType(pkg: PackageDefinition): string {
-  switch (pkg.type) {
-    case 'Chip': return 'PT_TWO_POLE'
-    case 'ThreePole': return 'PT_THREE_POLE'
-    case 'TwoSymmetricLeadGroups': return 'PT_TWO_SYM'
-    case 'FourSymmetricLeadGroups': return 'PT_FOUR_SYM'
-    case 'TwoPlusTwo': return 'PT_TWO_PLUS_TWO'
-    case 'FourOnTwo': return 'PT_FOUR_ON_TWO'
-    case 'BGA': return 'PT_BGA'
-    case 'PT_GENERIC': return 'PT_GENERIC'
-    case 'Outline': return 'PT_OUTLINE'
-  }
+  return pkg.type
 }
 
 // ── P04 pin numbering ──
 
 function pinNumbering(pkg: PackageDefinition): string {
   switch (pkg.type) {
-    case 'Chip':
+    case 'PT_TWO_POLE':
       return 'P04 1 2 0'
-    case 'ThreePole':
+    case 'PT_THREE_POLE':
       return 'P04 1 3 0'
-    case 'TwoSymmetricLeadGroups': {
+    case 'PT_TWO_SYM': {
       const half = pkg.twoSymmetric.numberOfLeads / 2
       return `P04 1 ${half} ${half + 1} ${pkg.twoSymmetric.numberOfLeads} 0`
     }
-    case 'FourSymmetricLeadGroups': {
+    case 'PT_FOUR_SYM': {
       const n = pkg.fourSymmetric.numberOfLeads
       const q = n / 4
       return `P04 1 ${q} ${q + 1} ${2 * q} ${2 * q + 1} ${3 * q} ${3 * q + 1} ${n} 0`
     }
-    case 'TwoPlusTwo': {
+    case 'PT_TWO_PLUS_TWO': {
       const { leadsLong, leadsShort } = pkg.twoPlusTwo
       const total = 2 * leadsLong + 2 * leadsShort
       const s1 = leadsLong
@@ -82,16 +73,15 @@ function pinNumbering(pkg: PackageDefinition): string {
       const s3 = s2 + leadsLong
       return `P04 1 ${s1} ${s1 + 1} ${s2} ${s2 + 1} ${s3} ${s3 + 1} ${total} 0`
     }
-    case 'FourOnTwo': {
+    case 'PT_FOUR_ON_TWO': {
       const { leadsPerGroup } = pkg.fourOnTwo
       const total = leadsPerGroup * 4
-      // Left-upper, left-lower, right-lower, right-upper
       const s1 = leadsPerGroup
       const s2 = 2 * leadsPerGroup
       const s3 = 3 * leadsPerGroup
       return `P04 1 ${s1} ${s1 + 1} ${s2} ${s2 + 1} ${s3} ${s3 + 1} ${total} 0`
     }
-    case 'BGA': {
+    case 'PT_BGA': {
       const total = pkg.bga.leadsPerRow * pkg.bga.leadsPerColumn
       return `P04 1 ${total} 0`
     }
@@ -99,7 +89,7 @@ function pinNumbering(pkg: PackageDefinition): string {
       const total = pkg.generic.leadGroups.reduce((sum, g) => sum + g.numLeads, 0)
       return total > 0 ? `P04 1 ${total} 0` : 'P04 1 1 0'
     }
-    case 'Outline':
+    case 'PT_OUTLINE':
       return 'P04 1 1 0'
   }
 }
@@ -324,15 +314,15 @@ function outlineLeadGroups(_pkg: OutlinePackage): LeadGroupLine[] {
 
 function getLeadGroups(pkg: PackageDefinition): LeadGroupLine[] {
   switch (pkg.type) {
-    case 'Chip': return chipLeadGroups(pkg)
-    case 'ThreePole': return threePoleLeadGroups(pkg)
-    case 'TwoSymmetricLeadGroups': return twoSymLeadGroups(pkg)
-    case 'FourSymmetricLeadGroups': return fourSymLeadGroups(pkg)
-    case 'TwoPlusTwo': return twoPlusTwoLeadGroups(pkg)
-    case 'FourOnTwo': return fourOnTwoLeadGroups(pkg)
-    case 'BGA': return bgaLeadGroups(pkg)
+    case 'PT_TWO_POLE': return chipLeadGroups(pkg)
+    case 'PT_THREE_POLE': return threePoleLeadGroups(pkg)
+    case 'PT_TWO_SYM': return twoSymLeadGroups(pkg)
+    case 'PT_FOUR_SYM': return fourSymLeadGroups(pkg)
+    case 'PT_TWO_PLUS_TWO': return twoPlusTwoLeadGroups(pkg)
+    case 'PT_FOUR_ON_TWO': return fourOnTwoLeadGroups(pkg)
+    case 'PT_BGA': return bgaLeadGroups(pkg)
     case 'PT_GENERIC': return genericLeadGroups(pkg)
-    case 'Outline': return outlineLeadGroups(pkg)
+    case 'PT_OUTLINE': return outlineLeadGroups(pkg)
   }
 }
 

@@ -1,0 +1,23 @@
+{
+  "name": "VSON-8_3.3X3.3MM_P0.65MM_NEX_FET",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 3.3,
+    "width": 3.3
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 8,
+    "widthOverLeads": 3.51,
+    "leadPitch": 0.65,
+    "leadWidth": 0.5,
+    "leadLength": 0.63
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_SON.pretty/VSON-8_3.3x3.3mm_P0.65mm_NexFET.kicad_mod",
+    "sourceFootprint": "VSON-8_3.3x3.3mm_P0.65mm_NexFET"
+  }
+}

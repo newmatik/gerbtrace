@@ -1,0 +1,26 @@
+{
+  "name": "LFBGA-144",
+  "type": "PT_BGA",
+  "aliases": [
+    "LFBGA144"
+  ],
+  "body": {
+    "length": 10.8,
+    "width": 10.8
+  },
+  "bga": {
+    "leadsPerRow": 12,
+    "leadsPerColumn": 12,
+    "leadPitch": 0.8,
+    "leadDiameter": 0.35,
+    "leadsPerRowInHole": 0,
+    "leadsPerColumnInHole": 0
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/LFBGA-144.json",
+    "sourceFootprint": "LFBGA-144"
+  }
+}

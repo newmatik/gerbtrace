@@ -1,7 +1,7 @@
 <template>
   <div
     class="group flex items-center gap-1.5 px-2 py-1.5 rounded text-xs select-none transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800"
-    :class="{ 'opacity-40': !layer.visible }"
+    :class="{ 'opacity-40': !layer.visible && layer.type !== 'Unmatched' }"
   >
     <!-- Non-renderable layers (BOM, etc.): show file icon instead of color dot -->
     <template v-if="isNonRenderableLayer(layer.type)">
@@ -88,19 +88,18 @@
         <UIcon name="i-lucide-ellipsis-vertical" class="text-sm" />
       </button>
     </UDropdownMenu>
-    <select
+    <USelect
       v-if="!isNonRenderableLayer(layer.type)"
-      :value="layer.type"
-      class="text-[10px] border rounded px-1 py-0.5 cursor-pointer outline-none transition-colors appearance-none shrink-0 max-w-[5.5rem]"
-      :class="layer.type === 'Unmatched'
-        ? 'bg-amber-50 dark:bg-amber-900/30 border-amber-300 dark:border-amber-600 text-amber-700 dark:text-amber-300'
-        : 'bg-neutral-100 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:border-neutral-400 dark:hover:border-neutral-500'"
+      :model-value="layer.type"
+      :items="layerTypeItems"
+      value-key="value"
+      label-key="label"
+      size="xs"
+      class="shrink-0 max-w-[8rem]"
       @click.stop
       @pointerdown.stop
-      @change="(e) => $emit('typeChange', (e.target as HTMLSelectElement).value)"
-    >
-      <option v-for="t in ALL_LAYER_TYPES" :key="t" :value="t">{{ t }}</option>
-    </select>
+      @update:model-value="(value) => $emit('typeChange', String(value))"
+    />
     <span
       v-else
       class="text-[10px] text-neutral-400 dark:text-neutral-500 shrink-0"
@@ -198,6 +197,7 @@ const menuGroups = computed(() => {
 // ── Color picker ──
 
 const localColor = ref(props.layer.color)
+const layerTypeItems = ALL_LAYER_TYPES.map((t) => ({ label: t, value: t }))
 
 watch(() => props.layer.color, (val) => {
   localColor.value = val

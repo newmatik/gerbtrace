@@ -1,0 +1,29 @@
+{
+  "name": "KNOWLES-LGA_5_3.5X2",
+  "type": "PT_GENERIC",
+  "body": {
+    "length": 2.203,
+    "width": 1.68
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "GULLWING",
+        "numLeads": 5,
+        "distFromCenter": 0,
+        "ccHalf": 1.574,
+        "angleMilliDeg": 0,
+        "padLength": 0.64,
+        "padWidth": 0.478
+      }
+    ]
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Sensor_Audio.pretty/Knowles_LGA-5_3.5x2.65mm.kicad_mod",
+    "sourceFootprint": "Knowles_LGA-5_3.5x2.65mm"
+  }
+}

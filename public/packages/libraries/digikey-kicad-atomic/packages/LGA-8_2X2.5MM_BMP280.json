@@ -1,0 +1,23 @@
+{
+  "name": "LGA-8_2X2.5MM_BMP280",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 2.5,
+    "width": 2
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 8,
+    "widthOverLeads": 2.45,
+    "leadPitch": 0.65,
+    "leadWidth": 0.35,
+    "leadLength": 0.5
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/LGA-8_2x2.5mm_BMP280.kicad_mod",
+    "sourceFootprint": "LGA-8_2x2.5mm_BMP280"
+  }
+}

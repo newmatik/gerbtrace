@@ -1,0 +1,23 @@
+{
+  "name": "TO-261-4",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 3.9,
+    "width": 5.46
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 4,
+    "widthOverLeads": 7.8,
+    "leadPitch": 5.572,
+    "leadWidth": 1.5,
+    "leadLength": 1.57
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/TO-261-4.kicad_mod",
+    "sourceFootprint": "TO-261-4"
+  }
+}

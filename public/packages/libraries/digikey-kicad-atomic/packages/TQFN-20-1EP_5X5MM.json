@@ -1,0 +1,23 @@
+{
+  "name": "TQFN-20-1EP_5X5MM",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 5,
+    "width": 5
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 20,
+    "widthOverLeads": 5.63,
+    "leadPitch": 0.65,
+    "leadWidth": 0.35,
+    "leadLength": 0.95
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/TQFN-20-1EP_5x5mm.kicad_mod",
+    "sourceFootprint": "TQFN-20-1EP_5x5mm"
+  }
+}

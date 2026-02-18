@@ -1,0 +1,23 @@
+{
+  "name": "Mini-MELF",
+  "type": "PT_TWO_POLE",
+  "aliases": [
+    "MINIMELF"
+  ],
+  "body": {
+    "length": 3.6,
+    "width": 1.4
+  },
+  "chip": {
+    "chipLength": 3.6,
+    "leadWidth": 1.4,
+    "leadLength": 0.3
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/Mini-MELF.json",
+    "sourceFootprint": "Mini-MELF"
+  }
+}

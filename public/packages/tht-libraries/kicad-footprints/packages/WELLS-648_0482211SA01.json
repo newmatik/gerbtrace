@@ -1,0 +1,991 @@
+{
+  "name": "WELLS-648_0482211SA01",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 15.4,
+      "y": 5.68,
+      "width": 41.16,
+      "height": 19.16,
+      "cornerRadius": 1.533,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4.64,
+      "y1": 14.86,
+      "x2": 35.58,
+      "y2": 14.86,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 35.58,
+      "y1": -3.36,
+      "x2": -4.64,
+      "y2": -3.36,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4.53,
+      "y1": 14.75,
+      "x2": 35.47,
+      "y2": 14.75,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4.53,
+      "y1": -3.25,
+      "x2": 35.47,
+      "y2": -3.25,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4.64,
+      "y1": -3.36,
+      "x2": -4.64,
+      "y2": 14.86,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 35.58,
+      "y1": 14.86,
+      "x2": 35.58,
+      "y2": -3.36,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 35.47,
+      "y1": 14.75,
+      "x2": 35.47,
+      "y2": -3.25,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4.53,
+      "y1": 14.75,
+      "x2": -4.53,
+      "y2": -3.25,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4.78,
+      "y1": -3.5,
+      "x2": -2.03,
+      "y2": -3.5,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4.78,
+      "y1": -3.5,
+      "x2": -4.78,
+      "y2": -1.25,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": -3.3,
+      "y": 9.5,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -3.3,
+      "y": 9.5,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": -3.3,
+      "y": 8,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -3.3,
+      "y": 8,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": -3.3,
+      "y": 6.5,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -3.3,
+      "y": 6.5,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": -3.3,
+      "y": 5,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -3.3,
+      "y": 5,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 0,
+      "y": 10.5,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 10.5,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 0,
+      "y": 9,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 9,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 0,
+      "y": 7.5,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 7.5,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 0,
+      "y": 6,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 6,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 3.3,
+      "y": 7,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 3.3,
+      "y": 7,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 3.3,
+      "y": 8.5,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 3.3,
+      "y": 8.5,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 3.3,
+      "y": 10,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 3.3,
+      "y": 10,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 3.3,
+      "y": 11.5,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 3.3,
+      "y": 11.5,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 3.3,
+      "y": 5.5,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 3.3,
+      "y": 5.5,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 3.3,
+      "y": 4,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 3.3,
+      "y": 4,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 3.3,
+      "y": 2.5,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 3.3,
+      "y": 2.5,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 3.3,
+      "y": 1,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 3.3,
+      "y": 1,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "rect",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "width": 1.5,
+      "height": 1.1
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 0,
+      "y": 1.5,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 1.5,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 0,
+      "y": 3,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 3,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 0,
+      "y": 4.5,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 4.5,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": -3.3,
+      "y": 11,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -3.3,
+      "y": 11,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": -3.3,
+      "y": 0.5,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -3.3,
+      "y": 0.5,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": -3.3,
+      "y": 2,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -3.3,
+      "y": 2,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": -3.3,
+      "y": 3.5,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -3.3,
+      "y": 3.5,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 27.64,
+      "y": 4,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 27.64,
+      "y": 4,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 27.64,
+      "y": 2.5,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 27.64,
+      "y": 2.5,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 27.64,
+      "y": 1,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 27.64,
+      "y": 1,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 27.64,
+      "y": 11.5,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 27.64,
+      "y": 11.5,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 30.94,
+      "y": 4.5,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 30.94,
+      "y": 4.5,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 30.94,
+      "y": 3,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 30.94,
+      "y": 3,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 30.94,
+      "y": 1.5,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 30.94,
+      "y": 1.5,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 30.94,
+      "y": 0,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 30.94,
+      "y": 0,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 34.24,
+      "y": 0.5,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 34.24,
+      "y": 0.5,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 34.24,
+      "y": 2,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 34.24,
+      "y": 2,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 34.24,
+      "y": 3.5,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 34.24,
+      "y": 3.5,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 34.24,
+      "y": 5,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 34.24,
+      "y": 5,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 34.24,
+      "y": 11,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 34.24,
+      "y": 11,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 34.24,
+      "y": 9.5,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 34.24,
+      "y": 9.5,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 34.24,
+      "y": 8,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 34.24,
+      "y": 8,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 34.24,
+      "y": 6.5,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 34.24,
+      "y": 6.5,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 30.94,
+      "y": 6,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 30.94,
+      "y": 6,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 30.94,
+      "y": 7.5,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 30.94,
+      "y": 7.5,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 30.94,
+      "y": 9,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 30.94,
+      "y": 9,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 30.94,
+      "y": 10.5,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 30.94,
+      "y": 10.5,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 27.64,
+      "y": 5.5,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 27.64,
+      "y": 5.5,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 27.64,
+      "y": 7,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 27.64,
+      "y": 7,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 27.64,
+      "y": 8.5,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 27.64,
+      "y": 8.5,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 27.64,
+      "y": 10,
+      "width": 1.5,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 27.64,
+      "y": 10,
+      "radius": 0.375,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Socket.pretty/Wells_648-0482211SA01.kicad_mod",
+    "sourceFootprint": "Wells_648-0482211SA01"
+  }
+}

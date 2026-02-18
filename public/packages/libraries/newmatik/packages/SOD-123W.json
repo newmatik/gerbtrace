@@ -1,0 +1,67 @@
+{
+  "name": "SOD-123W",
+  "type": "PT_TWO_POLE",
+  "body": {
+    "length": 3.7,
+    "width": 1.7
+  },
+  "chip": {
+    "chipLength": 3.7,
+    "leadWidth": 1.7,
+    "leadLength": 0.3
+  },
+  "aliases": [
+    "SOD123W"
+  ],
+  "height": {
+    "nominal": 1,
+    "max": 1.2,
+    "min": 0.8
+  },
+  "searchArea": {
+    "x": 3.5,
+    "y": 1.7
+  },
+  "machine": {
+    "mountTools": [
+      "A13"
+    ],
+    "pickWaitTime": 100,
+    "placeWaitTime": 100,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "high",
+      "y": "high",
+      "tape": "high",
+      "theta": "high",
+      "z": "high",
+      "hydraTheta": "high",
+      "hydraZ": "high"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL",
+          "HYDRA_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/SOD-123W.json",
+    "sourceFootprint": "SOD-123W"
+  }
+}

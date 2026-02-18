@@ -1,0 +1,23 @@
+{
+  "name": "NXP-LGA_8_3X5MM_P1.25MM_H1",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 5,
+    "width": 3
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 8,
+    "widthOverLeads": 4.95,
+    "leadPitch": 1.25,
+    "leadWidth": 0.5,
+    "leadLength": 1.2
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_LGA.pretty/NXP_LGA-8_3x5mm_P1.25mm_H1.1mm.kicad_mod",
+    "sourceFootprint": "NXP_LGA-8_3x5mm_P1.25mm_H1.1mm"
+  }
+}

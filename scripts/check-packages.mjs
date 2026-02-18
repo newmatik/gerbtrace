@@ -4,6 +4,8 @@ import process from 'node:process'
 
 const PACKAGES_DIR = path.resolve(process.cwd(), 'public', 'packages')
 const MANIFEST_PATH = path.join(PACKAGES_DIR, '_manifest.json')
+const LIBRARIES_DIR = path.join(PACKAGES_DIR, 'libraries')
+const TREE_MANIFEST_PATH = path.join(LIBRARIES_DIR, '_tree.json')
 
 function normalise(name) {
   // Must match `app/composables/usePackageLibrary.ts`
@@ -28,6 +30,23 @@ async function listPackageJsonFiles() {
     .map((e) => e.name)
     .filter((n) => n.toLowerCase().endsWith('.json'))
     .filter((n) => n !== '_manifest.json')
+    .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
+}
+
+async function existsDir(dirPath) {
+  try {
+    const st = await fs.stat(dirPath)
+    return st.isDirectory()
+  } catch {
+    return false
+  }
+}
+
+async function listLibraryIds() {
+  const entries = await fs.readdir(LIBRARIES_DIR, { withFileTypes: true })
+  return entries
+    .filter((e) => e.isDirectory() && !e.name.startsWith('_'))
+    .map((e) => e.name)
     .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
 }
 
@@ -155,6 +174,151 @@ async function checkNamesAndAliasesUnique() {
   }
 }
 
+async function checkTreeManifestMatchesDir() {
+  let tree
+  try {
+    tree = await readJson(TREE_MANIFEST_PATH)
+  } catch {
+    throw new Error('Missing /public/packages/libraries/_tree.json (run manifest builder)')
+  }
+
+  if (!tree || !Array.isArray(tree.libraries)) {
+    throw new Error('Invalid /public/packages/libraries/_tree.json (expected object with libraries[])')
+  }
+
+  const libraryIds = await listLibraryIds()
+  const manifestIds = tree.libraries.map((l) => l?.id).filter((v) => typeof v === 'string')
+  const missing = libraryIds.filter((id) => !manifestIds.includes(id))
+  const extra = manifestIds.filter((id) => !libraryIds.includes(id))
+  if (missing.length || extra.length) {
+    throw new Error(`_tree.json out of date (library mismatch: missing=${missing.join(', ') || '-'} extra=${extra.join(', ') || '-'})`)
+  }
+
+  for (const id of libraryIds) {
+    const pkgDir = path.join(LIBRARIES_DIR, id, 'packages')
+    const item = tree.libraries.find((l) => l.id === id)
+    if (!item) continue
+    let expectedFiles = []
+    try {
+      const entries = await fs.readdir(pkgDir, { withFileTypes: true })
+      expectedFiles = entries
+        .filter((e) => e.isFile())
+        .map((e) => e.name)
+        .filter((n) => n.toLowerCase().endsWith('.json'))
+        .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
+    } catch {
+      expectedFiles = []
+    }
+    const actualFiles = Array.isArray(item.packages)
+      ? item.packages
+        .map((p) => p?.file)
+        .filter((v) => typeof v === 'string')
+        .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
+      : []
+
+    const miss = expectedFiles.filter((f) => !actualFiles.includes(f))
+    const ext = actualFiles.filter((f) => !expectedFiles.includes(f))
+    if (miss.length || ext.length) {
+      throw new Error(`_tree.json out of date for library "${id}" (missing=${miss.join(', ') || '-'} extra=${ext.join(', ') || '-'})`)
+    }
+  }
+}
+
+async function checkTreeNamesAndAliasesUnique() {
+  const libraryIds = await listLibraryIds()
+
+  /** @type {Set<string>} */
+  const globalNameKeys = new Set()
+  /** @type {Map<string, string>} */
+  const globalOwner = new Map()
+  const errors = []
+
+  for (const libraryId of libraryIds) {
+    const pkgDir = path.join(LIBRARIES_DIR, libraryId, 'packages')
+    let files = []
+    try {
+      const entries = await fs.readdir(pkgDir, { withFileTypes: true })
+      files = entries
+        .filter((e) => e.isFile())
+        .map((e) => e.name)
+        .filter((n) => n.toLowerCase().endsWith('.json'))
+    } catch {
+      continue
+    }
+
+    /** @type {Set<string>} */
+    const localNameKeys = new Set()
+    /** @type {Set<string>} */
+    const localAnyKeys = new Set()
+
+    for (const fname of files) {
+      const fp = path.join(pkgDir, fname)
+      const pkg = await readJson(fp)
+      const pkgName = pkg?.name
+      if (!pkgName || typeof pkgName !== 'string') {
+        errors.push(`[${libraryId}] ${fname} missing valid "name"`)
+        continue
+      }
+
+      const nKey = normalise(pkgName)
+      if (localNameKeys.has(nKey)) {
+        errors.push(`[${libraryId}] duplicate package name key "${nKey}" (${fname})`)
+      }
+      localNameKeys.add(nKey)
+
+      if (globalOwner.has(nKey)) {
+        errors.push(`Global name collision "${nKey}" between ${globalOwner.get(nKey)} and ${libraryId}/${fname}`)
+      } else {
+        globalOwner.set(nKey, `${libraryId}/${fname}`)
+      }
+      globalNameKeys.add(nKey)
+    }
+
+    for (const fname of files) {
+      const fp = path.join(pkgDir, fname)
+      const pkg = await readJson(fp)
+      const pkgName = pkg?.name
+      if (!pkgName || typeof pkgName !== 'string') continue
+      const ownerKey = normalise(pkgName)
+
+      if (localAnyKeys.has(ownerKey)) {
+        errors.push(`[${libraryId}] key collision for name "${ownerKey}" in ${fname}`)
+      } else {
+        localAnyKeys.add(ownerKey)
+      }
+
+      const aliases = pkg.aliases ?? []
+      if (aliases != null && !Array.isArray(aliases)) {
+        errors.push(`[${libraryId}] ${fname} has non-array "aliases"`)
+        continue
+      }
+
+      for (const alias of aliases) {
+        if (typeof alias !== 'string' || !alias.trim()) {
+          errors.push(`[${libraryId}] ${fname} has invalid alias ${JSON.stringify(alias)}`)
+          continue
+        }
+        const aKey = normalise(alias)
+        if (aKey === ownerKey) {
+          errors.push(`[${libraryId}] redundant alias equals own name key (${fname}: "${alias}")`)
+          continue
+        }
+        if (localAnyKeys.has(aKey)) {
+          errors.push(`[${libraryId}] key collision "${aKey}" (${fname})`)
+        }
+        if (globalNameKeys.has(aKey) && !localNameKeys.has(aKey)) {
+          errors.push(`[${libraryId}] alias "${alias}" collides with package name key "${aKey}" in another package`)
+        }
+        localAnyKeys.add(aKey)
+      }
+    }
+  }
+
+  if (errors.length) {
+    throw new Error(`Package library tree check failed (${errors.length} issues)\n\n- ${errors.join('\n- ')}`)
+  }
+}
+
 async function main() {
   // Ensure folder exists
   try {
@@ -166,6 +330,11 @@ async function main() {
 
   await checkManifestMatchesDir()
   await checkNamesAndAliasesUnique()
+
+  if (await existsDir(LIBRARIES_DIR)) {
+    await checkTreeManifestMatchesDir()
+    await checkTreeNamesAndAliasesUnique()
+  }
 }
 
 main().catch((err) => {

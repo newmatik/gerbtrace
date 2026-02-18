@@ -1,0 +1,23 @@
+{
+  "name": "HSOP-36-1EP_11.0X15.9MM_P0.65MM_SLUG_DOWN_THERMALVIAS",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 15.9,
+    "width": 11
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 40,
+    "widthOverLeads": 15.4,
+    "leadPitch": 0.65,
+    "leadWidth": 0.38,
+    "leadLength": 1.7
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_SO.pretty/HSOP-36-1EP_11.0x15.9mm_P0.65mm_SlugDown_ThermalVias.kicad_mod",
+    "sourceFootprint": "HSOP-36-1EP_11.0x15.9mm_P0.65mm_SlugDown_ThermalVias"
+  }
+}

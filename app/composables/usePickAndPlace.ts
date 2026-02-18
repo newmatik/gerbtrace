@@ -137,7 +137,7 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
     // Exception: chip passives like resistors/capacitors/inductors/jumpers are typically not polarized.
     const ref = (comp.designator || '').trim().toUpperCase()
     const isPassiveRef = /^(R|C|L|J|FB)\d+/.test(ref)
-    if (matched?.type === 'Chip' && isPassiveRef) return false
+    if (matched?.type === 'PT_TWO_POLE' && isPassiveRef) return false
     return true
   }
 

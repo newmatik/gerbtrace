@@ -1,0 +1,23 @@
+{
+  "name": "INFINEON-PG_TO_220_7LEAD_TAB_PIN8",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 10.8,
+    "width": 16.15
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 220,
+    "widthOverLeads": 16.15,
+    "leadPitch": 1.27,
+    "leadWidth": 0.8,
+    "leadLength": 4.6
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_TO_SOT_SMD.pretty/Infineon_PG-TO-220-7Lead_TabPin8.kicad_mod",
+    "sourceFootprint": "Infineon_PG-TO-220-7Lead_TabPin8"
+  }
+}

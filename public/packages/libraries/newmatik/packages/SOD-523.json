@@ -1,0 +1,88 @@
+{
+  "name": "SOD-523",
+  "body": {
+    "length": 1.2,
+    "width": 0.7
+  },
+  "type": "PT_TWO_POLE",
+  "chip": {
+    "chipLength": 1.2,
+    "leadWidth": 0.7,
+    "leadLength": 0.6
+  },
+  "aliases": [
+    "SOD523"
+  ],
+  "height": {
+    "nominal": 0.6,
+    "max": 0.7,
+    "min": 0.5
+  },
+  "searchArea": {
+    "x": 1.621,
+    "y": 0.281
+  },
+  "machine": {
+    "mountTools": [
+      "C14"
+    ],
+    "pickWaitTime": 50,
+    "placeWaitTime": 50,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "low",
+      "y": "low",
+      "tape": "low",
+      "theta": "low",
+      "z": "low",
+      "hydraTheta": "low",
+      "hydraZ": "low"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL",
+          "HYDRA_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false
+  },
+  "variations": [
+    {
+      "id": "hydra",
+      "label": "Hydra",
+      "machine": {
+        "centering": [
+          {
+            "method": "optical",
+            "tools": [
+              "Z_TOOL",
+              "HYDRA_TOOL"
+            ]
+          }
+        ],
+        "visionModes": [
+          "linescan",
+          "hydra"
+        ]
+      }
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/SOD-523.json",
+    "sourceFootprint": "SOD-523"
+  }
+}

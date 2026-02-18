@@ -1,0 +1,23 @@
+{
+  "name": "SOT-143R_REVERSE",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 2.31,
+    "width": 2.31
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 4,
+    "widthOverLeads": 3.3,
+    "leadPitch": 3.3,
+    "leadWidth": 1.05,
+    "leadLength": 1.4
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_TO_SOT_SMD.pretty/SOT-143R_Reverse.kicad_mod",
+    "sourceFootprint": "SOT-143R_Reverse"
+  }
+}

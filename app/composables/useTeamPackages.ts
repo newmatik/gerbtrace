@@ -1,4 +1,5 @@
 import type { PackageDefinition } from '~/utils/package-types'
+import { normalizePackageType } from '~/utils/package-types'
 
 /**
  * CRUD for team-scoped package definitions stored in Supabase.
@@ -47,7 +48,10 @@ export function useTeamPackages() {
         console.warn('[useTeamPackages] Failed to fetch:', error.message)
         teamPackages.value = []
       } else {
-        teamPackages.value = (data ?? []) as TeamPackageRecord[]
+        teamPackages.value = (data ?? []).map((rec: any) => ({
+          ...rec,
+          data: normalizePackageType(rec.data) as PackageDefinition,
+        })) as TeamPackageRecord[]
       }
     } finally {
       teamPackagesLoading.value = false

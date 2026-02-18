@@ -1,0 +1,23 @@
+{
+  "name": "ALLEGRO-QSOP_24_3.9X8.7MM_P0",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 8.7,
+    "width": 3.9
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 24,
+    "widthOverLeads": 7.3,
+    "leadPitch": 0.635,
+    "leadWidth": 0.4,
+    "leadLength": 2.3
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Sensor_Current.pretty/Allegro_QSOP-24_3.9x8.7mm_P0.635mm.kicad_mod",
+    "sourceFootprint": "Allegro_QSOP-24_3.9x8.7mm_P0.635mm"
+  }
+}

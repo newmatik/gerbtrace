@@ -1,0 +1,23 @@
+{
+  "name": "ST-UFQFPN_20_3X3MM_P0",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 3,
+    "width": 3
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 20,
+    "widthOverLeads": 3.65,
+    "leadPitch": 0.5,
+    "leadWidth": 0.3,
+    "leadLength": 0.7
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_DFN_QFN.pretty/ST_UFQFPN-20_3x3mm_P0.5mm.kicad_mod",
+    "sourceFootprint": "ST_UFQFPN-20_3x3mm_P0.5mm"
+  }
+}

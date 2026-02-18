@@ -1,0 +1,29 @@
+{
+  "name": "LINEAR-LGA_133_15.0X15.0MM_LAYOUT12X12_P1",
+  "type": "PT_GENERIC",
+  "body": {
+    "length": 10.22,
+    "width": 10.22
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "GULLWING",
+        "numLeads": 133,
+        "distFromCenter": 0,
+        "ccHalf": 7.3,
+        "angleMilliDeg": 0,
+        "padLength": 0.63,
+        "padWidth": 0.63
+      }
+    ]
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_LGA.pretty/Linear_LGA-133_15.0x15.0mm_Layout12x12_P1.27mm.kicad_mod",
+    "sourceFootprint": "Linear_LGA-133_15.0x15.0mm_Layout12x12_P1.27mm"
+  }
+}

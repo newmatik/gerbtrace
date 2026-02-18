@@ -1,0 +1,29 @@
+{
+  "name": "SOT-665",
+  "type": "PT_GENERIC",
+  "body": {
+    "length": 1.022,
+    "width": 1.649
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "GULLWING",
+        "numLeads": 5,
+        "distFromCenter": 0,
+        "ccHalf": 1.178,
+        "angleMilliDeg": 0,
+        "padLength": 0.53,
+        "padWidth": 0.364
+      }
+    ]
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_TO_SOT_SMD.pretty/SOT-665.kicad_mod",
+    "sourceFootprint": "SOT-665"
+  }
+}

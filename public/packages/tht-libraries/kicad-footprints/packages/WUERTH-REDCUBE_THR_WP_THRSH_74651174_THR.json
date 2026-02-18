@@ -1,0 +1,172 @@
+{
+  "name": "WUERTH-REDCUBE_THR_WP_THRSH_74651174_THR",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "width": 9.87,
+      "height": 9.87,
+      "cornerRadius": 0.79,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.5,
+      "y1": -3.5,
+      "x2": 3.5,
+      "y2": 3.5,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.5,
+      "y1": 3.5,
+      "x2": -3.5,
+      "y2": 3.5,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -3.5,
+      "y1": 3.5,
+      "x2": -3.5,
+      "y2": -3.5,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -3.5,
+      "y1": -3.5,
+      "x2": 3.5,
+      "y2": -3.5,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.7,
+      "y1": -1.2,
+      "x2": 3.7,
+      "y2": 1.2,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 1.2,
+      "y1": 3.7,
+      "x2": -1.2,
+      "y2": 3.7,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -3.7,
+      "y1": 1.2,
+      "x2": -3.7,
+      "y2": -1.2,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.2,
+      "y1": -3.7,
+      "x2": 1.2,
+      "y2": -3.7,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "circle",
+      "role": "pin1",
+      "x": 2.935,
+      "y": 2.935,
+      "radius": 1.6
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 2.935,
+      "y": 2.935,
+      "radius": 0.925,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin1",
+      "x": 2.935,
+      "y": -2.935,
+      "radius": 1.6
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 2.935,
+      "y": -2.935,
+      "radius": 0.925,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin1",
+      "x": -2.935,
+      "y": -2.935,
+      "radius": 1.6
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -2.935,
+      "y": -2.935,
+      "radius": 0.925,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin1",
+      "x": -2.935,
+      "y": 2.935,
+      "radius": 1.6
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -2.935,
+      "y": 2.935,
+      "radius": 0.925,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/TerminalBlock_Wuerth.pretty/Wuerth_REDCUBE-THR_WP-THRSH_74651174_THR.kicad_mod",
+    "sourceFootprint": "Wuerth_REDCUBE-THR_WP-THRSH_74651174_THR"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "SOIC-6-5_W4",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 3.34,
+    "width": 7.5
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 6,
+    "widthOverLeads": 7.5,
+    "leadPitch": 1.27,
+    "leadWidth": 0.8,
+    "leadLength": 1.2
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/SOIC-6-5_W4.55mm.kicad_mod",
+    "sourceFootprint": "SOIC-6-5_W4.55mm"
+  }
+}

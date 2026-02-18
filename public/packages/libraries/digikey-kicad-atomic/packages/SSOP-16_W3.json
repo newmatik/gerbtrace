@@ -1,0 +1,23 @@
+{
+  "name": "SSOP-16_W3",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 4.902,
+    "width": 7.468
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 16,
+    "widthOverLeads": 7.468,
+    "leadPitch": 0.635,
+    "leadWidth": 0.457,
+    "leadLength": 2.54
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/SSOP-16_W3.90mm.kicad_mod",
+    "sourceFootprint": "SSOP-16_W3.90mm"
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "name": "QFN-28-5x5-P0.50",
+  "type": "PT_FOUR_SYM",
+  "aliases": [
+    "QFN28-5x5-P0.50",
+    "QFN285x5P0.50"
+  ],
+  "body": {
+    "length": 5,
+    "width": 5
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 28,
+    "widthOverLeads": 7,
+    "leadPitch": 0.5,
+    "leadWidth": 0.35,
+    "leadLength": 0.25
+  },
+  "height": {
+    "nominal": 0.75,
+    "max": 0.787,
+    "min": 0.713
+  },
+  "searchArea": {
+    "x": 3.928,
+    "y": 3.928
+  },
+  "machine": {
+    "mountTools": [
+      "A14"
+    ],
+    "pickWaitTime": 100,
+    "placeWaitTime": 100,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "highest",
+      "y": "highest",
+      "tape": "highest",
+      "theta": "highest",
+      "z": "high",
+      "hydraTheta": "highest",
+      "hydraZ": "high"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/QFN-28-5x5-P0.50.json",
+    "sourceFootprint": "QFN-28-5x5-P0.50"
+  }
+}

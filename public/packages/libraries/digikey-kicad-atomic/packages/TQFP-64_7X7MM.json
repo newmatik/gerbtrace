@@ -1,0 +1,23 @@
+{
+  "name": "TQFP-64_7X7MM",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 7,
+    "width": 7
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 64,
+    "widthOverLeads": 9,
+    "leadPitch": 0.4,
+    "leadWidth": 0.2,
+    "leadLength": 1
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/TQFP-64_7x7mm.kicad_mod",
+    "sourceFootprint": "TQFP-64_7x7mm"
+  }
+}

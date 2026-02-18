@@ -1,0 +1,23 @@
+{
+  "name": "HTSSOP-20-1EP_4.4X6.5MM_P0.65MM_EP3.4X6.5MM_MASK2.96X2.96MM_THERMALVIAS",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 6.5,
+    "width": 4.4
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 20,
+    "widthOverLeads": 7.3,
+    "leadPitch": 0.65,
+    "leadWidth": 0.4,
+    "leadLength": 1.575
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_SO.pretty/HTSSOP-20-1EP_4.4x6.5mm_P0.65mm_EP3.4x6.5mm_Mask2.96x2.96mm_ThermalVias.kicad_mod",
+    "sourceFootprint": "HTSSOP-20-1EP_4.4x6.5mm_P0.65mm_EP3.4x6.5mm_Mask2.96x2.96mm_ThermalVias"
+  }
+}

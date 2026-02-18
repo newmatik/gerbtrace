@@ -1,0 +1,23 @@
+{
+  "name": "WFDFN-6_1.5X1",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 1.5,
+    "width": 1.5
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 6,
+    "widthOverLeads": 1.9,
+    "leadPitch": 0.5,
+    "leadWidth": 0.28,
+    "leadLength": 0.75
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/WFDFN-6_1.5x1.5mm.kicad_mod",
+    "sourceFootprint": "WFDFN-6_1.5x1.5mm"
+  }
+}

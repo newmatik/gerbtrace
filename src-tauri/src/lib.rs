@@ -37,6 +37,21 @@ fn consume_post_update_info(app: AppHandle) -> Option<String> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+  // Sentry: init when DSN is set (build-time SENTRY_DSN or runtime env). Guard must live for app lifetime.
+  let _sentry_guard = std::env::var("SENTRY_DSN")
+    .ok()
+    .or_else(|| option_env!("SENTRY_DSN").map(String::from))
+    .map(|dsn| {
+      sentry::init((
+        dsn,
+        sentry::ClientOptions {
+          release: sentry::release_name!(),
+          default_integrations: true,
+          ..Default::default()
+        },
+      ))
+    });
+
   tauri::Builder::default()
     .plugin(tauri_plugin_opener::init())
     .plugin(tauri_plugin_process::init())

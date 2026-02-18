@@ -1,0 +1,23 @@
+{
+  "name": "TFQFN-24-1EP_4X4MM",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 4,
+    "width": 4
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 24,
+    "widthOverLeads": 4.48,
+    "leadPitch": 0.5,
+    "leadWidth": 0.28,
+    "leadLength": 0.69
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/TFQFN-24-1EP_4x4mm.kicad_mod",
+    "sourceFootprint": "TFQFN-24-1EP_4x4mm"
+  }
+}

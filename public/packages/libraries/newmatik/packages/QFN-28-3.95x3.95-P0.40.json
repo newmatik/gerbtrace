@@ -1,0 +1,26 @@
+{
+  "name": "QFN-28-3.95x3.95-P0.40",
+  "body": {
+    "length": 3.95,
+    "width": 3.95
+  },
+  "type": "PT_FOUR_SYM",
+  "fourSymmetric": {
+    "numberOfLeads": 28,
+    "widthOverLeads": 4,
+    "leadPitch": 0.4,
+    "leadWidth": 0.4,
+    "leadLength": 0.15
+  },
+  "aliases": [
+    "QFN28-3.95x3.95-P0.40",
+    "QFN283.95x3.95P0.40"
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/QFN-28-3.95x3.95-P0.40.json",
+    "sourceFootprint": "QFN-28-3.95x3.95-P0.40"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "SOIC-8-1EP_3.9X4.9MM_P1.27MM_EP2.514X3",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 4.9,
+    "width": 3.9
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 8,
+    "widthOverLeads": 6.9,
+    "leadPitch": 1.27,
+    "leadWidth": 0.6,
+    "leadLength": 1.625
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_SO.pretty/SOIC-8-1EP_3.9x4.9mm_P1.27mm_EP2.514x3.2mm.kicad_mod",
+    "sourceFootprint": "SOIC-8-1EP_3.9x4.9mm_P1.27mm_EP2.514x3.2mm"
+  }
+}

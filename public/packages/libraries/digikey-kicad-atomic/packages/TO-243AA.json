@@ -1,0 +1,23 @@
+{
+  "name": "TO-243AA",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 2.394,
+    "width": 3.185
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 4,
+    "widthOverLeads": 4.55,
+    "leadPitch": 3.42,
+    "leadWidth": 0.768,
+    "leadLength": 1.725
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/TO-243AA.kicad_mod",
+    "sourceFootprint": "TO-243AA"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "QFN-20-1EP_3X3MM_P0.45MM_EP1.6X1.6MM_THERMALVIAS",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 3,
+    "width": 3
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 20,
+    "widthOverLeads": 3.75,
+    "leadPitch": 0.45,
+    "leadWidth": 0.25,
+    "leadLength": 0.85
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_DFN_QFN.pretty/QFN-20-1EP_3x3mm_P0.45mm_EP1.6x1.6mm_ThermalVias.kicad_mod",
+    "sourceFootprint": "QFN-20-1EP_3x3mm_P0.45mm_EP1.6x1.6mm_ThermalVias"
+  }
+}

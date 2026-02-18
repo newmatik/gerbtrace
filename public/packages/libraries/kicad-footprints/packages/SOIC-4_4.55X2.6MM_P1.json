@@ -1,0 +1,23 @@
+{
+  "name": "SOIC-4_4.55X2.6MM_P1",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 2.6,
+    "width": 4.55
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 4,
+    "widthOverLeads": 8.1,
+    "leadPitch": 1.27,
+    "leadWidth": 0.55,
+    "leadLength": 1.6
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_SO.pretty/SOIC-4_4.55x2.6mm_P1.27mm.kicad_mod",
+    "sourceFootprint": "SOIC-4_4.55x2.6mm_P1.27mm"
+  }
+}

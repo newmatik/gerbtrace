@@ -1,0 +1,97 @@
+{
+  "name": "QFP44",
+  "type": "PT_FOUR_SYM",
+  "aliases": [
+    "LQFP-44",
+    "LQFP44",
+    "QFP-44"
+  ],
+  "body": {
+    "length": 10,
+    "width": 10
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 44,
+    "widthOverLeads": 12,
+    "leadPitch": 0.8,
+    "leadWidth": 0.3,
+    "leadLength": 0.6
+  },
+  "height": {
+    "nominal": 1.4,
+    "max": 1.6,
+    "min": 1.2
+  },
+  "searchArea": {
+    "x": 12.1,
+    "y": 12.1
+  },
+  "machine": {
+    "mountTools": [
+      "A23"
+    ],
+    "pickWaitTime": 100,
+    "placeWaitTime": 100,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "lowest",
+      "y": "highest",
+      "tape": "low",
+      "theta": "highest",
+      "z": "high",
+      "hydraTheta": "highest",
+      "hydraZ": "lowest"
+    },
+    "centering": [
+      {
+        "method": "mechanical",
+        "mechanical": {
+          "angle": 0,
+          "position": "POS_UPPER",
+          "force": "MIDDLE_FORCE"
+        },
+        "jaw": {
+          "nominal": 12,
+          "max": 13,
+          "min": 11
+        }
+      },
+      {
+        "method": "mechanical",
+        "mechanical": {
+          "angle": -90000,
+          "position": "POS_UPPER",
+          "force": "MIDDLE_FORCE"
+        },
+        "jaw": {
+          "nominal": 12,
+          "max": 13,
+          "min": 11
+        }
+      },
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "standard",
+      "linescan"
+    ],
+    "coplanarityCheck": false
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/QFP44.json",
+    "sourceFootprint": "QFP44"
+  }
+}

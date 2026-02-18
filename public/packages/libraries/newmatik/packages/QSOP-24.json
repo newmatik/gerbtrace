@@ -1,0 +1,25 @@
+{
+  "name": "QSOP-24",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 7.6,
+    "width": 3.9
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 24,
+    "widthOverLeads": 5.5,
+    "leadPitch": 0.635,
+    "leadWidth": 0.28,
+    "leadLength": 0.45
+  },
+  "aliases": [
+    "QSOP24"
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/QSOP-24.json",
+    "sourceFootprint": "QSOP-24"
+  }
+}

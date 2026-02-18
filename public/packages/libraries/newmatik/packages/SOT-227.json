@@ -1,0 +1,22 @@
+{
+  "name": "SOT-227",
+  "type": "PT_OUTLINE",
+  "body": {
+    "length": 38,
+    "width": 25
+  },
+  "outline": {
+    "length": 38,
+    "width": 25
+  },
+  "aliases": [
+    "SOT227"
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/SOT-227.json",
+    "sourceFootprint": "SOT-227"
+  }
+}

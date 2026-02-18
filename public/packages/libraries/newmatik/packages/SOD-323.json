@@ -1,0 +1,97 @@
+{
+  "name": "SOD-323",
+  "body": {
+    "length": 1.25,
+    "width": 1.7
+  },
+  "type": "PT_TWO_POLE",
+  "chip": {
+    "chipLength": 2.2,
+    "leadWidth": 0.35,
+    "leadLength": 0.7
+  },
+  "aliases": [
+    "SOD323"
+  ],
+  "height": {
+    "nominal": 1.16,
+    "max": 1.218,
+    "min": 1.102
+  },
+  "searchArea": {
+    "x": 2.5,
+    "y": 1.2
+  },
+  "machine": {
+    "mountTools": [
+      "A12"
+    ],
+    "pickWaitTime": 100,
+    "placeWaitTime": 100,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "high",
+      "y": "high",
+      "tape": "high",
+      "theta": "high",
+      "z": "high",
+      "hydraTheta": "low",
+      "hydraZ": "low"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false
+  },
+  "variations": [
+    {
+      "id": "hydra",
+      "label": "Hydra",
+      "machine": {
+        "centering": [
+          {
+            "method": "optical",
+            "tools": [
+              "Z_TOOL",
+              "HYDRA_TOOL"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "slow",
+      "label": "Slow (no Hydra)",
+      "machine": {
+        "centering": [
+          {
+            "method": "optical",
+            "tools": [
+              "Z_TOOL"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/SOD-323.json",
+    "sourceFootprint": "SOD-323"
+  }
+}

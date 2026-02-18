@@ -1,0 +1,22 @@
+{
+  "name": "SOT-23W",
+  "type": "PT_THREE_POLE",
+  "body": {
+    "length": 1.82,
+    "width": 2.38
+  },
+  "threePole": {
+    "widthOverLeads": 3.4,
+    "ccDistance": 1.3,
+    "leadWidth": 0.7,
+    "leadLength": 1
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_TO_SOT_SMD.pretty/SOT-23W.kicad_mod",
+    "sourceFootprint": "SOT-23W"
+  }
+}

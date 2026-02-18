@@ -26,13 +26,12 @@
         </div>
       </div>
       <label class="flex items-center gap-2 text-[11px] text-neutral-400">
-        <input
-          type="checkbox"
-          :checked="machine.coplanarityCheck ?? false"
+        <USwitch
+          :model-value="machine.coplanarityCheck ?? false"
+          size="sm"
           :disabled="isReadonly"
-          class="rounded"
-          @change="updateMachine({ coplanarityCheck: ($event.target as HTMLInputElement).checked })"
-        >
+          @update:model-value="updateMachine({ coplanarityCheck: !!$event })"
+        />
         Coplanarity check (P07)
       </label>
     </fieldset>

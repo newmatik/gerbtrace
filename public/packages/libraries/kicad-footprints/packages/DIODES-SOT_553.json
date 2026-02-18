@@ -1,0 +1,23 @@
+{
+  "name": "DIODES-SOT_553",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 0.962,
+    "width": 1.54
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 6,
+    "widthOverLeads": 2.2,
+    "leadPitch": 0.917,
+    "leadWidth": 0.375,
+    "leadLength": 0.5
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_TO_SOT_SMD.pretty/Diodes_SOT-553.kicad_mod",
+    "sourceFootprint": "Diodes_SOT-553"
+  }
+}

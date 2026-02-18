@@ -1,0 +1,23 @@
+{
+  "name": "SC-74-6_1.5X2.9MM_P0",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 2.9,
+    "width": 1.5
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 74,
+    "widthOverLeads": 3.7,
+    "leadPitch": 0.95,
+    "leadWidth": 0.5,
+    "leadLength": 1.425
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_SO.pretty/SC-74-6_1.5x2.9mm_P0.95mm.kicad_mod",
+    "sourceFootprint": "SC-74-6_1.5x2.9mm_P0.95mm"
+  }
+}

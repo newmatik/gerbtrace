@@ -1,0 +1,241 @@
+{
+  "name": "LED-VCCLITE_5381H3_6.35X6",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 1.27,
+      "y": 1.27,
+      "width": 7.404,
+      "height": 7.404,
+      "cornerRadius": 0.592,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.572,
+      "y1": 4.572,
+      "x2": -2.032,
+      "y2": 4.572,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.572,
+      "y1": -2.032,
+      "x2": -2.032,
+      "y2": -2.032,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.572,
+      "y1": 4.572,
+      "x2": 4.572,
+      "y2": -2.032,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.45,
+      "y1": 4.45,
+      "x2": -1.91,
+      "y2": 4.45,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.45,
+      "y1": -1.91,
+      "x2": 4.45,
+      "y2": 4.45,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.91,
+      "y1": -1.91,
+      "x2": 4.45,
+      "y2": -1.91,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.032,
+      "y1": 4.572,
+      "x2": -2.032,
+      "y2": 3.81,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.032,
+      "y1": -2.032,
+      "x2": -2.032,
+      "y2": -1.27,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.91,
+      "y1": 4.45,
+      "x2": -1.91,
+      "y2": 3.87,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.91,
+      "y1": -1.91,
+      "x2": -1.91,
+      "y2": -1.33,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.53,
+      "y1": -1.07,
+      "x2": -1.53,
+      "y2": -0.53,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.53,
+      "y1": 3.61,
+      "x2": -1.53,
+      "y2": 3.07,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.91,
+      "y1": 3.87,
+      "x2": -1.53,
+      "y2": 3.61,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.91,
+      "y1": -1.33,
+      "x2": -1.53,
+      "y2": -1.07,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.651,
+      "y1": 3.556,
+      "x2": -2.032,
+      "y2": 3.81,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.032,
+      "y1": -1.27,
+      "x2": -1.651,
+      "y2": -1.016,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.651,
+      "y1": 3.556,
+      "x2": -1.651,
+      "y2": 3.175,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.651,
+      "y1": -1.016,
+      "x2": -1.651,
+      "y2": -0.635,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 2.54,
+      "y": 2.54,
+      "radius": 0.875
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 2.54,
+      "y": 2.54,
+      "radius": 0.35,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "rect",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "width": 1.75,
+      "height": 1.75
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.35,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/LED_THT.pretty/LED_VCCLite_5381H3_6.35x6.35mm.kicad_mod",
+    "sourceFootprint": "LED_VCCLite_5381H3_6.35x6.35mm"
+  }
+}

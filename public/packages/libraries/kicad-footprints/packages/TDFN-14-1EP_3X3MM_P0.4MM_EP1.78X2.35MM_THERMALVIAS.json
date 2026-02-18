@@ -1,0 +1,23 @@
+{
+  "name": "TDFN-14-1EP_3X3MM_P0.4MM_EP1.78X2.35MM_THERMALVIAS",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 3,
+    "width": 3
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 14,
+    "widthOverLeads": 3.75,
+    "leadPitch": 0.4,
+    "leadWidth": 0.2,
+    "leadLength": 0.775
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_DFN_QFN.pretty/TDFN-14-1EP_3x3mm_P0.4mm_EP1.78x2.35mm_ThermalVias.kicad_mod",
+    "sourceFootprint": "TDFN-14-1EP_3x3mm_P0.4mm_EP1.78x2.35mm_ThermalVias"
+  }
+}

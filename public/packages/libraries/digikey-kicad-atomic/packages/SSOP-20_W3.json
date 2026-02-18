@@ -1,0 +1,23 @@
+{
+  "name": "SSOP-20_W3",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 6.165,
+    "width": 6.609
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 20,
+    "widthOverLeads": 6.609,
+    "leadPitch": 0.635,
+    "leadWidth": 0.45,
+    "leadLength": 1.25
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/SSOP-20_W3.9mm.kicad_mod",
+    "sourceFootprint": "SSOP-20_W3.9mm"
+  }
+}

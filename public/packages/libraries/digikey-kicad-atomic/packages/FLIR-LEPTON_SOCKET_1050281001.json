@@ -1,0 +1,23 @@
+{
+  "name": "FLIR-LEPTON_SOCKET_1050281001",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 11.26,
+    "width": 11.26
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 68,
+    "widthOverLeads": 11.26,
+    "leadPitch": 0.9,
+    "leadWidth": 0.65,
+    "leadLength": 0.65
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/FLIR_Lepton_Socket_1050281001.kicad_mod",
+    "sourceFootprint": "FLIR_Lepton_Socket_1050281001"
+  }
+}

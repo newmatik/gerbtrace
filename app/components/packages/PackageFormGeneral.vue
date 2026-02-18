@@ -260,13 +260,12 @@
         </div>
         <div class="flex items-end pb-1">
           <label class="flex items-center gap-2 text-[11px] text-neutral-400">
-            <input
-              type="checkbox"
-              :checked="form.machine?.zMountForceLow ?? false"
+            <USwitch
+              :model-value="form.machine?.zMountForceLow ?? false"
+              size="sm"
               :disabled="isReadonly"
-              class="rounded"
-              @change="updateMachine({ zMountForceLow: ($event.target as HTMLInputElement).checked })"
-            >
+              @update:model-value="updateMachine({ zMountForceLow: !!$event })"
+            />
             Low force
           </label>
         </div>
@@ -277,13 +276,12 @@
         <p class="text-[11px] font-medium text-neutral-400">Flags</p>
         <div class="grid grid-cols-2 gap-x-4 gap-y-1.5">
           <label v-for="flag in flagOptions" :key="flag.key" class="flex items-center gap-2 text-[11px] text-neutral-400">
-            <input
-              type="checkbox"
-              :checked="(form.machine?.flags as any)?.[flag.key] ?? false"
+            <USwitch
+              :model-value="(form.machine?.flags as any)?.[flag.key] ?? false"
+              size="sm"
               :disabled="isReadonly"
-              class="rounded"
-              @change="updateFlag(flag.key, ($event.target as HTMLInputElement).checked)"
-            >
+              @update:model-value="updateFlag(flag.key, !!$event)"
+            />
             {{ flag.label }}
           </label>
         </div>

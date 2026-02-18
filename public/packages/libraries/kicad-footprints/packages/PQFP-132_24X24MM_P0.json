@@ -1,0 +1,23 @@
+{
+  "name": "PQFP-132_24X24MM_P0",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 24,
+    "width": 24
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 132,
+    "widthOverLeads": 28.435,
+    "leadPitch": 0.635,
+    "leadWidth": 0.38,
+    "leadLength": 1.635
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_QFP.pretty/PQFP-132_24x24mm_P0.635mm.kicad_mod",
+    "sourceFootprint": "PQFP-132_24x24mm_P0.635mm"
+  }
+}

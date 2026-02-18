@@ -1,0 +1,82 @@
+{
+  "name": "DFN-12-3x3-P0.50",
+  "type": "PT_TWO_SYM",
+  "aliases": [
+    "DFN-12",
+    "DFN12",
+    "DFN12-3x3-P0.50",
+    "DFN123x3P0.50"
+  ],
+  "body": {
+    "length": 3,
+    "width": 3
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 12,
+    "widthOverLeads": 2.1,
+    "leadPitch": 0.5,
+    "leadWidth": 0.35,
+    "leadLength": 0.25
+  },
+  "height": {
+    "nominal": 0.9,
+    "max": 0.945,
+    "min": 0.855
+  },
+  "searchArea": {
+    "x": 3,
+    "y": 3
+  },
+  "machine": {
+    "mountTools": [
+      "A13"
+    ],
+    "pickWaitTime": 150,
+    "placeWaitTime": 150,
+    "zMountForce": null,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "lowest",
+      "y": "lowest",
+      "tape": "lowest",
+      "theta": "highest",
+      "z": "high",
+      "hydraTheta": "highest",
+      "hydraZ": "lowest"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false
+  },
+  "variations": [
+    {
+      "id": "08",
+      "label": "H0.8",
+      "height": {
+        "nominal": 0.75,
+        "max": 0.8,
+        "min": 0.7
+      }
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/DFN-12-3x3-P0.50.json",
+    "sourceFootprint": "DFN-12-3x3-P0.50"
+  }
+}

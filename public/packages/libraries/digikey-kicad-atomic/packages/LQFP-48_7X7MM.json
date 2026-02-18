@@ -1,0 +1,23 @@
+{
+  "name": "LQFP-48_7X7MM",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 7,
+    "width": 7
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 48,
+    "widthOverLeads": 9.6,
+    "leadPitch": 0.5,
+    "leadWidth": 0.35,
+    "leadLength": 1.2
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/LQFP-48_7x7mm.kicad_mod",
+    "sourceFootprint": "LQFP-48_7x7mm"
+  }
+}

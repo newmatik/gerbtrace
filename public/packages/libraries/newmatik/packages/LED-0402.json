@@ -1,0 +1,82 @@
+{
+  "name": "LED-0402",
+  "type": "PT_TWO_POLE",
+  "aliases": [
+    "0402 LED",
+    "CHIP-LED0402",
+    "CHIP-LED402",
+    "LED 0402",
+    "LED0402"
+  ],
+  "body": {
+    "length": 1,
+    "width": 0.5
+  },
+  "chip": {
+    "chipLength": 1,
+    "leadWidth": 0.5,
+    "leadLength": 0.2
+  },
+  "height": {
+    "nominal": 0.6,
+    "max": 0.63,
+    "min": 0.57
+  },
+  "searchArea": {
+    "x": 0.935,
+    "y": 0.468
+  },
+  "machine": {
+    "mountTools": [
+      "C14"
+    ],
+    "hydraTools": [
+      "H06"
+    ],
+    "pickWaitTime": 50,
+    "placeWaitTime": 50,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": true
+    },
+    "accelerations": {
+      "x": "low",
+      "y": "high",
+      "tape": "lowest",
+      "theta": "high",
+      "z": "lowest",
+      "hydraTheta": "low",
+      "hydraZ": "low"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL",
+          "HYDRA_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan",
+      "hydra"
+    ],
+    "coplanarityCheck": false,
+    "markingPositions": [
+      {
+        "x": 0,
+        "y": 0,
+        "dotType": "DOT0.5mm"
+      }
+    ]
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/LED-0402.json",
+    "sourceFootprint": "LED-0402"
+  }
+}

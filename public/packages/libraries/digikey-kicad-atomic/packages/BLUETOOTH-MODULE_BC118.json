@@ -1,0 +1,29 @@
+{
+  "name": "BLUETOOTH-MODULE_BC118",
+  "type": "PT_GENERIC",
+  "body": {
+    "length": 10.85,
+    "width": 11.06
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "GULLWING",
+        "numLeads": 35,
+        "distFromCenter": 0,
+        "ccHalf": 7.9,
+        "angleMilliDeg": 0,
+        "padLength": 1.2,
+        "padWidth": 0.977
+      }
+    ]
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/Bluetooth_Module_BC118.kicad_mod",
+    "sourceFootprint": "Bluetooth_Module_BC118"
+  }
+}

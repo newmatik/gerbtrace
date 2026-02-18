@@ -1,0 +1,239 @@
+{
+  "name": "TRANSFORMER-MICROPHONE_LUNDAHL_LL1538",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 13.97,
+      "y": -7.62,
+      "width": 39.14,
+      "height": 25.16,
+      "cornerRadius": 2.013,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -3.15,
+      "y": 2.55,
+      "radius": 1.254,
+      "color": "#4b5563",
+      "strokeColor": "#6b7280"
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -3.17,
+      "y": 2.54,
+      "radius": 1.27,
+      "color": "#374151",
+      "strokeColor": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -5.2,
+      "y1": -19.8,
+      "x2": 33.14,
+      "y2": -19.8,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 33.14,
+      "y1": 4.56,
+      "x2": -5.2,
+      "y2": 4.56,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -5.08,
+      "y1": -19.68,
+      "x2": 33.02,
+      "y2": -19.68,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 33.02,
+      "y1": 4.44,
+      "x2": -5.08,
+      "y2": 4.44,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -5.2,
+      "y1": -19.8,
+      "x2": -5.2,
+      "y2": 4.56,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 33.14,
+      "y1": 4.56,
+      "x2": 33.14,
+      "y2": -19.8,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 33.02,
+      "y1": -19.68,
+      "x2": 33.02,
+      "y2": 4.44,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -5.08,
+      "y1": 4.44,
+      "x2": -5.08,
+      "y2": -19.68,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "rect",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "width": 2.54,
+      "height": 2.54
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.76,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 0,
+      "y": -5.08,
+      "radius": 1.27
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": -5.08,
+      "radius": 0.76,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 0,
+      "y": -10.16,
+      "radius": 1.27
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": -10.16,
+      "radius": 0.76,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 0,
+      "y": -15.24,
+      "radius": 1.27
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": -15.24,
+      "radius": 0.76,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 27.94,
+      "y": 0,
+      "radius": 1.27
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 27.94,
+      "y": 0,
+      "radius": 0.76,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 27.94,
+      "y": -5.08,
+      "radius": 1.27
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 27.94,
+      "y": -5.08,
+      "radius": 0.76,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 27.94,
+      "y": -15.24,
+      "radius": 1.27
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 27.94,
+      "y": -15.24,
+      "radius": 0.76,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Transformer_THT.pretty/Transformer_Microphone_Lundahl_LL1538.kicad_mod",
+    "sourceFootprint": "Transformer_Microphone_Lundahl_LL1538"
+  }
+}

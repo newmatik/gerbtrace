@@ -1,0 +1,23 @@
+{
+  "name": "RELAY-DPDT_KEMET_EE2_NUH_DOUBLE_COIL",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 14.7,
+    "width": 7.4
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 10,
+    "widthOverLeads": 7.4,
+    "leadPitch": 2.54,
+    "leadWidth": 2,
+    "leadLength": 1.11
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Relay_SMD.pretty/Relay_DPDT_Kemet_EE2_NUH_DoubleCoil.kicad_mod",
+    "sourceFootprint": "Relay_DPDT_Kemet_EE2_NUH_DoubleCoil"
+  }
+}

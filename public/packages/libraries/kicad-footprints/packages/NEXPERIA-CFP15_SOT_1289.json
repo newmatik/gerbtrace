@@ -1,0 +1,23 @@
+{
+  "name": "NEXPERIA-CFP15_SOT_1289",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 3.8,
+    "width": 7
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 128,
+    "widthOverLeads": 8.2,
+    "leadPitch": 1.9,
+    "leadWidth": 1.7,
+    "leadLength": 1.9
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_TO_SOT_SMD.pretty/Nexperia_CFP15_SOT-1289.kicad_mod",
+    "sourceFootprint": "Nexperia_CFP15_SOT-1289"
+  }
+}

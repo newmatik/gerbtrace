@@ -1,0 +1,188 @@
+{
+  "name": "THERMOCOUPLE-CONNECTOR_PCC_SMP_K",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 7.85,
+      "y": 4.45,
+      "width": 17.27,
+      "height": 21.9,
+      "cornerRadius": 1.382,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 15.61,
+      "y1": -5.94,
+      "x2": 15.61,
+      "y2": 14.86,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.11,
+      "y1": -5.94,
+      "x2": 0.11,
+      "y2": 14.86,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.11,
+      "y1": 14.86,
+      "x2": 15.61,
+      "y2": 14.86,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.11,
+      "y1": -5.94,
+      "x2": 15.61,
+      "y2": -5.94,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 15.7,
+      "y1": -6.1,
+      "x2": 15.7,
+      "y2": -5.6,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 15.7,
+      "y1": -6.1,
+      "x2": 15.2,
+      "y2": -6.1,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0,
+      "y1": -6.1,
+      "x2": 0.5,
+      "y2": -6.1,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0,
+      "y1": -6.1,
+      "x2": 0,
+      "y2": -5.6,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0,
+      "y1": 15,
+      "x2": 0.5,
+      "y2": 15,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0,
+      "y1": 14.6,
+      "x2": 0,
+      "y2": 15,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 15.7,
+      "y1": 14.6,
+      "x2": 15.7,
+      "y2": 15,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 15.7,
+      "y1": 15,
+      "x2": 15.3,
+      "y2": 15,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 1,
+      "y": 13.5,
+      "radius": 1.385
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 1,
+      "y": 13.5,
+      "radius": 0.885,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 14.7,
+      "y": 13.5,
+      "radius": 1.385
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 14.7,
+      "y": 13.5,
+      "radius": 0.885,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "polarity-marker",
+      "x": -0.247,
+      "y": 14.747,
+      "radius": 0.693,
+      "color": "#ef4444"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/Thermocouple_Connector_PCC-SMP-K.kicad_mod",
+    "sourceFootprint": "Thermocouple_Connector_PCC-SMP-K"
+  }
+}

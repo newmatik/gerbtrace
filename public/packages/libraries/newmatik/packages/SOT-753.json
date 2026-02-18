@@ -1,0 +1,22 @@
+{
+  "name": "SOT-753",
+  "type": "PT_OUTLINE",
+  "body": {
+    "length": 1.6,
+    "width": 1.6
+  },
+  "outline": {
+    "length": 1.6,
+    "width": 1.6
+  },
+  "aliases": [
+    "SOT753"
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/SOT-753.json",
+    "sourceFootprint": "SOT-753"
+  }
+}

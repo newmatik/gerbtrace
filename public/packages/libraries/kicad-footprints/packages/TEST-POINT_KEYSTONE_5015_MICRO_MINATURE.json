@@ -1,0 +1,23 @@
+{
+  "name": "TEST-POINT_KEYSTONE_5015_MICRO_MINATURE",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 1.26,
+    "width": 2.38
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 2,
+    "widthOverLeads": 3.4,
+    "leadPitch": 1.8,
+    "leadWidth": 1.8,
+    "leadLength": 3.4
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/TestPoint.pretty/TestPoint_Keystone_5015_Micro-Minature.kicad_mod",
+    "sourceFootprint": "TestPoint_Keystone_5015_Micro-Minature"
+  }
+}

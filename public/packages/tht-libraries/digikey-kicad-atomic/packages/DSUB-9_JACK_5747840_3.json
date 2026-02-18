@@ -1,0 +1,324 @@
+{
+  "name": "DSUB-9_JACK_5747840_3",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 0,
+      "y": -6.2,
+      "width": 31.8,
+      "height": 19.6,
+      "cornerRadius": 1.568,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -15.405,
+      "y1": -15.49,
+      "x2": 15.405,
+      "y2": -15.49,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -15.405,
+      "y1": 3.13,
+      "x2": 15.405,
+      "y2": 3.13,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 15.405,
+      "y1": -15.49,
+      "x2": 15.405,
+      "y2": 3.13,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -15.405,
+      "y1": -15.49,
+      "x2": -15.405,
+      "y2": 3.13,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -15.5,
+      "y1": 3.2,
+      "x2": -13.5,
+      "y2": 3.2,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 15.5,
+      "y1": 3.2,
+      "x2": 14.1,
+      "y2": 3.2,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 15.5,
+      "y1": -15.6,
+      "x2": 15.5,
+      "y2": -14.3,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -15.5,
+      "y1": -15.6,
+      "x2": -15.5,
+      "y2": -14.5,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -15.5,
+      "y1": 2.2,
+      "x2": -15.5,
+      "y2": 3.2,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 14.6,
+      "y1": -15.6,
+      "x2": 15.5,
+      "y2": -15.6,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 15.5,
+      "y1": 2.5,
+      "x2": 15.5,
+      "y2": 3.2,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -14.8,
+      "y1": -15.6,
+      "x2": -15.5,
+      "y2": -15.6,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -5.48,
+      "y": 1.42,
+      "radius": 1
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -5.48,
+      "y": 1.42,
+      "radius": 0.52,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -4.11,
+      "y": -1.42,
+      "radius": 1
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -4.11,
+      "y": -1.42,
+      "radius": 0.52,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -2.74,
+      "y": 1.42,
+      "radius": 1
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -2.74,
+      "y": 1.42,
+      "radius": 0.52,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -1.37,
+      "y": -1.42,
+      "radius": 1
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -1.37,
+      "y": -1.42,
+      "radius": 0.52,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 0,
+      "y": 1.42,
+      "radius": 1
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 1.42,
+      "radius": 0.52,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 1.37,
+      "y": -1.42,
+      "radius": 1
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 1.37,
+      "y": -1.42,
+      "radius": 0.52,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 2.74,
+      "y": 1.42,
+      "radius": 1
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 2.74,
+      "y": 1.42,
+      "radius": 0.52,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 4.11,
+      "y": -1.42,
+      "radius": 1
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 4.11,
+      "y": -1.42,
+      "radius": 0.52,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin1",
+      "x": 5.48,
+      "y": 1.42,
+      "radius": 1
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 5.48,
+      "y": 1.42,
+      "radius": 0.52,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 12.495,
+      "y": 0,
+      "radius": 1.75
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 12.495,
+      "y": 0,
+      "radius": 1.585,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -12.495,
+      "y": 0,
+      "radius": 1.75
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -12.495,
+      "y": 0,
+      "radius": 1.585,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/DSUB-9_Jack_5747840-3.kicad_mod",
+    "sourceFootprint": "DSUB-9_Jack_5747840-3"
+  }
+}

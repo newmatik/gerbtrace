@@ -1,0 +1,73 @@
+{
+  "name": "HTSSOP-28",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 9.85,
+    "width": 6.1
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 28,
+    "widthOverLeads": 8.4,
+    "leadPitch": 0.65,
+    "leadWidth": 0.35,
+    "leadLength": 0.7
+  },
+  "aliases": [
+    "HTSSOP28"
+  ],
+  "height": {
+    "nominal": 1.1,
+    "max": 1.155,
+    "min": 1.045
+  },
+  "searchArea": {
+    "x": 9.9,
+    "y": 6.5
+  },
+  "machine": {
+    "mountTools": [
+      "A23"
+    ],
+    "hydraTools": [
+      "H03"
+    ],
+    "pickWaitTime": 100,
+    "placeWaitTime": 100,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "lowest",
+      "y": "low",
+      "tape": "low",
+      "theta": "highest",
+      "z": "highest",
+      "hydraTheta": "highest",
+      "hydraZ": "lowest"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL",
+          "HYDRA_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "standard",
+      "linescan"
+    ],
+    "coplanarityCheck": false
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/HTSSOP-28.json",
+    "sourceFootprint": "HTSSOP-28"
+  }
+}

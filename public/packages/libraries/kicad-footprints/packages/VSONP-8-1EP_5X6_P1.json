@@ -1,0 +1,29 @@
+{
+  "name": "VSONP-8-1EP_5X6_P1",
+  "type": "PT_GENERIC",
+  "body": {
+    "length": 3.157,
+    "width": 4.41
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "GULLWING",
+        "numLeads": 13,
+        "distFromCenter": 0,
+        "ccHalf": 3.15,
+        "angleMilliDeg": 0,
+        "padLength": 1.261,
+        "padWidth": 1.199
+      }
+    ]
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_SON.pretty/VSONP-8-1EP_5x6_P1.27mm.kicad_mod",
+    "sourceFootprint": "VSONP-8-1EP_5x6_P1.27mm"
+  }
+}

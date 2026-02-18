@@ -1,0 +1,26 @@
+{
+  "name": "LED-1210",
+  "type": "PT_TWO_POLE",
+  "aliases": [
+    "1210 LED",
+    "CHIP-LED1210",
+    "LED 1210",
+    "LED1210"
+  ],
+  "body": {
+    "length": 3.2,
+    "width": 2.5
+  },
+  "chip": {
+    "chipLength": 3.2,
+    "leadWidth": 2.5,
+    "leadLength": 0.5
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/LED-1210.json",
+    "sourceFootprint": "LED-1210"
+  }
+}

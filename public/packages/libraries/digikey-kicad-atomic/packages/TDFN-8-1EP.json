@@ -1,0 +1,23 @@
+{
+  "name": "TDFN-8-1EP",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 4.41,
+    "width": 6.65
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 8,
+    "widthOverLeads": 6.65,
+    "leadPitch": 1.27,
+    "leadWidth": 0.6,
+    "leadLength": 1.25
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/TDFN-8-1EP.kicad_mod",
+    "sourceFootprint": "TDFN-8-1EP"
+  }
+}

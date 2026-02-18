@@ -1,0 +1,23 @@
+{
+  "name": "SSOP-8_2.95X2.8MM_P0",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 2.8,
+    "width": 2.95
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 8,
+    "widthOverLeads": 3.7,
+    "leadPitch": 0.65,
+    "leadWidth": 1.6,
+    "leadLength": 0.3
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_SO.pretty/SSOP-8_2.95x2.8mm_P0.65mm.kicad_mod",
+    "sourceFootprint": "SSOP-8_2.95x2.8mm_P0.65mm"
+  }
+}

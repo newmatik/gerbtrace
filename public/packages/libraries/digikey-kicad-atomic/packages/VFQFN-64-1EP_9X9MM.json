@@ -1,0 +1,23 @@
+{
+  "name": "VFQFN-64-1EP_9X9MM",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 9,
+    "width": 9
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 64,
+    "widthOverLeads": 10.05,
+    "leadPitch": 0.5,
+    "leadWidth": 0.35,
+    "leadLength": 1
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/VFQFN-64-1EP_9x9mm.kicad_mod",
+    "sourceFootprint": "VFQFN-64-1EP_9x9mm"
+  }
+}

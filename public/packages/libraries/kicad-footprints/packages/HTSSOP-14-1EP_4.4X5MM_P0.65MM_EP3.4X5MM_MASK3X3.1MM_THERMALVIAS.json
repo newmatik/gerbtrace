@@ -1,0 +1,23 @@
+{
+  "name": "HTSSOP-14-1EP_4.4X5MM_P0.65MM_EP3.4X5MM_MASK3X3.1MM_THERMALVIAS",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 5,
+    "width": 4.4
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 14,
+    "widthOverLeads": 7.3,
+    "leadPitch": 0.65,
+    "leadWidth": 0.4,
+    "leadLength": 1.575
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_SO.pretty/HTSSOP-14-1EP_4.4x5mm_P0.65mm_EP3.4x5mm_Mask3x3.1mm_ThermalVias.kicad_mod",
+    "sourceFootprint": "HTSSOP-14-1EP_4.4x5mm_P0.65mm_EP3.4x5mm_Mask3x3.1mm_ThermalVias"
+  }
+}

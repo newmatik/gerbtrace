@@ -1,0 +1,23 @@
+{
+  "name": "TO-268-2",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 16.6,
+    "width": 21.95
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 268,
+    "widthOverLeads": 23.55,
+    "leadPitch": 8.45,
+    "leadWidth": 8.15,
+    "leadLength": 6.6
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_TO_SOT_SMD.pretty/TO-268-2.kicad_mod",
+    "sourceFootprint": "TO-268-2"
+  }
+}

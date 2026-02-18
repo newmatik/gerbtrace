@@ -1,0 +1,187 @@
+{
+  "name": "2220",
+  "type": "PT_TWO_POLE",
+  "aliases": [
+    "C2220",
+    "CAP2220",
+    "CHIP-2220",
+    "L2220",
+    "R2220",
+    "RES2220"
+  ],
+  "body": {
+    "length": 5.7,
+    "width": 5
+  },
+  "chip": {
+    "chipLength": 5.7,
+    "leadWidth": 5,
+    "leadLength": 0.7
+  },
+  "height": {
+    "nominal": 4.78,
+    "max": 5.019,
+    "min": 4.541
+  },
+  "searchArea": {
+    "x": 5.35,
+    "y": 5.35
+  },
+  "machine": {
+    "mountTools": [
+      "A23"
+    ],
+    "pickWaitTime": 100,
+    "placeWaitTime": 100,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "low",
+      "y": "low",
+      "tape": "low",
+      "theta": "highest",
+      "z": "highest",
+      "hydraTheta": "highest",
+      "hydraZ": "lowest"
+    },
+    "centering": [
+      {
+        "method": "mechanical",
+        "mechanical": {
+          "angle": 90000,
+          "position": "POS_UPPER",
+          "force": "HIGH_FORCE"
+        },
+        "jaw": {
+          "nominal": 5.9,
+          "max": 6.5,
+          "min": 5.3
+        }
+      },
+      {
+        "method": "mechanical",
+        "mechanical": {
+          "angle": 0,
+          "position": "POS_UPPER",
+          "force": "HIGH_FORCE"
+        },
+        "jaw": {
+          "nominal": 4.9,
+          "max": 5.5,
+          "min": 3.3
+        }
+      },
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false,
+    "markingPositions": [
+      {
+        "x": 0,
+        "y": 0,
+        "dotType": "DOT1.5mm"
+      }
+    ]
+  },
+  "variations": [
+    {
+      "id": "20",
+      "label": "H2.0",
+      "height": {
+        "nominal": 2,
+        "max": 2.1,
+        "min": 1.9
+      }
+    },
+    {
+      "id": "23",
+      "label": "H2.3",
+      "height": {
+        "nominal": 2.3,
+        "max": 2.415,
+        "min": 2.185
+      }
+    },
+    {
+      "id": "23",
+      "label": "H2.3",
+      "height": {
+        "nominal": 2.3,
+        "max": 2.415,
+        "min": 2.185
+      }
+    },
+    {
+      "id": "25",
+      "label": "H2.5",
+      "height": {
+        "nominal": 2.5,
+        "max": 2.625,
+        "min": 2.375
+      }
+    },
+    {
+      "id": "27",
+      "label": "H2.7",
+      "height": {
+        "nominal": 2.7,
+        "max": 2.835,
+        "min": 2.565
+      }
+    },
+    {
+      "id": "42",
+      "label": "H4.2",
+      "height": {
+        "nominal": 4.2,
+        "max": 4.41,
+        "min": 3.99
+      }
+    },
+    {
+      "id": "45",
+      "label": "H4.5",
+      "height": {
+        "nominal": 4.5,
+        "max": 4.725,
+        "min": 4.275
+      }
+    },
+    {
+      "id": "48",
+      "label": "H4.8",
+      "height": {
+        "nominal": 4.8,
+        "max": 5.04,
+        "min": 4.56
+      }
+    },
+    {
+      "id": "53",
+      "label": "H5.3",
+      "height": {
+        "nominal": 5.35,
+        "max": 5.618,
+        "min": 5.082
+      }
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/2220.json",
+    "sourceFootprint": "2220"
+  }
+}

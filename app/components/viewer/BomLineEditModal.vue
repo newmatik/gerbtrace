@@ -52,12 +52,15 @@
 
           <div>
             <label class="text-neutral-400 dark:text-neutral-500 uppercase tracking-wide text-[10px] font-medium">Type</label>
-            <select
-              v-model="local.type"
-              class="mt-0.5 w-full text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md px-2 py-1.5 outline-none focus:border-primary transition-colors"
-            >
-              <option v-for="t in BOM_LINE_TYPES" :key="t" :value="t">{{ t }}</option>
-            </select>
+            <USelect
+              :model-value="local.type"
+              :items="bomTypeItems"
+              value-key="value"
+              label-key="label"
+              size="xs"
+              class="mt-0.5 w-full"
+              @update:model-value="local.type = String($event) as BomLine['type']"
+            />
           </div>
 
           <div>
@@ -81,10 +84,10 @@
           <div>
             <label class="text-neutral-400 dark:text-neutral-500 uppercase tracking-wide text-[10px] font-medium">Customer Provided</label>
             <div class="mt-1.5 flex items-center gap-2">
-              <input
-                v-model="local.customerProvided"
-                type="checkbox"
-                class="h-3.5 w-3.5 rounded border-neutral-300 dark:border-neutral-600"
+              <USwitch
+                :model-value="local.customerProvided"
+                size="sm"
+                @update:model-value="local.customerProvided = !!$event"
               />
               <span class="text-xs text-neutral-600 dark:text-neutral-300">{{ local.customerProvided ? 'Yes' : 'No' }}</span>
             </div>
@@ -93,10 +96,10 @@
           <div>
             <label class="text-neutral-400 dark:text-neutral-500 uppercase tracking-wide text-[10px] font-medium">DNP</label>
             <div class="mt-1.5 flex items-center gap-2">
-              <input
-                v-model="local.dnp"
-                type="checkbox"
-                class="h-3.5 w-3.5 rounded border-neutral-300 dark:border-neutral-600"
+              <USwitch
+                :model-value="local.dnp"
+                size="sm"
+                @update:model-value="local.dnp = !!$event"
               />
               <span class="text-xs text-neutral-600 dark:text-neutral-300">{{ local.dnp ? 'Do Not Populate' : 'No' }}</span>
             </div>
@@ -191,6 +194,7 @@ const emit = defineEmits<{
 const open = defineModel<boolean>('open', { default: false })
 
 const isNew = computed(() => !props.line)
+const bomTypeItems = BOM_LINE_TYPES.map((t) => ({ label: t, value: t }))
 
 const missingInPnP = computed(() => {
   if (!props.pnpDesignators || local.dnp) return []

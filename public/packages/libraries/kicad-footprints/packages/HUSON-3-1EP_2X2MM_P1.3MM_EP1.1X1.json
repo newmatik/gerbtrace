@@ -1,0 +1,22 @@
+{
+  "name": "HUSON-3-1EP_2X2MM_P1.3MM_EP1.1X1",
+  "type": "PT_THREE_POLE",
+  "body": {
+    "length": 1.19,
+    "width": 1.47
+  },
+  "threePole": {
+    "widthOverLeads": 2.1,
+    "ccDistance": 0.85,
+    "leadWidth": 0.4,
+    "leadLength": 0.417
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_SON.pretty/HUSON-3-1EP_2x2mm_P1.3mm_EP1.1x1.6mm.kicad_mod",
+    "sourceFootprint": "HUSON-3-1EP_2x2mm_P1.3mm_EP1.1x1.6mm"
+  }
+}

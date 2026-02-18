@@ -1,0 +1,23 @@
+{
+  "name": "DFN-10_3X3MM",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 3,
+    "width": 3
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 10,
+    "widthOverLeads": 3.305,
+    "leadPitch": 0.5,
+    "leadWidth": 0.3,
+    "leadLength": 0.825
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/DFN-10_3x3mm.kicad_mod",
+    "sourceFootprint": "DFN-10_3x3mm"
+  }
+}

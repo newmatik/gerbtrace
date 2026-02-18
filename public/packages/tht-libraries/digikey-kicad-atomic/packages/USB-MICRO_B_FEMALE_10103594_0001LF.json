@@ -1,0 +1,220 @@
+{
+  "name": "USB-MICRO_B_FEMALE_10103594_0001LF",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 0,
+      "y": -1.262,
+      "width": 8.6,
+      "height": 6.475,
+      "cornerRadius": 0.518,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -3.75,
+      "y1": 1.29,
+      "x2": 3.75,
+      "y2": 1.29,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -3.75,
+      "y1": -3.97,
+      "x2": 3.75,
+      "y2": -3.97,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.75,
+      "y1": -3.97,
+      "x2": 3.75,
+      "y2": 1.29,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -3.75,
+      "y1": -3.97,
+      "x2": -3.75,
+      "y2": 1.29,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.6,
+      "y1": -3.6,
+      "x2": -1.6,
+      "y2": -2,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0,
+      "y1": -4.1,
+      "x2": 0.3,
+      "y2": -4.1,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0,
+      "y1": -4.1,
+      "x2": -0.3,
+      "y2": -4.1,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.9,
+      "y1": 1.4,
+      "x2": 3.9,
+      "y2": 1.1,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.9,
+      "y1": 1.4,
+      "x2": 3.6,
+      "y2": 1.4,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -3.9,
+      "y1": 1.4,
+      "x2": -3.9,
+      "y2": 1.1,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -3.9,
+      "y1": 1.4,
+      "x2": -3.6,
+      "y2": 1.4,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -3.9,
+      "y1": -4.1,
+      "x2": -3.6,
+      "y2": -4.1,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -3.9,
+      "y1": -4.1,
+      "x2": -3.9,
+      "y2": -3.8,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.9,
+      "y1": -4.1,
+      "x2": 3.6,
+      "y2": -4.1,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.9,
+      "y1": -4.1,
+      "x2": 3.9,
+      "y2": -3.8,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": -2.725,
+      "y": 0,
+      "width": 1.3,
+      "height": 3.15,
+      "cornerRadius": 0.585
+    },
+    {
+      "kind": "rect",
+      "role": "pin",
+      "x": -2.425,
+      "y": -3.03,
+      "width": 2,
+      "height": 1.4
+    },
+    {
+      "kind": "rect",
+      "role": "pin",
+      "x": 2.425,
+      "y": -3.03,
+      "width": 2,
+      "height": 1.4
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 2.725,
+      "y": 0,
+      "width": 1.3,
+      "height": 3.15,
+      "cornerRadius": 0.585
+    },
+    {
+      "kind": "circle",
+      "role": "polarity-marker",
+      "x": -3.333,
+      "y": 0.608,
+      "radius": 0.338,
+      "color": "#ef4444"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/USB_Micro_B_Female_10103594-0001LF.kicad_mod",
+    "sourceFootprint": "USB_Micro_B_Female_10103594-0001LF"
+  }
+}

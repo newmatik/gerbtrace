@@ -61,7 +61,7 @@ function jsonStable(obj) {
 function chipPkg({ name, length, width, aliases = [], leadLength }) {
   return {
     name,
-    type: 'Chip',
+    type: 'PT_TWO_POLE',
     ...(aliases.length ? { aliases } : {}),
     body: { length: round(length), width: round(width) },
     chip: {
@@ -75,7 +75,7 @@ function chipPkg({ name, length, width, aliases = [], leadLength }) {
 function outlinePkg({ name, length, width, aliases = [] }) {
   return {
     name,
-    type: 'Outline',
+    type: 'PT_OUTLINE',
     ...(aliases.length ? { aliases } : {}),
     body: { length: round(length), width: round(width) },
     outline: { length: round(length), width: round(width) },
@@ -85,7 +85,7 @@ function outlinePkg({ name, length, width, aliases = [] }) {
 function threePolePkg({ name, bodyL, bodyW, widthOverLeads, ccDistance, leadWidth, leadLength, aliases = [] }) {
   return {
     name,
-    type: 'ThreePole',
+    type: 'PT_THREE_POLE',
     ...(aliases.length ? { aliases } : {}),
     body: { length: round(bodyL), width: round(bodyW) },
     threePole: {
@@ -100,7 +100,7 @@ function threePolePkg({ name, bodyL, bodyW, widthOverLeads, ccDistance, leadWidt
 function twoSymPkg({ name, pins, pitch, bodyW, bodyL, widthOverLeads, leadWidth, leadLength, aliases = [] }) {
   return {
     name,
-    type: 'TwoSymmetricLeadGroups',
+    type: 'PT_TWO_SYM',
     ...(aliases.length ? { aliases } : {}),
     body: { length: round(bodyL), width: round(bodyW) },
     twoSymmetric: {
@@ -116,7 +116,7 @@ function twoSymPkg({ name, pins, pitch, bodyW, bodyL, widthOverLeads, leadWidth,
 function fourSymPkg({ name, pins, pitch, body, widthOverLeads, leadWidth, leadLength, aliases = [] }) {
   return {
     name,
-    type: 'FourSymmetricLeadGroups',
+    type: 'PT_FOUR_SYM',
     ...(aliases.length ? { aliases } : {}),
     body: { length: round(body), width: round(body) },
     fourSymmetric: {
@@ -136,7 +136,7 @@ function bgaPkg({ name, pins, pitch, rowCol, body, ballDia, aliases = [] }) {
   }
   return {
     name,
-    type: 'BGA',
+    type: 'PT_BGA',
     ...(aliases.length ? { aliases } : {}),
     body: { length: round(body), width: round(body) },
     bga: {

@@ -54,6 +54,65 @@
             </template>
           </UFormField>
 
+          <div class="space-y-3">
+            <div class="text-sm font-medium">Panel Defaults</div>
+            <div class="grid grid-cols-2 gap-3">
+              <UFormField label="Preferred Width (mm)" hint="Optional">
+                <UInput
+                  v-model="preferredPanelWidthInput"
+                  type="number"
+                  min="50"
+                  max="1000"
+                  step="1"
+                  size="lg"
+                  placeholder="300"
+                  :disabled="saving"
+                />
+              </UFormField>
+              <UFormField label="Preferred Height (mm)" hint="Optional">
+                <UInput
+                  v-model="preferredPanelHeightInput"
+                  type="number"
+                  min="50"
+                  max="1000"
+                  step="1"
+                  size="lg"
+                  placeholder="250"
+                  :disabled="saving"
+                />
+              </UFormField>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <UFormField label="Maximum Width (mm)" hint="Optional">
+                <UInput
+                  v-model="maxPanelWidthInput"
+                  type="number"
+                  min="50"
+                  max="1200"
+                  step="1"
+                  size="lg"
+                  placeholder="450"
+                  :disabled="saving"
+                />
+              </UFormField>
+              <UFormField label="Maximum Height (mm)" hint="Optional">
+                <UInput
+                  v-model="maxPanelHeightInput"
+                  type="number"
+                  min="50"
+                  max="1200"
+                  step="1"
+                  size="lg"
+                  placeholder="400"
+                  :disabled="saving"
+                />
+              </UFormField>
+            </div>
+            <p class="text-xs text-neutral-400">
+              Preferred size is the suggestion target. Maximum size is used for panel-size warnings.
+            </p>
+          </div>
+
           <div class="flex justify-end gap-3 pt-4">
             <UButton
               type="submit"
@@ -131,6 +190,10 @@ watch(isAuthenticated, (authed) => {
 
 const teamName = ref('')
 const autoJoinDomain = ref('')
+const preferredPanelWidthInput = ref('')
+const preferredPanelHeightInput = ref('')
+const maxPanelWidthInput = ref('')
+const maxPanelHeightInput = ref('')
 const saving = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
@@ -149,13 +212,25 @@ watch(currentTeam, (team) => {
     autoJoinDomain.value = team.auto_join_domain ?? ''
     elexessUsername.value = team.elexess_username ?? ''
     elexessPassword.value = team.elexess_password ?? ''
+    preferredPanelWidthInput.value = toInputValue(team.preferred_panel_width_mm)
+    preferredPanelHeightInput.value = toInputValue(team.preferred_panel_height_mm)
+    maxPanelWidthInput.value = toInputValue(team.max_panel_width_mm)
+    maxPanelHeightInput.value = toInputValue(team.max_panel_height_mm)
   }
 }, { immediate: true })
 
 const hasChanges = computed(() => {
   if (!currentTeam.value) return false
+  const preferredPanelWidth = parseOptionalMm(preferredPanelWidthInput.value)
+  const preferredPanelHeight = parseOptionalMm(preferredPanelHeightInput.value)
+  const maxPanelWidth = parseOptionalMm(maxPanelWidthInput.value)
+  const maxPanelHeight = parseOptionalMm(maxPanelHeightInput.value)
   return teamName.value !== currentTeam.value.name
     || autoJoinDomain.value !== (currentTeam.value.auto_join_domain ?? '')
+    || preferredPanelWidth !== currentTeam.value.preferred_panel_width_mm
+    || preferredPanelHeight !== currentTeam.value.preferred_panel_height_mm
+    || maxPanelWidth !== currentTeam.value.max_panel_width_mm
+    || maxPanelHeight !== currentTeam.value.max_panel_height_mm
 })
 
 const hasElexessChanges = computed(() => {
@@ -170,9 +245,26 @@ async function handleSave() {
   saving.value = true
 
   try {
+    const preferredPanelWidth = parseOptionalMm(preferredPanelWidthInput.value)
+    const preferredPanelHeight = parseOptionalMm(preferredPanelHeightInput.value)
+    const maxPanelWidth = parseOptionalMm(maxPanelWidthInput.value)
+    const maxPanelHeight = parseOptionalMm(maxPanelHeightInput.value)
+
+    if (
+      preferredPanelWidth != null && maxPanelWidth != null && preferredPanelWidth > maxPanelWidth
+      || preferredPanelHeight != null && maxPanelHeight != null && preferredPanelHeight > maxPanelHeight
+    ) {
+      errorMessage.value = 'Preferred panel size cannot exceed maximum panel size.'
+      return
+    }
+
     const { error } = await updateTeam({
       name: teamName.value.trim(),
       auto_join_domain: autoJoinDomain.value.trim() || null,
+      preferred_panel_width_mm: preferredPanelWidth,
+      preferred_panel_height_mm: preferredPanelHeight,
+      max_panel_width_mm: maxPanelWidth,
+      max_panel_height_mm: maxPanelHeight,
     })
 
     if (error) {
@@ -184,6 +276,20 @@ async function handleSave() {
   } finally {
     saving.value = false
   }
+}
+
+function parseOptionalMm(value: string): number | null {
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  const n = Number(trimmed)
+  if (!Number.isFinite(n)) return null
+  if (n <= 0) return null
+  return Math.round(n * 100) / 100
+}
+
+function toInputValue(value: number | null | undefined): string {
+  if (value == null) return ''
+  return String(value)
 }
 
 async function handleSaveElexess() {

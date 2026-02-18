@@ -1,0 +1,23 @@
+{
+  "name": "HTSSOP-44_6.1X14MM_P0.635MM_TOP_EP4.14X7",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 14,
+    "width": 6.1
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 44,
+    "widthOverLeads": 9,
+    "leadPitch": 0.635,
+    "leadWidth": 0.4,
+    "leadLength": 1.575
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_SO.pretty/HTSSOP-44_6.1x14mm_P0.635mm_TopEP4.14x7.01mm.kicad_mod",
+    "sourceFootprint": "HTSSOP-44_6.1x14mm_P0.635mm_TopEP4.14x7.01mm"
+  }
+}

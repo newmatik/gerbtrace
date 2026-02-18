@@ -47,9 +47,56 @@ const props = defineProps<{
   notes: string
 }>()
 
+const GITHUB_RELEASES_API_BASE = 'https://api.github.com/repos/newmatik/gerbtrace/releases/tags/'
+const GENERIC_RELEASE_NOTES_RE = /see the assets below to download and install gerbtrace for your platform\.?/i
+const effectiveNotes = ref('')
+
+function normalizeNotes(notes: string | null | undefined): string {
+  if (!notes) return ''
+  const normalized = notes.replace(/\r\n/g, '\n').trim()
+  if (!normalized) return ''
+  if (GENERIC_RELEASE_NOTES_RE.test(normalized)) return ''
+  return normalized
+}
+
+async function resolveNotes() {
+  const localNotes = normalizeNotes(props.notes)
+  if (localNotes) {
+    effectiveNotes.value = localNotes
+    return
+  }
+
+  const tag = props.version.startsWith('v') ? props.version : `v${props.version}`
+  const url = `${GITHUB_RELEASES_API_BASE}${encodeURIComponent(tag)}`
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        Accept: 'application/vnd.github+json',
+      },
+    })
+    if (!response.ok) {
+      effectiveNotes.value = ''
+      return
+    }
+    const payload = await response.json() as { body?: string | null }
+    effectiveNotes.value = normalizeNotes(payload.body ?? null)
+  } catch {
+    effectiveNotes.value = ''
+  }
+}
+
+watch(
+  () => [props.version, props.notes],
+  () => {
+    void resolveNotes()
+  },
+  { immediate: true },
+)
+
 const items = computed(() => {
-  if (!props.notes) return []
-  return props.notes
+  if (!effectiveNotes.value) return []
+  return effectiveNotes.value
     .split('\n')
     .map(line => line.replace(/^[-*]\s*/, '').trim())
     .filter(Boolean)

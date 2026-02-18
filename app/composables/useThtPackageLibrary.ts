@@ -1,4 +1,12 @@
 import type { THTPackageDefinition } from '~/utils/tht-package-types'
+import type { BuiltinLibraryAttribution } from '~/composables/usePackageLibrary'
+
+export interface ThtLibraryInfo {
+  id: string
+  name: string
+  packageCount: number
+  attribution?: BuiltinLibraryAttribution
+}
 
 /**
  * Composable that manages THT package definitions:
@@ -6,15 +14,36 @@ import type { THTPackageDefinition } from '~/utils/tht-package-types'
  * and exposes a match function for THT component → library matching.
  */
 export function useThtPackageLibrary() {
+  type BuiltinThtPackage = THTPackageDefinition & {
+    libraryId?: string
+    libraryName?: string
+    attribution?: BuiltinLibraryAttribution
+  }
+
+  const builtInPackages = ref<BuiltinThtPackage[]>([])
+  const builtInByLibrary = ref<Record<string, BuiltinThtPackage[]>>({})
   const customPackages = ref<THTPackageDefinition[]>([])
   const teamPackages = ref<THTPackageDefinition[]>([])
+  const libraries = ref<ThtLibraryInfo[]>([])
+  const selectedLibraryIds = ref<string[]>([])
+  const loaded = ref(false)
+  const loading = ref(false)
 
   /** All THT packages: local custom first (highest priority), then team */
-  const allThtPackages = computed(() => [...customPackages.value, ...teamPackages.value])
+  const allThtPackages = computed(() => [...customPackages.value, ...teamPackages.value, ...builtInPackages.value])
 
   /** Map from normalised package name -> THTPackageDefinition */
   const lookupMap = computed(() => {
     const map = new Map<string, THTPackageDefinition>()
+    // Built-in lowest priority
+    for (const pkg of builtInPackages.value) {
+      map.set(normalise(pkg.name), pkg)
+      if (pkg.aliases) {
+        for (const alias of pkg.aliases) {
+          map.set(normalise(alias), pkg)
+        }
+      }
+    }
     // Team first, then local custom overwrites (highest priority)
     for (const pkg of teamPackages.value) {
       map.set(normalise(pkg.name), pkg)
@@ -55,14 +84,90 @@ export function useThtPackageLibrary() {
     teamPackages.value = pkgs
   }
 
+  async function ensureLibrariesLoaded(ids: string[]) {
+    const target = ids.length ? ids : libraries.value.map((l) => l.id)
+    const misses = target.filter((id) => !(id in builtInByLibrary.value))
+    if (misses.length === 0) {
+      builtInPackages.value = target.flatMap((id) => builtInByLibrary.value[id] ?? [])
+      return
+    }
+
+    const next = { ...builtInByLibrary.value }
+    for (const id of misses) {
+      const treeRes = await fetch('/packages/tht-libraries/_tree.json')
+      if (!treeRes.ok) continue
+      const tree = await treeRes.json()
+      const entry = (tree?.libraries ?? []).find((l: any) => l.id === id)
+      if (!entry) {
+        next[id] = []
+        continue
+      }
+      const files = Array.isArray(entry.packages) ? entry.packages : []
+      const loadedPkgs = await Promise.all(files.map(async (p: any) => {
+        try {
+          const res = await fetch(`/packages/tht-libraries/${id}/packages/${p.file}`)
+          if (!res.ok) return null
+          const pkg = await res.json()
+          return {
+            ...pkg,
+            libraryId: id,
+            libraryName: entry.library?.displayName ?? id,
+            attribution: entry.library?.attribution,
+          } as BuiltinThtPackage
+        } catch {
+          return null
+        }
+      }))
+      next[id] = loadedPkgs.filter((p): p is BuiltinThtPackage => p !== null)
+    }
+    builtInByLibrary.value = next
+    builtInPackages.value = target.flatMap((id) => next[id] ?? [])
+  }
+
+  async function setSelectedLibraries(ids: string[]) {
+    selectedLibraryIds.value = [...new Set(ids)]
+    await ensureLibrariesLoaded(selectedLibraryIds.value)
+  }
+
+  async function loadPackages() {
+    if (loaded.value || loading.value) return
+    loading.value = true
+    try {
+      const res = await fetch('/packages/tht-libraries/_tree.json')
+      if (!res.ok) {
+        loaded.value = true
+        return
+      }
+      const tree = await res.json()
+      const libs = Array.isArray(tree?.libraries) ? tree.libraries : []
+      libraries.value = libs.map((l: any) => ({
+        id: l.id,
+        name: l.library?.displayName ?? l.id,
+        packageCount: l.packageCount ?? (Array.isArray(l.packages) ? l.packages.length : 0),
+        attribution: l.library?.attribution,
+      }))
+      await setSelectedLibraries([])
+      loaded.value = true
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
+    builtInPackages,
     customPackages,
     teamPackages,
     allThtPackages,
+    libraries,
+    selectedLibraryIds,
+    loaded,
+    loading,
     lookupMap,
     matchThtPackage,
     setCustomPackages,
     setTeamPackages,
+    setSelectedLibraries,
+    loadPackages,
   }
 }
 

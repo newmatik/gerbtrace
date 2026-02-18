@@ -174,16 +174,47 @@
           <!-- Package mapping -->
           <div class="flex items-center justify-between">
             <label class="text-xs text-neutral-500 dark:text-neutral-400">Package</label>
-            <select
+            <USelectMenu
               v-model="localPackage"
-              class="text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md px-2 py-1 outline-none text-neutral-700 dark:text-neutral-300 cursor-pointer max-w-[11rem] focus:border-primary transition-colors"
+              v-model:search-term="modalPkgSearchTerm"
+              :items="packageSelectItems"
+              value-key="value"
+              label-key="displayLabel"
+              size="xs"
+              searchable
+              ignore-filter
+              class="max-w-[16rem] w-full"
               :class="localPackage ? 'text-blue-700 dark:text-blue-300' : ''"
+              :search-input="{ placeholder: 'Search package or library...' }"
+              :ui="{ content: 'min-w-[28rem] max-w-[40rem]', itemLabel: 'whitespace-normal leading-tight' }"
+              placeholder="—"
+              @highlight="onPkgHighlight($event as any)"
+              @update:open="!$event && emit('preview:package', null)"
             >
-              <option value="">—</option>
-              <option v-for="p in packageOptions" :key="p" :value="p">
-                {{ p }}
-              </option>
-            </select>
+              <template #item="{ item }">
+                <div class="w-full py-0.5">
+                  <div class="text-xs font-medium text-neutral-800 dark:text-neutral-100 break-all leading-tight">
+                    {{ getPackageOption(item)?.label ?? getItemLabel(item) }}
+                  </div>
+                  <div class="text-[10px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                    {{ getPackageOption(item)?.libraryLabel ?? 'Local' }}
+                  </div>
+                </div>
+              </template>
+            </USelectMenu>
+          </div>
+
+          <!-- Group assignment -->
+          <div class="flex items-center justify-between">
+            <label class="text-xs text-neutral-500 dark:text-neutral-400">Group</label>
+            <USelect
+              v-model="localGroupId"
+              :items="groupSelectItems"
+              value-key="value"
+              label-key="label"
+              size="xs"
+              class="max-w-[12rem] w-full"
+            />
           </div>
         </div>
 
@@ -226,7 +257,17 @@ const open = defineModel<boolean>('open', { default: false })
 
 const props = defineProps<{
   component: EditablePnPComponent | null
-  packageOptions: string[]
+  packageOptions: Array<{
+    value: string
+    label: string
+    libraryLabel: string
+    searchText: string
+    previewKind: 'smd' | 'tht'
+    previewPkg?: Record<string, any>
+    packageType?: string
+  }>
+  groups: { id: string; name: string }[]
+  currentGroupId: string | null
   /** Set of designators present in BOM data (excluding DNP lines) */
   bomDesignators?: Set<string>
 }>()
@@ -242,6 +283,8 @@ const emit = defineEmits<{
   'update:manualComponent': [payload: { id: string; designator?: string; value?: string; package?: string; x?: number; y?: number; rotation?: number; side?: 'top' | 'bottom' }]
   'delete:manualComponent': [id: string]
   'delete:component': [key: string]
+  'assign:group': [payload: { key: string; groupId: string | null }]
+  'preview:package': [payload: { componentKey: string; packageName: string } | null]
 }>()
 
 const noteInput = ref<HTMLTextAreaElement | null>(null)
@@ -262,6 +305,66 @@ const localPolarized = ref(false)
 const localPackage = ref('')
 const localNote = ref('')
 const localSide = ref<'top' | 'bottom'>('top')
+const localGroupId = ref('')
+const NO_SECTION_GROUP_VALUE = '__NO_SECTION__'
+const PKG_DROPDOWN_LIMIT = 80
+const allPackageSelectItems = computed(() =>
+  props.packageOptions.map((opt) => ({
+    ...opt,
+    displayLabel: `${opt.label} · ${opt.libraryLabel}`,
+  })),
+)
+const modalPkgSearchTerm = ref('')
+const packageSelectItems = computed(() => {
+  const q = modalPkgSearchTerm.value.trim().toLowerCase()
+  const source = allPackageSelectItems.value
+  if (!q) return source.slice(0, PKG_DROPDOWN_LIMIT)
+  const out: typeof source = []
+  for (const item of source) {
+    if (item.searchText.toLowerCase().includes(q)) {
+      out.push(item)
+      if (out.length >= PKG_DROPDOWN_LIMIT) break
+    }
+  }
+  return out
+})
+function onPkgHighlight(payload: { value: string } | undefined) {
+  if (!props.component) return
+  emit('preview:package', payload?.value ? { componentKey: props.component.key, packageName: payload.value } : null)
+}
+const packageOptionsByValue = computed(() => {
+  const map = new Map<string, (typeof props.packageOptions)[number]>()
+  for (const opt of props.packageOptions) map.set(opt.value, opt)
+  return map
+})
+
+function getItemValue(item: any): string | undefined {
+  if (!item || typeof item !== 'object') return undefined
+  if (typeof item.value === 'string') return item.value
+  if (item.raw && typeof item.raw === 'object' && typeof item.raw.value === 'string') return item.raw.value
+  return undefined
+}
+
+function getItemLabel(item: any): string {
+  if (!item || typeof item !== 'object') return ''
+  if (typeof item.label === 'string') return item.label
+  if (typeof item.displayLabel === 'string') return item.displayLabel
+  if (item.raw && typeof item.raw === 'object') {
+    if (typeof item.raw.label === 'string') return item.raw.label
+    if (typeof item.raw.displayLabel === 'string') return item.raw.displayLabel
+  }
+  return ''
+}
+
+function getPackageOption(item: any) {
+  const value = getItemValue(item)
+  if (!value) return null
+  return packageOptionsByValue.value.get(value) ?? null
+}
+const groupSelectItems = computed(() => [
+  { value: NO_SECTION_GROUP_VALUE, label: 'No section' },
+  ...props.groups.map((g) => ({ value: g.id, label: g.name })),
+])
 
 const sideOptions = [
   { label: 'Top', value: 'top' as const },
@@ -297,6 +400,7 @@ watch([open, () => props.component], ([isOpen, comp]) => {
     localPackage.value = comp.matchedPackage
     localNote.value = comp.note
     localSide.value = comp.side
+    localGroupId.value = props.currentGroupId ?? NO_SECTION_GROUP_VALUE
   }
 }, { immediate: true })
 
@@ -398,6 +502,13 @@ function save() {
   // Note (for both manual and parsed)
   if (localNote.value.trim() !== comp.note) {
     emit('update:note', { key: comp.key, note: localNote.value })
+  }
+
+  // Group assignment
+  const nextGroupId = localGroupId.value === NO_SECTION_GROUP_VALUE ? null : localGroupId.value
+  const currentGroupId = props.currentGroupId ?? null
+  if (nextGroupId !== currentGroupId) {
+    emit('assign:group', { key: comp.key, groupId: nextGroupId })
   }
 
   open.value = false

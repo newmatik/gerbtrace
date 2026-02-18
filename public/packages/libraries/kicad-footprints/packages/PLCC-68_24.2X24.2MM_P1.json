@@ -1,0 +1,23 @@
+{
+  "name": "PLCC-68_24.2X24.2MM_P1",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 24.2,
+    "width": 24.2
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 68,
+    "widthOverLeads": 25.3,
+    "leadPitch": 1.27,
+    "leadWidth": 0.6,
+    "leadLength": 1.7
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_LCC.pretty/PLCC-68_24.2x24.2mm_P1.27mm.kicad_mod",
+    "sourceFootprint": "PLCC-68_24.2x24.2mm_P1.27mm"
+  }
+}

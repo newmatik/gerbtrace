@@ -1,0 +1,23 @@
+{
+  "name": "UFDFN-10-2",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 1,
+    "width": 2.5
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 10,
+    "widthOverLeads": 1.55,
+    "leadPitch": 0.5,
+    "leadWidth": 0.2,
+    "leadLength": 0.675
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/UFDFN-10_2.5x1mm.kicad_mod",
+    "sourceFootprint": "UFDFN-10_2.5x1mm"
+  }
+}
