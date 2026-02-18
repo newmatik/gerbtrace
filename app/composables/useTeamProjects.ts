@@ -8,10 +8,20 @@
 import type { BomLine, BomPricingCache } from '~/utils/bom-types'
 import type { PanelConfig } from '~/utils/panel-types'
 
+export type LockableViewerTab = 'files' | 'pcb' | 'panel' | 'smd' | 'tht' | 'bom'
+
+export interface ViewerPageLockState {
+  locked: boolean
+  locked_at: string | null
+  locked_by: string | null
+  locked_by_name: string | null
+}
+
 export interface TeamProject {
   id: string
   team_id: string
   name: string
+  assignee_user_id: string | null
   mode: 'viewer' | 'compare'
   status: 'draft' | 'approved'
   approved_by: string | null
@@ -46,8 +56,11 @@ export interface TeamProject {
     innerCopperWeight?: string
     thicknessMm?: number
     panelizationMode?: 'single' | 'panelized'
+    pricingQuantities?: number[]
+    selectedPricingQuantity?: number
   } | null
   panel_data: PanelConfig | null
+  page_locks: Partial<Record<LockableViewerTab, ViewerPageLockState>> | null
   created_at: string
   updated_at: string
 }

@@ -1,9 +1,6 @@
 <template>
   <div class="h-screen flex flex-col">
     <AppHeader compact>
-      <!-- Toolbar separator -->
-      <div class="w-px h-5 bg-neutral-200 dark:bg-neutral-700/80" />
-
       <!-- Project name -->
       <div class="group flex items-center shrink-0">
         <input
@@ -26,8 +23,6 @@
         </button>
       </div>
 
-      <div class="w-px h-5 bg-neutral-200 dark:bg-neutral-700/80" />
-
       <!-- Comparison mode toggle -->
       <div class="flex items-center rounded-lg p-0.5 gap-0.5 bg-neutral-100/90 border border-neutral-200 dark:bg-neutral-900/70 dark:border-neutral-700">
         <UButton
@@ -43,8 +38,6 @@
           <span>{{ m.label }}</span>
         </UButton>
       </div>
-
-      <div class="w-px h-5 bg-neutral-200 dark:bg-neutral-700/80" />
 
       <!-- Alignment toggle -->
       <UButton
@@ -224,7 +217,7 @@ const { getProject, getFiles, addFiles, clearFiles, renameProject } = useProject
 const { autoMatch } = useLayerMatching()
 const canvasInteraction = useCanvasInteraction()
 const { backgroundColor } = useBackgroundColor()
-const { sidebarWidth, dragging: sidebarDragging, onDragStart: onSidebarDragStart } = useSidebarWidth()
+const { sidebarWidth, dragging: sidebarDragging, onDragStart: onSidebarDragStart } = useSidebarWidth('compare')
 const alignment = useCompareAlignment()
 const { parse } = useGerberRenderer()
 

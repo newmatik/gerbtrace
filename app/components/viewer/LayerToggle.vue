@@ -7,7 +7,7 @@
     <template v-if="isNonRenderableLayer(layer.type)">
       <UIcon name="i-lucide-file-spreadsheet" class="text-sm text-neutral-400 shrink-0 w-4 h-4 flex items-center justify-center" />
     </template>
-    <!-- Renderable layers: color dot + visibility toggle -->
+    <!-- Renderable layers: color dot -->
     <template v-else>
       <UPopover :content="{ side: 'right', align: 'start', sideOffset: 8 }" @pointerdown.stop>
         <button
@@ -39,18 +39,9 @@
           </div>
         </template>
       </UPopover>
-
-      <button
-        class="shrink-0 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors cursor-pointer"
-        title="Toggle layer visibility"
-        @pointerdown.stop
-        @click.stop="emit('toggleVisibility')"
-      >
-        <UIcon
-        :name="layer.visible ? 'i-lucide-eye' : 'i-lucide-eye-off'"
-        />
-      </button>
     </template>
+
+    <UIcon :name="getLayerTypeIconName(layer.type)" class="text-sm text-neutral-400 shrink-0 w-4 h-4" />
 
     <!-- Inline rename input -->
     <input
@@ -105,6 +96,17 @@
       v-else
       class="text-[10px] text-neutral-400 dark:text-neutral-500 shrink-0"
     >{{ layer.type }}</span>
+    <button
+      v-if="!isNonRenderableLayer(layer.type)"
+      class="shrink-0 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors cursor-pointer"
+      title="Toggle layer visibility"
+      @pointerdown.stop
+      @click.stop="emit('toggleVisibility')"
+    >
+      <UIcon
+        :name="layer.visible ? 'i-lucide-eye' : 'i-lucide-eye-off'"
+      />
+    </button>
   </div>
 </template>
 
@@ -216,5 +218,48 @@ function onCustomColor(color: string | undefined) {
 function isWhiteLike(color: string): boolean {
   const c = color.trim().toLowerCase()
   return c === '#fff' || c === '#ffffff' || c === 'white'
+}
+
+function getLayerTypeIconName(type: string): string {
+  switch (type) {
+    case 'Drill':
+      return 'i-lucide-drill'
+    case 'Top Copper':
+      return 'i-lucide-square-chevron-up'
+    case 'Bottom Copper':
+      return 'i-lucide-square-chevron-down'
+    case 'Inner Layer':
+      return 'i-lucide-layers'
+    case 'Top Solder Mask':
+      return 'i-lucide-shield-check'
+    case 'Bottom Solder Mask':
+      return 'i-lucide-shield'
+    case 'Top Silkscreen':
+      return 'i-lucide-pencil-line'
+    case 'Bottom Silkscreen':
+      return 'i-lucide-pen-line'
+    case 'Top Paste':
+      return 'i-lucide-paint-bucket'
+    case 'Bottom Paste':
+      return 'i-lucide-paintbrush'
+    case 'Outline':
+      return 'i-lucide-square'
+    case 'Keep-Out':
+      return 'i-lucide-octagon-alert'
+    case 'PnP Top':
+    case 'PnP Bottom':
+    case 'PnP Top + Bot':
+      return 'i-lucide-microchip'
+    case 'PnP Top (THT)':
+    case 'PnP Bottom (THT)':
+    case 'PnP Top + Bot (THT)':
+      return 'i-lucide-pin'
+    case 'BOM':
+      return 'i-lucide-file-spreadsheet'
+    case 'Unmatched':
+      return 'i-lucide-circle-help'
+    default:
+      return 'i-lucide-file'
+  }
 }
 </script>

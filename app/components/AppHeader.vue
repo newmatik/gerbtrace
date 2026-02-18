@@ -14,6 +14,12 @@
 
     <div class="flex-1" />
 
+    <!-- Right-side slot (before team selector) -->
+    <template v-if="$slots.right">
+      <slot name="right" />
+      <div class="w-px h-5 bg-neutral-200 dark:bg-neutral-700/80" />
+    </template>
+
     <!-- Team selector (when user has teams) -->
     <UDropdownMenu v-if="isAuthenticated && hasTeam" :items="teamSelectorItems">
       <UButton
@@ -27,16 +33,6 @@
       </UButton>
     </UDropdownMenu>
 
-    <!-- Report a bug (always visible) -->
-    <UButton
-      size="xs"
-      color="neutral"
-      variant="ghost"
-      icon="i-lucide-bug"
-      title="Report a bug"
-      @click="bugReportOpen = true"
-    />
-
     <!-- Settings / Packages dropdown -->
     <UDropdownMenu :items="settingsMenuItems">
       <UButton
@@ -44,19 +40,9 @@
         color="neutral"
         variant="ghost"
         icon="i-lucide-settings"
-        title="Settings & Packages"
+        title="Settings"
       />
     </UDropdownMenu>
-
-    <!-- Theme toggle -->
-    <UButton
-      size="xs"
-      color="neutral"
-      variant="ghost"
-      :icon="isDark ? 'i-lucide-moon' : 'i-lucide-sun'"
-      title="Toggle color mode"
-      @click="toggleColorMode"
-    />
 
     <!-- User menu or Sign In -->
     <UDropdownMenu v-if="isAuthenticated" :items="userMenuItems">
@@ -89,7 +75,11 @@
 import { useColorMode } from '#imports'
 import { isTauri as coreIsTauri } from '@tauri-apps/api/core'
 
-const { compact = false } = defineProps<{ compact?: boolean }>()
+const { compact = false, showPerformanceMonitorItem = false } = defineProps<{
+  compact?: boolean
+  showPerformanceMonitorItem?: boolean
+}>()
+const emit = defineEmits<{ openPerformanceMonitor: [] }>()
 
 const router = useRouter()
 const colorMode = useColorMode()
@@ -125,7 +115,6 @@ const settingsMenuItems = computed(() => {
   const items: any[][] = [
     [
       { label: 'Package Manager', icon: 'i-lucide-package', onSelect: () => router.push('/packages') },
-      { label: 'Report a bug', icon: 'i-lucide-bug', onSelect: () => { bugReportOpen.value = true } },
     ],
   ]
 
@@ -135,6 +124,22 @@ const settingsMenuItems = computed(() => {
       { label: 'Team Members', icon: 'i-lucide-users', onSelect: () => router.push('/team/members') },
     ])
   }
+
+  items.push([
+    ...(showPerformanceMonitorItem
+      ? [{
+          label: 'Performance Monitor',
+          icon: 'i-lucide-activity',
+          onSelect: () => emit('openPerformanceMonitor'),
+        }]
+      : []),
+    { label: 'Report a Bug', icon: 'i-lucide-bug', onSelect: () => { bugReportOpen.value = true } },
+    {
+      label: isDark.value ? 'Light Mode' : 'Dark Mode',
+      icon: isDark.value ? 'i-lucide-sun' : 'i-lucide-moon',
+      onSelect: () => toggleColorMode(),
+    },
+  ])
 
   return items
 })

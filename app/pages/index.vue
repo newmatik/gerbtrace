@@ -52,6 +52,15 @@
             label-key="label"
             class="w-36"
           />
+          <USelect
+            v-if="isAuthenticated && hasTeam"
+            v-model="assigneeFilter"
+            size="sm"
+            :items="assigneeFilterOptions"
+            value-key="value"
+            label-key="label"
+            class="w-52"
+          />
         </div>
 
         <!-- ── Team Projects (when logged in with team) ────────────────── -->
@@ -113,6 +122,21 @@
               <UBadge size="xs" variant="subtle" color="neutral">
                 {{ project.mode }}
               </UBadge>
+              <div class="min-w-[170px]" @click.stop>
+                <USelect
+                  v-if="isEditor"
+                  :model-value="project.assignee_user_id ?? ASSIGNEE_UNASSIGNED"
+                  size="xs"
+                  :items="assigneeOptions"
+                  value-key="value"
+                  label-key="label"
+                  :disabled="isAssigning(project.id)"
+                  @update:model-value="(value: string) => updateProjectAssignee(project, value)"
+                />
+                <UBadge v-else size="xs" variant="subtle" color="neutral">
+                  {{ getAssigneeLabel(project.assignee_user_id) }}
+                </UBadge>
+              </div>
               <UButton
                 v-if="isAdmin"
                 size="xs"
@@ -306,7 +330,8 @@ const aboutOpen = ref(false)
 // Auth and team state
 const { isAuthenticated } = useAuth()
 const { currentTeam, hasTeam, isEditor, isAdmin, teamsLoaded } = useTeam()
-const { projects: teamProjects, projectsLoading: teamProjectsLoading, createProject: createTeamProjectFn, deleteProject: deleteTeamProjectFn } = useTeamProjects()
+const { members } = useTeamMembers()
+const { projects: teamProjects, projectsLoading: teamProjectsLoading, createProject: createTeamProjectFn, updateProject: updateTeamProjectFn, deleteProject: deleteTeamProjectFn } = useTeamProjects()
 
 const query = ref('')
 const modeFilter = ref<'all' | 'viewer' | 'compare'>('all')
@@ -315,6 +340,35 @@ const modeOptions = [
   { label: 'Viewer', value: 'viewer' },
   { label: 'Compare', value: 'compare' },
 ]
+const ASSIGNEE_ALL = '__all__'
+const ASSIGNEE_UNASSIGNED = '__unassigned__'
+const assigneeFilter = ref<string>(ASSIGNEE_ALL)
+const assigningByProjectId = ref<Record<string, boolean>>({})
+
+const assignableMembers = computed(() => {
+  return members.value.filter(m => m.status === 'active' && (m.role === 'admin' || m.role === 'editor'))
+})
+
+const assigneeFilterOptions = computed(() => {
+  return [
+    { label: 'All assignees', value: ASSIGNEE_ALL },
+    { label: 'Unassigned', value: ASSIGNEE_UNASSIGNED },
+    ...assignableMembers.value.map(member => ({
+      label: member.profile?.name?.trim() || member.profile?.email || 'Unnamed member',
+      value: member.user_id,
+    })),
+  ]
+})
+
+const assigneeOptions = computed(() => {
+  return [
+    { label: 'Unassigned', value: ASSIGNEE_UNASSIGNED },
+    ...assignableMembers.value.map(member => ({
+      label: member.profile?.name?.trim() || member.profile?.email || 'Unnamed member',
+      value: member.user_id,
+    })),
+  ]
+})
 
 const hasAnyProjects = computed(() => projects.value.length > 0 || teamProjects.value.length > 0)
 
@@ -323,7 +377,12 @@ const filteredTeamProjects = computed(() => {
   return teamProjects.value.filter(p => {
     const matchesMode = modeFilter.value === 'all' ? true : p.mode === modeFilter.value
     const matchesQuery = !q ? true : p.name.toLowerCase().includes(q)
-    return matchesMode && matchesQuery
+    const matchesAssignee = assigneeFilter.value === ASSIGNEE_ALL
+      ? true
+      : assigneeFilter.value === ASSIGNEE_UNASSIGNED
+        ? !p.assignee_user_id
+        : p.assignee_user_id === assigneeFilter.value
+    return matchesMode && matchesQuery && matchesAssignee
   })
 })
 
@@ -348,6 +407,32 @@ async function createTeamProject(mode: 'viewer' | 'compare') {
   const { project } = await createTeamProjectFn(mode)
   if (project) {
     router.push(`/${mode}/team-${project.id}`)
+  }
+}
+
+function getAssigneeLabel(assigneeUserId: string | null) {
+  if (!assigneeUserId) return 'Unassigned'
+  const member = assignableMembers.value.find(m => m.user_id === assigneeUserId)
+  return member?.profile?.name?.trim() || member?.profile?.email || 'Former member'
+}
+
+function isAssigning(projectId: string) {
+  return Boolean(assigningByProjectId.value[projectId])
+}
+
+async function updateProjectAssignee(project: { id: string; assignee_user_id: string | null }, assigneeValue: string) {
+  if (!isEditor.value || isAssigning(project.id)) return
+
+  const nextAssigneeUserId = assigneeValue === ASSIGNEE_UNASSIGNED ? null : assigneeValue
+  if (nextAssigneeUserId === project.assignee_user_id) return
+
+  assigningByProjectId.value = { ...assigningByProjectId.value, [project.id]: true }
+  try {
+    await updateTeamProjectFn(project.id, { assignee_user_id: nextAssigneeUserId })
+  } finally {
+    const next = { ...assigningByProjectId.value }
+    delete next[project.id]
+    assigningByProjectId.value = next
   }
 }
 

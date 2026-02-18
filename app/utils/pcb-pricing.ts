@@ -27,6 +27,7 @@ export interface PcbParams {
 export interface PriceTier {
   quantity: number
   piecePrice: number     // EUR — bare PCB cost per piece
+  freightPerPiece: number // EUR — freight (China -> Germany) amortized per piece
   fixedPerPiece: number  // EUR — freight + bank amortized per piece
   pricePerPiece: number  // EUR — all-in per piece (piece + fixed/qty)
   total: number          // EUR — qty * pricePerPiece
@@ -105,8 +106,8 @@ const NRE_BY_LAYERS: Record<number, number> = {
 
 // ─── Standard output tiers ──────────────────────────────────────────────
 
-/** Standard quantity tiers shown in the pricing table */
-export const QUANTITY_TIERS = [10, 25, 50, 100, 250, 500, 1000, 2500, 5000]
+/** Default quantity tiers shown in the pricing table */
+export const QUANTITY_TIERS = [10, 50, 100, 500, 1000]
 
 // ─── Interpolation helpers ──────────────────────────────────────────────
 
@@ -145,6 +146,13 @@ export function computeFixedCost(quantity: number): number {
 }
 
 /**
+ * Compute freight-only cost for a given quantity.
+ */
+export function computeFreightCost(quantity: number): number {
+  return interpolate(FREIGHT_BREAKPOINTS, quantity)
+}
+
+/**
  * Compute the one-time NRE / tooling cost based on layer count.
  */
 export function computeNreCost(layerCount: number): number {
@@ -155,7 +163,7 @@ export function computeNreCost(layerCount: number): number {
  * Compute full pricing table for all standard quantity tiers.
  * Returns null if required parameters are missing or invalid.
  */
-export function computePricingTable(params: Partial<PcbParams>): PricingResult | null {
+export function computePricingTable(params: Partial<PcbParams>, quantities: number[] = QUANTITY_TIERS): PricingResult | null {
   if (!params.sizeX || !params.sizeY || !params.layerCount || !params.surfaceFinish || !params.copperWeight) {
     return null
   }
@@ -172,13 +180,27 @@ export function computePricingTable(params: Partial<PcbParams>): PricingResult |
   const piecePrice = computePiecePrice(fullParams)
   const nreCost = computeNreCost(fullParams.layerCount)
 
-  const tiers: PriceTier[] = QUANTITY_TIERS.map((qty) => {
-    const fixedTotal = computeFixedCost(qty)
+  const normalizedQuantities = Array.from(
+    new Set(
+      (quantities ?? [])
+        .map(v => Number(v))
+        .filter(v => Number.isFinite(v) && v >= 1)
+        .map(v => Math.round(v)),
+    ),
+  ).sort((a, b) => a - b)
+
+  const effectiveQuantities = normalizedQuantities.length > 0 ? normalizedQuantities : QUANTITY_TIERS
+
+  const tiers: PriceTier[] = effectiveQuantities.map((qty) => {
+    const freightTotal = computeFreightCost(qty)
+    const fixedTotal = freightTotal + BANK_CHARGE_EUR
+    const freightPerPiece = freightTotal / qty
     const fixedPerPiece = fixedTotal / qty
     const pricePerPiece = piecePrice + fixedPerPiece
     return {
       quantity: qty,
       piecePrice: round3(piecePrice),
+      freightPerPiece: round3(freightPerPiece),
       fixedPerPiece: round3(fixedPerPiece),
       pricePerPiece: round3(pricePerPiece),
       total: round2(pricePerPiece * qty),

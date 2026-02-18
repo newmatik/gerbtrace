@@ -1,5 +1,8 @@
 <template>
-  <div class="flex-1 flex flex-col overflow-hidden">
+  <div
+    class="flex-1 flex flex-col overflow-hidden"
+    :class="{ 'pointer-events-none opacity-80': locked }"
+  >
     <div class="flex-1 overflow-y-auto">
       <!-- Section 1: Board Parameters (compact two-column) -->
       <div class="p-4 pb-2">
@@ -285,6 +288,7 @@ interface PcbData {
   thicknessMm?: PcbThicknessMm
   solderMaskColor?: SolderMaskColor
   panelizationMode?: 'single' | 'panelized'
+  pricingQuantities?: number[]
 }
 
 interface LayerGroupData {
@@ -299,7 +303,10 @@ const props = defineProps<{
   detectedLayerCount?: number | null
   layers: LayerInfo[]
   editedLayers?: Set<string>
+  locked?: boolean
 }>()
+
+const locked = computed(() => !!props.locked)
 
 const emit = defineEmits<{
   'update:pcbData': [data: PcbData]

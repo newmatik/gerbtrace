@@ -1,5 +1,5 @@
 <template>
-  <div class="flex-1 flex flex-col overflow-hidden">
+  <div class="h-full min-h-0 flex flex-col overflow-hidden">
     <!-- Search bar -->
     <div class="p-3 pb-2">
       <div class="relative">
@@ -37,9 +37,7 @@
         {{ f.label }}
         <span class="tabular-nums opacity-60">{{ f.count }}</span>
       </button>
-      <!-- Spacer -->
       <span class="flex-1" />
-      <!-- Sort controls -->
       <button
         class="text-[10px] px-1.5 py-0.5 rounded-full border transition-colors flex items-center gap-0.5"
         :class="sortBy === 'designator'
@@ -70,17 +68,6 @@
         <span class="text-[10px] text-neutral-400">
           {{ displayLines.length }}/{{ bomLines.length }} lines
         </span>
-        <!-- Board quantity input -->
-        <div class="flex items-center gap-1">
-          <label class="text-[10px] text-neutral-400">Boards:</label>
-          <input
-            :value="boardQuantity"
-            type="number"
-            min="1"
-            class="w-14 text-[10px] tabular-nums bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded px-1.5 py-0.5 outline-none focus:border-primary transition-colors text-center"
-            @input="handleBoardQtyInput"
-          />
-        </div>
       </div>
       <div class="flex items-center gap-1">
         <button
@@ -96,6 +83,7 @@
         <button
           class="text-[10px] px-1.5 py-0.5 rounded-full border border-neutral-200 dark:border-neutral-700 text-neutral-400 hover:text-green-600 dark:hover:text-green-400 hover:border-green-300 dark:hover:border-green-600 transition-colors flex items-center gap-0.5"
           title="Add BOM line"
+          :disabled="props.locked"
           @click="openEditModal(null)"
         >
           <UIcon name="i-lucide-plus" class="text-[10px]" />
@@ -106,7 +94,6 @@
 
     <!-- Pricing queue status strip -->
     <div v-if="pricingQueue.length > 0" class="mx-3 mb-2 rounded-lg border border-neutral-200 dark:border-neutral-700 overflow-hidden">
-      <!-- Summary bar (clickable to expand) -->
       <button
         class="w-full flex items-center gap-2 px-2.5 py-1.5 text-left hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
         @click="queueExpanded = !queueExpanded"
@@ -137,7 +124,6 @@
         </span>
       </button>
 
-      <!-- Progress bar -->
       <div v-if="queueTotal > 0" class="h-0.5 bg-neutral-100 dark:bg-neutral-800">
         <div
           class="h-full transition-all duration-300"
@@ -146,7 +132,6 @@
         />
       </div>
 
-      <!-- Expanded queue items -->
       <div v-if="queueExpanded" class="max-h-40 overflow-y-auto border-t border-neutral-100 dark:border-neutral-800">
         <div
           v-for="item in pricingQueue"
@@ -183,13 +168,12 @@
       </div>
     </div>
 
-    <!-- Elexess warning -->
     <div v-if="!hasCredentials && bomLines.length > 0" class="mx-3 mb-2 px-2 py-1.5 text-[10px] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded border border-amber-200 dark:border-amber-800">
       Elexess API not configured. Set credentials in Team Settings to fetch pricing.
     </div>
 
-    <!-- BOM table -->
-    <div class="flex-1 overflow-y-auto px-3 pb-3">
+    <!-- Table -->
+    <div class="flex-1 min-h-0 overflow-y-auto px-3 pb-3">
       <div v-if="bomLines.length === 0" class="text-center py-8">
         <UIcon name="i-lucide-clipboard-list" class="text-3xl text-neutral-300 dark:text-neutral-600 mb-2" />
         <p class="text-xs text-neutral-400">No BOM data yet.</p>
@@ -205,15 +189,21 @@
           class="rounded-lg border transition-colors cursor-pointer"
           :class="selectedLineId === line.id
             ? 'border-blue-400/40 bg-blue-50/70 dark:border-blue-500/30 dark:bg-blue-500/10'
-            : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600'"
+            : isLineChanged(line)
+              ? 'border-amber-300/70 bg-amber-50/60 dark:border-amber-700/40 dark:bg-amber-900/10 hover:border-amber-300 dark:hover:border-amber-600'
+              : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600'"
           @click="emit('selectLine', line.id)"
         >
-          <div
-            class="px-2.5 py-1.5 flex items-center gap-2"
-            :class="{ 'opacity-40': line.dnp }"
-          >
+          <div class="px-2.5 py-1.5 flex items-center gap-2" :class="{ 'opacity-40': line.dnp }">
             <span class="text-[10px] font-mono text-neutral-500 dark:text-neutral-400 shrink-0 w-[60px] truncate" :title="line.references">
               {{ line.references || '--' }}
+            </span>
+            <span
+              v-if="isLineChanged(line)"
+              class="text-[9px] px-1.5 py-0.5 rounded-full border shrink-0 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20"
+              title="This line differs from the original customer BOM"
+            >
+              Edited
             </span>
             <UIcon
               v-if="getMissingInPnP(line).length > 0"
@@ -228,23 +218,21 @@
             >
               {{ line.description || '(no description)' }}
             </span>
-            <!-- DNP badge -->
             <span
               v-if="line.dnp"
               class="text-[10px] px-1.5 py-0.5 rounded-full border shrink-0 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20"
             >
               DNP
             </span>
-            <!-- Type badge (click to cycle) -->
             <button
               class="text-[10px] px-1.5 py-0.5 rounded-full border shrink-0 transition-colors"
+              :disabled="props.locked"
               :class="typeClass(line.type)"
               title="Click to change type"
               @click.stop="cycleType(line)"
             >
               {{ line.type }}
             </button>
-            <!-- Quantity (click to edit inline) -->
             <div class="shrink-0 text-right" @click.stop>
               <input
                 v-if="editingQtyId === line.id"
@@ -260,6 +248,7 @@
               <button
                 v-else
                 class="text-[10px] text-neutral-500 tabular-nums hover:text-primary transition-colors"
+                :disabled="props.locked"
                 :title="`${line.quantity} per board × ${boardQuantity} boards — click to edit`"
                 @click.stop="startQtyEdit(line)"
               >
@@ -267,7 +256,6 @@
                 <span v-if="boardQuantity > 1" class="text-neutral-400">({{ formatNumber(line.quantity * boardQuantity) }})</span>
               </button>
             </div>
-            <!-- Pricing badge: unit price + line value -->
             <template v-if="!line.dnp">
               <template v-for="offer in [getLineBestOffer(line)]" :key="'price'">
                 <template v-if="offer">
@@ -282,21 +270,19 @@
                 </template>
               </template>
             </template>
-            <!-- Edit button -->
             <button
               class="text-neutral-400 hover:text-primary transition-colors shrink-0"
+              :disabled="props.locked"
               title="Edit"
               @click.stop="openEditModal(line)"
             >
               <UIcon name="i-lucide-pencil" class="text-xs" />
             </button>
           </div>
-
         </div>
       </div>
     </div>
 
-    <!-- Edit modal -->
     <BomLineEditModal
       v-model:open="showEditModal"
       :line="editingLine"
@@ -315,6 +301,7 @@ import { formatCurrency, normalizeCurrencyCode } from '~/utils/currency'
 
 const props = defineProps<{
   bomLines: BomLine[]
+  customerBomLines: BomLine[]
   filteredLines: BomLine[]
   searchQuery: string
   pricingCache: BomPricingCache
@@ -324,36 +311,28 @@ const props = defineProps<{
   boardQuantity: number
   teamCurrency: 'USD' | 'EUR'
   exchangeRate: ExchangeRateSnapshot | null
-  /** Set of designators present in PnP data (SMD + THT, excluding DNP) */
   pnpDesignators: Set<string>
   selectedLineId: string | null
+  locked?: boolean
 }>()
 
 const emit = defineEmits<{
   'update:searchQuery': [value: string]
-  'update:boardQuantity': [value: number]
   'addLine': [line?: Partial<BomLine>]
   'updateLine': [id: string, updates: Partial<BomLine>]
   'removeLine': [id: string]
+  'addManufacturer': [lineId: string, mfr: { manufacturer: string; manufacturerPart: string }]
   'fetchAllPricing': []
+  'fetchSinglePricing': [partNumber: string]
   'selectLine': [id: string]
 }>()
 
 const searchQuery = computed({
   get: () => props.searchQuery,
-  set: (v) => emit('update:searchQuery', v),
+  set: v => emit('update:searchQuery', v),
 })
 
-function handleBoardQtyInput(e: Event) {
-  const val = parseInt((e.target as HTMLInputElement).value, 10)
-  if (val > 0 && !isNaN(val)) {
-    emit('update:boardQuantity', val)
-  }
-}
-
-// ── Filter chips + sort ──
-
-type FilterKey = 'smd' | 'tht' | 'dnp' | 'no-mfr' | 'no-price'
+type FilterKey = 'smd' | 'tht' | 'dnp' | 'no-mfr' | 'no-price' | 'missing-pnp'
 const activeFilters = ref(new Set<FilterKey>())
 const sortBy = ref<'designator' | 'price'>('designator')
 
@@ -364,104 +343,36 @@ function toggleFilter(key: FilterKey) {
   activeFilters.value = next
 }
 
-function lineHasPrice(line: BomLine): boolean {
-  const totalQty = line.quantity * props.boardQuantity
-  for (const mfr of line.manufacturers) {
-    if (getSupplierOffers(mfr.manufacturerPart, totalQty).length > 0) return true
-  }
-  return false
+function formatNumber(n: number): string {
+  return n.toLocaleString()
 }
 
-function lineHasManufacturer(line: BomLine): boolean {
-  return line.manufacturers.length > 0 && line.manufacturers.some(m => !!m.manufacturerPart)
-}
-
-const filterDefs = computed(() => {
-  const lines = props.filteredLines
-  return [
-    { key: 'smd' as FilterKey, label: 'SMD', count: lines.filter(l => l.type === 'SMD').length, activeClass: 'border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' },
-    { key: 'tht' as FilterKey, label: 'THT', count: lines.filter(l => l.type === 'THT').length, activeClass: 'border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20' },
-    { key: 'dnp' as FilterKey, label: 'DNP', count: lines.filter(l => l.dnp).length, activeClass: 'border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20' },
-    { key: 'no-mfr' as FilterKey, label: 'No MFR', count: lines.filter(l => !lineHasManufacturer(l)).length, activeClass: 'border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20' },
-    { key: 'no-price' as FilterKey, label: 'No Price', count: lines.filter(l => !lineHasPrice(l)).length, activeClass: 'border-orange-300 dark:border-orange-700 text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20' },
-  ]
-})
-
-/** Apply local filters and sorting on top of the text-search filteredLines. */
-const displayLines = computed(() => {
-  let lines = props.filteredLines
-  const filters = activeFilters.value
-
-  if (filters.size > 0) {
-    lines = lines.filter(line => {
-      if (filters.has('smd') && line.type === 'SMD') return true
-      if (filters.has('tht') && line.type === 'THT') return true
-      if (filters.has('dnp') && line.dnp) return true
-      if (filters.has('no-mfr') && !lineHasManufacturer(line)) return true
-      if (filters.has('no-price') && !lineHasPrice(line)) return true
-      return false
-    })
-  }
-
-  if (sortBy.value === 'price') {
-    lines = [...lines].sort((a, b) => {
-      const pa = getLineBestOffer(a)?.lineValue ?? -1
-      const pb = getLineBestOffer(b)?.lineValue ?? -1
-      return pb - pa
-    })
-  } else {
-    lines = [...lines].sort((a, b) => {
-      const ra = a.references || '\uffff'
-      const rb = b.references || '\uffff'
-      return ra.localeCompare(rb, undefined, { numeric: true })
-    })
-  }
-
-  return lines
-})
-
-// Edit modal
-const showEditModal = ref(false)
-const editingLine = ref<BomLine | null>(null)
-
-function openEditModal(line: BomLine | null) {
-  editingLine.value = line
-  showEditModal.value = true
-}
-
-function handleLineSave(line: BomLine) {
-  if (editingLine.value) {
-    emit('updateLine', line.id, line)
-  } else {
-    emit('addLine', line)
+function typeClass(type: string) {
+  switch (type) {
+    case 'SMD': return 'border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
+    case 'THT': return 'border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20'
+    case 'Mounting': return 'border-orange-200 dark:border-orange-800 text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20'
+    default: return 'border-neutral-200 dark:border-neutral-700 text-neutral-500'
   }
 }
-
-function handleLineDelete(id: string) {
-  emit('removeLine', id)
-}
-
-
-// ── Inline type cycling ──
 
 function cycleType(line: BomLine) {
+  if (props.locked) return
   const idx = BOM_LINE_TYPES.indexOf(line.type)
   const next = BOM_LINE_TYPES[(idx + 1) % BOM_LINE_TYPES.length]
   emit('updateLine', line.id, { type: next })
 }
 
-// ── Inline quantity editing ──
-
+// Inline quantity editing
 const editingQtyId = ref<string | null>(null)
 const editingQtyValue = ref(1)
 const qtyInputRef = ref<HTMLInputElement | null>(null)
 
 function startQtyEdit(line: BomLine) {
+  if (props.locked) return
   editingQtyId.value = line.id
   editingQtyValue.value = line.quantity
-  nextTick(() => {
-    qtyInputRef.value?.select()
-  })
+  nextTick(() => { qtyInputRef.value?.select() })
 }
 
 function commitQty(lineId: string) {
@@ -477,64 +388,106 @@ function cancelQty() {
   editingQtyId.value = null
 }
 
-// ── Inline add manufacturer ──
+// Edit modal
+const showEditModal = ref(false)
+const editingLine = ref<BomLine | null>(null)
 
+function openEditModal(line: BomLine | null) {
+  if (props.locked) return
+  editingLine.value = line
+  showEditModal.value = true
+}
 
-// ── Queue computed helpers ──
+function handleLineSave(line: BomLine) {
+  if (props.locked) return
+  if (editingLine.value) emit('updateLine', line.id, line)
+  else emit('addLine', line)
+}
 
+function handleLineDelete(id: string) {
+  if (props.locked) return
+  emit('removeLine', id)
+}
+
+// Queue strip
 const queueExpanded = ref(false)
-
 const queueTotal = computed(() => props.pricingQueue.length)
 const queueDone = computed(() => props.pricingQueue.filter(i => i.status === 'done' || i.status === 'error').length)
 const queueErrors = computed(() => props.pricingQueue.filter(i => i.status === 'error').length)
 
-// Auto-expand queue when fetching starts, collapse when done
-watch(() => props.isFetchingPricing, (fetching) => {
-  if (fetching) queueExpanded.value = true
-})
+watch(() => props.isFetchingPricing, (fetching) => { if (fetching) queueExpanded.value = true })
+watch(() => props.pricingQueue.length, (len) => { if (len === 0) queueExpanded.value = false })
 
-watch(() => props.pricingQueue.length, (len) => {
-  if (len === 0) queueExpanded.value = false
-})
-
-// ── Helpers ──
-
-function formatNumber(n: number): string {
-  return n.toLocaleString()
-}
-
-function typeClass(type: string) {
-  switch (type) {
-    case 'SMD': return 'border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
-    case 'THT': return 'border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20'
-    case 'Mounting': return 'border-orange-200 dark:border-orange-800 text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20'
-    default: return 'border-neutral-200 dark:border-neutral-700 text-neutral-500'
-  }
-}
-
-// ── BOM ↔ PnP mismatch helpers ──
-
-/**
- * Parse comma-separated references into individual designators.
- */
+// PnP mismatch helpers
 function parseRefs(refs: string): string[] {
   if (!refs) return []
   return refs.split(/[,;\s]+/).map(r => r.trim()).filter(Boolean)
 }
 
-/**
- * Get designators from a BOM line that are missing in PnP data.
- * DNP lines return empty (no warning needed).
- * Returns empty when no PnP data is loaded (no false positives).
- */
+function refsKey(refs: string): string {
+  return parseRefs(refs).map(r => r.toUpperCase()).sort().join(',')
+}
+
+function manufacturerKey(m: { manufacturer: string; manufacturerPart: string }): string {
+  return `${String(m.manufacturer ?? '').trim().toLowerCase()}|${String(m.manufacturerPart ?? '').trim().toLowerCase()}`
+}
+
+const customerBaselineByLineId = shallowRef(new Map<string, BomLine | null>())
+
+watchEffect(() => {
+  // Ensure baseline mapping exists and remains stable per line.id once assigned.
+  const byId = new Map(props.customerBomLines.map(l => [l.id, l]))
+  const byRefs = new Map<string, BomLine>()
+  for (const l of props.customerBomLines) {
+    const key = refsKey(l.references)
+    if (key && !byRefs.has(key)) byRefs.set(key, l)
+  }
+
+  const map = customerBaselineByLineId.value
+  for (const line of props.bomLines) {
+    if (map.has(line.id)) continue
+    const direct = byId.get(line.id)
+    if (direct) {
+      map.set(line.id, direct)
+      continue
+    }
+    const rk = refsKey(line.references)
+    map.set(line.id, rk ? (byRefs.get(rk) ?? null) : null)
+  }
+})
+
+function isLineChanged(line: BomLine): boolean {
+  const base = customerBaselineByLineId.value.get(line.id)
+  if (!base) return true
+
+  const fieldsEqual =
+    String(line.description ?? '').trim() === String(base.description ?? '').trim()
+    && String(line.comment ?? '').trim() === String(base.comment ?? '').trim()
+    && String(line.package ?? '').trim() === String(base.package ?? '').trim()
+    && refsKey(line.references) === refsKey(base.references)
+    && line.type === base.type
+    && line.quantity === base.quantity
+    && !!line.dnp === !!base.dnp
+    && !!line.customerProvided === !!base.customerProvided
+    && String(line.customerItemNo ?? '').trim() === String(base.customerItemNo ?? '').trim()
+
+  if (!fieldsEqual) return true
+
+  const a = (line.manufacturers ?? []).map(manufacturerKey).sort()
+  const b = (base.manufacturers ?? []).map(manufacturerKey).sort()
+  if (a.length !== b.length) return true
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return true
+  }
+  return false
+}
+
 function getMissingInPnP(line: BomLine): string[] {
   if (line.dnp || props.pnpDesignators.size === 0) return []
   return parseRefs(line.references).filter(r => !props.pnpDesignators.has(r))
 }
 
-// ── Elexess pricing extraction ──
-// Elexess response: { results: [{ supplier, country, current_stock, moq, current_leadtime, pricebreaks: [{ quantity, price, currency }] }] }
-
+// Pricing helpers (copied from BomPanel)
 interface SupplierOffer {
   supplier: string
   country: string
@@ -552,11 +505,6 @@ interface DisplayOffer {
   currency: string
 }
 
-/**
- * Pick the best price tier for a given quantity from an array of pricebreaks.
- * Returns the tier whose quantity is <= totalQty and closest to it,
- * or the first tier if qty is below all tiers.
- */
 interface PriceBreak {
   quantity?: number
   price?: number
@@ -575,24 +523,46 @@ function pickTierPrice(pricebreaks: PriceBreak[], totalQty: number): { price: nu
   return { price: Number(best.price), currency: best.currency || 'EUR' }
 }
 
-/**
- * Extract supplier offers from cached Elexess data for an MPN.
- * Returns offers sorted by unit price (cheapest first), deduplicated by supplier.
- */
+function conversionRate(from: string, to: string): number | null {
+  const snapshot = props.exchangeRate
+  if (!snapshot) return null
+  const source = normalizeCurrencyCode(snapshot.sourceCurrency)
+  const target = normalizeCurrencyCode(snapshot.targetCurrency)
+  if (!source || !target) return null
+  const rate = Number(snapshot.rate)
+  if (!Number.isFinite(rate) || rate <= 0) return null
+  if (source === from && target === to) return rate
+  if (source === to && target === from) return 1 / rate
+  return null
+}
+
+function convertAmount(value: number, fromCurrency: string, toCurrency: 'USD' | 'EUR'): number | null {
+  if (!Number.isFinite(value)) return null
+  const from = normalizeCurrencyCode(fromCurrency)
+  const to = toCurrency.toUpperCase()
+  if (!from) return null
+  if (from === to) return value
+  const rate = conversionRate(from, to)
+  if (rate == null) return null
+  return value * rate
+}
+
+function comparableUnitPrice(offer: SupplierOffer): number {
+  const converted = convertAmount(offer.unitPrice, offer.currency, props.teamCurrency)
+  return converted ?? offer.unitPrice
+}
+
 function getSupplierOffers(mpn: string, totalQty: number): SupplierOffer[] {
   const entry = props.pricingCache[mpn]
   if (!entry?.data) return []
   const results = entry.data?.results
   if (!Array.isArray(results) || results.length === 0) return []
-
   const candidates: SupplierOffer[] = []
   const seenSuppliers = new Set<string>()
-
   for (const r of results) {
     if (!r.pricebreaks || r.pricebreaks.length === 0) continue
     const tier = pickTierPrice(r.pricebreaks, totalQty)
     if (!tier) continue
-
     candidates.push({
       supplier: r.supplier || 'Unknown',
       country: r.country || '',
@@ -604,23 +574,16 @@ function getSupplierOffers(mpn: string, totalQty: number): SupplierOffer[] {
       lineValue: tier.price * totalQty,
     })
   }
-
   const offers: SupplierOffer[] = []
   for (const offer of candidates.sort((a, b) => comparableUnitPrice(a) - comparableUnitPrice(b))) {
-    // Deduplicate by supplier after conversion to the team currency.
     const key = offer.supplier
     if (seenSuppliers.has(key)) continue
     seenSuppliers.add(key)
     offers.push(offer)
   }
-
   return offers.sort((a, b) => comparableUnitPrice(a) - comparableUnitPrice(b))
 }
 
-/**
- * Get the cheapest supplier offer across all MPNs for a BOM line.
- * Only considers suppliers with enough stock to fulfil the total quantity.
- */
 function getLineBestOffer(line: BomLine): SupplierOffer | null {
   const totalQty = line.quantity * props.boardQuantity
   let best: SupplierOffer | null = null
@@ -628,61 +591,70 @@ function getLineBestOffer(line: BomLine): SupplierOffer | null {
     const offers = getSupplierOffers(mfr.manufacturerPart, totalQty)
     for (const offer of offers) {
       if (offer.stock < totalQty) continue
-      if (!best || comparableUnitPrice(offer) < comparableUnitPrice(best)) {
-        best = offer
-      }
-      break // offers are sorted by price, first with stock wins for this MPN
+      if (!best || comparableUnitPrice(offer) < comparableUnitPrice(best)) best = offer
+      break
     }
   }
   return best
-}
-
-function comparableUnitPrice(offer: SupplierOffer): number {
-  const converted = convertAmount(offer.unitPrice, offer.currency, props.teamCurrency)
-  return converted ?? offer.unitPrice
 }
 
 function getDisplayOffer(offer: SupplierOffer): DisplayOffer {
   const unitPrice = convertAmount(offer.unitPrice, offer.currency, props.teamCurrency)
   const lineValue = convertAmount(offer.lineValue, offer.currency, props.teamCurrency)
   if (unitPrice == null || lineValue == null) {
-    return {
-      unitPrice: offer.unitPrice,
-      lineValue: offer.lineValue,
-      currency: offer.currency,
-    }
+    return { unitPrice: offer.unitPrice, lineValue: offer.lineValue, currency: offer.currency }
   }
-  return {
-    unitPrice,
-    lineValue,
-    currency: props.teamCurrency,
+  return { unitPrice, lineValue, currency: props.teamCurrency }
+}
+
+function lineHasPrice(line: BomLine): boolean {
+  return !!getLineBestOffer(line)
+}
+
+function lineHasManufacturer(line: BomLine): boolean {
+  return (line.manufacturers?.length ?? 0) > 0
+}
+
+const filterDefs = computed(() => {
+  const lines = props.filteredLines
+  const counts = {
+    smd: lines.filter(l => l.type === 'SMD').length,
+    tht: lines.filter(l => l.type === 'THT').length,
+    dnp: lines.filter(l => l.dnp).length,
+    'no-mfr': lines.filter(l => !lineHasManufacturer(l)).length,
+    'no-price': lines.filter(l => !lineHasPrice(l)).length,
+    'missing-pnp': lines.filter(l => getMissingInPnP(l).length > 0).length,
   }
-}
+  return [
+    { key: 'smd' as const, label: 'SMD', count: counts.smd, activeClass: 'border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' },
+    { key: 'tht' as const, label: 'THT', count: counts.tht, activeClass: 'border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20' },
+    { key: 'dnp' as const, label: 'DNP', count: counts.dnp, activeClass: 'border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20' },
+    { key: 'no-mfr' as const, label: 'No Mfr', count: counts['no-mfr'], activeClass: 'border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20' },
+    { key: 'no-price' as const, label: 'No Price', count: counts['no-price'], activeClass: 'border-orange-300 dark:border-orange-700 text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20' },
+    { key: 'missing-pnp' as const, label: 'Missing PnP', count: counts['missing-pnp'], activeClass: 'border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20' },
+  ]
+})
 
-function convertAmount(value: number, fromCurrency: string, toCurrency: 'USD' | 'EUR'): number | null {
-  if (!Number.isFinite(value)) return null
-  const from = normalizeCurrencyCode(fromCurrency)
-  const to = toCurrency.toUpperCase()
-  if (!from) return null
-  if (from === to) return value
-
-  const rate = conversionRate(from, to)
-  if (rate == null) return null
-  return value * rate
-}
-
-function conversionRate(from: string, to: string): number | null {
-  const snapshot = props.exchangeRate
-  if (!snapshot) return null
-  const source = normalizeCurrencyCode(snapshot.sourceCurrency)
-  const target = normalizeCurrencyCode(snapshot.targetCurrency)
-  if (!source || !target) return null
-  const rate = Number(snapshot.rate)
-  if (!Number.isFinite(rate) || rate <= 0) return null
-
-  if (source === from && target === to) return rate
-  if (source === to && target === from) return 1 / rate
-  return null
-}
-
+const displayLines = computed(() => {
+  let lines = props.filteredLines
+  const filters = activeFilters.value
+  if (filters.size > 0) {
+    lines = lines.filter(line => {
+      if (filters.has('smd') && line.type === 'SMD') return true
+      if (filters.has('tht') && line.type === 'THT') return true
+      if (filters.has('dnp') && line.dnp) return true
+      if (filters.has('no-mfr') && !lineHasManufacturer(line)) return true
+      if (filters.has('no-price') && !lineHasPrice(line)) return true
+      if (filters.has('missing-pnp') && getMissingInPnP(line).length > 0) return true
+      return false
+    })
+  }
+  if (sortBy.value === 'price') {
+    lines = [...lines].sort((a, b) => (getLineBestOffer(b)?.lineValue ?? -1) - (getLineBestOffer(a)?.lineValue ?? -1))
+  } else {
+    lines = [...lines].sort((a, b) => (a.references || '\uffff').localeCompare((b.references || '\uffff'), undefined, { numeric: true }))
+  }
+  return lines
+})
 </script>
+

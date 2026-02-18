@@ -35,9 +35,13 @@
           <UIcon name="i-lucide-triangle-alert" class="text-xs shrink-0 mt-0.5" />
           <span><span class="font-medium">{{ localDesignator }}</span> not found in BOM</span>
         </div>
+        <div v-if="locked" class="px-2 py-1 text-[10px] text-neutral-500 dark:text-neutral-400 rounded border border-neutral-200 dark:border-neutral-700">
+          This component is locked. Fields are read-only.
+        </div>
 
-        <!-- Editable core fields -->
-        <div class="grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs">
+        <fieldset class="contents" :disabled="locked">
+          <!-- Editable core fields -->
+          <div class="grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs">
           <div>
             <label class="text-neutral-400 dark:text-neutral-500 uppercase tracking-wide text-[10px] font-medium">Designator</label>
             <input
@@ -76,18 +80,18 @@
               :class="{ 'text-amber-600 dark:text-amber-300': Number(localY) !== (component?.originalY ?? 0) }"
             />
           </div>
-        </div>
+          </div>
 
-        <!-- CAD package (read-only for parsed, editable for manual) -->
-        <div v-if="!component?.manual" class="text-xs">
-          <span class="text-neutral-400 dark:text-neutral-500 uppercase tracking-wide text-[10px] font-medium">CAD Package</span>
-          <div class="text-neutral-700 dark:text-neutral-300 mt-0.5">{{ component?.cadPackage || '—' }}</div>
-        </div>
+          <!-- CAD package (read-only for parsed, editable for manual) -->
+          <div v-if="!component?.manual" class="text-xs">
+            <span class="text-neutral-400 dark:text-neutral-500 uppercase tracking-wide text-[10px] font-medium">CAD Package</span>
+            <div class="text-neutral-700 dark:text-neutral-300 mt-0.5">{{ component?.cadPackage || '—' }}</div>
+          </div>
 
-        <div class="h-px bg-neutral-200 dark:bg-neutral-700" />
+          <div class="h-px bg-neutral-200 dark:bg-neutral-700" />
 
-        <!-- Editable fields -->
-        <div class="space-y-3">
+          <!-- Editable fields -->
+          <div class="space-y-3">
           <!-- Rotation -->
           <div class="flex items-center justify-between">
             <label class="text-xs text-neutral-500 dark:text-neutral-400">Rotation</label>
@@ -216,33 +220,35 @@
               class="max-w-[12rem] w-full"
             />
           </div>
-        </div>
+          </div>
 
-        <div class="h-px bg-neutral-200 dark:bg-neutral-700" />
+          <div class="h-px bg-neutral-200 dark:bg-neutral-700" />
 
-        <!-- Note -->
-        <div class="space-y-1.5">
-          <label class="text-[10px] font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Note</label>
-          <textarea
-            ref="noteInput"
-            v-model="localNote"
-            rows="3"
-            class="w-full text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md px-2.5 py-2 outline-none placeholder:text-neutral-400 focus:border-primary transition-colors resize-none"
-            placeholder="Add a note for this component..."
-          />
-        </div>
+          <!-- Note -->
+          <div class="space-y-1.5">
+            <label class="text-[10px] font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Note</label>
+            <textarea
+              ref="noteInput"
+              v-model="localNote"
+              rows="3"
+              class="w-full text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md px-2.5 py-2 outline-none placeholder:text-neutral-400 focus:border-primary transition-colors resize-none"
+              placeholder="Add a note for this component..."
+            />
+          </div>
+        </fieldset>
 
         <!-- Footer -->
         <div class="flex items-center justify-between pt-1">
           <button
+            v-if="!locked"
             class="text-xs text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 transition-colors flex items-center gap-1"
             @click="handleDelete"
           >
             <UIcon name="i-lucide-trash-2" class="text-xs" />
             Delete
           </button>
-          <UButton size="sm" color="primary" @click="save">
-            Done
+          <UButton size="sm" color="primary" @click="locked ? (open = false) : save()">
+            {{ locked ? 'Close' : 'Done' }}
           </UButton>
         </div>
       </div>
@@ -270,7 +276,9 @@ const props = defineProps<{
   currentGroupId: string | null
   /** Set of designators present in BOM data (excluding DNP lines) */
   bomDesignators?: Set<string>
+  locked?: boolean
 }>()
+const locked = computed(() => !!props.locked)
 
 const emit = defineEmits<{
   'update:rotation': [payload: { key: string; rotation: number }]
@@ -405,6 +413,7 @@ watch([open, () => props.component], ([isOpen, comp]) => {
 }, { immediate: true })
 
 function handleDelete() {
+  if (locked.value) return
   if (!props.component) return
   if (props.component.manual) {
     const id = props.component.key.replace('manual|', '')
@@ -416,6 +425,7 @@ function handleDelete() {
 }
 
 function save() {
+  if (locked.value) { open.value = false; return }
   if (!props.component) { open.value = false; return }
   const comp = props.component
 
