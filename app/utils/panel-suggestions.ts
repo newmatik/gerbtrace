@@ -273,7 +273,8 @@ function applyTabKeepoutsToConfig(
   }
   let blockedTabCount = 0
 
-  const edgeToField: Record<PanelEdgeName, keyof PanelConfig['tabs']> = {
+  type TabCountField = 'defaultCountTop' | 'defaultCountBottom' | 'defaultCountLeft' | 'defaultCountRight'
+  const edgeToField: Record<PanelEdgeName, TabCountField> = {
     top: 'defaultCountTop',
     bottom: 'defaultCountBottom',
     left: 'defaultCountLeft',
@@ -315,7 +316,8 @@ function ensureMinimumRoutedTabs(cfg: PanelConfig): PanelConfig {
       edgeOverrides: { ...cfg.tabs.edgeOverrides },
     },
   }
-  const edgeField: Record<PanelEdgeName, keyof PanelConfig['tabs']> = {
+  type TabCountField = 'defaultCountTop' | 'defaultCountBottom' | 'defaultCountLeft' | 'defaultCountRight'
+  const edgeField: Record<PanelEdgeName, TabCountField> = {
     top: 'defaultCountTop',
     bottom: 'defaultCountBottom',
     left: 'defaultCountLeft',

@@ -372,9 +372,9 @@ const INNER_COPPER_WEIGHT_OPTIONS: { value: '0.5oz' | '1oz' | '2oz'; label: stri
   { value: '2oz', label: '2 oz (70 µm)' },
 ]
 
-const layerCountOptions = LAYER_COUNT_OPTIONS.map(n => ({
+const layerCountOptions: { label: string; value: number }[] = LAYER_COUNT_OPTIONS.map(n => ({
   label: `${n}L`,
-  value: n,
+  value: n as number,
 }))
 
 const panelizationOptions: { label: string; value: 'single' | 'panelized' }[] = [

@@ -382,7 +382,7 @@ const allPackageItems = computed<PackageListItem[]>(() => {
     const libName = (pkg as any).libraryName as string | undefined
     items.push({
       key: `builtin-${libId ?? 'newmatik'}-${pkg.name}`,
-      pkg,
+      pkg: pkg as PackageDefinition,
       source: 'builtin',
       libraryId: libId,
       libraryName: libName,
@@ -392,7 +392,7 @@ const allPackageItems = computed<PackageListItem[]>(() => {
   for (const record of teamPackages.value) {
     items.push({
       key: `team-${record.id}`,
-      pkg: record.data,
+      pkg: record.data as PackageDefinition,
       source: 'team',
       teamId: record.id,
       libraryId: 'team',
@@ -567,7 +567,7 @@ const thtItems = computed<ThtListItem[]>(() => {
   for (const pkg of builtInThtPackages.value) {
     out.push({
       key: `builtin-${(pkg as any).libraryId ?? 'tht'}-${pkg.name}`,
-      pkg,
+      pkg: pkg as THTPackageDefinition,
       source: 'builtin',
       libraryId: (pkg as any).libraryId,
       libraryName: (pkg as any).libraryName,
@@ -576,7 +576,7 @@ const thtItems = computed<ThtListItem[]>(() => {
   for (const rec of teamThtPackages.value) {
     out.push({
       key: `team-${rec.id}`,
-      pkg: rec.data,
+      pkg: rec.data as THTPackageDefinition,
       source: 'team',
       teamId: rec.id,
       libraryId: 'team',

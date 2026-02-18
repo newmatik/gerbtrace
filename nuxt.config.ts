@@ -22,7 +22,7 @@ export default defineNuxtConfig({
     project: process.env.SENTRY_PROJECT || 'gerbtrace',
     authToken: process.env.SENTRY_AUTH_TOKEN,
     sourcemaps: {
-      uploadInDev: false,
+      enabled: process.env.NODE_ENV === 'production',
     },
   },
 

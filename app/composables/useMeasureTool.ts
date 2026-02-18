@@ -242,8 +242,6 @@ export function useMeasureTool() {
   }
 
   function extractFromShape(shape: Shape, out: SnapPoint[], seen: Set<string>) {
-    if (shape.erase) return
-
     switch (shape.type) {
       case 'circle':
         pushUniquePoint(out, seen, { x: shape.cx, y: shape.cy, type: 'center' })

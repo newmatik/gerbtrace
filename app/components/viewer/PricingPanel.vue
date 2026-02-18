@@ -107,7 +107,7 @@
 
 <script setup lang="ts">
 import { computePricingTable } from '~/utils/pcb-pricing'
-import type { SurfaceFinish, CopperWeight, PricingResult } from '~/utils/pcb-pricing'
+import type { SurfaceFinish, CopperWeight, PcbThicknessMm, PricingResult } from '~/utils/pcb-pricing'
 
 interface PcbData {
   sizeX?: number
@@ -115,7 +115,7 @@ interface PcbData {
   layerCount?: number
   surfaceFinish?: SurfaceFinish
   copperWeight?: CopperWeight
-  thicknessMm?: number
+  thicknessMm?: PcbThicknessMm
 }
 
 const props = defineProps<{

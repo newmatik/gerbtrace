@@ -791,6 +791,8 @@ import type { BomLine, BomColumnMapping } from '~/utils/bom-types'
 import type { PricingQueueItem } from '~/composables/useElexessApi'
 import type { ViewMode } from '~/components/viewer/BoardCanvas.vue'
 import { getPresetForAppearance } from '~/utils/pcb-presets'
+import type { SolderMaskColor } from '~/utils/pcb-presets'
+import type { PcbThicknessMm } from '~/utils/pcb-pricing'
 import type { PnPConvention } from '~/utils/pnp-conventions'
 import type { PnPExportFormat, PnPExportSideMode } from '~/utils/pnp-export'
 import { generatePnPExport, getPnPExportExtension, getPnPExportMimeType } from '~/utils/pnp-export'
@@ -1101,8 +1103,8 @@ const pcbData = ref<{
   surfaceFinish?: 'ENIG' | 'HAL'
   copperWeight?: '1oz' | '2oz'
   innerCopperWeight?: '0.5oz' | '1oz' | '2oz'
-  thicknessMm?: number
-  solderMaskColor?: 'green' | 'black' | 'blue' | 'red' | 'white' | 'purple'
+  thicknessMm?: PcbThicknessMm
+  solderMaskColor?: SolderMaskColor
   panelizationMode?: 'single' | 'panelized'
 } | null>(null)
 
