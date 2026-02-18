@@ -46,7 +46,7 @@ async function writeIfMissing(filename, obj) {
 function twoSym({ name, pins, pitch, bodyL, bodyW, widthOverLeads, leadWidth, leadLength, aliases = [] }) {
   return {
     name,
-    type: 'TwoSymmetricLeadGroups',
+    type: 'PT_TWO_SYM',
     body: { length: bodyL, width: bodyW },
     twoSymmetric: {
       numberOfLeads: pins,
@@ -62,7 +62,7 @@ function twoSym({ name, pins, pitch, bodyL, bodyW, widthOverLeads, leadWidth, le
 function fourSym({ name, pins, pitch, body, widthOverLeads, leadWidth, leadLength, aliases = [] }) {
   return {
     name,
-    type: 'FourSymmetricLeadGroups',
+    type: 'PT_FOUR_SYM',
     body: { length: body, width: body },
     fourSymmetric: {
       numberOfLeads: pins,
@@ -78,7 +78,7 @@ function fourSym({ name, pins, pitch, body, widthOverLeads, leadWidth, leadLengt
 function threePole({ name, bodyL, bodyW, widthOverLeads, ccDistance, leadWidth, leadLength, aliases = [] }) {
   return {
     name,
-    type: 'ThreePole',
+    type: 'PT_THREE_POLE',
     body: { length: bodyL, width: bodyW },
     threePole: {
       widthOverLeads,
@@ -93,7 +93,7 @@ function threePole({ name, bodyL, bodyW, widthOverLeads, ccDistance, leadWidth, 
 function chip({ name, bodyL, bodyW, leadLength, aliases = [] }) {
   return {
     name,
-    type: 'Chip',
+    type: 'PT_TWO_POLE',
     body: { length: bodyL, width: bodyW },
     chip: { chipLength: bodyL, leadWidth: bodyW, leadLength },
     ...(aliases.length ? { aliases } : {}),
@@ -103,7 +103,7 @@ function chip({ name, bodyL, bodyW, leadLength, aliases = [] }) {
 function outline({ name, L, W, aliases = [] }) {
   return {
     name,
-    type: 'Outline',
+    type: 'PT_OUTLINE',
     body: { length: L, width: W },
     outline: { length: L, width: W },
     ...(aliases.length ? { aliases } : {}),

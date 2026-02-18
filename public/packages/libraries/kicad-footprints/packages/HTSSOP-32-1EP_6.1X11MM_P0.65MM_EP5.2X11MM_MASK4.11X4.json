@@ -1,0 +1,23 @@
+{
+  "name": "HTSSOP-32-1EP_6.1X11MM_P0.65MM_EP5.2X11MM_MASK4.11X4",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 11,
+    "width": 6.1
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 32,
+    "widthOverLeads": 8.5,
+    "leadPitch": 0.65,
+    "leadWidth": 0.4,
+    "leadLength": 1.2
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_SO.pretty/HTSSOP-32-1EP_6.1x11mm_P0.65mm_EP5.2x11mm_Mask4.11x4.36mm.kicad_mod",
+    "sourceFootprint": "HTSSOP-32-1EP_6.1x11mm_P0.65mm_EP5.2x11mm_Mask4.11x4.36mm"
+  }
+}

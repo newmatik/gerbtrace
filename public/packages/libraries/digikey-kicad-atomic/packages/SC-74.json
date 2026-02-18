@@ -1,0 +1,23 @@
+{
+  "name": "SC-74",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 2.45,
+    "width": 3.2
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 74,
+    "widthOverLeads": 3.2,
+    "leadPitch": 0.95,
+    "leadWidth": 0.55,
+    "leadLength": 0.8
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/SC-74.kicad_mod",
+    "sourceFootprint": "SC-74"
+  }
+}

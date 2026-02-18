@@ -27,6 +27,16 @@
       </UButton>
     </UDropdownMenu>
 
+    <!-- Report a bug (always visible) -->
+    <UButton
+      size="xs"
+      color="neutral"
+      variant="ghost"
+      icon="i-lucide-bug"
+      title="Report a bug"
+      @click="bugReportOpen = true"
+    />
+
     <!-- Settings / Packages dropdown -->
     <UDropdownMenu :items="settingsMenuItems">
       <UButton
@@ -70,6 +80,8 @@
     >
       Sign In
     </UButton>
+
+    <BugReportModal v-model:open="bugReportOpen" />
   </header>
 </template>
 
@@ -106,26 +118,16 @@ const teamSelectorItems = computed(() => {
   ]
 })
 
-// Settings menu items (packages, team settings)
+const bugReportOpen = ref(false)
+
+// Settings menu items (unified package manager + team admin)
 const settingsMenuItems = computed(() => {
   const items: any[][] = [
     [
-      { label: 'Local Packages', icon: 'i-lucide-package', onSelect: () => router.push('/packages') },
+      { label: 'Package Manager', icon: 'i-lucide-package', onSelect: () => router.push('/packages') },
+      { label: 'Report a bug', icon: 'i-lucide-bug', onSelect: () => { bugReportOpen.value = true } },
     ],
   ]
-
-  if (isAuthenticated.value && hasTeam.value) {
-    items[0]!.push({
-      label: 'Team SMD Packages',
-      icon: 'i-lucide-package-check',
-      onSelect: () => router.push('/team/packages'),
-    })
-    items[0]!.push({
-      label: 'Team THT Packages',
-      icon: 'i-lucide-circuit-board',
-      onSelect: () => router.push('/team/tht-packages'),
-    })
-  }
 
   if (isAdmin.value) {
     items.push([

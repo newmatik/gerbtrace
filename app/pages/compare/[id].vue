@@ -152,7 +152,7 @@
       />
 
       <!-- Comparison area -->
-      <main class="flex-1 flex flex-col overflow-hidden" :class="{ 'select-none': sidebarDragging }">
+      <main class="flex-1 min-w-0 flex flex-col overflow-hidden" :class="{ 'select-none': sidebarDragging }">
         <div class="flex-1 relative overflow-hidden" :style="comparisonMode !== 'text' ? { backgroundColor } : undefined">
           <SideBySideView
             v-if="comparisonMode === 'side-by-side'"

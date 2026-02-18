@@ -1,0 +1,23 @@
+{
+  "name": "TO-269AA",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 2.338,
+    "width": 5.005
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 4,
+    "widthOverLeads": 7.15,
+    "leadPitch": 3.34,
+    "leadWidth": 0.8,
+    "leadLength": 1
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_TO_SOT_SMD.pretty/TO-269AA.kicad_mod",
+    "sourceFootprint": "TO-269AA"
+  }
+}

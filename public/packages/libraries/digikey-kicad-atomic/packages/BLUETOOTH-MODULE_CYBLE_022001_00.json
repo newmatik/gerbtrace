@@ -1,0 +1,29 @@
+{
+  "name": "BLUETOOTH-MODULE_CYBLE_022001_00",
+  "type": "PT_GENERIC",
+  "body": {
+    "length": 7.28,
+    "width": 6.132
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "GULLWING",
+        "numLeads": 21,
+        "distFromCenter": 0,
+        "ccHalf": 5.2,
+        "angleMilliDeg": 0,
+        "padLength": 0.696,
+        "padWidth": 0.624
+      }
+    ]
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/Bluetooth_Module_CYBLE-022001-00.kicad_mod",
+    "sourceFootprint": "Bluetooth_Module_CYBLE-022001-00"
+  }
+}

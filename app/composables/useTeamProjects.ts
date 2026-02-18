@@ -44,6 +44,8 @@ export interface TeamProject {
     surfaceFinish?: string
     copperWeight?: string
     innerCopperWeight?: string
+    thicknessMm?: number
+    panelizationMode?: 'single' | 'panelized'
   } | null
   panel_data: PanelConfig | null
   created_at: string
@@ -149,7 +151,7 @@ export function useTeamProjects() {
       .update(updates)
       .eq('id', projectId)
       .select()
-      .single()
+      .maybeSingle()
 
     if (!error && data) {
       const idx = projects.value.findIndex(p => p.id === projectId)

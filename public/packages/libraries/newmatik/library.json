@@ -1,0 +1,19 @@
+{
+  "id": "newmatik",
+  "displayName": "Gerbtrace",
+  "owner": "newmatik",
+  "sourceType": "TPSys",
+  "license": "Proprietary/Newmatik internal dataset",
+  "redistribution": "allowed",
+  "attribution": {
+    "upstreamOwner": "Newmatik GmbH",
+    "upstreamRepo": "gerber-compare",
+    "upstreamUrl": "https://github.com/newmatik/gerber-compare",
+    "notice": "Canonical built-in package set maintained by Newmatik."
+  },
+  "source": {
+    "id": "newmatik-builtins",
+    "path": "public/packages"
+  },
+  "packageCount": 233
+}

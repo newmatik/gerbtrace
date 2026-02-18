@@ -1,0 +1,29 @@
+{
+  "name": "AMS-QFN_4_1EP_2X2MM_P0.95MM_EP0.7X1",
+  "type": "PT_GENERIC",
+  "body": {
+    "length": 0.945,
+    "width": 1.75
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "GULLWING",
+        "numLeads": 5,
+        "distFromCenter": 0,
+        "ccHalf": 1.25,
+        "angleMilliDeg": 0,
+        "padLength": 0.55,
+        "padWidth": 0.48
+      }
+    ]
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_DFN_QFN.pretty/AMS_QFN-4-1EP_2x2mm_P0.95mm_EP0.7x1.6mm.kicad_mod",
+    "sourceFootprint": "AMS_QFN-4-1EP_2x2mm_P0.95mm_EP0.7x1.6mm"
+  }
+}

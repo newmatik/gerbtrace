@@ -1,0 +1,29 @@
+{
+  "name": "UFBGA-WLCSP_62",
+  "type": "PT_GENERIC",
+  "body": {
+    "length": 2.408,
+    "width": 2.408
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "GULLWING",
+        "numLeads": 62,
+        "distFromCenter": 0,
+        "ccHalf": 1.72,
+        "angleMilliDeg": 0,
+        "padLength": 0.24,
+        "padWidth": 0.24
+      }
+    ]
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/UFBGA_WLCSP-62.kicad_mod",
+    "sourceFootprint": "UFBGA_WLCSP-62"
+  }
+}

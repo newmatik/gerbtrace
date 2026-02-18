@@ -1,0 +1,26 @@
+{
+  "name": "WLCSP-49",
+  "type": "PT_BGA",
+  "aliases": [
+    "WLCSP49"
+  ],
+  "body": {
+    "length": 4.4,
+    "width": 4.4
+  },
+  "bga": {
+    "leadsPerRow": 7,
+    "leadsPerColumn": 7,
+    "leadPitch": 0.4,
+    "leadDiameter": 0.25,
+    "leadsPerRowInHole": 0,
+    "leadsPerColumnInHole": 0
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/WLCSP-49.json",
+    "sourceFootprint": "WLCSP-49"
+  }
+}

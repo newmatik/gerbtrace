@@ -1,0 +1,23 @@
+{
+  "name": "INVEN-SENSE_QFN_24_4X4MM_P0",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 4,
+    "width": 4
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 24,
+    "widthOverLeads": 4.75,
+    "leadPitch": 0.5,
+    "leadWidth": 0.3,
+    "leadLength": 0.85
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Sensor_Motion.pretty/InvenSense_QFN-24_4x4mm_P0.5mm.kicad_mod",
+    "sourceFootprint": "InvenSense_QFN-24_4x4mm_P0.5mm"
+  }
+}

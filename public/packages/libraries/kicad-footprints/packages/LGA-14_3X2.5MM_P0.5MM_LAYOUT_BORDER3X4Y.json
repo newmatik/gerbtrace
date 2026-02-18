@@ -1,0 +1,29 @@
+{
+  "name": "LGA-14_3X2.5MM_P0.5MM_LAYOUT_BORDER3X4Y",
+  "type": "PT_GENERIC",
+  "body": {
+    "length": 1.715,
+    "width": 2.065
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "GULLWING",
+        "numLeads": 14,
+        "distFromCenter": 0,
+        "ccHalf": 1.475,
+        "angleMilliDeg": 0,
+        "padLength": 0.363,
+        "padWidth": 0.331
+      }
+    ]
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_LGA.pretty/LGA-14_3x2.5mm_P0.5mm_LayoutBorder3x4y.kicad_mod",
+    "sourceFootprint": "LGA-14_3x2.5mm_P0.5mm_LayoutBorder3x4y"
+  }
+}

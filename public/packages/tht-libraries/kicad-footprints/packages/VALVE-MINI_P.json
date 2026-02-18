@@ -1,0 +1,159 @@
+{
+  "name": "VALVE-MINI_P",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": -6.35,
+      "y": -2.54,
+      "width": 18.242,
+      "height": 18.58,
+      "cornerRadius": 1.459,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -6.35,
+      "y": -2.54,
+      "radius": 8.721,
+      "color": "#4b5563",
+      "strokeColor": "#6b7280"
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -6.35,
+      "y": -2.54,
+      "radius": 6.286,
+      "color": "#374151",
+      "strokeColor": "#6b7280"
+    },
+    {
+      "kind": "rect",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "width": 2.54,
+      "height": 2.54
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 0,
+      "y": -5.08,
+      "radius": 1.27
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": -5.08,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -3.81,
+      "y": -8.89,
+      "radius": 1.27
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -3.81,
+      "y": -8.89,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -8.89,
+      "y": -8.89,
+      "radius": 1.27
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -8.89,
+      "y": -8.89,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -12.7,
+      "y": -5.08,
+      "radius": 1.27
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -12.7,
+      "y": -5.08,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -12.7,
+      "y": 0,
+      "radius": 1.27
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -12.7,
+      "y": 0,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -8.89,
+      "y": 3.81,
+      "radius": 1.27
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -8.89,
+      "y": 3.81,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Valve.pretty/Valve_Mini_P.kicad_mod",
+    "sourceFootprint": "Valve_Mini_P"
+  }
+}

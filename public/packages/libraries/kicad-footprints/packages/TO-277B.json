@@ -1,0 +1,29 @@
+{
+  "name": "TO-277B",
+  "type": "PT_GENERIC",
+  "body": {
+    "length": 2.24,
+    "width": 5.11
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "GULLWING",
+        "numLeads": 9,
+        "distFromCenter": 0,
+        "ccHalf": 3.65,
+        "angleMilliDeg": 0,
+        "padLength": 1.567,
+        "padWidth": 1.433
+      }
+    ]
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_TO_SOT_SMD.pretty/TO-277B.kicad_mod",
+    "sourceFootprint": "TO-277B"
+  }
+}

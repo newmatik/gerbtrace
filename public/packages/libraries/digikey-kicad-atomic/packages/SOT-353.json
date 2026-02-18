@@ -1,0 +1,23 @@
+{
+  "name": "SOT-353",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 1.75,
+    "width": 2.625
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 6,
+    "widthOverLeads": 3.75,
+    "leadPitch": 1.667,
+    "leadWidth": 0.6,
+    "leadLength": 1.05
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/SOT-353.kicad_mod",
+    "sourceFootprint": "SOT-353"
+  }
+}

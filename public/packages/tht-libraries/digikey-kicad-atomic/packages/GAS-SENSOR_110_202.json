@@ -1,0 +1,244 @@
+{
+  "name": "GAS-SENSOR_110_202",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "width": 21.8,
+      "height": 21.8,
+      "cornerRadius": 1.744,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -10.405,
+      "y1": 10.405,
+      "x2": 10.405,
+      "y2": 10.405,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -10.405,
+      "y1": -10.405,
+      "x2": -10.405,
+      "y2": 10.405,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 10.405,
+      "y1": -10.405,
+      "x2": 10.405,
+      "y2": 10.405,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -10.405,
+      "y1": -10.405,
+      "x2": 10.405,
+      "y2": -10.405,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 10.5,
+      "y1": 10.5,
+      "x2": 10.5,
+      "y2": 10,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 10.5,
+      "y1": 10.5,
+      "x2": 10,
+      "y2": 10.5,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -10.5,
+      "y1": 10.5,
+      "x2": -10,
+      "y2": 10.5,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -10.5,
+      "y1": 10.5,
+      "x2": -10.5,
+      "y2": 10,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -10.5,
+      "y1": -10.5,
+      "x2": -10.5,
+      "y2": -10,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -10.5,
+      "y1": -10.5,
+      "x2": -10,
+      "y2": -10.5,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 10.5,
+      "y1": -10.5,
+      "x2": 10.5,
+      "y2": -10,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 10.5,
+      "y1": -10.5,
+      "x2": 10,
+      "y2": -10.5,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -8.89,
+      "y": -1,
+      "radius": 0.7
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -8.89,
+      "y": -1,
+      "radius": 0.4,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -8.89,
+      "y": 1,
+      "radius": 0.7
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -8.89,
+      "y": 1,
+      "radius": 0.4,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin1",
+      "x": -1,
+      "y": 8.89,
+      "radius": 0.7
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -1,
+      "y": 8.89,
+      "radius": 0.4,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -1,
+      "y": -8.89,
+      "radius": 0.7
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -1,
+      "y": -8.89,
+      "radius": 0.4,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 1,
+      "y": -8.89,
+      "radius": 0.7
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 1,
+      "y": -8.89,
+      "radius": 0.4,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 1,
+      "y": 8.89,
+      "radius": 0.7
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 1,
+      "y": 8.89,
+      "radius": 0.4,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/Gas_Sensor_110-202.kicad_mod",
+    "sourceFootprint": "Gas_Sensor_110-202"
+  }
+}

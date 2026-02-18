@@ -1,0 +1,23 @@
+{
+  "name": "PRESSURE-SENSOR_LGA_8_2.5X2.5MM_BME280",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 2.5,
+    "width": 2.5
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 8,
+    "widthOverLeads": 2.55,
+    "leadPitch": 0.65,
+    "leadWidth": 0.35,
+    "leadLength": 0.5
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/Pressure_Sensor_LGA-8_2.5x2.5mm_BME280.kicad_mod",
+    "sourceFootprint": "Pressure_Sensor_LGA-8_2.5x2.5mm_BME280"
+  }
+}

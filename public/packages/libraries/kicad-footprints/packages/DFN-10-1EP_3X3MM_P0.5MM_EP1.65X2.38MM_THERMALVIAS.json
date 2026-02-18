@@ -1,0 +1,23 @@
+{
+  "name": "DFN-10-1EP_3X3MM_P0.5MM_EP1.65X2.38MM_THERMALVIAS",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 3,
+    "width": 3
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 10,
+    "widthOverLeads": 3.75,
+    "leadPitch": 0.5,
+    "leadWidth": 0.25,
+    "leadLength": 0.85
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_DFN_QFN.pretty/DFN-10-1EP_3x3mm_P0.5mm_EP1.65x2.38mm_ThermalVias.kicad_mod",
+    "sourceFootprint": "DFN-10-1EP_3x3mm_P0.5mm_EP1.65x2.38mm_ThermalVias"
+  }
+}

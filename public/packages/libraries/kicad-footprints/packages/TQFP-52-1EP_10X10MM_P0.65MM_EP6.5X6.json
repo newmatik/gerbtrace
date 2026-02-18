@@ -1,0 +1,23 @@
+{
+  "name": "TQFP-52-1EP_10X10MM_P0.65MM_EP6.5X6",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 10,
+    "width": 10
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 52,
+    "widthOverLeads": 12.8,
+    "leadPitch": 0.65,
+    "leadWidth": 0.5,
+    "leadLength": 1.475
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_QFP.pretty/TQFP-52-1EP_10x10mm_P0.65mm_EP6.5x6.5mm.kicad_mod",
+    "sourceFootprint": "TQFP-52-1EP_10x10mm_P0.65mm_EP6.5x6.5mm"
+  }
+}

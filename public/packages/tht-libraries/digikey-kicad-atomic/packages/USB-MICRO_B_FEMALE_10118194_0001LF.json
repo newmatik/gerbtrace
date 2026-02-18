@@ -1,0 +1,212 @@
+{
+  "name": "USB-MICRO_B_FEMALE_10118194_0001LF",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 0,
+      "y": 2.488,
+      "width": 9,
+      "height": 6.725,
+      "cornerRadius": 0.538,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4.025,
+      "y1": 5.38,
+      "x2": 4.025,
+      "y2": 5.38,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.02,
+      "y1": -0.15,
+      "x2": -3.71,
+      "y2": -0.15,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.025,
+      "y1": 5.38,
+      "x2": 4.025,
+      "y2": -0.15,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4.03,
+      "y1": 5.38,
+      "x2": -4.02,
+      "y2": 0.23,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.1,
+      "y1": -0.25,
+      "x2": 4.1,
+      "y2": 0.45,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4.1,
+      "y1": 5.45,
+      "x2": -3.45,
+      "y2": 5.45,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.1,
+      "y1": 4.85,
+      "x2": 4.1,
+      "y2": 5.45,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4.1,
+      "y1": 4.9,
+      "x2": -4.1,
+      "y2": 5.45,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.6,
+      "y1": -0.25,
+      "x2": 4.1,
+      "y2": -0.25,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4.02,
+      "y1": 0.23,
+      "x2": -3.71,
+      "y2": -0.15,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -3.8,
+      "y1": -0.25,
+      "x2": -4.1,
+      "y2": 0.1,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -3.35,
+      "y1": -0.25,
+      "x2": -3.8,
+      "y2": -0.25,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.1,
+      "y1": 5.45,
+      "x2": 3.7,
+      "y2": 5.45,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4.1,
+      "y1": 0.1,
+      "x2": -4.1,
+      "y2": 0.4,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 2.5,
+      "y": 0,
+      "width": 1.25,
+      "height": 0.95,
+      "cornerRadius": 0.428
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": -2.5,
+      "y": 0,
+      "width": 1.25,
+      "height": 0.95,
+      "cornerRadius": 0.428
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": -3.5,
+      "y": 2.7,
+      "width": 1,
+      "height": 1.55,
+      "cornerRadius": 0.45
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 3.5,
+      "y": 2.7,
+      "width": 1,
+      "height": 1.55,
+      "cornerRadius": 0.45
+    },
+    {
+      "kind": "circle",
+      "role": "polarity-marker",
+      "x": 2.061,
+      "y": 0.439,
+      "radius": 0.244,
+      "color": "#ef4444"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/USB_Micro_B_Female_10118194-0001LF.kicad_mod",
+    "sourceFootprint": "USB_Micro_B_Female_10118194-0001LF"
+  }
+}

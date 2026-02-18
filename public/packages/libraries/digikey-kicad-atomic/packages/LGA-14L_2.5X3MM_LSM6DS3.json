@@ -1,0 +1,29 @@
+{
+  "name": "LGA-14L_2.5X3MM_LSM6DS3",
+  "type": "PT_GENERIC",
+  "body": {
+    "length": 1.82,
+    "width": 2.17
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "GULLWING",
+        "numLeads": 14,
+        "distFromCenter": 0,
+        "ccHalf": 1.55,
+        "angleMilliDeg": 0,
+        "padLength": 0.579,
+        "padWidth": 0.571
+      }
+    ]
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/LGA-14L_2.5x3mm__LSM6DS3.kicad_mod",
+    "sourceFootprint": "LGA-14L_2.5x3mm__LSM6DS3"
+  }
+}

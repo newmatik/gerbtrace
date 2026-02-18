@@ -1,0 +1,29 @@
+{
+  "name": "LGA-14_2X2MM",
+  "type": "PT_GENERIC",
+  "body": {
+    "length": 1.33,
+    "width": 1.33
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "GULLWING",
+        "numLeads": 14,
+        "distFromCenter": 0,
+        "ccHalf": 0.95,
+        "angleMilliDeg": 0,
+        "padLength": 0.343,
+        "padWidth": 0.332
+      }
+    ]
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/LGA-14_2x2mm.kicad_mod",
+    "sourceFootprint": "LGA-14_2x2mm"
+  }
+}

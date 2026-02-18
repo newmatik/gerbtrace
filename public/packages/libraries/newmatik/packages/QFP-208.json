@@ -1,0 +1,25 @@
+{
+  "name": "QFP-208",
+  "type": "PT_FOUR_SYM",
+  "aliases": [
+    "QFP208"
+  ],
+  "body": {
+    "length": 28,
+    "width": 28
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 208,
+    "widthOverLeads": 31.2,
+    "leadPitch": 0.5,
+    "leadWidth": 0.25,
+    "leadLength": 0.8
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/QFP-208.json",
+    "sourceFootprint": "QFP-208"
+  }
+}

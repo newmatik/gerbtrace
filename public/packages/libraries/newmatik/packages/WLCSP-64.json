@@ -1,0 +1,26 @@
+{
+  "name": "WLCSP-64",
+  "type": "PT_BGA",
+  "aliases": [
+    "WLCSP64"
+  ],
+  "body": {
+    "length": 4.8,
+    "width": 4.8
+  },
+  "bga": {
+    "leadsPerRow": 8,
+    "leadsPerColumn": 8,
+    "leadPitch": 0.4,
+    "leadDiameter": 0.25,
+    "leadsPerRowInHole": 0,
+    "leadsPerColumnInHole": 0
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/WLCSP-64.json",
+    "sourceFootprint": "WLCSP-64"
+  }
+}

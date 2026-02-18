@@ -1,0 +1,23 @@
+{
+  "name": "LGA-12_4.8X2.8_VL6180",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 4.3,
+    "width": 2.6
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 12,
+    "widthOverLeads": 4.35,
+    "leadPitch": 0.75,
+    "leadWidth": 0.55,
+    "leadLength": 0.6
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/LGA-12_4.8x2.8_VL6180.kicad_mod",
+    "sourceFootprint": "LGA-12_4.8x2.8_VL6180"
+  }
+}

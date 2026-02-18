@@ -3,16 +3,16 @@ export type RotationPositiveDirection = 'cw' | 'ccw'
 /** Available PnP convention choices in the UI */
 export type PnPConvention = 'mycronic' | 'ipc7351' | 'iec61188'
 
-/** Package type keys (must match `PackageDefinition['type']`) */
+/** Package type keys (must match `PackageDefinition['type']` — uses TPSys technical names) */
 export type PackageTypeKey =
-  | 'Chip'
-  | 'ThreePole'
-  | 'TwoSymmetricLeadGroups'
-  | 'FourSymmetricLeadGroups'
-  | 'TwoPlusTwo'
-  | 'FourOnTwo'
-  | 'BGA'
-  | 'Outline'
+  | 'PT_TWO_POLE'
+  | 'PT_THREE_POLE'
+  | 'PT_TWO_SYM'
+  | 'PT_FOUR_SYM'
+  | 'PT_TWO_PLUS_TWO'
+  | 'PT_FOUR_ON_TWO'
+  | 'PT_BGA'
+  | 'PT_OUTLINE'
   | 'PT_GENERIC'
 
 export interface PnPConventionConfig {
@@ -44,14 +44,14 @@ export const PNP_CONVENTIONS: Record<PnPConvention, PnPConventionConfig> = {
     label: 'Mycronic',
     rotationPositive: 'cw',
     offsetDegByType: {
-      Chip: 0,
-      ThreePole: 0,
-      TwoSymmetricLeadGroups: 0,
-      FourSymmetricLeadGroups: 0,
-      TwoPlusTwo: 0,
-      FourOnTwo: 0,
-      BGA: 0,
-      Outline: 0,
+      PT_TWO_POLE: 0,
+      PT_THREE_POLE: 0,
+      PT_TWO_SYM: 0,
+      PT_FOUR_SYM: 0,
+      PT_TWO_PLUS_TWO: 0,
+      PT_FOUR_ON_TWO: 0,
+      PT_BGA: 0,
+      PT_OUTLINE: 0,
       PT_GENERIC: 0,
     },
   },
@@ -59,17 +59,17 @@ export const PNP_CONVENTIONS: Record<PnPConvention, PnPConventionConfig> = {
     label: 'IPC-7351',
     rotationPositive: 'ccw',
     offsetDegByType: {
-      // Chip: IPC 0° differs from Mycronic/TPSys baseline (pad1 top vs left)
-      Chip: 90,
+      // PT_TWO_POLE: IPC 0° differs from Mycronic/TPSys baseline (pad1 top vs left)
+      PT_TWO_POLE: 90,
 
       // All other package types match Mycronic baseline at 0°
-      ThreePole: 0,
-      TwoSymmetricLeadGroups: 0,
-      FourSymmetricLeadGroups: 0,
-      TwoPlusTwo: 0,
-      FourOnTwo: 0,
-      BGA: 0,
-      Outline: 0,
+      PT_THREE_POLE: 0,
+      PT_TWO_SYM: 0,
+      PT_FOUR_SYM: 0,
+      PT_TWO_PLUS_TWO: 0,
+      PT_FOUR_ON_TWO: 0,
+      PT_BGA: 0,
+      PT_OUTLINE: 0,
       PT_GENERIC: 0,
     },
   },
@@ -77,21 +77,20 @@ export const PNP_CONVENTIONS: Record<PnPConvention, PnPConventionConfig> = {
     label: 'IEC 61188-7',
     rotationPositive: 'ccw',
     offsetDegByType: {
-      // Per your instruction:
       // IEC behaves like IPC, but the 0° reference is rotated 90° CCW for leaded packages.
-      // Chip: same as IPC
-      Chip: 90,
+      // PT_TWO_POLE: same as IPC
+      PT_TWO_POLE: 90,
 
       // Leaded multi-pin: +90° CCW vs IPC
-      ThreePole: 90,
-      TwoSymmetricLeadGroups: 90,
-      FourSymmetricLeadGroups: 90,
-      TwoPlusTwo: 90,
-      FourOnTwo: 90,
+      PT_THREE_POLE: 90,
+      PT_TWO_SYM: 90,
+      PT_FOUR_SYM: 90,
+      PT_TWO_PLUS_TWO: 90,
+      PT_FOUR_ON_TWO: 90,
 
       // BGA: same as IPC
-      BGA: 0,
-      Outline: 0,
+      PT_BGA: 0,
+      PT_OUTLINE: 0,
       PT_GENERIC: 90,
     },
   },

@@ -19,16 +19,15 @@
               {{ field.label }}
               <span v-if="field.required" class="text-red-400">*</span>
             </label>
-            <select
-              :value="mapping[field.key] ?? ''"
-              @change="onFieldChange(field.key, $event)"
-              class="mt-0.5 w-full text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md px-2 py-1.5 outline-none focus:border-primary transition-colors"
-            >
-              <option value="">-- Not mapped --</option>
-              <option v-for="(header, idx) in headers" :key="idx" :value="idx">
-                {{ header || `Column ${idx + 1}` }}
-              </option>
-            </select>
+            <USelect
+              :model-value="mapping[field.key] != null ? String(mapping[field.key]) : ''"
+              :items="headerOptions"
+              value-key="value"
+              label-key="label"
+              size="xs"
+              class="mt-0.5 w-full"
+              @update:model-value="onFieldChange(field.key, $event)"
+            />
           </div>
         </div>
 
@@ -93,11 +92,18 @@ const mappableFields: { key: keyof BomColumnMapping; label: string; required: bo
 ]
 
 const mapping = reactive<BomColumnMapping>({})
+const headerOptions = computed(() => [
+  { value: '', label: '-- Not mapped --' },
+  ...props.headers.map((header, idx) => ({
+    value: String(idx),
+    label: header || `Column ${idx + 1}`,
+  })),
+])
 
 const previewRows = computed(() => props.rows.slice(0, 3))
 
-function onFieldChange(key: keyof BomColumnMapping, e: Event) {
-  const raw = (e.target as HTMLSelectElement).value
+function onFieldChange(key: keyof BomColumnMapping, value: unknown) {
+  const raw = String(value ?? '')
   mapping[key] = raw === '' ? undefined : Number(raw)
 }
 

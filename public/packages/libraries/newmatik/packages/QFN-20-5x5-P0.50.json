@@ -1,0 +1,97 @@
+{
+  "name": "QFN-20-5x5-P0.50",
+  "body": {
+    "length": 5,
+    "width": 5
+  },
+  "type": "PT_FOUR_SYM",
+  "fourSymmetric": {
+    "numberOfLeads": 20,
+    "widthOverLeads": 5,
+    "leadPitch": 0.5,
+    "leadWidth": 0.27,
+    "leadLength": 0.25
+  },
+  "aliases": [
+    "QFN20-5x5-P0.50",
+    "QFN205x5P0.50"
+  ],
+  "height": {
+    "nominal": 0.9,
+    "max": 1,
+    "min": 0.8
+  },
+  "searchArea": {
+    "x": 5,
+    "y": 5
+  },
+  "machine": {
+    "mountTools": [
+      "A14"
+    ],
+    "pickWaitTime": 50,
+    "placeWaitTime": 50,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "low",
+      "y": "low",
+      "tape": "low",
+      "theta": "low",
+      "z": "low",
+      "hydraTheta": "low",
+      "hydraZ": "lowest"
+    },
+    "centering": [
+      {
+        "method": "mechanical",
+        "mechanical": {
+          "angle": 0,
+          "position": "POS_UPPER",
+          "force": "LOW_FORCE"
+        },
+        "jaw": {
+          "nominal": 5,
+          "max": 5.5,
+          "min": 3.9
+        }
+      },
+      {
+        "method": "mechanical",
+        "mechanical": {
+          "angle": 90000,
+          "position": "POS_UPPER",
+          "force": "LOW_FORCE"
+        },
+        "jaw": {
+          "nominal": 5,
+          "max": 5.5,
+          "min": 3.9
+        }
+      },
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "standard",
+      "high res.",
+      "linescan"
+    ],
+    "coplanarityCheck": false
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/QFN-20-5x5-P0.50.json",
+    "sourceFootprint": "QFN-20-5x5-P0.50"
+  }
+}

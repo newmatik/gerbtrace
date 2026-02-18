@@ -1,0 +1,222 @@
+{
+  "name": "TEXAS-EUW_R_PDSS_T7_THT",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 11.115,
+      "y": 6.35,
+      "width": 26.33,
+      "height": 16.82,
+      "cornerRadius": 1.346,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.65,
+      "y1": -1.66,
+      "x2": 23.88,
+      "y2": -1.66,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.65,
+      "y1": 14.36,
+      "x2": 23.88,
+      "y2": 14.36,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 23.75,
+      "y1": -1.53,
+      "x2": -1.52,
+      "y2": -1.53,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.52,
+      "y1": 14.23,
+      "x2": 23.75,
+      "y2": 14.23,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 23.88,
+      "y1": -1.66,
+      "x2": 23.88,
+      "y2": 14.36,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.65,
+      "y1": -1.66,
+      "x2": -1.65,
+      "y2": 14.36,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.52,
+      "y1": 14.23,
+      "x2": -1.52,
+      "y2": -1.53,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 23.75,
+      "y1": 14.23,
+      "x2": 23.75,
+      "y2": -1.53,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 9.52,
+      "y": 12.7,
+      "radius": 1.25
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 9.52,
+      "y": 12.7,
+      "radius": 0.7,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 0,
+      "y": 12.7,
+      "radius": 1.25
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 12.7,
+      "radius": 0.7,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "width": 2.5,
+      "height": 2.5,
+      "cornerRadius": 1.125
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.7,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 12.7,
+      "y": 12.7,
+      "radius": 1.25
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 12.7,
+      "y": 12.7,
+      "radius": 0.7,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 15.88,
+      "y": 12.7,
+      "radius": 1.25
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 15.88,
+      "y": 12.7,
+      "radius": 0.7,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 22.23,
+      "y": 12.7,
+      "radius": 1.25
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 22.23,
+      "y": 12.7,
+      "radius": 0.7,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 22.23,
+      "y": 0,
+      "radius": 1.25
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 22.23,
+      "y": 0,
+      "radius": 0.7,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Module.pretty/Texas_EUW_R-PDSS-T7_THT.kicad_mod",
+    "sourceFootprint": "Texas_EUW_R-PDSS-T7_THT"
+  }
+}

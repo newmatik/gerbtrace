@@ -1,0 +1,23 @@
+{
+  "name": "TO-251-2-1EP_HORIZONTAL_TAB_DOWN",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 4.34,
+    "width": 3.99
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 2,
+    "widthOverLeads": 6.2,
+    "leadPitch": 5.7,
+    "leadWidth": 5.7,
+    "leadLength": 6.2
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_TO_SOT_THT.pretty/TO-251-2-1EP_Horizontal_TabDown.kicad_mod",
+    "sourceFootprint": "TO-251-2-1EP_Horizontal_TabDown"
+  }
+}

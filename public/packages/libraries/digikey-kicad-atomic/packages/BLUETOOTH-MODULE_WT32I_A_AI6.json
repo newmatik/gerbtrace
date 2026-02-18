@@ -1,0 +1,23 @@
+{
+  "name": "BLUETOOTH-MODULE_WT32I_A_AI6",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 21.63,
+    "width": 16.9
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 50,
+    "widthOverLeads": 17.15,
+    "leadPitch": 1,
+    "leadWidth": 0.6,
+    "leadLength": 2
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/Bluetooth_Module_WT32I-A-AI6.kicad_mod",
+    "sourceFootprint": "Bluetooth_Module_WT32I-A-AI6"
+  }
+}

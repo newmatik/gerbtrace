@@ -1,0 +1,23 @@
+{
+  "name": "VISHAY-POWER_PAK_SC70_6L_SINGLE",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 2.2,
+    "width": 1.6
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 70,
+    "widthOverLeads": 1.85,
+    "leadPitch": 0.617,
+    "leadWidth": 0.6,
+    "leadLength": 0.55
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_TO_SOT_SMD.pretty/Vishay_PowerPAK_SC70-6L_Single.kicad_mod",
+    "sourceFootprint": "Vishay_PowerPAK_SC70-6L_Single"
+  }
+}

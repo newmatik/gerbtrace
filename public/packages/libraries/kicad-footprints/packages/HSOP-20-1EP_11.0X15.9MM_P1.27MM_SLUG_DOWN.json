@@ -1,0 +1,29 @@
+{
+  "name": "HSOP-20-1EP_11.0X15.9MM_P1.27MM_SLUG_DOWN",
+  "type": "PT_GENERIC",
+  "body": {
+    "length": 12.39,
+    "width": 10.78
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "GULLWING",
+        "numLeads": 23,
+        "distFromCenter": 0,
+        "ccHalf": 8.85,
+        "angleMilliDeg": 0,
+        "padLength": 2.322,
+        "padWidth": 1.378
+      }
+    ]
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_SO.pretty/HSOP-20-1EP_11.0x15.9mm_P1.27mm_SlugDown.kicad_mod",
+    "sourceFootprint": "HSOP-20-1EP_11.0x15.9mm_P1.27mm_SlugDown"
+  }
+}

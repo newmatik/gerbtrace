@@ -1,0 +1,73 @@
+{
+  "name": "BGA169",
+  "type": "PT_BGA",
+  "aliases": [
+    "BGA-169",
+    "CABGA-169",
+    "CABGA169"
+  ],
+  "body": {
+    "length": 14,
+    "width": 14
+  },
+  "bga": {
+    "leadsPerRow": 13,
+    "leadsPerColumn": 13,
+    "leadPitch": 1,
+    "leadDiameter": 0.5,
+    "leadsPerRowInHole": 0,
+    "leadsPerColumnInHole": 0
+  },
+  "height": {
+    "nominal": 1.65,
+    "max": 1.733,
+    "min": 1.567
+  },
+  "searchArea": {
+    "x": 20.5,
+    "y": 24
+  },
+  "machine": {
+    "mountTools": [
+      "C23"
+    ],
+    "pickWaitTime": 50,
+    "placeWaitTime": 50,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "highest",
+      "y": "highest",
+      "tape": "high",
+      "theta": "highest",
+      "z": "high",
+      "hydraTheta": "high",
+      "hydraZ": "high"
+    },
+    "hydraFinePitch": true,
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "standard",
+      "linescan"
+    ],
+    "coplanarityCheck": false
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/BGA169.json",
+    "sourceFootprint": "BGA169"
+  }
+}

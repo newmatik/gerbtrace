@@ -1,0 +1,229 @@
+{
+  "name": "TERMINAL-BLOCK_METZ_CONNECT_360322_1X01_HORIZONTAL_SCREW_M3.0_WIRE_PROTECTION",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 2.281,
+      "y": 0,
+      "width": 8.361,
+      "height": 4.92,
+      "cornerRadius": 0.394,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 2,
+      "y": 0,
+      "radius": 2,
+      "color": "#374151",
+      "strokeColor": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.06,
+      "y1": -2.06,
+      "x2": 6.061,
+      "y2": -2.06,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.06,
+      "y1": 2.06,
+      "x2": 6.061,
+      "y2": 2.06,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 6.061,
+      "y1": -2.06,
+      "x2": 6.061,
+      "y2": 2.06,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 6,
+      "y1": -2,
+      "x2": 6,
+      "y2": 2,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.517,
+      "y1": -1.273,
+      "x2": 0.727,
+      "y2": 1.517,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.273,
+      "y1": -1.517,
+      "x2": 0.483,
+      "y2": 1.273,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 2.711,
+      "y1": -2,
+      "x2": 6,
+      "y2": -2,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 2.711,
+      "y1": 2,
+      "x2": 6,
+      "y2": 2,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0,
+      "y1": -2,
+      "x2": 0,
+      "y2": -0.265,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0,
+      "y1": 0.265,
+      "x2": 0,
+      "y2": 2,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0,
+      "y1": -2,
+      "x2": 1.289,
+      "y2": -2,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0,
+      "y1": 2,
+      "x2": 1.289,
+      "y2": 2,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 2.241,
+      "y1": 0.011,
+      "x2": 1.708,
+      "y2": 0.543,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 2.291,
+      "y1": -0.543,
+      "x2": 1.759,
+      "y2": -0.011,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.06,
+      "y1": -2.06,
+      "x2": -0.06,
+      "y2": -1.755,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.06,
+      "y1": 1.755,
+      "x2": -0.06,
+      "y2": 2.06,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "circle",
+      "role": "pin1",
+      "x": 4,
+      "y": 0,
+      "radius": 1.5
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 4,
+      "y": 0,
+      "radius": 0.75,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "radius": 1.5
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.75,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/TerminalBlock_MetzConnect.pretty/TerminalBlock_MetzConnect_360322_1x01_Horizontal_ScrewM3.0_WireProtection.kicad_mod",
+    "sourceFootprint": "TerminalBlock_MetzConnect_360322_1x01_Horizontal_ScrewM3.0_WireProtection"
+  }
+}

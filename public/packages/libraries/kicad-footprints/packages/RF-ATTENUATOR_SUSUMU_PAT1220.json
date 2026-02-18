@@ -1,0 +1,22 @@
+{
+  "name": "RF-ATTENUATOR_SUSUMU_PAT1220",
+  "type": "PT_THREE_POLE",
+  "body": {
+    "length": 2.3,
+    "width": 1.9
+  },
+  "threePole": {
+    "widthOverLeads": 2.3,
+    "ccDistance": 0.95,
+    "leadWidth": 0.7,
+    "leadLength": 0.8
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/RF_Converter.pretty/RF_Attenuator_Susumu_PAT1220.kicad_mod",
+    "sourceFootprint": "RF_Attenuator_Susumu_PAT1220"
+  }
+}

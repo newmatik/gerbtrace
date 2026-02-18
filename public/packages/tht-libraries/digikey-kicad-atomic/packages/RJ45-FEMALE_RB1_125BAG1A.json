@@ -1,0 +1,380 @@
+{
+  "name": "RJ45-FEMALE_RB1_125BAG1A",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 4.445,
+      "y": 6.875,
+      "width": 18.85,
+      "height": 23.95,
+      "cornerRadius": 1.508,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 12.32,
+      "y1": -4.57,
+      "x2": 12.32,
+      "y2": 18.35,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -3.43,
+      "y1": -4.57,
+      "x2": -3.43,
+      "y2": 18.35,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -3.43,
+      "y1": 18.35,
+      "x2": 12.32,
+      "y2": 18.35,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -3.43,
+      "y1": -4.57,
+      "x2": 12.32,
+      "y2": -4.57,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 12.45,
+      "y1": 18.45,
+      "x2": 12.45,
+      "y2": 17.95,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 12.45,
+      "y1": 18.45,
+      "x2": 11.95,
+      "y2": 18.45,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -3.55,
+      "y1": 18.45,
+      "x2": -3.55,
+      "y2": 17.95,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -3.55,
+      "y1": 18.45,
+      "x2": -3.05,
+      "y2": 18.45,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -3.55,
+      "y1": -4.7,
+      "x2": -3.55,
+      "y2": -4.2,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -3.55,
+      "y1": -4.7,
+      "x2": -3.05,
+      "y2": -4.7,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 12.45,
+      "y1": -4.7,
+      "x2": 12.45,
+      "y2": -4.2,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 12.45,
+      "y1": -4.7,
+      "x2": 11.95,
+      "y2": -4.7,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 0,
+      "y": 0,
+      "radius": 0.95
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.45,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 1.27,
+      "y": -2.54,
+      "radius": 0.95
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 1.27,
+      "y": -2.54,
+      "radius": 0.45,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 2.54,
+      "y": 0,
+      "radius": 0.95
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 2.54,
+      "y": 0,
+      "radius": 0.45,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 3.81,
+      "y": -2.54,
+      "radius": 0.95
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 3.81,
+      "y": -2.54,
+      "radius": 0.45,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 5.08,
+      "y": 0,
+      "radius": 0.95
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 5.08,
+      "y": 0,
+      "radius": 0.45,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 6.35,
+      "y": -2.54,
+      "radius": 0.95
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 6.35,
+      "y": -2.54,
+      "radius": 0.45,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 7.62,
+      "y": 0,
+      "radius": 0.95
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 7.62,
+      "y": 0,
+      "radius": 0.45,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 8.89,
+      "y": -2.54,
+      "radius": 0.95
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 8.89,
+      "y": -2.54,
+      "radius": 0.45,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -3.33,
+      "y": 2.1,
+      "radius": 1.25
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -3.33,
+      "y": 2.1,
+      "radius": 0.75,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 12.22,
+      "y": 2.1,
+      "radius": 1.25
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 12.22,
+      "y": 2.1,
+      "radius": 0.75,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -1.88,
+      "y": 11.25,
+      "radius": 0.95
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -1.88,
+      "y": 11.25,
+      "radius": 0.45,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 0.66,
+      "y": 9.73,
+      "radius": 0.95
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0.66,
+      "y": 9.73,
+      "radius": 0.45,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 8.23,
+      "y": 11.25,
+      "radius": 0.95
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 8.23,
+      "y": 11.25,
+      "radius": 0.45,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 10.77,
+      "y": 9.73,
+      "radius": 0.95
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 10.77,
+      "y": 9.73,
+      "radius": 0.45,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "polarity-marker",
+      "x": -0.855,
+      "y": 0.855,
+      "radius": 0.475,
+      "color": "#ef4444"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/RJ45_Female_RB1-125BAG1A.kicad_mod",
+    "sourceFootprint": "RJ45_Female_RB1-125BAG1A"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "SOT-143-4",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 1.729,
+    "width": 2.317
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 4,
+    "widthOverLeads": 3.31,
+    "leadPitch": 2.47,
+    "leadWidth": 0.648,
+    "leadLength": 1.31
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/SOT-143-4.kicad_mod",
+    "sourceFootprint": "SOT-143-4"
+  }
+}

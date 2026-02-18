@@ -1,0 +1,218 @@
+{
+  "name": "DO-41",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 4.6,
+      "y": 0,
+      "width": 12.1,
+      "height": 3.75,
+      "cornerRadius": 0.3,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 7.2,
+      "y1": -1.35,
+      "x2": 2,
+      "y2": -1.35,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 2,
+      "y1": 1.35,
+      "x2": 7.2,
+      "y2": 1.35,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 1.875,
+      "y1": -1.475,
+      "x2": 1.875,
+      "y2": 1.475,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 1.975,
+      "y1": -1.475,
+      "x2": 1.975,
+      "y2": 1.475,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 2.075,
+      "y1": -1.475,
+      "x2": 2.075,
+      "y2": 1.475,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 2.175,
+      "y1": -1.475,
+      "x2": 2.175,
+      "y2": 1.475,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 2.275,
+      "y1": -1.475,
+      "x2": 2.275,
+      "y2": 1.475,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 7.2,
+      "y1": -1.35,
+      "x2": 7.2,
+      "y2": 1.35,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 2,
+      "y1": -1.35,
+      "x2": 2,
+      "y2": 1.35,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 2.475,
+      "y1": -1.475,
+      "x2": 1.875,
+      "y2": -1.475,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 1.875,
+      "y1": 1.475,
+      "x2": 2.375,
+      "y2": 1.475,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 6.825,
+      "y1": -1.475,
+      "x2": 7.325,
+      "y2": -1.475,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 7.325,
+      "y1": 1.025,
+      "x2": 7.325,
+      "y2": 1.475,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 7.325,
+      "y1": 1.475,
+      "x2": 6.925,
+      "y2": 1.475,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 7.325,
+      "y1": -1.475,
+      "x2": 7.325,
+      "y2": -1.1,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 0,
+      "y": 0,
+      "radius": 1.05
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.55,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 9.2,
+      "y": 0,
+      "radius": 1.05
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 9.2,
+      "y": 0,
+      "radius": 0.55,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "polarity-marker",
+      "x": -0.945,
+      "y": 0.945,
+      "radius": 0.525,
+      "color": "#ef4444"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/DO-41.kicad_mod",
+    "sourceFootprint": "DO-41"
+  }
+}

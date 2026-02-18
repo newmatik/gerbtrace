@@ -1,0 +1,105 @@
+{
+  "name": "QFN-10-1.9x1.9-P0.50",
+  "body": {
+    "length": 1.9,
+    "width": 1.9
+  },
+  "type": "PT_TWO_SYM",
+  "twoSymmetric": {
+    "numberOfLeads": 10,
+    "widthOverLeads": 3,
+    "leadPitch": 0.5,
+    "leadWidth": 0.4,
+    "leadLength": 0.25
+  },
+  "aliases": [
+    "QFN-10",
+    "QFN10",
+    "QFN10-1.9x1.9-P0.50",
+    "QFN101.9x1.9P0.50"
+  ],
+  "height": {
+    "nominal": 0.5,
+    "max": 0.555,
+    "min": 0.445
+  },
+  "searchArea": {
+    "x": 1.5,
+    "y": 1.9
+  },
+  "machine": {
+    "mountTools": [
+      "A12"
+    ],
+    "pickWaitTime": 100,
+    "placeWaitTime": 100,
+    "zMountForce": null,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "low",
+      "y": "low",
+      "tape": "low",
+      "theta": "low",
+      "z": "low",
+      "hydraTheta": "low",
+      "hydraZ": "low"
+    },
+    "centering": [
+      {
+        "method": "mechanical",
+        "mechanical": {
+          "angle": 0,
+          "position": "POS_UPPER",
+          "force": "MIDDLE_FORCE"
+        },
+        "jaw": {
+          "nominal": 1.9,
+          "max": 2.4,
+          "min": 1.5
+        }
+      },
+      {
+        "method": "mechanical",
+        "mechanical": {
+          "angle": -90000,
+          "position": "POS_UPPER",
+          "force": "MIDDLE_FORCE"
+        },
+        "jaw": {
+          "nominal": 1.5,
+          "max": 1.9,
+          "min": 1.1
+        }
+      },
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "high res.",
+      "linescan"
+    ],
+    "coplanarityCheck": false,
+    "markingPositions": [
+      {
+        "x": 0,
+        "y": 0,
+        "dotType": "DOT0.5mm"
+      }
+    ]
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/QFN-10-1.9x1.9-P0.50.json",
+    "sourceFootprint": "QFN-10-1.9x1.9-P0.50"
+  }
+}

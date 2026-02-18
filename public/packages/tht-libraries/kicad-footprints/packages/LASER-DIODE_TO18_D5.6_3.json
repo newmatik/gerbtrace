@@ -1,0 +1,214 @@
+{
+  "name": "LASER-DIODE_TO18_D5.6_3",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 1,
+      "y": 0,
+      "width": 6.5,
+      "height": 6.5,
+      "cornerRadius": 0.52,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 1,
+      "y": 0,
+      "radius": 2.8,
+      "color": "#374151",
+      "strokeColor": "#6b7280"
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 1,
+      "y": 0,
+      "radius": 1.8,
+      "color": "#374151",
+      "strokeColor": "#6b7280"
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 1,
+      "y": 0,
+      "radius": 2.2,
+      "color": "#374151",
+      "strokeColor": "#6b7280"
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 1,
+      "y": 0,
+      "radius": 2.85,
+      "color": "#4b5563",
+      "strokeColor": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.5,
+      "y1": 2.4,
+      "x2": 1.4,
+      "y2": 2.4,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.5,
+      "y1": 2.4,
+      "x2": 1.4,
+      "y2": 2.4,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.7,
+      "y1": -0.4,
+      "x2": 3.4,
+      "y2": 0,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.4,
+      "y1": 0,
+      "x2": 3.7,
+      "y2": 0.4,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.4,
+      "y1": 0,
+      "x2": -1.7,
+      "y2": 0.4,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.4,
+      "y1": 0,
+      "x2": -1.7,
+      "y2": -0.4,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.5,
+      "y1": 2.8,
+      "x2": 0.5,
+      "y2": 2.4,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 1.4,
+      "y1": 2.4,
+      "x2": 1.4,
+      "y2": 2.8,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.5,
+      "y1": 2.7,
+      "x2": 0.5,
+      "y2": 2.4,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 1.4,
+      "y1": 2.4,
+      "x2": 1.4,
+      "y2": 2.7,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "width": 1.2,
+      "height": 1.2,
+      "cornerRadius": 0.54
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.3,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 1,
+      "y": 1,
+      "radius": 0.6
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 1,
+      "y": 1,
+      "radius": 0.3,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 2,
+      "y": 0,
+      "radius": 0.6
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 2,
+      "y": 0,
+      "radius": 0.3,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/OptoDevice.pretty/LaserDiode_TO18-D5.6-3.kicad_mod",
+    "sourceFootprint": "LaserDiode_TO18-D5.6-3"
+  }
+}

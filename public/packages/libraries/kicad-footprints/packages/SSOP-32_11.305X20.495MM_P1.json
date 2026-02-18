@@ -1,0 +1,23 @@
+{
+  "name": "SSOP-32_11.305X20.495MM_P1",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 20.495,
+    "width": 11.305
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 32,
+    "widthOverLeads": 15.15,
+    "leadPitch": 1.27,
+    "leadWidth": 0.6,
+    "leadLength": 2.05
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_SO.pretty/SSOP-32_11.305x20.495mm_P1.27mm.kicad_mod",
+    "sourceFootprint": "SSOP-32_11.305x20.495mm_P1.27mm"
+  }
+}

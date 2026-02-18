@@ -1,0 +1,212 @@
+{
+  "name": "HEADER-PIN_2X2_P4.2_DRILL1",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 2.1,
+      "y": 2.7,
+      "width": 10.6,
+      "height": 10.6,
+      "cornerRadius": 0.848,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.7,
+      "y1": 7.5,
+      "x2": 6.9,
+      "y2": 7.5,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.7,
+      "y1": -2.1,
+      "x2": 6.9,
+      "y2": -2.1,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 6.9,
+      "y1": 7.5,
+      "x2": 6.9,
+      "y2": -2.1,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.7,
+      "y1": 7.5,
+      "x2": -2.7,
+      "y2": -2.1,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 7,
+      "y1": -2.2,
+      "x2": 7,
+      "y2": -1.7,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.8,
+      "y1": -2.2,
+      "x2": -2.8,
+      "y2": -1.7,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 7,
+      "y1": -2.2,
+      "x2": 6.5,
+      "y2": -2.2,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.8,
+      "y1": -2.2,
+      "x2": -2.3,
+      "y2": -2.2,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.8,
+      "y1": 7.6,
+      "x2": -2.8,
+      "y2": 7.1,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.8,
+      "y1": 7.6,
+      "x2": -2.3,
+      "y2": 7.6,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 7,
+      "y1": 7.6,
+      "x2": 6.5,
+      "y2": 7.6,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 7,
+      "y1": 7.6,
+      "x2": 7,
+      "y2": 7.1,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "circle",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "radius": 1.2
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.7,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 4.2,
+      "y": 0,
+      "radius": 1.2
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 4.2,
+      "y": 0,
+      "radius": 0.7,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 4.2,
+      "y": 5.5,
+      "radius": 1.2
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 4.2,
+      "y": 5.5,
+      "radius": 0.7,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 0,
+      "y": 5.5,
+      "radius": 1.2
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 5.5,
+      "radius": 0.7,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/HeaderPin_2x2_P4.2_Drill1.4mm.kicad_mod",
+    "sourceFootprint": "HeaderPin_2x2_P4.2_Drill1.4mm"
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "name": "SOD-923",
+  "body": {
+    "length": 1,
+    "width": 0.35
+  },
+  "type": "PT_TWO_POLE",
+  "chip": {
+    "chipLength": 1,
+    "leadWidth": 0.35,
+    "leadLength": 0.15
+  },
+  "aliases": [
+    "SOD923",
+    "VMN2",
+    "VMN2M"
+  ],
+  "height": {
+    "nominal": 0.3,
+    "max": 0.315,
+    "min": 0.285
+  },
+  "searchArea": {
+    "x": 1.033,
+    "y": 0.282
+  },
+  "machine": {
+    "mountTools": [
+      "C14"
+    ],
+    "pickWaitTime": 100,
+    "placeWaitTime": 100,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "low",
+      "y": "highest",
+      "tape": "high",
+      "theta": "highest",
+      "z": "highest",
+      "hydraTheta": "low",
+      "hydraZ": "lowest"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/SOD-923.json",
+    "sourceFootprint": "SOD-923"
+  }
+}

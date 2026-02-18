@@ -1,0 +1,174 @@
+{
+  "name": "BATTERY-HOLDER_9V_BC9VPC_ND",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": -13.29,
+      "y": 11.25,
+      "width": 56.12,
+      "height": 31.1,
+      "cornerRadius": 2.488,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -40.85,
+      "y1": -3.8,
+      "x2": 14.27,
+      "y2": -3.8,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -40.85,
+      "y1": 26.3,
+      "x2": 14.27,
+      "y2": 26.3,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -40.85,
+      "y1": -3.8,
+      "x2": -40.85,
+      "y2": 26.3,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 14.27,
+      "y1": -3.8,
+      "x2": 14.27,
+      "y2": 26.3,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 14.37,
+      "y1": 25.65,
+      "x2": 14.37,
+      "y2": 26.4,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -40.95,
+      "y1": 25.65,
+      "x2": -40.95,
+      "y2": 26.4,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 14.37,
+      "y1": 26.4,
+      "x2": 13.62,
+      "y2": 26.4,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -40.2,
+      "y1": 26.4,
+      "x2": -40.95,
+      "y2": 26.4,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -40.2,
+      "y1": -3.9,
+      "x2": -40.95,
+      "y2": -3.9,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -40.95,
+      "y1": -3.9,
+      "x2": -40.95,
+      "y2": -3.15,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 14.37,
+      "y1": -3.9,
+      "x2": 14.37,
+      "y2": -3.15,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 14.37,
+      "y1": -3.9,
+      "x2": 13.62,
+      "y2": -3.9,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 12.62,
+      "y": 17.69,
+      "width": 1.75,
+      "height": 3.3,
+      "cornerRadius": 0.788
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 12.62,
+      "y": 4.74,
+      "width": 1.75,
+      "height": 3.3,
+      "cornerRadius": 0.788
+    },
+    {
+      "kind": "circle",
+      "role": "polarity-marker",
+      "x": 11.832,
+      "y": 18.478,
+      "radius": 0.438,
+      "color": "#ef4444"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/Battery_Holder_9V_BC9VPC-ND.kicad_mod",
+    "sourceFootprint": "Battery_Holder_9V_BC9VPC-ND"
+  }
+}

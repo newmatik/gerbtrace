@@ -1,0 +1,99 @@
+{
+  "name": "LED-D5.0MM_FLAT_TOP",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 1.24,
+      "y": 0,
+      "width": 5.86,
+      "height": 5.8,
+      "cornerRadius": 0.464,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 1.27,
+      "y": 0,
+      "radius": 2.5,
+      "color": "#374151",
+      "strokeColor": "#6b7280"
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 1.27,
+      "y": 0,
+      "radius": 2.5,
+      "color": "#4b5563",
+      "strokeColor": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.29,
+      "y1": -1.64,
+      "x2": -1.29,
+      "y2": 1.64,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.23,
+      "y1": -1.566046,
+      "x2": -1.23,
+      "y2": 1.566046,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "rect",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "width": 1.8,
+      "height": 1.8
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.45,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 2.54,
+      "y": 0,
+      "radius": 0.9
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 2.54,
+      "y": 0,
+      "radius": 0.45,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/LED_THT.pretty/LED_D5.0mm_FlatTop.kicad_mod",
+    "sourceFootprint": "LED_D5.0mm_FlatTop"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "TRANSFORMER-ETHERNET_HALO_TG111_MSC13",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 9.049,
+    "width": 7.027
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 24,
+    "widthOverLeads": 12.927,
+    "leadPitch": 0.913,
+    "leadWidth": 0.64,
+    "leadLength": 2.03
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Transformer_SMD.pretty/Transformer_Ethernet_HALO_TG111-MSC13.kicad_mod",
+    "sourceFootprint": "Transformer_Ethernet_HALO_TG111-MSC13"
+  }
+}

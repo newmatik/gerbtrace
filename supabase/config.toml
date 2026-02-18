@@ -2,8 +2,7 @@
 # Used by `supabase` CLI for local development.
 # Production settings live in Docker Compose .env on the DigitalOcean Droplet.
 
-[project]
-id = "gerbtrace"
+project_id = "gerbtrace"
 
 [api]
 enabled = true
@@ -15,7 +14,7 @@ max_rows = 1000
 [db]
 port = 54322
 shadow_port = 54320
-major_version = 15
+major_version = 17
 
 [db.pooler]
 enabled = false

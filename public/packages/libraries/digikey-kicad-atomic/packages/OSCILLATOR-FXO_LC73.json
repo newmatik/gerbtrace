@@ -1,0 +1,23 @@
+{
+  "name": "OSCILLATOR-FXO_LC73",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 6.88,
+    "width": 6.2
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 6,
+    "widthOverLeads": 6.2,
+    "leadPitch": 2.54,
+    "leadWidth": 1.8,
+    "leadLength": 2
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/Oscillator_FXO-LC73.kicad_mod",
+    "sourceFootprint": "Oscillator_FXO-LC73"
+  }
+}

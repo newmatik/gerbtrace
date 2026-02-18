@@ -1,0 +1,212 @@
+{
+  "name": "HDMI-MINI_FEMALE_2001_1_2_21_00_BK",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 0,
+      "y": 3.5,
+      "width": 12.9,
+      "height": 8.85,
+      "cornerRadius": 0.708,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.6,
+      "y1": 7.4,
+      "x2": -5.6,
+      "y2": 7.4,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.275,
+      "y1": -0.1,
+      "x2": -5.6,
+      "y2": -0.1,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -5.6,
+      "y1": -0.1,
+      "x2": -5.6,
+      "y2": 7.4,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.6,
+      "y1": 0.2,
+      "x2": 5.6,
+      "y2": 7.4,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.2,
+      "y1": -0.225,
+      "x2": 3.775,
+      "y2": -0.225,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -5.725,
+      "y1": 7.525,
+      "x2": -5,
+      "y2": 7.525,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.725,
+      "y1": 7.525,
+      "x2": 5.075,
+      "y2": 7.525,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -5.725,
+      "y1": 6.925,
+      "x2": -5.725,
+      "y2": 7.525,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.725,
+      "y1": 6.95,
+      "x2": 5.725,
+      "y2": 7.525,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -5.725,
+      "y1": -0.225,
+      "x2": -5.15,
+      "y2": -0.225,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.35,
+      "y1": -0.225,
+      "x2": 5.7,
+      "y2": 0.1,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.275,
+      "y1": -0.1,
+      "x2": 5.6,
+      "y2": 0.2,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -5.725,
+      "y1": 0.15,
+      "x2": -5.725,
+      "y2": -0.225,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.775,
+      "y1": -0.225,
+      "x2": 3.775,
+      "y2": -0.525,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": -5.425,
+      "y": 1.15,
+      "width": 1.25,
+      "height": 2,
+      "cornerRadius": 0.563
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 5.425,
+      "y": 1.15,
+      "width": 1.25,
+      "height": 2,
+      "cornerRadius": 0.563
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 5.425,
+      "y": 5.65,
+      "width": 1.25,
+      "height": 2,
+      "cornerRadius": 0.563
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": -5.425,
+      "y": 5.65,
+      "width": 1.25,
+      "height": 2,
+      "cornerRadius": 0.563
+    },
+    {
+      "kind": "circle",
+      "role": "polarity-marker",
+      "x": -5.988,
+      "y": 1.713,
+      "radius": 0.313,
+      "color": "#ef4444"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/HDMI_Mini_Female_2001-1-2-21-00-BK.kicad_mod",
+    "sourceFootprint": "HDMI_Mini_Female_2001-1-2-21-00-BK"
+  }
+}

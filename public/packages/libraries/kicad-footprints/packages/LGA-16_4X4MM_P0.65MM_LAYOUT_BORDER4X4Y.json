@@ -1,0 +1,23 @@
+{
+  "name": "LGA-16_4X4MM_P0.65MM_LAYOUT_BORDER4X4Y",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 4,
+    "width": 4
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 16,
+    "widthOverLeads": 3.95,
+    "leadPitch": 0.65,
+    "leadWidth": 0.4,
+    "leadLength": 0.55
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_LGA.pretty/LGA-16_4x4mm_P0.65mm_LayoutBorder4x4y.kicad_mod",
+    "sourceFootprint": "LGA-16_4x4mm_P0.65mm_LayoutBorder4x4y"
+  }
+}

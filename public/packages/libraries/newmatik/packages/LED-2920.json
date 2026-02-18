@@ -1,0 +1,26 @@
+{
+  "name": "LED-2920",
+  "type": "PT_TWO_POLE",
+  "aliases": [
+    "2920 LED",
+    "CHIP-LED2920",
+    "LED 2920",
+    "LED2920"
+  ],
+  "body": {
+    "length": 7.3,
+    "width": 5
+  },
+  "chip": {
+    "chipLength": 7.3,
+    "leadWidth": 5,
+    "leadLength": 0.8
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/LED-2920.json",
+    "sourceFootprint": "LED-2920"
+  }
+}

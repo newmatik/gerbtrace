@@ -1,0 +1,23 @@
+{
+  "name": "MSOP-12-16-1EP_3X4MM_P0.5MM_EP1.65X2",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 4,
+    "width": 3
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 12,
+    "widthOverLeads": 5.8,
+    "leadPitch": 0.95,
+    "leadWidth": 0.3,
+    "leadLength": 1.4
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_SO.pretty/MSOP-12-16-1EP_3x4mm_P0.5mm_EP1.65x2.85mm.kicad_mod",
+    "sourceFootprint": "MSOP-12-16-1EP_3x4mm_P0.5mm_EP1.65x2.85mm"
+  }
+}

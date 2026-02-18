@@ -1,0 +1,140 @@
+{
+  "name": "RV-DISC_D15.5MM_W6.3MM_P7",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 3.75,
+      "y": 1.5,
+      "width": 16.3,
+      "height": 7.1,
+      "cornerRadius": 0.568,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4,
+      "y1": 4.65,
+      "x2": 11.5,
+      "y2": 4.65,
+      "strokeWidth": 0.15,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4,
+      "y1": -1.65,
+      "x2": 11.5,
+      "y2": -1.65,
+      "strokeWidth": 0.15,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4,
+      "y1": 4.65,
+      "x2": 11.5,
+      "y2": 4.65,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4,
+      "y1": -1.65,
+      "x2": 11.5,
+      "y2": -1.65,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 11.5,
+      "y1": -1.65,
+      "x2": 11.5,
+      "y2": 4.65,
+      "strokeWidth": 0.15,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4,
+      "y1": -1.65,
+      "x2": -4,
+      "y2": 4.65,
+      "strokeWidth": 0.15,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 11.5,
+      "y1": -1.65,
+      "x2": 11.5,
+      "y2": 4.65,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4,
+      "y1": -1.65,
+      "x2": -4,
+      "y2": 4.65,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "circle",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "radius": 0.9
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.4,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 7.5,
+      "y": 3,
+      "radius": 0.9
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 7.5,
+      "y": 3,
+      "radius": 0.4,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Varistor.pretty/RV_Disc_D15.5mm_W6.3mm_P7.5mm.kicad_mod",
+    "sourceFootprint": "RV_Disc_D15.5mm_W6.3mm_P7.5mm"
+  }
+}

@@ -1,0 +1,207 @@
+{
+  "name": "IR-RECEIVER_TSOP38238",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 2.552,
+      "y": 0,
+      "width": 7.555,
+      "height": 3.85,
+      "cornerRadius": 0.308,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.04,
+      "y1": 1.4,
+      "x2": 5.04,
+      "y2": 1.4,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.04,
+      "y1": -1.4,
+      "x2": 5.04,
+      "y2": -1.4,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.04,
+      "y1": -1.4,
+      "x2": 5.04,
+      "y2": 1.4,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.04,
+      "y1": 1.4,
+      "x2": 0.04,
+      "y2": -1.4,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.075,
+      "y1": 0.9,
+      "x2": -0.75,
+      "y2": 0.9,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.075,
+      "y1": 1.525,
+      "x2": -0.075,
+      "y2": 0.9,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.15,
+      "y1": 0.95,
+      "x2": 5.15,
+      "y2": 1.525,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.5,
+      "y1": -1.525,
+      "x2": -0.075,
+      "y2": -1.525,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.6,
+      "y1": -1.525,
+      "x2": 5.15,
+      "y2": -1.525,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.45,
+      "y1": 1.525,
+      "x2": -0.075,
+      "y2": 1.525,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.075,
+      "y1": -1.525,
+      "x2": -0.075,
+      "y2": -1.05,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.15,
+      "y1": 1.525,
+      "x2": 4.725,
+      "y2": 1.525,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.15,
+      "y1": -1.525,
+      "x2": 5.15,
+      "y2": -1.1,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "rect",
+      "role": "pin1",
+      "x": 0.025,
+      "y": -0.025,
+      "width": 1.7,
+      "height": 1.7
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0.025,
+      "y": -0.025,
+      "radius": 0.35,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 2.54,
+      "y": 0,
+      "radius": 0.85
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 2.54,
+      "y": 0,
+      "radius": 0.35,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 5.08,
+      "y": 0,
+      "radius": 0.85
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 5.08,
+      "y": 0,
+      "radius": 0.35,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/IR_Receiver_TSOP38238.kicad_mod",
+    "sourceFootprint": "IR_Receiver_TSOP38238"
+  }
+}

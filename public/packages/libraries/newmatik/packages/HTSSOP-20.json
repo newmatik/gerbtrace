@@ -1,0 +1,25 @@
+{
+  "name": "HTSSOP-20",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 7.25,
+    "width": 4.4
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 20,
+    "widthOverLeads": 6.7,
+    "leadPitch": 0.65,
+    "leadWidth": 0.35,
+    "leadLength": 0.7
+  },
+  "aliases": [
+    "HTSSOP20"
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/HTSSOP-20.json",
+    "sourceFootprint": "HTSSOP-20"
+  }
+}

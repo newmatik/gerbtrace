@@ -1,0 +1,23 @@
+{
+  "name": "SENSIRION-DFN_4_1EP_2X2MM_P1MM_EP0.7X1",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 2,
+    "width": 2
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 4,
+    "widthOverLeads": 1.35,
+    "leadPitch": 0.1,
+    "leadWidth": 0.55,
+    "leadLength": 0.35
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Sensor_Humidity.pretty/Sensirion_DFN-4-1EP_2x2mm_P1mm_EP0.7x1.6mm.kicad_mod",
+    "sourceFootprint": "Sensirion_DFN-4-1EP_2x2mm_P1mm_EP0.7x1.6mm"
+  }
+}

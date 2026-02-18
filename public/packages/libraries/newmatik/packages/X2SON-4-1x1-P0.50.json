@@ -1,0 +1,77 @@
+{
+  "name": "X2SON-4-1x1-P0.50",
+  "type": "PT_TWO_SYM",
+  "aliases": [
+    "X2SON",
+    "DQN",
+    "X2SON / DQN",
+    "X2SON (DQN)",
+    "X2SON-4",
+    "X2SON4"
+  ],
+  "body": {
+    "length": 1,
+    "width": 1
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 4,
+    "widthOverLeads": 1.2,
+    "leadPitch": 0.5,
+    "leadWidth": 0.25,
+    "leadLength": 0.25
+  },
+  "height": {
+    "nominal": 0.4,
+    "max": 0.42,
+    "min": 0.38
+  },
+  "searchArea": {
+    "x": 0.876,
+    "y": 1.001
+  },
+  "machine": {
+    "mountTools": [
+      "C14"
+    ],
+    "hydraTools": [
+      "H06"
+    ],
+    "pickWaitTime": 200,
+    "placeWaitTime": 200,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "low",
+      "y": "low",
+      "tape": "low",
+      "theta": "highest",
+      "z": "low",
+      "hydraTheta": "low",
+      "hydraZ": "lowest"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL",
+          "HYDRA_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/X2SON-4-1x1-P0.50.json",
+    "sourceFootprint": "X2SON-4-1x1-P0.50"
+  }
+}

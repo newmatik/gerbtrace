@@ -1,0 +1,193 @@
+{
+  "name": "USB-MICRO_B_FEMALE_VERT_1051330001",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 0,
+      "y": 0.825,
+      "width": 9,
+      "height": 4.05,
+      "cornerRadius": 0.324,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4,
+      "y1": 2.24,
+      "x2": 4,
+      "y2": 2.24,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4,
+      "y1": -0.55,
+      "x2": 4,
+      "y2": -0.55,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4,
+      "y1": -0.55,
+      "x2": -4,
+      "y2": 2.24,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4,
+      "y1": -0.55,
+      "x2": 4,
+      "y2": 2.24,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.6,
+      "y1": -0.75,
+      "x2": -1.6,
+      "y2": 0.7,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.1,
+      "y1": 2.35,
+      "x2": 4.1,
+      "y2": 2.05,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4.1,
+      "y1": -0.65,
+      "x2": -4.1,
+      "y2": -0.35,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.1,
+      "y1": -0.65,
+      "x2": 4.1,
+      "y2": -0.35,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.1,
+      "y1": 2.35,
+      "x2": 3.8,
+      "y2": 2.35,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4.1,
+      "y1": -0.65,
+      "x2": -3.8,
+      "y2": -0.65,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.1,
+      "y1": -0.65,
+      "x2": 3.8,
+      "y2": -0.65,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4.1,
+      "y1": 2.35,
+      "x2": -4.1,
+      "y2": 2.1,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4.1,
+      "y1": 2.35,
+      "x2": -3.85,
+      "y2": 2.35,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 0,
+      "y": 1.9,
+      "width": 2.2,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 2.8,
+      "y": -0.25,
+      "width": 1.8,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": -2.8,
+      "y": -0.25,
+      "width": 1.8,
+      "height": 1.1,
+      "cornerRadius": 0.495
+    },
+    {
+      "kind": "circle",
+      "role": "polarity-marker",
+      "x": -0.495,
+      "y": 2.395,
+      "radius": 0.275,
+      "color": "#ef4444"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/USB_Micro_B_Female_Vert_1051330001.kicad_mod",
+    "sourceFootprint": "USB_Micro_B_Female_Vert_1051330001"
+  }
+}

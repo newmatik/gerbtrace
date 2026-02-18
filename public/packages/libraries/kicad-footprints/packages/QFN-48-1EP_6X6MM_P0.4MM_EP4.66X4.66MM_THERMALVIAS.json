@@ -1,0 +1,23 @@
+{
+  "name": "QFN-48-1EP_6X6MM_P0.4MM_EP4.66X4.66MM_THERMALVIAS",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 6,
+    "width": 6
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 48,
+    "widthOverLeads": 6.7,
+    "leadPitch": 0.4,
+    "leadWidth": 0.2,
+    "leadLength": 0.82
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_DFN_QFN.pretty/QFN-48-1EP_6x6mm_P0.4mm_EP4.66x4.66mm_ThermalVias.kicad_mod",
+    "sourceFootprint": "QFN-48-1EP_6x6mm_P0.4mm_EP4.66x4.66mm_ThermalVias"
+  }
+}

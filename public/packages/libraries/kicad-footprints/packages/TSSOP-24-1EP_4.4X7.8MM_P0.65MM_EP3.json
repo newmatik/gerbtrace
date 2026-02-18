@@ -1,0 +1,23 @@
+{
+  "name": "TSSOP-24-1EP_4.4X7.8MM_P0.65MM_EP3",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 7.8,
+    "width": 4.4
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 24,
+    "widthOverLeads": 7.25,
+    "leadPitch": 0.65,
+    "leadWidth": 0.4,
+    "leadLength": 1.5
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_SO.pretty/TSSOP-24-1EP_4.4x7.8mm_P0.65mm_EP3.2x5mm.kicad_mod",
+    "sourceFootprint": "TSSOP-24-1EP_4.4x7.8mm_P0.65mm_EP3.2x5mm"
+  }
+}

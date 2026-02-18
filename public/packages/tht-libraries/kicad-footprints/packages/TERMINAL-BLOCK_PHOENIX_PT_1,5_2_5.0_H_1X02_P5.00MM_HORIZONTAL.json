@@ -1,0 +1,327 @@
+{
+  "name": "TERMINAL-BLOCK_PHOENIX_PT_1,5_2_5.0_H_1X02_P5.00MM_HORIZONTAL",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 2.38,
+      "y": 0.62,
+      "width": 11.16,
+      "height": 10.16,
+      "cornerRadius": 0.813,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 2,
+      "color": "#374151",
+      "strokeColor": "#6b7280"
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 2.18,
+      "color": "#4b5563",
+      "strokeColor": "#6b7280"
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 5,
+      "y": 0,
+      "radius": 2,
+      "color": "#374151",
+      "strokeColor": "#6b7280"
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 5,
+      "y": 0,
+      "radius": 2.18,
+      "color": "#4b5563",
+      "strokeColor": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.56,
+      "y1": 4.6,
+      "x2": 7.56,
+      "y2": 4.6,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.56,
+      "y1": 3.5,
+      "x2": 7.56,
+      "y2": 3.5,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.56,
+      "y1": -4.06,
+      "x2": 7.56,
+      "y2": -4.06,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.56,
+      "y1": 5.06,
+      "x2": 7.56,
+      "y2": 5.06,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.5,
+      "y1": -4,
+      "x2": 7.5,
+      "y2": -4,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.5,
+      "y1": 4.6,
+      "x2": 7.5,
+      "y2": 4.6,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.5,
+      "y1": 3.5,
+      "x2": 7.5,
+      "y2": 3.5,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 7.5,
+      "y1": 5,
+      "x2": -2.1,
+      "y2": 5,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.56,
+      "y1": -4.06,
+      "x2": -2.56,
+      "y2": 5.06,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 7.56,
+      "y1": -4.06,
+      "x2": 7.56,
+      "y2": 5.06,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 7.5,
+      "y1": -4,
+      "x2": 7.5,
+      "y2": 5,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.5,
+      "y1": 4.6,
+      "x2": -2.5,
+      "y2": -4,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 1.517,
+      "y1": -1.273,
+      "x2": -1.273,
+      "y2": 1.517,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 1.273,
+      "y1": -1.517,
+      "x2": -1.517,
+      "y2": 1.273,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 6.517,
+      "y1": -1.273,
+      "x2": 3.728,
+      "y2": 1.517,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 6.273,
+      "y1": -1.517,
+      "x2": 3.484,
+      "y2": 1.273,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.8,
+      "y1": 4.66,
+      "x2": -2.8,
+      "y2": 5.3,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.1,
+      "y1": 5,
+      "x2": -2.5,
+      "y2": 4.6,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.742,
+      "y1": 0.992,
+      "x2": 3.347,
+      "y2": 1.388,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 6.654,
+      "y1": -1.388,
+      "x2": 6.259,
+      "y2": -0.992,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.993,
+      "y1": 1.274,
+      "x2": 3.613,
+      "y2": 1.654,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 6.388,
+      "y1": -1.654,
+      "x2": 6.008,
+      "y2": -1.274,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.8,
+      "y1": 5.3,
+      "x2": -2.4,
+      "y2": 5.3,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "rect",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "width": 2.6,
+      "height": 2.6
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.65,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 5,
+      "y": 0,
+      "radius": 1.3
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 5,
+      "y": 0,
+      "radius": 0.65,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/TerminalBlock_Phoenix.pretty/TerminalBlock_Phoenix_PT-1,5-2-5.0-H_1x02_P5.00mm_Horizontal.kicad_mod",
+    "sourceFootprint": "TerminalBlock_Phoenix_PT-1,5-2-5.0-H_1x02_P5.00mm_Horizontal"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "SON-8-1EP_3X2MM_P0.5MM_EP1.4X1",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 2,
+    "width": 3
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 8,
+    "widthOverLeads": 3.1,
+    "leadPitch": 0.5,
+    "leadWidth": 0.35,
+    "leadLength": 0.525
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_SON.pretty/SON-8-1EP_3x2mm_P0.5mm_EP1.4x1.6mm.kicad_mod",
+    "sourceFootprint": "SON-8-1EP_3x2mm_P0.5mm_EP1.4x1.6mm"
+  }
+}

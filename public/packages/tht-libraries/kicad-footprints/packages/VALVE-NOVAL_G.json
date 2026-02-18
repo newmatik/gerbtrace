@@ -1,0 +1,287 @@
+{
+  "name": "VALVE-NOVAL_G",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": -7.895,
+      "y": 10.16,
+      "width": 33.97,
+      "height": 29.76,
+      "cornerRadius": 2.381,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -7.62,
+      "y": 10.16,
+      "radius": 6.293,
+      "color": "#4b5563",
+      "strokeColor": "#6b7280"
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -7.62,
+      "y": 10.16,
+      "radius": 6.293,
+      "color": "#374151",
+      "strokeColor": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 8.69,
+      "y1": 8.28,
+      "x2": -0.74,
+      "y2": 1.12,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 8.69,
+      "y1": 8.28,
+      "x2": -0.74,
+      "y2": 1.12,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -23.75,
+      "y1": 12.19,
+      "x2": -14.43,
+      "y2": 19.3,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -23.75,
+      "y1": 12.19,
+      "x2": -14.43,
+      "y2": 19.3,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 8.66,
+      "y1": 12.06,
+      "x2": -0.63,
+      "y2": 19.2,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 8.66,
+      "y1": 12.06,
+      "x2": -0.63,
+      "y2": 19.2,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -23.75,
+      "y1": 8.15,
+      "x2": -14.73,
+      "y2": 1.27,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -23.75,
+      "y1": 8.15,
+      "x2": -14.73,
+      "y2": 1.27,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "rect",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "width": 1.78,
+      "height": 1.78
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -7.62,
+      "y": -2.54,
+      "radius": 0.89
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -7.62,
+      "y": -2.54,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -15.24,
+      "y": 0,
+      "radius": 0.89
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -15.24,
+      "y": 0,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -20.32,
+      "y": 3.81,
+      "radius": 0.89
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -20.32,
+      "y": 3.81,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -20.32,
+      "y": 16.51,
+      "radius": 0.89
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -20.32,
+      "y": 16.51,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -15.24,
+      "y": 20.32,
+      "radius": 0.89
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -15.24,
+      "y": 20.32,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -7.62,
+      "y": 22.86,
+      "radius": 0.89
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -7.62,
+      "y": 22.86,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 0,
+      "y": 20.32,
+      "radius": 0.89
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 20.32,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 5.08,
+      "y": 16.51,
+      "radius": 0.89
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 5.08,
+      "y": 16.51,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -22.23,
+      "y": 10.16,
+      "radius": 2.25
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -22.23,
+      "y": 10.16,
+      "radius": 2,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Valve.pretty/Valve_Noval_G.kicad_mod",
+    "sourceFootprint": "Valve_Noval_G"
+  }
+}

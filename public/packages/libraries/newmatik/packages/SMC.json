@@ -1,0 +1,78 @@
+{
+  "name": "SMC",
+  "type": "PT_TWO_POLE",
+  "body": {
+    "length": 7.2,
+    "width": 6.2
+  },
+  "chip": {
+    "chipLength": 7.2,
+    "leadWidth": 6.2,
+    "leadLength": 0.8
+  },
+  "aliases": [
+    "DO-214AB",
+    "DO214AB"
+  ],
+  "height": {
+    "nominal": 2.33,
+    "max": 2.446,
+    "min": 2.214
+  },
+  "searchArea": {
+    "x": 8.067,
+    "y": 6.159
+  },
+  "machine": {
+    "mountTools": [
+      "A23"
+    ],
+    "hydraTools": [
+      "H03"
+    ],
+    "pickWaitTime": 100,
+    "placeWaitTime": 100,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "low",
+      "y": "highest",
+      "tape": "high",
+      "theta": "highest",
+      "z": "high",
+      "hydraTheta": "low",
+      "hydraZ": "high"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL",
+          "HYDRA_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false,
+    "markingPositions": [
+      {
+        "x": 0,
+        "y": 0,
+        "dotType": "DOT3.0mm"
+      }
+    ]
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/SMC.json",
+    "sourceFootprint": "SMC"
+  }
+}

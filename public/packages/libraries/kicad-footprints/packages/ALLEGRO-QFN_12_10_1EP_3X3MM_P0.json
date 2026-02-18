@@ -1,0 +1,23 @@
+{
+  "name": "ALLEGRO-QFN_12_10_1EP_3X3MM_P0",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 3,
+    "width": 3
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 12,
+    "widthOverLeads": 3.75,
+    "leadPitch": 0.5,
+    "leadWidth": 0.3,
+    "leadLength": 0.85
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Sensor_Current.pretty/Allegro_QFN-12-10-1EP_3x3mm_P0.5mm.kicad_mod",
+    "sourceFootprint": "Allegro_QFN-12-10-1EP_3x3mm_P0.5mm"
+  }
+}

@@ -1,0 +1,130 @@
+{
+  "version": 1,
+  "notes": "Curated source list for legal/license-aware CAD library ingestion.",
+  "sources": [
+    {
+      "id": "librepcb-base",
+      "enabled": true,
+      "large": false,
+      "tool": "LibrePCB",
+      "license": "CC0-1.0",
+      "licenseBucket": "cc0",
+      "redistribution": "allowed",
+      "owner": "LibrePCB-Libraries",
+      "repo": "LibrePCB_Base.lplib",
+      "url": "https://github.com/LibrePCB-Libraries/LibrePCB_Base.lplib.git"
+    },
+    {
+      "id": "librepcb-connectors",
+      "enabled": true,
+      "large": false,
+      "tool": "LibrePCB",
+      "license": "CC0-1.0",
+      "licenseBucket": "cc0",
+      "redistribution": "allowed",
+      "owner": "LibrePCB-Libraries",
+      "repo": "LibrePCB_Connectors.lplib",
+      "url": "https://github.com/LibrePCB-Libraries/LibrePCB_Connectors.lplib.git"
+    },
+    {
+      "id": "kicad-symbols",
+      "enabled": true,
+      "large": false,
+      "tool": "KiCad",
+      "license": "CC-BY-SA-4.0 + KiCad Libraries Exception",
+      "licenseBucket": "cc-by-sa-4.0-kicad-exception",
+      "redistribution": "share-alike-conditions",
+      "owner": "KiCad",
+      "repo": "kicad-symbols",
+      "url": "https://github.com/KiCad/kicad-symbols.git"
+    },
+    {
+      "id": "kicad-footprints",
+      "enabled": true,
+      "displayName": "KiCad",
+      "large": false,
+      "tool": "KiCad",
+      "license": "CC-BY-SA-4.0 + KiCad Libraries Exception",
+      "licenseBucket": "cc-by-sa-4.0-kicad-exception",
+      "redistribution": "share-alike-conditions",
+      "owner": "KiCad",
+      "repo": "kicad-footprints",
+      "url": "https://github.com/KiCad/kicad-footprints.git"
+    },
+    {
+      "id": "kicad-packages3d",
+      "enabled": false,
+      "large": true,
+      "tool": "KiCad",
+      "license": "CC-BY-SA-4.0 + KiCad Libraries Exception",
+      "licenseBucket": "cc-by-sa-4.0-kicad-exception",
+      "redistribution": "share-alike-conditions",
+      "owner": "KiCad",
+      "repo": "kicad-packages3D",
+      "url": "https://github.com/KiCad/kicad-packages3D.git"
+    },
+    {
+      "id": "kicad-templates",
+      "enabled": false,
+      "large": false,
+      "tool": "KiCad",
+      "license": "CC-BY-SA-4.0 + KiCad Libraries Exception",
+      "licenseBucket": "cc-by-sa-4.0-kicad-exception",
+      "redistribution": "share-alike-conditions",
+      "owner": "KiCad",
+      "repo": "kicad-templates",
+      "url": "https://github.com/KiCad/kicad-templates.git"
+    },
+    {
+      "id": "digikey-kicad-atomic",
+      "enabled": true,
+      "displayName": "DigiKey KiCad",
+      "large": false,
+      "tool": "KiCad",
+      "license": "Digi-Key custom (read LICENSE before redistribution)",
+      "licenseBucket": "custom-terms",
+      "redistribution": "conditional",
+      "owner": "Digi-Key",
+      "repo": "digikey-kicad-library",
+      "url": "https://github.com/Digi-Key/digikey-kicad-library.git"
+    },
+    {
+      "id": "wurth-kicad-library",
+      "enabled": true,
+      "displayName": "Wurth KiCad",
+      "large": false,
+      "tool": "KiCad",
+      "license": "Wurth Elektronik custom terms (see upstream disclaimer/license PDFs)",
+      "licenseBucket": "custom-terms",
+      "redistribution": "conditional",
+      "owner": "WurthElektronik",
+      "repo": "KiCad-Library",
+      "url": "https://github.com/WurthElektronik/KiCad-Library.git"
+    },
+    {
+      "id": "adafruit-eagle",
+      "enabled": false,
+      "large": false,
+      "tool": "Eagle",
+      "license": "Public Domain (per upstream project statement)",
+      "licenseBucket": "public-domain",
+      "redistribution": "allowed",
+      "owner": "adafruit",
+      "repo": "Adafruit-Eagle-Library",
+      "url": "https://github.com/adafruit/Adafruit-Eagle-Library.git"
+    },
+    {
+      "id": "sparkfun-eagle",
+      "enabled": false,
+      "large": false,
+      "tool": "Eagle",
+      "license": "SparkFun custom permissive text (attribution requested)",
+      "licenseBucket": "custom-terms",
+      "redistribution": "conditional",
+      "owner": "sparkfun",
+      "repo": "SparkFun-Eagle-Libraries",
+      "url": "https://github.com/sparkfun/SparkFun-Eagle-Libraries.git"
+    }
+  ]
+}
+

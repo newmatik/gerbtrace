@@ -1,0 +1,23 @@
+{
+  "name": "LGA-28_5.2X3.8MM_BNO0055",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 3.8,
+    "width": 5.2
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 28,
+    "widthOverLeads": 5.025,
+    "leadPitch": 0.5,
+    "leadWidth": 0.3,
+    "leadLength": 0.5
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/LGA-28_5.2x3.8mm_BNO0055.kicad_mod",
+    "sourceFootprint": "LGA-28_5.2x3.8mm_BNO0055"
+  }
+}

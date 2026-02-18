@@ -1,0 +1,23 @@
+{
+  "name": "ST-POWER_SSO_24_SLUG_DOWN_THERMALVIAS",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 9.4,
+    "width": 11.565
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 26,
+    "widthOverLeads": 11.565,
+    "leadPitch": 0.8,
+    "leadWidth": 0.6,
+    "leadLength": 1.7
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_SO.pretty/ST_PowerSSO-24_SlugDown_ThermalVias.kicad_mod",
+    "sourceFootprint": "ST_PowerSSO-24_SlugDown_ThermalVias"
+  }
+}

@@ -1,0 +1,162 @@
+{
+  "name": "MINI-CIRCUITS_MMM168_LAND_PATTERN_PL_225",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 0.013,
+      "y": -0.063,
+      "width": 7.45,
+      "height": 4.605,
+      "cornerRadius": 0.368,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.762,
+      "y1": -1.651,
+      "x2": -2.286,
+      "y2": -1.651,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.6477,
+      "y1": -1.41605,
+      "x2": 0.6477,
+      "y2": 1.44145,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.6223,
+      "y1": 1.44145,
+      "x2": -0.6223,
+      "y2": -1.1303,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.762,
+      "y1": 1.651,
+      "x2": -0.762,
+      "y2": 1.651,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.6477,
+      "y1": 1.44145,
+      "x2": -0.6223,
+      "y2": 1.44145,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.2413,
+      "y1": -1.41605,
+      "x2": 0.6477,
+      "y2": -1.41605,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.6223,
+      "y1": -1.1303,
+      "x2": -0.2413,
+      "y2": -1.41605,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "circle",
+      "role": "pin1",
+      "x": -2.908,
+      "y": -1.562,
+      "radius": 0.404
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -2.908,
+      "y": -1.562,
+      "radius": 0.254,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin1",
+      "x": -2.908,
+      "y": -0.648,
+      "radius": 0.404
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -2.908,
+      "y": -0.648,
+      "radius": 0.254,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 2.934,
+      "y": 0.521,
+      "radius": 0.404
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 2.934,
+      "y": 0.521,
+      "radius": 0.254,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 2.934,
+      "y": 1.435,
+      "radius": 0.404
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 2.934,
+      "y": 1.435,
+      "radius": 0.254,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/RF_Mini-Circuits.pretty/Mini-Circuits_MMM168_LandPatternPL-225.kicad_mod",
+    "sourceFootprint": "Mini-Circuits_MMM168_LandPatternPL-225"
+  }
+}

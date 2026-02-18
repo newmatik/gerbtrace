@@ -1,0 +1,23 @@
+{
+  "name": "SWITCH-SLIDE_JS202011SCQN",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 6.2,
+    "width": 8
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 6,
+    "widthOverLeads": 8,
+    "leadPitch": 2.5,
+    "leadWidth": 1.2,
+    "leadLength": 2.5
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/Switch_Slide_JS202011SCQN.kicad_mod",
+    "sourceFootprint": "Switch_Slide_JS202011SCQN"
+  }
+}

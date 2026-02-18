@@ -1,0 +1,219 @@
+{
+  "name": "RELAY-SPDT_STANDEX_MEDER_SIL_FORM1C",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 7.5,
+      "y": 0.1,
+      "width": 20.9,
+      "height": 6.2,
+      "cornerRadius": 0.496,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 17.55,
+      "y1": 2.6,
+      "x2": -2.35,
+      "y2": 2.6,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.35,
+      "y1": -2.6,
+      "x2": 17.55,
+      "y2": -2.6,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.3,
+      "y1": -2.58326,
+      "x2": 17.5,
+      "y2": -2.58326,
+      "strokeWidth": 0.12,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 17.5,
+      "y1": 2.51674,
+      "x2": -1.5,
+      "y2": 2.51674,
+      "strokeWidth": 0.12,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.35,
+      "y1": 2.6,
+      "x2": -2.35,
+      "y2": -2.6,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 17.55,
+      "y1": -2.6,
+      "x2": 17.55,
+      "y2": 2.6,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 17.5,
+      "y1": -2.58326,
+      "x2": 17.5,
+      "y2": 2.51674,
+      "strokeWidth": 0.12,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.3,
+      "y1": 1.66674,
+      "x2": -2.3,
+      "y2": -2.58326,
+      "strokeWidth": 0.12,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.5,
+      "y1": 2.51674,
+      "x2": -2.3,
+      "y2": 1.66674,
+      "strokeWidth": 0.12,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.45,
+      "y1": 2.8,
+      "x2": -2.55,
+      "y2": 2.8,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.55,
+      "y1": 2.8,
+      "x2": -2.55,
+      "y2": 1.8,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 2.54,
+      "y": 0,
+      "radius": 0.7
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 2.54,
+      "y": 0,
+      "radius": 0.35,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 15.24,
+      "y": 0,
+      "radius": 0.7
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 15.24,
+      "y": 0,
+      "radius": 0.35,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 10.16,
+      "y": 0,
+      "radius": 0.7
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 10.16,
+      "y": 0,
+      "radius": 0.35,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 5.08,
+      "y": 0,
+      "radius": 0.7
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 5.08,
+      "y": 0,
+      "radius": 0.35,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "rect",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "width": 1.4,
+      "height": 1.4
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.35,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Relay_THT.pretty/Relay_SPDT_StandexMeder_SIL_Form1C.kicad_mod",
+    "sourceFootprint": "Relay_SPDT_StandexMeder_SIL_Form1C"
+  }
+}

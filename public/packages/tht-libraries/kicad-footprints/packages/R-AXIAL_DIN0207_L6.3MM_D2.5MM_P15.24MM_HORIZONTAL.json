@@ -1,0 +1,182 @@
+{
+  "name": "R-AXIAL_DIN0207_L6.3MM_D2.5MM_P15.24MM_HORIZONTAL",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 7.62,
+      "y": 0,
+      "width": 17.64,
+      "height": 3.54,
+      "cornerRadius": 0.283,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.35,
+      "y1": 1.37,
+      "x2": 10.89,
+      "y2": 1.37,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 10.89,
+      "y1": -1.37,
+      "x2": 4.35,
+      "y2": -1.37,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.47,
+      "y1": 1.25,
+      "x2": 10.77,
+      "y2": 1.25,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 10.77,
+      "y1": -1.25,
+      "x2": 4.47,
+      "y2": -1.25,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 15.24,
+      "y1": 0,
+      "x2": 10.77,
+      "y2": 0,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0,
+      "y1": 0,
+      "x2": 4.47,
+      "y2": 0,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 1.04,
+      "y1": 0,
+      "x2": 4.35,
+      "y2": 0,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 14.2,
+      "y1": 0,
+      "x2": 10.89,
+      "y2": 0,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.35,
+      "y1": -1.37,
+      "x2": 4.35,
+      "y2": 1.37,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 10.89,
+      "y1": 1.37,
+      "x2": 10.89,
+      "y2": -1.37,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.47,
+      "y1": -1.25,
+      "x2": 4.47,
+      "y2": 1.25,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 10.77,
+      "y1": 1.25,
+      "x2": 10.77,
+      "y2": -1.25,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "circle",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "radius": 0.8
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.4,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 15.24,
+      "y": 0,
+      "width": 1.6,
+      "height": 1.6,
+      "cornerRadius": 0.72
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 15.24,
+      "y": 0,
+      "radius": 0.4,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Resistor_THT.pretty/R_Axial_DIN0207_L6.3mm_D2.5mm_P15.24mm_Horizontal.kicad_mod",
+    "sourceFootprint": "R_Axial_DIN0207_L6.3mm_D2.5mm_P15.24mm_Horizontal"
+  }
+}

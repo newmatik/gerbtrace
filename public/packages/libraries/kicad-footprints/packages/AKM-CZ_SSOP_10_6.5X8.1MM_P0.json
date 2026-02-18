@@ -1,0 +1,23 @@
+{
+  "name": "AKM-CZ_SSOP_10_6.5X8.1MM_P0",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 8.1,
+    "width": 6.5
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 10,
+    "widthOverLeads": 12,
+    "leadPitch": 0.95,
+    "leadWidth": 0.54,
+    "leadLength": 1.42
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Sensor_Current.pretty/AKM_CZ_SSOP-10_6.5x8.1mm_P0.95mm.kicad_mod",
+    "sourceFootprint": "AKM_CZ_SSOP-10_6.5x8.1mm_P0.95mm"
+  }
+}

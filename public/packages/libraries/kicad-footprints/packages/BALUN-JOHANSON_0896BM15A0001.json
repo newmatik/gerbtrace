@@ -1,0 +1,23 @@
+{
+  "name": "BALUN-JOHANSON_0896BM15A0001",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 1.155,
+    "width": 1.96
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 6,
+    "widthOverLeads": 2.8,
+    "leadPitch": 0.825,
+    "leadWidth": 0.35,
+    "leadLength": 1
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/RF_Converter.pretty/Balun_Johanson_0896BM15A0001.kicad_mod",
+    "sourceFootprint": "Balun_Johanson_0896BM15A0001"
+  }
+}

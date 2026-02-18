@@ -1,0 +1,169 @@
+{
+  "name": "TO-17-4",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 0.52,
+      "y": -0.38,
+      "width": 5.759,
+      "height": 5.759,
+      "cornerRadius": 0.461,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0.9,
+      "y": 0,
+      "radius": 2.1,
+      "color": "#374151",
+      "strokeColor": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.252185,
+      "y1": -2.859292,
+      "x2": -1.959292,
+      "y2": -2.152185,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.637002,
+      "y1": -2.244109,
+      "x2": -1.252185,
+      "y2": -2.859292,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.959292,
+      "y1": -2.152185,
+      "x2": -1.344109,
+      "y2": -1.537002,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.180365,
+      "y1": -2.617766,
+      "x2": -1.717766,
+      "y2": -2.080365,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.650035,
+      "y1": -2.087436,
+      "x2": -1.180365,
+      "y2": -2.617766,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.717766,
+      "y1": -2.080365,
+      "x2": -1.187436,
+      "y2": -1.550035,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "width": 1.2,
+      "height": 0.9,
+      "cornerRadius": 0.405
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.3,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 0.9,
+      "y": 0.9,
+      "width": 0.9,
+      "height": 0.9,
+      "cornerRadius": 0.405
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0.9,
+      "y": 0.9,
+      "radius": 0.3,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 1.8,
+      "y": 0,
+      "width": 0.9,
+      "height": 0.9,
+      "cornerRadius": 0.405
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 1.8,
+      "y": 0,
+      "radius": 0.3,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 0.9,
+      "y": -0.9,
+      "width": 0.9,
+      "height": 0.9,
+      "cornerRadius": 0.405
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0.9,
+      "y": -0.9,
+      "radius": 0.3,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_TO_SOT_THT.pretty/TO-17-4.kicad_mod",
+    "sourceFootprint": "TO-17-4"
+  }
+}

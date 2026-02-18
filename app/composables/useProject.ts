@@ -60,6 +60,9 @@ interface ProjectRecord {
     surfaceFinish?: SurfaceFinish
     copperWeight?: CopperWeight
     innerCopperWeight?: '0.5oz' | CopperWeight
+    thicknessMm?: number
+    solderMaskColor?: 'green' | 'black' | 'blue' | 'red' | 'white' | 'purple'
+    panelizationMode?: 'single' | 'panelized'
   } | null
   /** Panel configuration for panelization */
   panelData?: PanelConfig | null

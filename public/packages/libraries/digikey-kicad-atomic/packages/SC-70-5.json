@@ -1,0 +1,23 @@
+{
+  "name": "SC-70-5",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 1.7,
+    "width": 3.1
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 70,
+    "widthOverLeads": 3.1,
+    "leadPitch": 0.65,
+    "leadWidth": 0.4,
+    "leadLength": 0.9
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/SC-70-5.kicad_mod",
+    "sourceFootprint": "SC-70-5"
+  }
+}

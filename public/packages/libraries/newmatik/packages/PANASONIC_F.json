@@ -1,0 +1,33 @@
+{
+  "name": "PANASONIC_F",
+  "type": "PT_TWO_POLE",
+  "aliases": [
+    "CP_Elec_8x10.2",
+    "ELEC_F",
+    "CAP_ELEC_F",
+    "CHEMI-CON_H",
+    "CHEMI-CON_Ha0",
+    "CAPAE830X1020"
+  ],
+  "body": {
+    "length": 7.1,
+    "width": 4
+  },
+  "chip": {
+    "chipLength": 7.1,
+    "leadWidth": 4,
+    "leadLength": 2
+  },
+  "height": {
+    "nominal": 10.2,
+    "max": 10.5,
+    "min": 9.9
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/PANASONIC_F.json",
+    "sourceFootprint": "PANASONIC_F"
+  }
+}

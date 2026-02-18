@@ -1,0 +1,214 @@
+{
+  "name": "HEADPHONE-JACK_6.35MM_SN49B12B",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 7.328,
+      "y": 0.005,
+      "width": 35.005,
+      "height": 16.659,
+      "cornerRadius": 1.333,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -9.66,
+      "y1": 7.81,
+      "x2": 24.43,
+      "y2": 7.81,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -9.66,
+      "y1": -7.81,
+      "x2": 24.43,
+      "y2": -7.81,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 17.98,
+      "y1": -7.81,
+      "x2": 17.98,
+      "y2": 7.81,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -9.66,
+      "y1": -7.81,
+      "x2": -9.66,
+      "y2": 7.81,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 24.43,
+      "y1": -7.81,
+      "x2": 24.43,
+      "y2": 7.81,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -8.86992,
+      "y1": 7.92968,
+      "x2": -9.76992,
+      "y2": 7.92968,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -8.875,
+      "y1": -7.925,
+      "x2": -9.775,
+      "y2": -7.925,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -9.77246,
+      "y1": 7.25912,
+      "x2": -9.77246,
+      "y2": 7.93412,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -9.775,
+      "y1": -7.925,
+      "x2": -9.775,
+      "y2": -7.25,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 17.9832,
+      "y1": 7.925,
+      "x2": 17.4752,
+      "y2": 7.925,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 17.9832,
+      "y1": -7.925,
+      "x2": 17.4752,
+      "y2": -7.925,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 17.9832,
+      "y1": 7.425,
+      "x2": 17.9832,
+      "y2": 7.925,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 17.9832,
+      "y1": -7.925,
+      "x2": 17.9832,
+      "y2": -7.55,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 12.7,
+      "y": -4.955,
+      "radius": 1.5
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 12.7,
+      "y": -4.955,
+      "radius": 1.04,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 5.08,
+      "y": -4.955,
+      "radius": 1.5
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 5.08,
+      "y": -4.955,
+      "radius": 1.04,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -5.08,
+      "y": -4.955,
+      "radius": 1.5
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -5.08,
+      "y": -4.955,
+      "radius": 1.04,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "polarity-marker",
+      "x": 11.35,
+      "y": -3.605,
+      "radius": 0.75,
+      "color": "#ef4444"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/Headphone_Jack_6.35mm_SN49B12B.kicad_mod",
+    "sourceFootprint": "Headphone_Jack_6.35mm_SN49B12B"
+  }
+}

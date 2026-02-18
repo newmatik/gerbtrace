@@ -1,8 +1,9 @@
 /**
  * Package type definitions and geometry computation.
  *
- * Each package type (Chip, ThreePole, TwoSymmetric, FourSymmetric, BGA, Outline)
- * defines its lead/pad geometry parameters. The `computeFootprint()` function converts
+ * Each package type uses the TPSys technical name (PT_TWO_POLE, PT_THREE_POLE, PT_TWO_SYM,
+ * PT_FOUR_SYM, PT_TWO_PLUS_TWO, PT_FOUR_ON_TWO, PT_BGA, PT_OUTLINE, PT_GENERIC).
+ * The `computeFootprint()` function converts
  * any PackageDefinition into a normalised list of shapes (rectangles, circles, rounded rects)
  * centered at (0, 0) in mm, ready for rotation and rendering.
  *
@@ -372,6 +373,13 @@ export interface PackageBase {
   name: string
   aliases?: string[]
   body: PackageBody
+  provenance?: {
+    owner?: string
+    sourceLibrary?: string
+    sourceType?: string
+    sourceFile?: string
+    sourceFootprint?: string
+  }
 
   // Physical properties (from P01, P011)
   height?: { nominal: number; min: number; max: number }
@@ -385,14 +393,14 @@ export interface PackageBase {
   variations?: PackageVariation[]
 }
 
-export interface ChipPackage extends PackageBase { type: 'Chip'; chip: ChipParams }
-export interface ThreePolePackage extends PackageBase { type: 'ThreePole'; threePole: ThreePoleParams }
-export interface TwoSymmetricPackage extends PackageBase { type: 'TwoSymmetricLeadGroups'; twoSymmetric: TwoSymmetricParams }
-export interface FourSymmetricPackage extends PackageBase { type: 'FourSymmetricLeadGroups'; fourSymmetric: FourSymmetricParams }
-export interface TwoPlusTwoPackage extends PackageBase { type: 'TwoPlusTwo'; twoPlusTwo: TwoPlusTwoParams }
-export interface FourOnTwoPackage extends PackageBase { type: 'FourOnTwo'; fourOnTwo: FourOnTwoParams }
-export interface BgaPackage extends PackageBase { type: 'BGA'; bga: BgaParams }
-export interface OutlinePackage extends PackageBase { type: 'Outline'; outline: OutlineParams }
+export interface ChipPackage extends PackageBase { type: 'PT_TWO_POLE'; chip: ChipParams }
+export interface ThreePolePackage extends PackageBase { type: 'PT_THREE_POLE'; threePole: ThreePoleParams }
+export interface TwoSymmetricPackage extends PackageBase { type: 'PT_TWO_SYM'; twoSymmetric: TwoSymmetricParams }
+export interface FourSymmetricPackage extends PackageBase { type: 'PT_FOUR_SYM'; fourSymmetric: FourSymmetricParams }
+export interface TwoPlusTwoPackage extends PackageBase { type: 'PT_TWO_PLUS_TWO'; twoPlusTwo: TwoPlusTwoParams }
+export interface FourOnTwoPackage extends PackageBase { type: 'PT_FOUR_ON_TWO'; fourOnTwo: FourOnTwoParams }
+export interface BgaPackage extends PackageBase { type: 'PT_BGA'; bga: BgaParams }
+export interface OutlinePackage extends PackageBase { type: 'PT_OUTLINE'; outline: OutlineParams }
 export interface TpsysGenericPackage extends PackageBase { type: 'PT_GENERIC'; generic: TpsysGenericParams }
 
 export type PackageDefinition =
@@ -406,6 +414,35 @@ export type PackageDefinition =
   | OutlinePackage
   | TpsysGenericPackage
 
+/** All valid package type discriminator values. */
+export const PACKAGE_TYPES = [
+  'PT_TWO_POLE',
+  'PT_THREE_POLE',
+  'PT_TWO_SYM',
+  'PT_FOUR_SYM',
+  'PT_TWO_PLUS_TWO',
+  'PT_FOUR_ON_TWO',
+  'PT_BGA',
+  'PT_OUTLINE',
+  'PT_GENERIC',
+] as const
+
+/**
+ * Authoritative human-readable labels for each TPSys package type.
+ * Use this everywhere in the UI instead of ad-hoc label maps.
+ */
+export const PACKAGE_TYPE_LABELS: Record<PackageDefinition['type'], string> = {
+  PT_TWO_POLE: 'Chip (2-pole)',
+  PT_THREE_POLE: 'SOT (3-pole)',
+  PT_TWO_SYM: 'SOIC / SSOP (2-sym)',
+  PT_FOUR_SYM: 'QFP / QFN (4-sym)',
+  PT_TWO_PLUS_TWO: 'Asymmetric Quad (2+2)',
+  PT_FOUR_ON_TWO: '4-on-2',
+  PT_BGA: 'BGA',
+  PT_OUTLINE: 'Outline',
+  PT_GENERIC: 'Generic',
+}
+
 // ── Geometry computation ──
 
 /**
@@ -414,14 +451,14 @@ export type PackageDefinition =
  */
 export function computeFootprint(pkg: PackageDefinition): FootprintShape[] {
   switch (pkg.type) {
-    case 'Chip': return computeChip(pkg)
-    case 'ThreePole': return computeThreePole(pkg)
-    case 'TwoSymmetricLeadGroups': return computeTwoSymmetric(pkg)
-    case 'FourSymmetricLeadGroups': return computeFourSymmetric(pkg)
-    case 'TwoPlusTwo': return computeTwoPlusTwo(pkg)
-    case 'FourOnTwo': return computeFourOnTwo(pkg)
-    case 'BGA': return computeBga(pkg)
-    case 'Outline': return computeOutline(pkg)
+    case 'PT_TWO_POLE': return computeChip(pkg)
+    case 'PT_THREE_POLE': return computeThreePole(pkg)
+    case 'PT_TWO_SYM': return computeTwoSymmetric(pkg)
+    case 'PT_FOUR_SYM': return computeFourSymmetric(pkg)
+    case 'PT_TWO_PLUS_TWO': return computeTwoPlusTwo(pkg)
+    case 'PT_FOUR_ON_TWO': return computeFourOnTwo(pkg)
+    case 'PT_BGA': return computeBga(pkg)
+    case 'PT_OUTLINE': return computeOutline(pkg)
     case 'PT_GENERIC': return computeTpsysGeneric(pkg)
   }
 }

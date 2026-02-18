@@ -1,0 +1,23 @@
+{
+  "name": "VSON-10-1EP_3X3MM",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 3,
+    "width": 3
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 10,
+    "widthOverLeads": 3.36,
+    "leadPitch": 0.5,
+    "leadWidth": 0.28,
+    "leadLength": 0.28
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/VSON-10-1EP_3x3mm.kicad_mod",
+    "sourceFootprint": "VSON-10-1EP_3x3mm"
+  }
+}

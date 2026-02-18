@@ -1,0 +1,256 @@
+{
+  "name": "POTENTIOMETER-BOURNS_3009Y_HORIZONTAL",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": -9.58,
+      "y": -1.27,
+      "width": 21.76,
+      "height": 5.87,
+      "cornerRadius": 0.47,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -18.54,
+      "y1": -3.805,
+      "x2": 0.75,
+      "y2": -3.805,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -18.54,
+      "y1": 1.265,
+      "x2": 0.75,
+      "y2": 1.265,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -18.42,
+      "y1": 1.145,
+      "x2": 0.63,
+      "y2": 1.145,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.63,
+      "y1": -3.685,
+      "x2": -18.42,
+      "y2": -3.685,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -18.42,
+      "y1": -3.685,
+      "x2": -18.42,
+      "y2": 1.145,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.63,
+      "y1": 1.145,
+      "x2": 0.63,
+      "y2": -3.685,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -18.54,
+      "y1": -3.805,
+      "x2": -18.54,
+      "y2": -1.155,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.75,
+      "y1": -3.805,
+      "x2": 0.75,
+      "y2": -1.155,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -20.06,
+      "y1": -2.569,
+      "x2": -20.06,
+      "y2": 0.03,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -19.94,
+      "y1": -2.45,
+      "x2": -19.94,
+      "y2": -0.09,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -18.42,
+      "y1": -0.09,
+      "x2": -18.42,
+      "y2": -2.45,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -19.94,
+      "y1": -0.09,
+      "x2": -18.42,
+      "y2": -0.09,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -18.42,
+      "y1": -2.45,
+      "x2": -19.94,
+      "y2": -2.45,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -20.06,
+      "y1": -2.569,
+      "x2": -18.541,
+      "y2": -2.569,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -18.541,
+      "y1": -2.569,
+      "x2": -18.541,
+      "y2": -1.155,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -20.06,
+      "y1": 0.03,
+      "x2": -18.935,
+      "y2": 0.03,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -19.94,
+      "y1": -1.27,
+      "x2": -19.18,
+      "y2": -1.27,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -20.06,
+      "y1": -1.27,
+      "x2": -19.301,
+      "y2": -1.27,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "circle",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "radius": 0.9
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -10.16,
+      "y": -2.54,
+      "radius": 0.9
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -10.16,
+      "y": -2.54,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -17.78,
+      "y": 0,
+      "radius": 0.9
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -17.78,
+      "y": 0,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Potentiometer_THT.pretty/Potentiometer_Bourns_3009Y_Horizontal.kicad_mod",
+    "sourceFootprint": "Potentiometer_Bourns_3009Y_Horizontal"
+  }
+}

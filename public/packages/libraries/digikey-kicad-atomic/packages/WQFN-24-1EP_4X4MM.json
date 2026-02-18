@@ -1,0 +1,23 @@
+{
+  "name": "WQFN-24-1EP_4X4MM",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 4,
+    "width": 4
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 24,
+    "widthOverLeads": 4.65,
+    "leadPitch": 0.5,
+    "leadWidth": 0.25,
+    "leadLength": 0.7
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/WQFN-24-1EP_4x4mm.kicad_mod",
+    "sourceFootprint": "WQFN-24-1EP_4x4mm"
+  }
+}

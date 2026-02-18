@@ -1,0 +1,222 @@
+{
+  "name": "TO-218-2_HORIZONTAL_TAB_DOWN",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 5.475,
+      "y": -10.35,
+      "width": 15.98,
+      "height": 25,
+      "cornerRadius": 1.278,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 5.475,
+      "y": -18.55,
+      "radius": 2.115,
+      "color": "#374151",
+      "strokeColor": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.115,
+      "y1": -22.45,
+      "x2": -2.115,
+      "y2": -2.23,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 13.065,
+      "y1": -22.45,
+      "x2": 13.065,
+      "y2": -2.23,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.115,
+      "y1": -2.23,
+      "x2": 13.065,
+      "y2": -2.23,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.115,
+      "y1": -22.45,
+      "x2": 13.065,
+      "y2": -22.45,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.995,
+      "y1": -22.33,
+      "x2": 12.945,
+      "y2": -22.33,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 12.945,
+      "y1": -14.54,
+      "x2": -1.995,
+      "y2": -14.54,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 12.945,
+      "y1": -2.35,
+      "x2": -1.995,
+      "y2": -2.35,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.995,
+      "y1": -2.35,
+      "x2": -1.995,
+      "y2": -14.54,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 12.945,
+      "y1": -14.54,
+      "x2": 12.945,
+      "y2": -2.35,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.995,
+      "y1": -14.54,
+      "x2": -1.995,
+      "y2": -22.33,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 12.945,
+      "y1": -22.33,
+      "x2": 12.945,
+      "y2": -14.54,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0,
+      "y1": -2.35,
+      "x2": 0,
+      "y2": 0,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 10.95,
+      "y1": -2.35,
+      "x2": 10.95,
+      "y2": 0,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0,
+      "y1": -2.23,
+      "x2": 0,
+      "y2": -1.9,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 10.95,
+      "y1": -2.23,
+      "x2": 10.95,
+      "y2": -1.9,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "rect",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "width": 2.5,
+      "height": 3.5
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.75,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 10.95,
+      "y": 0,
+      "width": 2.5,
+      "height": 3.5,
+      "cornerRadius": 1.125
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 10.95,
+      "y": 0,
+      "radius": 0.75,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_TO_SOT_THT.pretty/TO-218-2_Horizontal_TabDown.kicad_mod",
+    "sourceFootprint": "TO-218-2_Horizontal_TabDown"
+  }
+}

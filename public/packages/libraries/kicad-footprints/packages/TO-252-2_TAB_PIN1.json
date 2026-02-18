@@ -1,0 +1,23 @@
+{
+  "name": "TO-252-2_TAB_PIN1",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 7,
+    "width": 12.65
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 252,
+    "widthOverLeads": 12.5,
+    "leadPitch": 3.6,
+    "leadWidth": 3.3,
+    "leadLength": 3.3
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_TO_SOT_SMD.pretty/TO-252-2_TabPin1.kicad_mod",
+    "sourceFootprint": "TO-252-2_TabPin1"
+  }
+}

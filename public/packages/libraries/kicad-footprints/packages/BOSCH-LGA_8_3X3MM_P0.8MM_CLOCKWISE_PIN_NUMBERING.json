@@ -1,0 +1,23 @@
+{
+  "name": "BOSCH-LGA_8_3X3MM_P0.8MM_CLOCKWISE_PIN_NUMBERING",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 3,
+    "width": 3
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 8,
+    "widthOverLeads": 2.925,
+    "leadPitch": 0.8,
+    "leadWidth": 0.5,
+    "leadLength": 0.525
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_LGA.pretty/Bosch_LGA-8_3x3mm_P0.8mm_ClockwisePinNumbering.kicad_mod",
+    "sourceFootprint": "Bosch_LGA-8_3x3mm_P0.8mm_ClockwisePinNumbering"
+  }
+}

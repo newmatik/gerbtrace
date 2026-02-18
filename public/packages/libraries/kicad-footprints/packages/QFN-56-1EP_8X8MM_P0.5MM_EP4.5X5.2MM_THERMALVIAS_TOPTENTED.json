@@ -1,0 +1,23 @@
+{
+  "name": "QFN-56-1EP_8X8MM_P0.5MM_EP4.5X5.2MM_THERMALVIAS_TOPTENTED",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 8,
+    "width": 8
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 56,
+    "widthOverLeads": 8.75,
+    "leadPitch": 0.5,
+    "leadWidth": 0.25,
+    "leadLength": 0.875
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_DFN_QFN.pretty/QFN-56-1EP_8x8mm_P0.5mm_EP4.5x5.2mm_ThermalVias_TopTented.kicad_mod",
+    "sourceFootprint": "QFN-56-1EP_8x8mm_P0.5mm_EP4.5x5.2mm_ThermalVias_TopTented"
+  }
+}

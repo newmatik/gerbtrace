@@ -1,0 +1,378 @@
+{
+  "name": "LEM-LTSR_NP",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 1.64,
+      "y": 6.35,
+      "width": 23.22,
+      "height": 16,
+      "cornerRadius": 1.28,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -9.46,
+      "y1": 10.65,
+      "x2": 12.74,
+      "y2": 10.65,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -8.46,
+      "y1": 1.35,
+      "x2": 11.74,
+      "y2": 1.35,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 12.85,
+      "y1": 10.76,
+      "x2": 12.85,
+      "y2": 2.35,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -9.57,
+      "y1": 10.76,
+      "x2": -9.57,
+      "y2": 2.36,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -9.46,
+      "y1": 10.65,
+      "x2": -9.46,
+      "y2": 2.35,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 12.74,
+      "y1": 10.65,
+      "x2": 12.74,
+      "y2": 2.35,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -9.57,
+      "y1": 10.76,
+      "x2": -1.57,
+      "y2": 10.76,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.46,
+      "y1": 11.35,
+      "x2": 6.54,
+      "y2": 11.35,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -8.45,
+      "y1": 1.24,
+      "x2": -1.22,
+      "y2": 1.24,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 6.65,
+      "y1": 10.76,
+      "x2": 12.85,
+      "y2": 10.76,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.93,
+      "y1": 1.24,
+      "x2": 11.74,
+      "y2": 1.24,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.92,
+      "y1": 11.46,
+      "x2": 6.65,
+      "y2": 11.46,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.57,
+      "y1": 11.46,
+      "x2": -0.85,
+      "y2": 11.46,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.57,
+      "y1": 11.46,
+      "x2": -1.57,
+      "y2": 10.76,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 6.65,
+      "y1": 11.46,
+      "x2": 6.65,
+      "y2": 10.76,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 6.54,
+      "y1": 11.35,
+      "x2": 6.54,
+      "y2": 10.65,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.46,
+      "y1": 11.35,
+      "x2": -1.46,
+      "y2": 10.65,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 2.54,
+      "y": 12.7,
+      "width": 1.9,
+      "height": 2.5,
+      "cornerRadius": 0.855
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 2.54,
+      "y": 12.7,
+      "radius": 0.65,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 0,
+      "y": 12.7,
+      "width": 1.9,
+      "height": 2.5,
+      "cornerRadius": 0.855
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 12.7,
+      "radius": 0.65,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 5.08,
+      "y": 12.7,
+      "width": 1.9,
+      "height": 2.5,
+      "cornerRadius": 0.855
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 5.08,
+      "y": 12.7,
+      "radius": 0.65,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 5.08,
+      "y": 0,
+      "width": 1.9,
+      "height": 2.5,
+      "cornerRadius": 0.855
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 5.08,
+      "y": 0,
+      "radius": 0.65,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "width": 1.9,
+      "height": 2.5,
+      "cornerRadius": 0.855
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.65,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 2.54,
+      "y": 0,
+      "width": 1.9,
+      "height": 2.5,
+      "cornerRadius": 0.855
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 2.54,
+      "y": 0,
+      "radius": 0.65,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": -7.62,
+      "y": 7.303,
+      "width": 1.6,
+      "height": 1.4,
+      "cornerRadius": 0.63
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -7.62,
+      "y": 7.303,
+      "radius": 0.4,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": -7.62,
+      "y": 5.398,
+      "width": 1.6,
+      "height": 1.4,
+      "cornerRadius": 0.63
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -7.62,
+      "y": 5.398,
+      "radius": 0.4,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": -7.62,
+      "y": 3.493,
+      "width": 1.6,
+      "height": 1.4,
+      "cornerRadius": 0.63
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -7.62,
+      "y": 3.493,
+      "radius": 0.4,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": -7.62,
+      "y": 9.208,
+      "width": 1.6,
+      "height": 1.4,
+      "cornerRadius": 0.63
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -7.62,
+      "y": 9.208,
+      "radius": 0.4,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Sensor_Current.pretty/LEM_LTSR-NP.kicad_mod",
+    "sourceFootprint": "LEM_LTSR-NP"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "LFPAK56",
+  "type": "PT_OUTLINE",
+  "body": {
+    "length": 5,
+    "width": 6
+  },
+  "outline": {
+    "length": 5,
+    "width": 6
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/LFPAK56.json",
+    "sourceFootprint": "LFPAK56"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "SUPER-SOT_6",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 2.6,
+    "width": 3.6
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 6,
+    "widthOverLeads": 3.6,
+    "leadPitch": 0.95,
+    "leadWidth": 0.7,
+    "leadLength": 1
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_TO_SOT_SMD.pretty/SuperSOT-6.kicad_mod",
+    "sourceFootprint": "SuperSOT-6"
+  }
+}

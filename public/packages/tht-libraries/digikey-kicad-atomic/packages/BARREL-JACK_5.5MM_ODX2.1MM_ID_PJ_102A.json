@@ -1,0 +1,202 @@
+{
+  "name": "BARREL-JACK_5.5MM_ODX2.1MM_ID_PJ_102A",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": -0.55,
+      "y": -3.4,
+      "width": 11.1,
+      "height": 15.6,
+      "cornerRadius": 0.888,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.5,
+      "y1": 3.7,
+      "x2": 4.5,
+      "y2": -10.7,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4.5,
+      "y1": 3.7,
+      "x2": -4.5,
+      "y2": -10.7,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4.5,
+      "y1": -10.7,
+      "x2": 4.5,
+      "y2": -10.7,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4.5,
+      "y1": 3.7,
+      "x2": 4.5,
+      "y2": 3.7,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.2,
+      "y1": -1.8,
+      "x2": 1.2,
+      "y2": -1.8,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.6,
+      "y1": -3.5,
+      "x2": 4.6,
+      "y2": -4.5,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4.6,
+      "y1": -3.5,
+      "x2": -4.6,
+      "y2": -4.5,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.6,
+      "y1": -10.8,
+      "x2": 4.6,
+      "y2": -10.3,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.6,
+      "y1": -10.8,
+      "x2": 4.1,
+      "y2": -10.8,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4.6,
+      "y1": -10.8,
+      "x2": -4.1,
+      "y2": -10.8,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4.6,
+      "y1": -10.8,
+      "x2": -4.6,
+      "y2": -10.3,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4.6,
+      "y1": 3.8,
+      "x2": -4.6,
+      "y2": 3.3,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4.6,
+      "y1": 3.8,
+      "x2": -4.1,
+      "y2": 3.8,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.6,
+      "y1": 3.8,
+      "x2": 4.6,
+      "y2": 3.3,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.6,
+      "y1": 3.8,
+      "x2": 4.1,
+      "y2": 3.8,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "rect",
+      "role": "pin",
+      "x": -4.7,
+      "y": 0,
+      "width": 2,
+      "height": 2.6
+    },
+    {
+      "kind": "rect",
+      "role": "pin1",
+      "x": 0,
+      "y": 3,
+      "width": 2.6,
+      "height": 2
+    },
+    {
+      "kind": "rect",
+      "role": "pin",
+      "x": 0,
+      "y": -3,
+      "width": 2.6,
+      "height": 2
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/Barrel_Jack_5.5mmODx2.1mmID_PJ-102A.kicad_mod",
+    "sourceFootprint": "Barrel_Jack_5.5mmODx2.1mmID_PJ-102A"
+  }
+}

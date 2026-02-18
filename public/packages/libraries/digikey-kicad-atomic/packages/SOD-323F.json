@@ -1,0 +1,21 @@
+{
+  "name": "SOD-323F",
+  "type": "PT_TWO_POLE",
+  "body": {
+    "length": 1.75,
+    "width": 0.5
+  },
+  "chip": {
+    "chipLength": 2.5,
+    "leadWidth": 0.3,
+    "leadLength": 0.4
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/SOD-323F.kicad_mod",
+    "sourceFootprint": "SOD-323F"
+  }
+}

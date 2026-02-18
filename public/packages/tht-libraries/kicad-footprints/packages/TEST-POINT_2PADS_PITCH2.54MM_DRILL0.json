@@ -1,0 +1,140 @@
+{
+  "name": "TEST-POINT_2PADS_PITCH2.54MM_DRILL0",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 1.27,
+      "y": 0,
+      "width": 5.4,
+      "height": 2.6,
+      "cornerRadius": 0.208,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.53,
+      "y1": -0.9,
+      "x2": 3.07,
+      "y2": -0.9,
+      "strokeWidth": 0.15,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.07,
+      "y1": 0.9,
+      "x2": -0.53,
+      "y2": 0.9,
+      "strokeWidth": 0.15,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.57,
+      "y1": -0.4,
+      "x2": 3.57,
+      "y2": 0.4,
+      "strokeWidth": 0.15,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.03,
+      "y1": 0.4,
+      "x2": -1.03,
+      "y2": -0.4,
+      "strokeWidth": 0.15,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.07,
+      "y1": -0.9,
+      "x2": 3.57,
+      "y2": -0.4,
+      "strokeWidth": 0.15,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.57,
+      "y1": 0.4,
+      "x2": 3.07,
+      "y2": 0.9,
+      "strokeWidth": 0.15,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.53,
+      "y1": 0.9,
+      "x2": -1.03,
+      "y2": 0.4,
+      "strokeWidth": 0.15,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.03,
+      "y1": -0.4,
+      "x2": -0.53,
+      "y2": -0.9,
+      "strokeWidth": 0.15,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "circle",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "radius": 0.7
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.4,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 2.54,
+      "y": 0,
+      "radius": 0.7
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 2.54,
+      "y": 0,
+      "radius": 0.4,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/TestPoint.pretty/TestPoint_2Pads_Pitch2.54mm_Drill0.8mm.kicad_mod",
+    "sourceFootprint": "TestPoint_2Pads_Pitch2.54mm_Drill0.8mm"
+  }
+}

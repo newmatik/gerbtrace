@@ -1,0 +1,77 @@
+{
+  "name": "SO-10",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 4.9,
+    "width": 3.9
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 10,
+    "widthOverLeads": 6,
+    "leadPitch": 1.27,
+    "leadWidth": 0.4,
+    "leadLength": 0.6
+  },
+  "aliases": [
+    "SO10",
+    "SOIC-10",
+    "SOIC10"
+  ],
+  "height": {
+    "nominal": 3.5,
+    "max": 3.675,
+    "min": 3.325
+  },
+  "searchArea": {
+    "x": 15.629,
+    "y": 15.629
+  },
+  "machine": {
+    "mountTools": [
+      "A23"
+    ],
+    "pickWaitTime": 50,
+    "placeWaitTime": 50,
+    "zMountForce": null,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "highest",
+      "y": "highest",
+      "tape": "highest",
+      "theta": "highest",
+      "z": "high",
+      "hydraTheta": "highest",
+      "hydraZ": "high"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false,
+    "markingPositions": [
+      {
+        "x": 0,
+        "y": 0,
+        "dotType": "DOT0.5mm"
+      }
+    ]
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/SO-10.json",
+    "sourceFootprint": "SO-10"
+  }
+}

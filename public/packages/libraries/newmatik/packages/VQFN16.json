@@ -1,0 +1,69 @@
+{
+  "name": "VQFN16",
+  "body": {
+    "length": 2.95,
+    "width": 2.95
+  },
+  "type": "PT_FOUR_SYM",
+  "fourSymmetric": {
+    "numberOfLeads": 16,
+    "widthOverLeads": 3,
+    "leadPitch": 0.5,
+    "leadWidth": 0.4,
+    "leadLength": 0.25
+  },
+  "height": {
+    "nominal": 1,
+    "max": 1.05,
+    "min": 0.95
+  },
+  "searchArea": {
+    "x": 3.47,
+    "y": 4
+  },
+  "machine": {
+    "mountTools": [
+      "A14"
+    ],
+    "pickWaitTime": 100,
+    "placeWaitTime": 100,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "high",
+      "y": "highest",
+      "tape": "high",
+      "theta": "highest",
+      "z": "high",
+      "hydraTheta": "low",
+      "hydraZ": "high"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "coplanarityCheck": false,
+    "markingPositions": [
+      {
+        "x": 0,
+        "y": 0,
+        "dotType": "DOT0.8mm"
+      }
+    ]
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/VQFN16.json",
+    "sourceFootprint": "VQFN16"
+  }
+}

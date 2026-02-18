@@ -1,0 +1,23 @@
+{
+  "name": "DFN-22-1EP_5X6MM_P0.5MM_EP3.14X4",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 6,
+    "width": 5
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 22,
+    "widthOverLeads": 5.77,
+    "leadPitch": 0.5,
+    "leadWidth": 0.28,
+    "leadLength": 0.98
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_DFN_QFN.pretty/DFN-22-1EP_5x6mm_P0.5mm_EP3.14x4.3mm.kicad_mod",
+    "sourceFootprint": "DFN-22-1EP_5x6mm_P0.5mm_EP3.14x4.3mm"
+  }
+}

@@ -1,0 +1,133 @@
+{
+  "name": "TO-46-2_PIN2CENTER",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 0.545,
+      "y": 0,
+      "width": 7.05,
+      "height": 5.6,
+      "cornerRadius": 0.448,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 1.27,
+      "y": 0,
+      "radius": 2.4,
+      "color": "#374151",
+      "strokeColor": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.58,
+      "y1": -0.6,
+      "x2": -2.58,
+      "y2": 0.75,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.48,
+      "y1": -0.5,
+      "x2": -2.48,
+      "y2": 0.65,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.58,
+      "y1": 0.75,
+      "x2": -1.68,
+      "y2": 0.75,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.68,
+      "y1": -0.6,
+      "x2": -2.58,
+      "y2": -0.6,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.58,
+      "y1": -0.5,
+      "x2": -2.48,
+      "y2": -0.5,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.48,
+      "y1": 0.65,
+      "x2": -1.58,
+      "y2": 0.65,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "width": 1.5,
+      "height": 1,
+      "cornerRadius": 0.45
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.35,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 1.27,
+      "y": 0,
+      "width": 1,
+      "height": 1,
+      "cornerRadius": 0.45
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 1.27,
+      "y": 0,
+      "radius": 0.3,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_TO_SOT_THT.pretty/TO-46-2_Pin2Center.kicad_mod",
+    "sourceFootprint": "TO-46-2_Pin2Center"
+  }
+}

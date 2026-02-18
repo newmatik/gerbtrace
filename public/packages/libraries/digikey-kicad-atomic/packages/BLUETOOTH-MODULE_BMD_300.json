@@ -1,0 +1,29 @@
+{
+  "name": "BLUETOOTH-MODULE_BMD_300",
+  "type": "PT_GENERIC",
+  "body": {
+    "length": 6.51,
+    "width": 6.51
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "GULLWING",
+        "numLeads": 47,
+        "distFromCenter": 0,
+        "ccHalf": 4.65,
+        "angleMilliDeg": 0,
+        "padLength": 0.5,
+        "padWidth": 0.5
+      }
+    ]
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/Bluetooth_Module_BMD-300.kicad_mod",
+    "sourceFootprint": "Bluetooth_Module_BMD-300"
+  }
+}

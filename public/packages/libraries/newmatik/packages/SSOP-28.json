@@ -1,0 +1,98 @@
+{
+  "name": "SSOP-28",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 10.2,
+    "width": 5.3
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 28,
+    "widthOverLeads": 6.9,
+    "leadPitch": 0.635,
+    "leadWidth": 0.3,
+    "leadLength": 0.5
+  },
+  "aliases": [
+    "SSOP28"
+  ],
+  "height": {
+    "nominal": 1.04,
+    "max": 1.092,
+    "min": 0.988
+  },
+  "searchArea": {
+    "x": 22.25,
+    "y": 11.79
+  },
+  "machine": {
+    "mountTools": [
+      "A23"
+    ],
+    "hydraTools": [
+      "H03"
+    ],
+    "pickWaitTime": 100,
+    "placeWaitTime": 100,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "lowest",
+      "y": "lowest",
+      "tape": "lowest",
+      "theta": "highest",
+      "z": "highest",
+      "hydraTheta": "low",
+      "hydraZ": "lowest"
+    },
+    "centering": [
+      {
+        "method": "mechanical",
+        "mechanical": {
+          "angle": 0,
+          "position": "POS_UPPER",
+          "force": "MIDDLE_FORCE"
+        },
+        "jaw": {
+          "nominal": 11.79,
+          "max": 13,
+          "min": 9
+        }
+      },
+      {
+        "method": "mechanical",
+        "mechanical": {
+          "angle": 90000,
+          "position": "POS_MIDDLE",
+          "force": "MIDDLE_FORCE"
+        },
+        "jaw": {
+          "nominal": 22.25,
+          "max": 24,
+          "min": 20
+        }
+      },
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "standard",
+      "linescan"
+    ],
+    "coplanarityCheck": false
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/SSOP-28.json",
+    "sourceFootprint": "SSOP-28"
+  }
+}

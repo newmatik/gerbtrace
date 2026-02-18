@@ -1,0 +1,23 @@
+{
+  "name": "TDSON-8-1",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 4.41,
+    "width": 6.65
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 8,
+    "widthOverLeads": 6.66,
+    "leadPitch": 1.27,
+    "leadWidth": 0.5,
+    "leadLength": 0.85
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_TO_SOT_SMD.pretty/TDSON-8-1.kicad_mod",
+    "sourceFootprint": "TDSON-8-1"
+  }
+}

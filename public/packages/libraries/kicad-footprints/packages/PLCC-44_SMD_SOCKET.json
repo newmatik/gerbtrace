@@ -1,0 +1,23 @@
+{
+  "name": "PLCC-44_SMD_SOCKET",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 17.65,
+    "width": 17.65
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 44,
+    "widthOverLeads": 17.65,
+    "leadPitch": 1.27,
+    "leadWidth": 0.7,
+    "leadLength": 1.925
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_LCC.pretty/PLCC-44_SMD-Socket.kicad_mod",
+    "sourceFootprint": "PLCC-44_SMD-Socket"
+  }
+}

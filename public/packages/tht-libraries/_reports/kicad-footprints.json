@@ -1,0 +1,735 @@
+{
+  "source": "kicad-footprints",
+  "parsed": 1916,
+  "emitted": 1908,
+  "skipped": [
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Rotary_Encoder.pretty/RotaryEncoder_Alps_EC11E-Switch_Vertical_H20mm_CircularMountingHoles.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Rotary_Encoder.pretty/RotaryEncoder_Alps_EC11E_Vertical_H20mm_CircularMountingHoles.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Rotary_Encoder.pretty/RotaryEncoder_Alps_EC12E-Switch_Vertical_H20mm_CircularMountingHoles.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Rotary_Encoder.pretty/RotaryEncoder_Alps_EC12E_Vertical_H20mm_CircularMountingHoles.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.1mm.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.2mm_M2.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.2mm_M2_DIN965.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.2mm_M2_DIN965_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.2mm_M2_DIN965_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.2mm_M2_DIN965_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.2mm_M2_ISO14580.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.2mm_M2_ISO14580_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.2mm_M2_ISO14580_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.2mm_M2_ISO14580_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.2mm_M2_ISO7380.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.2mm_M2_ISO7380_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.2mm_M2_ISO7380_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.2mm_M2_ISO7380_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.2mm_M2_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.2mm_M2_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.2mm_M2_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.2mm_M2_Pad_Via.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.5mm.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.5mm_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.5mm_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.5mm_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.5mm_Pad_Via.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.7mm.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.7mm_M2.5.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.7mm_M2.5_DIN965.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.7mm_M2.5_DIN965_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.7mm_M2.5_DIN965_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.7mm_M2.5_DIN965_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.7mm_M2.5_ISO14580.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.7mm_M2.5_ISO14580_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.7mm_M2.5_ISO14580_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.7mm_M2.5_ISO14580_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.7mm_M2.5_ISO7380.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.7mm_M2.5_ISO7380_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.7mm_M2.5_ISO7380_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.7mm_M2.5_ISO7380_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.7mm_M2.5_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.7mm_M2.5_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.7mm_M2.5_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.7mm_M2.5_Pad_Via.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.7mm_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.7mm_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.7mm_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2.7mm_Pad_Via.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_2mm.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_3.2mm_M3.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_3.2mm_M3_DIN965.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_3.2mm_M3_DIN965_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_3.2mm_M3_DIN965_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_3.2mm_M3_DIN965_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_3.2mm_M3_ISO14580.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_3.2mm_M3_ISO14580_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_3.2mm_M3_ISO14580_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_3.2mm_M3_ISO14580_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_3.2mm_M3_ISO7380.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_3.2mm_M3_ISO7380_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_3.2mm_M3_ISO7380_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_3.2mm_M3_ISO7380_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_3.2mm_M3_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_3.2mm_M3_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_3.2mm_M3_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_3.2mm_M3_Pad_Via.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_3.5mm.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_3.5mm_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_3.5mm_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_3.5mm_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_3.5mm_Pad_Via.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_3.7mm.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_3.7mm_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_3.7mm_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_3.7mm_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_3.7mm_Pad_Via.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_3mm.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_3mm_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_3mm_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_3mm_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_3mm_Pad_Via.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_4.3mm_M4.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_4.3mm_M4_DIN965.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_4.3mm_M4_DIN965_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_4.3mm_M4_DIN965_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_4.3mm_M4_DIN965_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_4.3mm_M4_ISO14580.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_4.3mm_M4_ISO14580_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_4.3mm_M4_ISO14580_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_4.3mm_M4_ISO14580_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_4.3mm_M4_ISO7380.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_4.3mm_M4_ISO7380_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_4.3mm_M4_ISO7380_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_4.3mm_M4_ISO7380_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_4.3mm_M4_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_4.3mm_M4_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_4.3mm_M4_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_4.3mm_M4_Pad_Via.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_4.3x6.2mm_M4_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_4.3x6.2mm_M4_Pad_Via.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_4.5mm.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_4.5mm_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_4.5mm_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_4.5mm_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_4.5mm_Pad_Via.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_4mm.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_4mm_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_4mm_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_4mm_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_4mm_Pad_Via.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_5.3mm_M5.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_5.3mm_M5_DIN965.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_5.3mm_M5_DIN965_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_5.3mm_M5_DIN965_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_5.3mm_M5_DIN965_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_5.3mm_M5_ISO14580.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_5.3mm_M5_ISO14580_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_5.3mm_M5_ISO14580_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_5.3mm_M5_ISO14580_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_5.3mm_M5_ISO7380.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_5.3mm_M5_ISO7380_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_5.3mm_M5_ISO7380_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_5.3mm_M5_ISO7380_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_5.3mm_M5_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_5.3mm_M5_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_5.3mm_M5_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_5.3mm_M5_Pad_Via.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_5.5mm.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_5.5mm_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_5.5mm_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_5.5mm_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_5.5mm_Pad_Via.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_5mm.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_5mm_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_5mm_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_5mm_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_5mm_Pad_Via.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_6.4mm_M6.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_6.4mm_M6_DIN965.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_6.4mm_M6_DIN965_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_6.4mm_M6_DIN965_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_6.4mm_M6_DIN965_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_6.4mm_M6_ISO14580.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_6.4mm_M6_ISO14580_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_6.4mm_M6_ISO14580_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_6.4mm_M6_ISO14580_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_6.4mm_M6_ISO7380.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_6.4mm_M6_ISO7380_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_6.4mm_M6_ISO7380_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_6.4mm_M6_ISO7380_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_6.4mm_M6_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_6.4mm_M6_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_6.4mm_M6_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_6.4mm_M6_Pad_Via.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_6.5mm.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_6.5mm_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_6.5mm_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_6.5mm_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_6.5mm_Pad_Via.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_6mm.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_6mm_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_6mm_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_6mm_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_6mm_Pad_Via.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_8.4mm_M8.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_8.4mm_M8_Pad.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_8.4mm_M8_Pad_TopBottom.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_8.4mm_M8_Pad_TopOnly.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/MountingHole.pretty/MountingHole_8.4mm_M8_Pad_Via.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Module.pretty/Adafruit_Feather_32u4_FONA_WithMountingHoles.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Module.pretty/Adafruit_Feather_32u4_RFM_WithMountingHoles.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Module.pretty/Adafruit_Feather_M0_RFM_WithMountingHoles.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Module.pretty/Adafruit_Feather_M0_Wifi_WithMountingHoles.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Module.pretty/Adafruit_Feather_WICED_WithMountingHoles.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Module.pretty/Adafruit_Feather_WithMountingHoles.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Module.pretty/Adafruit_HUZZAH_ESP8266_breakout_WithMountingHoles.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Module.pretty/Arduino_Nano_WithMountingHoles.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Module.pretty/Arduino_UNO_R2_WithMountingHoles.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Module.pretty/Arduino_UNO_R3_WithMountingHoles.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Module.pretty/Raspberry_Pi_Zero_Socketed_THT_FaceDown_MountingHoles.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    },
+    {
+      "file": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Module.pretty/ST_Morpho_Connector_144_STLink_MountingHoles.kicad_mod",
+      "reason": "mounting_hole_filtered"
+    }
+  ]
+}

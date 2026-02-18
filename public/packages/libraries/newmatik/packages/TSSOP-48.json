@@ -1,0 +1,69 @@
+{
+  "name": "TSSOP-48",
+  "type": "PT_TWO_SYM",
+  "aliases": [
+    "TSSOP48"
+  ],
+  "body": {
+    "length": 16.35,
+    "width": 7.8
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 48,
+    "widthOverLeads": 9.4,
+    "leadPitch": 0.65,
+    "leadWidth": 0.3,
+    "leadLength": 0.5
+  },
+  "height": {
+    "nominal": 1.1,
+    "max": 1.2,
+    "min": 1
+  },
+  "searchArea": {
+    "x": 9.7,
+    "y": 8.1
+  },
+  "machine": {
+    "mountTools": [
+      "A23"
+    ],
+    "pickWaitTime": 50,
+    "placeWaitTime": 50,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "high",
+      "y": "highest",
+      "tape": "highest",
+      "theta": "highest",
+      "z": "highest",
+      "hydraTheta": "high",
+      "hydraZ": "high"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "standard",
+      "linescan"
+    ],
+    "coplanarityCheck": false
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/TSSOP-48.json",
+    "sourceFootprint": "TSSOP-48"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "name": "PHOTOTRANSISTOR-SMD_4X2MM_TEMT6000X01",
+  "type": "PT_THREE_POLE",
+  "body": {
+    "length": 2,
+    "width": 4
+  },
+  "threePole": {
+    "widthOverLeads": 4.65,
+    "ccDistance": 0.95,
+    "leadWidth": 0.8,
+    "leadLength": 1.1
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/Phototransistor_SMD_4x2mm_TEMT6000X01.kicad_mod",
+    "sourceFootprint": "Phototransistor_SMD_4x2mm_TEMT6000X01"
+  }
+}

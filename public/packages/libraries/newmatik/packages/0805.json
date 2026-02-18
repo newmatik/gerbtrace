@@ -1,0 +1,385 @@
+{
+  "name": "0805",
+  "type": "PT_TWO_POLE",
+  "aliases": [
+    "C0805",
+    "CAP0805",
+    "CHIP-0805",
+    "L0805",
+    "R0805",
+    "RES0805"
+  ],
+  "body": {
+    "length": 2,
+    "width": 1.25
+  },
+  "chip": {
+    "chipLength": 2,
+    "leadWidth": 1.25,
+    "leadLength": 0.4
+  },
+  "height": {
+    "nominal": 1.4,
+    "max": 1.5,
+    "min": 1.3
+  },
+  "searchArea": {
+    "x": 1.901,
+    "y": 1.247
+  },
+  "machine": {
+    "mountTools": [
+      "A12"
+    ],
+    "hydraTools": [
+      "H02"
+    ],
+    "pickWaitTime": 100,
+    "placeWaitTime": 100,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "high",
+      "y": "high",
+      "tape": "high",
+      "theta": "highest",
+      "z": "high",
+      "hydraTheta": "high",
+      "hydraZ": "low"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL",
+          "HYDRA_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan",
+      "hydra"
+    ],
+    "coplanarityCheck": false,
+    "markingPositions": [
+      {
+        "x": 0,
+        "y": 0,
+        "dotType": "DOT0.5mm"
+      }
+    ]
+  },
+  "variations": [
+    {
+      "id": "02",
+      "label": "H0.2",
+      "height": {
+        "nominal": 0.2,
+        "max": 0.21,
+        "min": 0.19
+      }
+    },
+    {
+      "id": "04",
+      "label": "H0.4",
+      "height": {
+        "nominal": 0.4,
+        "max": 0.44,
+        "min": 0.36
+      }
+    },
+    {
+      "id": "05",
+      "label": "H0.5",
+      "height": {
+        "nominal": 0.5,
+        "max": 0.55,
+        "min": 0.45
+      }
+    },
+    {
+      "id": "06",
+      "label": "H0.6",
+      "height": {
+        "nominal": 0.6,
+        "max": 0.66,
+        "min": 0.54
+      }
+    },
+    {
+      "id": "06",
+      "label": "H0.6",
+      "height": {
+        "nominal": 0.6,
+        "max": 0.66,
+        "min": 0.54
+      }
+    },
+    {
+      "id": "06",
+      "label": "H0.6",
+      "height": {
+        "nominal": 0.6,
+        "max": 0.66,
+        "min": 0.54
+      }
+    },
+    {
+      "id": "06",
+      "label": "H0.6",
+      "height": {
+        "nominal": 0.6,
+        "max": 0.66,
+        "min": 0.54
+      }
+    },
+    {
+      "id": "07",
+      "label": "H0.7",
+      "height": {
+        "nominal": 0.7,
+        "max": 0.77,
+        "min": 0.63
+      }
+    },
+    {
+      "id": "08",
+      "label": "H0.8",
+      "height": {
+        "nominal": 0.8,
+        "max": 0.88,
+        "min": 0.72
+      }
+    },
+    {
+      "id": "09",
+      "label": "H0.9",
+      "height": {
+        "nominal": 0.9,
+        "max": 0.99,
+        "min": 0.81
+      }
+    },
+    {
+      "id": "slow",
+      "label": "Slow (no Hydra)",
+      "height": {
+        "nominal": 0.9,
+        "max": 0.99,
+        "min": 0.81
+      },
+      "machine": {
+        "centering": [
+          {
+            "method": "optical",
+            "tools": [
+              "Z_TOOL"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "09",
+      "label": "H0.9",
+      "height": {
+        "nominal": 0.9,
+        "max": 0.99,
+        "min": 0.81
+      }
+    },
+    {
+      "id": "10",
+      "label": "H1.0",
+      "height": {
+        "nominal": 1,
+        "max": 1.1,
+        "min": 0.9
+      }
+    },
+    {
+      "id": "10",
+      "label": "H1.0",
+      "height": {
+        "nominal": 1,
+        "max": 1.1,
+        "min": 0.9
+      }
+    },
+    {
+      "id": "11",
+      "label": "H1.1",
+      "height": {
+        "nominal": 1.1,
+        "max": 1.2,
+        "min": 1
+      }
+    },
+    {
+      "id": "12",
+      "label": "H1.2",
+      "height": {
+        "nominal": 1.2,
+        "max": 1.26,
+        "min": 1.14
+      }
+    },
+    {
+      "id": "12",
+      "label": "H1.2",
+      "height": {
+        "nominal": 1.2,
+        "max": 1.26,
+        "min": 1.14
+      }
+    },
+    {
+      "id": "12",
+      "label": "H1.2",
+      "height": {
+        "nominal": 1.2,
+        "max": 1.26,
+        "min": 1.14
+      }
+    },
+    {
+      "id": "12",
+      "label": "H1.2",
+      "height": {
+        "nominal": 1.2,
+        "max": 1.3,
+        "min": 1.1
+      }
+    },
+    {
+      "id": "13",
+      "label": "H1.3",
+      "height": {
+        "nominal": 1.3,
+        "max": 1.365,
+        "min": 1.235
+      }
+    },
+    {
+      "id": "13",
+      "label": "H1.3",
+      "height": {
+        "nominal": 1.3,
+        "max": 1.365,
+        "min": 1.235
+      }
+    },
+    {
+      "id": "13",
+      "label": "H1.3",
+      "height": {
+        "nominal": 1.3,
+        "max": 1.365,
+        "min": 1.235
+      }
+    },
+    {
+      "id": "14",
+      "label": "H1.4",
+      "height": {
+        "nominal": 1.4,
+        "max": 1.49,
+        "min": 1.31
+      }
+    },
+    {
+      "id": "14",
+      "label": "H1.4",
+      "height": {
+        "nominal": 1.4,
+        "max": 1.49,
+        "min": 1.31
+      }
+    },
+    {
+      "id": "14",
+      "label": "H1.4",
+      "height": {
+        "nominal": 1.4,
+        "max": 1.49,
+        "min": 1.31
+      }
+    },
+    {
+      "id": "slow",
+      "label": "Slow (no Hydra)",
+      "height": {
+        "nominal": 1.4,
+        "max": 1.49,
+        "min": 1.31
+      },
+      "machine": {
+        "centering": [
+          {
+            "method": "optical",
+            "tools": [
+              "Z_TOOL"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "14",
+      "label": "H1.4",
+      "height": {
+        "nominal": 1.4,
+        "max": 1.49,
+        "min": 1.31
+      }
+    },
+    {
+      "id": "15",
+      "label": "H1.5",
+      "height": {
+        "nominal": 1.5,
+        "max": 1.575,
+        "min": 1.425
+      }
+    },
+    {
+      "id": "slow",
+      "label": "Slow (no Hydra)",
+      "height": {
+        "nominal": 1.6,
+        "max": 1.68,
+        "min": 1.52
+      },
+      "machine": {
+        "centering": [
+          {
+            "method": "optical",
+            "tools": [
+              "Z_TOOL"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "16",
+      "label": "H1.6",
+      "height": {
+        "nominal": 1.6,
+        "max": 1.68,
+        "min": 1.52
+      }
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/0805.json",
+    "sourceFootprint": "0805"
+  }
+}

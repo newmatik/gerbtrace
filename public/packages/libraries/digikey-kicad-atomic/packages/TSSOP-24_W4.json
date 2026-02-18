@@ -1,0 +1,23 @@
+{
+  "name": "TSSOP-24_W4",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 7.45,
+    "width": 7.2
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 24,
+    "widthOverLeads": 7.2,
+    "leadPitch": 0.65,
+    "leadWidth": 0.3,
+    "leadLength": 1.6
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/TSSOP-24_W4.40mm.kicad_mod",
+    "sourceFootprint": "TSSOP-24_W4.40mm"
+  }
+}

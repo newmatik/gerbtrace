@@ -1,0 +1,84 @@
+{
+  "name": "SOT-89",
+  "type": "PT_THREE_POLE",
+  "body": {
+    "length": 4.5,
+    "width": 2.5
+  },
+  "threePole": {
+    "widthOverLeads": 3.6,
+    "ccDistance": 3,
+    "leadWidth": 0.35,
+    "leadLength": 0.35
+  },
+  "aliases": [
+    "SOT89"
+  ],
+  "height": {
+    "nominal": 1.5,
+    "max": 1.6,
+    "min": 1.4
+  },
+  "searchArea": {
+    "x": 3.351,
+    "y": 4.197
+  },
+  "machine": {
+    "mountTools": [
+      "A13"
+    ],
+    "hydraTools": [
+      "H03"
+    ],
+    "pickWaitTime": 60,
+    "placeWaitTime": 60,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "low",
+      "y": "highest",
+      "tape": "highest",
+      "theta": "highest",
+      "z": "highest",
+      "hydraTheta": "low",
+      "hydraZ": "high"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL",
+          "HYDRA_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan",
+      "hydra"
+    ],
+    "coplanarityCheck": false,
+    "markingPositions": [
+      {
+        "x": 1,
+        "y": 0,
+        "dotType": "DOT0.8mm"
+      },
+      {
+        "x": -1,
+        "y": 0,
+        "dotType": "DOT0.8mm"
+      }
+    ]
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/SOT-89.json",
+    "sourceFootprint": "SOT-89"
+  }
+}

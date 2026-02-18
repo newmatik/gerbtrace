@@ -1,0 +1,26 @@
+{
+  "name": "uBGA-48",
+  "type": "PT_BGA",
+  "aliases": [
+    "uBGA48"
+  ],
+  "body": {
+    "length": 5.5,
+    "width": 5.5
+  },
+  "bga": {
+    "leadsPerRow": 8,
+    "leadsPerColumn": 6,
+    "leadPitch": 0.5,
+    "leadDiameter": 0.27,
+    "leadsPerRowInHole": 0,
+    "leadsPerColumnInHole": 0
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/uBGA-48.json",
+    "sourceFootprint": "uBGA-48"
+  }
+}

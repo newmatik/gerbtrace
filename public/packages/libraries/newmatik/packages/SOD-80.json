@@ -1,0 +1,70 @@
+{
+  "name": "SOD-80",
+  "type": "PT_TWO_POLE",
+  "body": {
+    "length": 5.9,
+    "width": 2.2
+  },
+  "chip": {
+    "chipLength": 5.9,
+    "leadWidth": 2.2,
+    "leadLength": 0.3
+  },
+  "aliases": [
+    "SOD80"
+  ],
+  "height": {
+    "nominal": 1.41,
+    "max": 1.481,
+    "min": 1.339
+  },
+  "searchArea": {
+    "x": 3.407,
+    "y": 1.063
+  },
+  "machine": {
+    "mountTools": [
+      "A34"
+    ],
+    "hydraTools": [
+      "H04"
+    ],
+    "pickWaitTime": 100,
+    "placeWaitTime": 100,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "high",
+      "y": "high",
+      "tape": "highest",
+      "theta": "high",
+      "z": "highest",
+      "hydraTheta": "high",
+      "hydraZ": "high"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL",
+          "HYDRA_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/SOD-80.json",
+    "sourceFootprint": "SOD-80"
+  }
+}

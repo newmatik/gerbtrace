@@ -1,0 +1,281 @@
+{
+  "name": "LED-D1.8MM_W1.8MM_H2.4MM_HORIZONTAL_O3.81MM_Z4",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 1.27,
+      "y": 2.985,
+      "width": 5.14,
+      "height": 8.57,
+      "cornerRadius": 0.411,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0,
+      "y1": 0,
+      "x2": 0,
+      "y2": 3.81,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 2.54,
+      "y1": 0,
+      "x2": 2.54,
+      "y2": 3.81,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.44,
+      "y1": 5.47,
+      "x2": 2.98,
+      "y2": 5.47,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 2.98,
+      "y1": 3.75,
+      "x2": -0.44,
+      "y2": 3.75,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.38,
+      "y1": 5.41,
+      "x2": 2.92,
+      "y2": 5.41,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 2.92,
+      "y1": 3.81,
+      "x2": -0.38,
+      "y2": 3.81,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0,
+      "y1": 1.08,
+      "x2": 0,
+      "y2": 3.75,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 2.54,
+      "y1": 1.08,
+      "x2": 2.54,
+      "y2": 3.75,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.31,
+      "y1": 6.87,
+      "x2": 2.23,
+      "y2": 6.87,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 2.23,
+      "y1": 5.47,
+      "x2": 0.31,
+      "y2": 5.47,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.37,
+      "y1": 6.81,
+      "x2": 2.17,
+      "y2": 6.81,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 2.17,
+      "y1": 5.41,
+      "x2": 0.37,
+      "y2": 5.41,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.44,
+      "y1": 3.75,
+      "x2": -0.44,
+      "y2": 5.47,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 2.98,
+      "y1": 5.47,
+      "x2": 2.98,
+      "y2": 3.75,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.32,
+      "y1": 3.75,
+      "x2": -0.32,
+      "y2": 5.47,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.2,
+      "y1": 3.75,
+      "x2": -0.2,
+      "y2": 5.47,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.38,
+      "y1": 3.81,
+      "x2": -0.38,
+      "y2": 5.41,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 2.92,
+      "y1": 5.41,
+      "x2": 2.92,
+      "y2": 3.81,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.31,
+      "y1": 5.47,
+      "x2": 0.31,
+      "y2": 6.87,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 2.23,
+      "y1": 6.87,
+      "x2": 2.23,
+      "y2": 5.47,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.37,
+      "y1": 5.41,
+      "x2": 0.37,
+      "y2": 6.81,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 2.17,
+      "y1": 6.81,
+      "x2": 2.17,
+      "y2": 5.41,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "rect",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "width": 1.8,
+      "height": 1.8
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.45,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 2.54,
+      "y": 0,
+      "radius": 0.9
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 2.54,
+      "y": 0,
+      "radius": 0.45,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/LED_THT.pretty/LED_D1.8mm_W1.8mm_H2.4mm_Horizontal_O3.81mm_Z4.9mm.kicad_mod",
+    "sourceFootprint": "LED_D1.8mm_W1.8mm_H2.4mm_Horizontal_O3.81mm_Z4.9mm"
+  }
+}

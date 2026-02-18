@@ -1,0 +1,220 @@
+{
+  "name": "R-LDR_5.2X5.2MM_P3.5MM_HORIZONTAL",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 1.75,
+      "y": -0.11,
+      "width": 6.4,
+      "height": 2.62,
+      "cornerRadius": 0.21,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1,
+      "y1": -0.75,
+      "x2": 4.5,
+      "y2": -0.75,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.5,
+      "y1": -0.35,
+      "x2": -1,
+      "y2": -0.35,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 2.86,
+      "y1": -0.8,
+      "x2": 0.64,
+      "y2": -0.8,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.85,
+      "y1": -0.3,
+      "x2": 2.6,
+      "y2": -0.3,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.5,
+      "y1": 0,
+      "x2": 3.5,
+      "y2": -0.9,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0,
+      "y1": 0,
+      "x2": 0,
+      "y2": -0.9,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.55,
+      "y1": -0.3,
+      "x2": 4.55,
+      "y2": -0.8,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.05,
+      "y1": -0.8,
+      "x2": -1.05,
+      "y2": -0.3,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.55,
+      "y1": -0.8,
+      "x2": 4.14,
+      "y2": -0.8,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.64,
+      "y1": -0.8,
+      "x2": -1.05,
+      "y2": -0.8,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.5,
+      "y1": -0.75,
+      "x2": 4.5,
+      "y2": -0.35,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1,
+      "y1": -0.35,
+      "x2": -1,
+      "y2": -0.75,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.4,
+      "y1": -1.02,
+      "x2": 3.65,
+      "y2": -1.02,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.15,
+      "y1": -1.02,
+      "x2": 0.1,
+      "y2": -1.02,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.35,
+      "y1": -0.3,
+      "x2": 4.55,
+      "y2": -0.3,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.05,
+      "y1": -0.3,
+      "x2": -0.85,
+      "y2": -0.3,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "circle",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "radius": 0.8
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.4,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 3.5,
+      "y": 0,
+      "radius": 0.8
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 3.5,
+      "y": 0,
+      "radius": 0.4,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/OptoDevice.pretty/R_LDR_5.2x5.2mm_P3.5mm_Horizontal.kicad_mod",
+    "sourceFootprint": "R_LDR_5.2x5.2mm_P3.5mm_Horizontal"
+  }
+}

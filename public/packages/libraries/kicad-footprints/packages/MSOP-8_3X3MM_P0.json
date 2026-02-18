@@ -1,0 +1,23 @@
+{
+  "name": "MSOP-8_3X3MM_P0",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 3,
+    "width": 3
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 8,
+    "widthOverLeads": 5.85,
+    "leadPitch": 0.65,
+    "leadWidth": 0.4,
+    "leadLength": 1.625
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_SO.pretty/MSOP-8_3x3mm_P0.65mm.kicad_mod",
+    "sourceFootprint": "MSOP-8_3x3mm_P0.65mm"
+  }
+}

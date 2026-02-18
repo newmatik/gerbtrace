@@ -3,27 +3,22 @@
     <!-- Mount Precision -->
     <fieldset class="space-y-3 rounded-lg border border-neutral-200 p-3 dark:border-neutral-700">
       <legend class="px-1 text-xs font-semibold text-neutral-500 dark:text-neutral-400">Mount Precision</legend>
-      <div class="flex items-center gap-4">
-        <label v-for="opt in precisionOptions" :key="opt" class="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-          <input
-            type="radio"
-            name="mountPrecision"
-            :value="opt"
-            :checked="machine.mountPrecision === opt"
-            :disabled="isReadonly"
-            @change="updateMachine({ mountPrecision: opt })"
-          >
-          {{ opt.charAt(0).toUpperCase() + opt.slice(1) }}
-        </label>
-      </div>
+      <USelect
+        :model-value="machine.mountPrecision ?? 'normal'"
+        size="sm"
+        :items="mountPrecisionItems"
+        value-key="value"
+        label-key="label"
+        :disabled="isReadonly"
+        @update:model-value="updateMachine({ mountPrecision: String($event) as MachineSettings['mountPrecision'] })"
+      />
       <label class="flex items-center gap-2 text-[11px] text-neutral-400">
-        <input
-          type="checkbox"
-          :checked="machine.hydraFinePitch ?? false"
+        <USwitch
+          :model-value="machine.hydraFinePitch ?? false"
+          size="sm"
           :disabled="isReadonly"
-          class="rounded"
-          @change="updateMachine({ hydraFinePitch: ($event.target as HTMLInputElement).checked })"
-        >
+          @update:model-value="updateMachine({ hydraFinePitch: !!$event })"
+        />
         HYDRA fine pitch
       </label>
     </fieldset>
@@ -65,13 +60,12 @@
         </div>
         <div class="flex items-end pb-1">
           <label class="flex items-center gap-2 text-[11px] text-neutral-400">
-            <input
-              type="checkbox"
-              :checked="machine.motionPicking?.downSpeedAuto ?? false"
+            <USwitch
+              :model-value="machine.motionPicking?.downSpeedAuto ?? false"
+              size="sm"
               :disabled="isReadonly"
-              class="rounded"
-              @change="updateMachine({ motionPicking: { ...machine.motionPicking, downSpeedAuto: ($event.target as HTMLInputElement).checked } })"
-            >
+              @update:model-value="updateMachine({ motionPicking: { ...machine.motionPicking, downSpeedAuto: !!$event } })"
+            />
             Auto
           </label>
         </div>
@@ -119,13 +113,12 @@
         </div>
       </div>
       <label class="flex items-center gap-2 text-[11px] text-neutral-400">
-        <input
-          type="checkbox"
-          :checked="machine.motionPlacing?.downSpeedAuto ?? false"
+        <USwitch
+          :model-value="machine.motionPlacing?.downSpeedAuto ?? false"
+          size="sm"
           :disabled="isReadonly"
-          class="rounded"
-          @change="updateMachine({ motionPlacing: { ...machine.motionPlacing, downSpeedAuto: ($event.target as HTMLInputElement).checked } })"
-        >
+          @update:model-value="updateMachine({ motionPlacing: { ...machine.motionPlacing, downSpeedAuto: !!$event } })"
+        />
         Auto downward speed
       </label>
     </fieldset>
@@ -142,6 +135,10 @@ const machine = computed(() => form.value.machine ?? {})
 const accels = computed(() => machine.value.accelerations ?? {})
 
 const precisionOptions = ['low', 'normal', 'high'] as const
+const mountPrecisionItems = precisionOptions.map((opt) => ({
+  value: opt,
+  label: opt.charAt(0).toUpperCase() + opt.slice(1),
+}))
 
 type AccAxisKey = 'x' | 'y' | 'tape' | 'theta' | 'z' | 'hydraTheta' | 'hydraZ'
 

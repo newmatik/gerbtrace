@@ -1,0 +1,29 @@
+{
+  "name": "LLGA-10_2.5X2.5MM_LPS25HB",
+  "type": "PT_GENERIC",
+  "body": {
+    "length": 1.848,
+    "width": 1.848
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "GULLWING",
+        "numLeads": 10,
+        "distFromCenter": 0,
+        "ccHalf": 1.32,
+        "angleMilliDeg": 0,
+        "padLength": 0.588,
+        "padWidth": 0.56
+      }
+    ]
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/LLGA-10_2.5x2.5mm_LPS25HB.kicad_mod",
+    "sourceFootprint": "LLGA-10_2.5x2.5mm_LPS25HB"
+  }
+}

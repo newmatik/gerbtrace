@@ -1,0 +1,246 @@
+{
+  "name": "HEADPHONE-JACK_6.35MM_RA49B14B",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 7.315,
+      "y": -0.006,
+      "width": 35.03,
+      "height": 16.637,
+      "cornerRadius": 1.331,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -9.66,
+      "y1": 7.81,
+      "x2": 24.43,
+      "y2": 7.81,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -9.66,
+      "y1": -7.81,
+      "x2": 24.43,
+      "y2": -7.81,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 17.98,
+      "y1": -7.81,
+      "x2": 17.98,
+      "y2": 7.81,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -9.66,
+      "y1": -7.81,
+      "x2": -9.66,
+      "y2": 7.81,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 24.43,
+      "y1": -7.81,
+      "x2": 24.43,
+      "y2": 7.81,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -8.875,
+      "y1": -7.925,
+      "x2": -9.775,
+      "y2": -7.925,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -9.775,
+      "y1": -7.925,
+      "x2": -9.775,
+      "y2": -7.25,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -9.8,
+      "y1": 7.9,
+      "x2": -9.3,
+      "y2": 7.9,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -9.8,
+      "y1": 7.9,
+      "x2": -9.8,
+      "y2": 7.4,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 18.09586,
+      "y1": 7.4123,
+      "x2": 18.09586,
+      "y2": 7.9123,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 18.09586,
+      "y1": 7.9123,
+      "x2": 17.62086,
+      "y2": 7.9123,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 17.6107,
+      "y1": -7.91738,
+      "x2": 18.0857,
+      "y2": -7.91738,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 18.0857,
+      "y1": -7.91738,
+      "x2": 18.0857,
+      "y2": -7.54238,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 12.7,
+      "y": -4.955,
+      "radius": 1.5
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 12.7,
+      "y": -4.955,
+      "radius": 1.04,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 5.08,
+      "y": -4.955,
+      "radius": 1.5
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 5.08,
+      "y": -4.955,
+      "radius": 1.04,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -5.08,
+      "y": -4.955,
+      "radius": 1.5
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -5.08,
+      "y": -4.955,
+      "radius": 1.04,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -5.08,
+      "y": 4.955,
+      "radius": 1.5
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -5.08,
+      "y": 4.955,
+      "radius": 1.04,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 5.08,
+      "y": 4.955,
+      "radius": 1.5
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 5.08,
+      "y": 4.955,
+      "radius": 1.04,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "polarity-marker",
+      "x": 11.35,
+      "y": -3.605,
+      "radius": 0.75,
+      "color": "#ef4444"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/Headphone_Jack_6.35mm_RA49B14B.kicad_mod",
+    "sourceFootprint": "Headphone_Jack_6.35mm_RA49B14B"
+  }
+}

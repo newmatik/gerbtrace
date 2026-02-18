@@ -1,0 +1,23 @@
+{
+  "name": "TEXAS-S_PWSON_N10_THERMALVIAS",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 3.8,
+    "width": 3.55
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 42,
+    "widthOverLeads": 3.45,
+    "leadPitch": 0.4,
+    "leadWidth": 0.28,
+    "leadLength": 0.6
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_SON.pretty/Texas_S-PWSON-N10_ThermalVias.kicad_mod",
+    "sourceFootprint": "Texas_S-PWSON-N10_ThermalVias"
+  }
+}

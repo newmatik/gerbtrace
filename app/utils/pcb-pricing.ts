@@ -12,6 +12,7 @@
 
 export type SurfaceFinish = 'ENIG' | 'HAL'
 export type CopperWeight = '1oz' | '2oz'
+export type PcbThicknessMm = 0.6 | 0.8 | 1.0 | 1.2 | 1.6 | 2.0
 
 export interface PcbParams {
   sizeX: number        // mm
@@ -19,6 +20,8 @@ export interface PcbParams {
   layerCount: number   // 1, 2, 4, 6, 8, 10
   surfaceFinish: SurfaceFinish
   copperWeight: CopperWeight
+  /** Standard board thickness in mm (recommendation-only in v1). */
+  thicknessMm?: PcbThicknessMm
 }
 
 export interface PriceTier {
@@ -201,4 +204,14 @@ export const SURFACE_FINISH_OPTIONS: { value: SurfaceFinish; label: string }[] =
 export const COPPER_WEIGHT_OPTIONS: { value: CopperWeight; label: string }[] = [
   { value: '1oz', label: '1 oz (35 µm)' },
   { value: '2oz', label: '2 oz (70 µm)' },
+]
+
+/** Available standard board thickness options in mm */
+export const PCB_THICKNESS_OPTIONS: { value: PcbThicknessMm; label: string }[] = [
+  { value: 0.6, label: '0.6 mm' },
+  { value: 0.8, label: '0.8 mm' },
+  { value: 1.0, label: '1.0 mm' },
+  { value: 1.2, label: '1.2 mm' },
+  { value: 1.6, label: '1.6 mm (standard)' },
+  { value: 2.0, label: '2.0 mm' },
 ]

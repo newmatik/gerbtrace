@@ -1,0 +1,218 @@
+{
+  "name": "R-AXIAL_SHUNT_L47.6MM_W12.7MM_PS34.93MM_P50",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 25.4,
+      "y": 0,
+      "width": 54.6,
+      "height": 13.74,
+      "cornerRadius": 1.099,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 1.48,
+      "y1": -6.47,
+      "x2": 49.32,
+      "y2": -6.47,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 1.48,
+      "y1": 6.47,
+      "x2": 49.32,
+      "y2": 6.47,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 1.6,
+      "y1": 6.35,
+      "x2": 49.2,
+      "y2": 6.35,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 49.2,
+      "y1": -6.35,
+      "x2": 1.6,
+      "y2": -6.35,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 1.6,
+      "y1": -6.35,
+      "x2": 1.6,
+      "y2": 6.35,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 49.2,
+      "y1": 6.35,
+      "x2": 49.2,
+      "y2": -6.35,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 1.48,
+      "y1": -1.74,
+      "x2": 1.48,
+      "y2": -6.47,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 49.32,
+      "y1": -6.47,
+      "x2": 49.32,
+      "y2": -1.74,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 1.48,
+      "y1": 1.74,
+      "x2": 1.48,
+      "y2": 6.47,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 49.32,
+      "y1": 6.47,
+      "x2": 49.32,
+      "y2": 1.74,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0,
+      "y1": 0,
+      "x2": 1.6,
+      "y2": 0,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 50.8,
+      "y1": 0,
+      "x2": 49.2,
+      "y2": 0,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "circle",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "radius": 1.5
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.75,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 7.935,
+      "y": 0,
+      "width": 3,
+      "height": 3,
+      "cornerRadius": 1.35
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 7.935,
+      "y": 0,
+      "radius": 0.75,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 42.865,
+      "y": 0,
+      "width": 3,
+      "height": 3,
+      "cornerRadius": 1.35
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 42.865,
+      "y": 0,
+      "radius": 0.75,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 50.8,
+      "y": 0,
+      "width": 3,
+      "height": 3,
+      "cornerRadius": 1.35
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 50.8,
+      "y": 0,
+      "radius": 0.75,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Resistor_THT.pretty/R_Axial_Shunt_L47.6mm_W12.7mm_PS34.93mm_P50.80mm.kicad_mod",
+    "sourceFootprint": "R_Axial_Shunt_L47.6mm_W12.7mm_PS34.93mm_P50.80mm"
+  }
+}

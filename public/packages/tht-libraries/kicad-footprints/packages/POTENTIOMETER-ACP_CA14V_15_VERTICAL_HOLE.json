@@ -1,0 +1,186 @@
+{
+  "name": "POTENTIOMETER-ACP_CA14V_15_VERTICAL_HOLE",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 7.5,
+      "y": -5,
+      "width": 18.14,
+      "height": 15.04,
+      "cornerRadius": 1.203,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.38,
+      "y1": -12.12,
+      "x2": 14.62,
+      "y2": -12.12,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.38,
+      "y1": 2.12,
+      "x2": 14.62,
+      "y2": 2.12,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.5,
+      "y1": -12,
+      "x2": 0.5,
+      "y2": 2,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.5,
+      "y1": 2,
+      "x2": 14.5,
+      "y2": 2,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 14.5,
+      "y1": 2,
+      "x2": 14.5,
+      "y2": -12,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 14.5,
+      "y1": -12,
+      "x2": 0.5,
+      "y2": -12,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.38,
+      "y1": -8.574,
+      "x2": 0.38,
+      "y2": -1.425,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 14.62,
+      "y1": -3.575,
+      "x2": 14.62,
+      "y2": 2.12,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 14.62,
+      "y1": -12.12,
+      "x2": 14.62,
+      "y2": -6.425,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.38,
+      "y1": 1.425,
+      "x2": 0.38,
+      "y2": 2.12,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.38,
+      "y1": -12.12,
+      "x2": 0.38,
+      "y2": -11.426,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 0,
+      "y": -10,
+      "radius": 1.17
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": -10,
+      "radius": 0.65,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 15,
+      "y": -5,
+      "radius": 1.17
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 15,
+      "y": -5,
+      "radius": 0.65,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "radius": 1.17
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.65,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Potentiometer_THT.pretty/Potentiometer_ACP_CA14V-15_Vertical_Hole.kicad_mod",
+    "sourceFootprint": "Potentiometer_ACP_CA14V-15_Vertical_Hole"
+  }
+}

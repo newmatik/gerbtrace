@@ -299,6 +299,7 @@
             PCB
           </button>
           <button
+            v-if="isPanelizedMode"
             class="text-[11px] font-medium px-2 py-0.5 rounded transition-colors"
             :class="sidebarTab === 'panel'
               ? 'bg-neutral-200/80 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100'
@@ -422,6 +423,8 @@
           @update:group-meta="updateGroupMeta($event)"
           @toggle:group-hidden="toggleGroupHidden($event)"
           @toggle:group-collapsed="toggleGroupCollapsed($event)"
+          @delete:group="deleteGroup($event, 'smd')"
+          @reorder:groups="reorderGroups('smd', $event)"
           @assign:group="assignComponentGroup($event, 'smd')"
           @select="pnp.selectComponent($event)"
           @start-set-origin="startSetOrigin"
@@ -429,6 +432,7 @@
           @reset-origin="pnp.resetOrigin()"
           @edit="openComponentEdit($event)"
           @add-component="startAddComponent('smd')"
+          @preview:package="previewPkgOverride = $event"
         />
 
         <!-- THT Components view -->
@@ -467,6 +471,8 @@
           @update:group-meta="updateGroupMeta($event)"
           @toggle:group-hidden="toggleGroupHidden($event)"
           @toggle:group-collapsed="toggleGroupCollapsed($event)"
+          @delete:group="deleteGroup($event, 'tht')"
+          @reorder:groups="reorderGroups('tht', $event)"
           @assign:group="assignComponentGroup($event, 'tht')"
           @select="pnp.selectComponent($event)"
           @start-set-origin="startSetOrigin"
@@ -474,6 +480,7 @@
           @reset-origin="pnp.resetOrigin()"
           @edit="openComponentEdit($event)"
           @add-component="startAddComponent('tht')"
+          @preview:package="previewPkgOverride = $event"
         />
 
         <!-- BOM view -->
@@ -506,9 +513,7 @@
           :detected-layer-count="detectedLayerCount"
           :layers="layers"
           :edited-layers="editedLayers"
-          :selected-preset="selectedPreset"
           @update:pcb-data="handlePcbDataUpdate"
-          @select-preset="selectedPreset = $event"
           @toggle-visibility="toggleLayerVisibility"
           @toggle-group-visibility="toggleGroupVisibility"
           @change-color="changeLayerColor"
@@ -521,9 +526,14 @@
 
         <!-- Panel view -->
         <PanelPanel
-          v-else-if="sidebarTab === 'panel'"
+          v-else-if="sidebarTab === 'panel' && isPanelizedMode"
           :panel-data="panelData"
           :board-size-mm="boardSizeMm"
+          :team-panel-limits="teamPanelLimits"
+          :thickness-mm="pcbData?.thicknessMm ?? 1.6"
+          :edge-constraints="panelEdgeConstraints"
+          :copper-trees="copperTrees"
+          :outline-origin-mm="_outlineOriginMm"
           @update:panel-data="handlePanelDataUpdate"
           @update:danger-zone="(dz) => panelDangerZone = dz"
         />
@@ -554,7 +564,7 @@
 
       <!-- Main content area: Board canvas or Document viewer -->
       <main
-        class="flex-1 relative outline-none"
+        class="flex-1 min-w-0 relative outline-none"
         :class="{ 'select-none': sidebarDragging }"
         :style="{ backgroundColor: showDocumentViewer ? undefined : canvasAreaBg }"
         @keydown="handleKeyDown"
@@ -590,7 +600,7 @@
         <div v-show="!showDocumentViewer" class="absolute inset-0">
           <!-- Panel canvas (shown when panel tab is active) -->
           <PanelCanvas
-            v-if="sidebarTab === 'panel'"
+            v-if="sidebarTab === 'panel' && isPanelizedMode"
             ref="panelCanvasRef"
             :layers="renderLayers"
             :all-layers="layers"
@@ -605,7 +615,7 @@
             :board-size-mm="boardSizeMm"
             :danger-zone="panelDangerZone"
             :measure="measureTool"
-            :pnp-components="panelData.showComponents ? pnp.visibleComponents.value : []"
+            :pnp-components="panelData.showComponents ? pnpComponentsWithPreview : []"
             :match-package="pkgLib.matchPackage"
             :match-tht-package="thtPkgLib.matchThtPackage"
             :show-packages="showPackages"
@@ -628,7 +638,7 @@
             :delete-tool="deleteTool"
             :view-mode="viewMode"
             :preset="viewMode === 'realistic' ? selectedPreset : undefined"
-            :pnp-components="sidebarTab === 'pcb' ? [] : pnp.visibleComponents.value"
+            :pnp-components="sidebarTab === 'pcb' ? [] : pnpComponentsWithPreview"
             :selected-pnp-designator="pnp.selectedDesignator.value"
             :pnp-origin-x="pnp.originX.value"
             :pnp-origin-y="pnp.originY.value"
@@ -726,6 +736,8 @@
       v-model:open="showComponentEdit"
       :component="editingComponent"
       :package-options="editingComponent?.componentType === 'tht' ? thtPackageOptions : packageOptions"
+      :groups="editingComponent?.componentType === 'tht' ? thtGroups : smdGroups"
+      :current-group-id="editingComponent ? (pnpGroupAssignments[editingComponent.key] ?? null) : null"
       :bom-designators="bomDesignators"
       @update:rotation="pnp.setRotationOverride($event.key, $event.rotation)"
       @reset:rotation="pnp.resetRotationOverride($event.key)"
@@ -737,6 +749,8 @@
       @update:manual-component="pnp.updateManualComponent($event.id, $event)"
       @delete:manual-component="pnp.removeManualComponent($event)"
       @delete:component="pnp.deleteComponent($event)"
+      @assign:group="assignEditingComponentGroup($event)"
+      @preview:package="previewPkgOverride = $event"
     />
 
     <!-- BOM field mapping modal -->
@@ -776,7 +790,7 @@ import { sortLayersByPcbOrder, isTopLayer, isBottomLayer, isSharedLayer, getColo
 import type { BomLine, BomColumnMapping } from '~/utils/bom-types'
 import type { PricingQueueItem } from '~/composables/useElexessApi'
 import type { ViewMode } from '~/components/viewer/BoardCanvas.vue'
-import { getPresetById, type PcbPreset } from '~/utils/pcb-presets'
+import { getPresetForAppearance } from '~/utils/pcb-presets'
 import type { PnPConvention } from '~/utils/pnp-conventions'
 import type { PnPExportFormat, PnPExportSideMode } from '~/utils/pnp-export'
 import { generatePnPExport, getPnPExportExtension, getPnPExportMimeType } from '~/utils/pnp-export'
@@ -794,7 +808,7 @@ const { getProject, getFiles, addFiles, upsertFiles, clearFiles, renameFile, rem
 
 // ── Team project support ──
 const teamProjectIdRef = ref(teamProjectId)
-const { currentTeamRole, currentTeamId, isAdmin: isTeamAdmin } = useTeam()
+const { currentTeam, currentTeamRole, currentTeamId, isAdmin: isTeamAdmin } = useTeam()
 
 /** Resolves with the team ID once it becomes available (for async write paths). */
 function waitForTeamId(): Promise<string> {
@@ -845,6 +859,13 @@ const VALID_TABS: SidebarTab[] = ['layers', 'pcb', 'panel', 'smd', 'tht', 'bom',
 const router = useRouter()
 const initialTab = (route.query.tab as string) || 'layers'
 const sidebarTab = ref<SidebarTab>(VALID_TABS.includes(initialTab as SidebarTab) ? initialTab as SidebarTab : 'layers')
+
+onMounted(() => {
+  const clientTab = new URLSearchParams(window.location.search).get('tab') || 'layers'
+  if (VALID_TABS.includes(clientTab as SidebarTab) && clientTab !== sidebarTab.value) {
+    sidebarTab.value = clientTab as SidebarTab
+  }
+})
 
 // Sync sidebar tab to URL query parameter
 watch(sidebarTab, (tab) => {
@@ -1073,7 +1094,24 @@ const project = ref<any>(null)
 const layers = ref<LayerInfo[]>([])
 
 // ── PCB parameters for pricing ──
-const pcbData = ref<{ sizeX?: number; sizeY?: number; layerCount?: number; surfaceFinish?: 'ENIG' | 'HAL'; copperWeight?: '1oz' | '2oz'; innerCopperWeight?: '0.5oz' | '1oz' | '2oz' } | null>(null)
+const pcbData = ref<{
+  sizeX?: number
+  sizeY?: number
+  layerCount?: number
+  surfaceFinish?: 'ENIG' | 'HAL'
+  copperWeight?: '1oz' | '2oz'
+  innerCopperWeight?: '0.5oz' | '1oz' | '2oz'
+  thicknessMm?: number
+  solderMaskColor?: 'green' | 'black' | 'blue' | 'red' | 'white' | 'purple'
+  panelizationMode?: 'single' | 'panelized'
+} | null>(null)
+
+const teamPanelLimits = computed(() => ({
+  preferredWidthMm: currentTeam.value?.preferred_panel_width_mm ?? null,
+  preferredHeightMm: currentTeam.value?.preferred_panel_height_mm ?? null,
+  maxWidthMm: currentTeam.value?.max_panel_width_mm ?? null,
+  maxHeightMm: currentTeam.value?.max_panel_height_mm ?? null,
+}))
 
 function handlePcbDataUpdate(data: typeof pcbData.value) {
   pcbData.value = data
@@ -1082,6 +1120,7 @@ function handlePcbDataUpdate(data: typeof pcbData.value) {
 // ── Panel configuration ──
 import type { PanelConfig, DangerZoneConfig } from '~/utils/panel-types'
 import { DEFAULT_PANEL_CONFIG, migratePanelConfig } from '~/utils/panel-types'
+import { derivePanelEdgeConstraintsFromComponents } from '~/utils/panel-component-clearance'
 
 const panelData = ref<PanelConfig>(DEFAULT_PANEL_CONFIG())
 const panelDangerZone = ref<DangerZoneConfig>({ enabled: false, insetMm: 2 })
@@ -1117,10 +1156,10 @@ const pendingImport = ref<{ files: GerberFile[]; sourceName: string; isZip: bool
 const conflictingFileNames = ref<string[]>([])
 const newImportFileNames = ref<string[]>([])
 
-const selectedPreset = computed({
-  get: () => getPresetById(prefs.presetId.value),
-  set: (p: PcbPreset) => { prefs.presetId.value = p.id },
-})
+const selectedPreset = computed(() =>
+  getPresetForAppearance(pcbData.value?.surfaceFinish, pcbData.value?.solderMaskColor),
+)
+const isPanelizedMode = computed(() => pcbData.value?.panelizationMode === 'panelized')
 const boardCanvasRef = ref<any>(null)
 const panelCanvasRef = ref<any>(null)
 
@@ -1141,6 +1180,7 @@ const showPnPExport = ref(false)
 const showImageExport = ref(false)
 const imageExportTarget = ref<'board' | 'panel'>('board')
 const showComponentEdit = ref(false)
+watch(showComponentEdit, (open) => { if (!open) previewPkgOverride.value = null })
 const editingComponent = ref<import('~/composables/usePickAndPlace').EditablePnPComponent | null>(null)
 const performanceSnapshot = ref<{
   fpsApprox?: number
@@ -1350,6 +1390,34 @@ const _gerberBoardSizeMm = computed<{ width: number; height: number } | undefine
   return { width: bw * toMm, height: bh * toMm }
 })
 
+const _outlineOriginMm = computed<{ x: number; y: number } | null>(() => {
+  const ls = layers.value
+  if (ls.length === 0) return null
+
+  const outlineLayer = ls.find(l => l.type === 'Outline') || ls.find(l => l.type === 'Keep-Out')
+  if (outlineLayer && !isPnPLayer(outlineLayer.type)) {
+    const tree = _parseLayerTree(outlineLayer)
+    if (tree && tree.children.length > 0 && !isEmpty(tree.bounds as BoundingBox)) {
+      const b = tree.bounds as BoundingBox
+      const toMm = tree.units === 'in' ? 25.4 : 1
+      return { x: b[0] * toMm, y: b[1] * toMm }
+    }
+  }
+
+  let bounds: BoundingBox = emptyBounds()
+  let units: 'mm' | 'in' = 'mm'
+  for (const layer of ls) {
+    if (isPnPLayer(layer.type)) continue
+    const tree = _parseLayerTree(layer)
+    if (!tree || tree.children.length === 0) continue
+    bounds = mergeBounds(bounds, tree.bounds as BoundingBox)
+    units = tree.units
+  }
+  if (isEmpty(bounds)) return null
+  const toMm = units === 'in' ? 25.4 : 1
+  return { x: bounds[0] * toMm, y: bounds[1] * toMm }
+})
+
 function _parseLayerTree(layer: LayerInfo): ImageTree | null {
   const key = layer.file.fileName
   if (_gerberImageTreeCache.has(key)) return _gerberImageTreeCache.get(key)!
@@ -1386,7 +1454,7 @@ const downloadMenuItems = computed(() => {
       },
     })
   }
-  if (sidebarTab.value === 'panel' && layers.value.length > 0) {
+  if (isPanelizedMode.value && sidebarTab.value === 'panel' && layers.value.length > 0) {
     items.push({
       label: 'Export Panel Image',
       icon: 'i-lucide-grid-2x2',
@@ -1408,16 +1476,97 @@ const downloadMenuItems = computed(() => {
 const outlineLayer = computed(() => layers.value.find(l => l.type === 'Outline') || undefined)
 const hasOutline = computed(() => layers.value.some(l => l.type === 'Outline'))
 
+const copperTrees = computed(() => {
+  const copperTypes = new Set(['Top Copper', 'Bottom Copper'])
+  const trees: import('@lib/gerber/types').ImageTree[] = []
+  for (const layer of layers.value) {
+    if (!copperTypes.has(layer.type)) continue
+    const tree = _parseLayerTree(layer)
+    if (tree) trees.push(tree)
+  }
+  return trees.length ? trees : null
+})
+
 // ── Pick & Place ──
 const pnp = usePickAndPlace(layers)
 const pkgLib = usePackageLibrary()
 const thtPkgLib = useThtPackageLibrary()
+const panelEdgeConstraints = computed(() => {
+  return derivePanelEdgeConstraintsFromComponents({
+    boardSizeMm: boardSizeMm.value ?? null,
+    components: pnp.allComponents.value,
+    matchPackage: pkgLib.matchPackage,
+    matchThtPackage: thtPkgLib.matchThtPackage,
+    tabClearanceMm: 20,
+  })
+})
 const showPackages = ref(true)
+
+const previewPkgOverride = ref<{ componentKey: string; packageName: string } | null>(null)
+const pnpComponentsWithPreview = computed(() => {
+  const comps = pnp.visibleComponents.value
+  const override = previewPkgOverride.value
+  if (!override) return comps
+  return comps.map(c =>
+    c.key === override.componentKey
+      ? { ...c, matchedPackage: override.packageName }
+      : c,
+  )
+})
+
 // Monotonic version counter — bumped whenever any package source changes.
 const _pkgLibVersion = ref(0)
 const packageLibraryVersion = computed(() => _pkgLibVersion.value)
-const packageOptions = computed(() => pkgLib.allPackages.value.map(p => p.name).sort((a, b) => a.localeCompare(b)))
-const thtPackageOptions = computed(() => thtPkgLib.allThtPackages.value.map(p => p.name).sort((a, b) => a.localeCompare(b)))
+
+type PackageSelectOption = {
+  value: string
+  label: string
+  libraryLabel: string
+  searchText: string
+  previewKind: 'smd' | 'tht'
+  previewPkg?: Record<string, any>
+  packageType?: string
+}
+
+function buildPackageOptions<T extends { name: string, type?: string, libraryName?: string, sourceType?: string, owner?: string }>(
+  packages: T[],
+  previewKind: 'smd' | 'tht',
+): PackageSelectOption[] {
+  const seen = new Set<string>()
+  const out: PackageSelectOption[] = []
+  for (const pkg of packages) {
+    const name = (pkg.name || '').trim()
+    if (!name) continue
+    const key = name.toLowerCase()
+    if (seen.has(key)) continue
+    seen.add(key)
+
+    const sourceParts: string[] = []
+    if (pkg.sourceType) sourceParts.push(pkg.sourceType)
+    if (pkg.owner) sourceParts.push(pkg.owner)
+    const sourceLabel = sourceParts.join(' / ')
+    const libraryLabel = pkg.libraryName || sourceLabel || 'Local'
+    out.push({
+      value: name,
+      label: name,
+      libraryLabel,
+      searchText: `${name} ${libraryLabel} ${sourceLabel}`.trim(),
+      previewKind,
+      previewPkg: pkg as Record<string, any>,
+      packageType: pkg.type,
+    })
+  }
+  return out.sort((a, b) => a.label.localeCompare(b.label))
+}
+
+const packageOptions = computed(() => buildPackageOptions(
+  pkgLib.allPackages.value as Array<{ name: string, type?: string, libraryName?: string, sourceType?: string, owner?: string }>,
+  'smd',
+))
+const thtPackageOptions = computed(() => buildPackageOptions(
+  thtPkgLib.allThtPackages.value as Array<{ name: string, type?: string, libraryName?: string, sourceType?: string, owner?: string }>,
+  'tht',
+))
 
 type PnPSortKey = 'ref' | 'x' | 'y' | 'rot' | 'pol' | 'value' | 'cadPackage' | 'package'
 type PnPSortState = { key: PnPSortKey | null; asc: boolean }
@@ -1491,6 +1640,41 @@ function toggleGroupCollapsed(groupId: string) {
   )
 }
 
+function deleteGroup(groupId: string, type: 'smd' | 'tht') {
+  const target = pnpComponentGroups.value.find(g => g.id === groupId)
+  if (!target || target.componentType !== type) return
+
+  // Move components in this group back to "No section" by clearing assignment.
+  const nextAssignments = { ...pnpGroupAssignments.value }
+  for (const [componentKey, assignedGroupId] of Object.entries(nextAssignments)) {
+    if (assignedGroupId === groupId) {
+      delete nextAssignments[componentKey]
+    }
+  }
+  pnpGroupAssignments.value = nextAssignments
+
+  pnpComponentGroups.value = pnpComponentGroups.value.filter(g => g.id !== groupId)
+}
+
+function reorderGroups(type: 'smd' | 'tht', orderedIds: string[]) {
+  const typeGroups = pnpComponentGroups.value.filter(g => g.componentType === type)
+  if (typeGroups.length <= 1) return
+
+  const expectedIds = new Set(typeGroups.map(g => g.id))
+  if (orderedIds.length !== typeGroups.length) return
+  if (orderedIds.some(id => !expectedIds.has(id))) return
+
+  const reorderedById = new Map(typeGroups.map(g => [g.id, g] as const))
+  const reordered = orderedIds.map(id => reorderedById.get(id)).filter(Boolean) as PnPComponentGroup[]
+  let idx = 0
+  pnpComponentGroups.value = pnpComponentGroups.value.map((group) => {
+    if (group.componentType !== type) return group
+    const next = reordered[idx]
+    idx++
+    return next ?? group
+  })
+}
+
 function assignComponentGroup(payload: { componentKey: string; groupId: string | null }, type: 'smd' | 'tht') {
   const next = { ...pnpGroupAssignments.value }
   if (!payload.groupId) {
@@ -1512,8 +1696,20 @@ function updateGroupMeta(payload: { groupId: string; name: string; comment: stri
   )
 }
 
-// Load package library on mount (non-blocking)
-onMounted(() => { pkgLib.loadPackages() })
+function assignEditingComponentGroup(payload: { key: string; groupId: string | null }) {
+  const comp = pnp.allComponents.value.find(c => c.key === payload.key)
+  if (!comp) return
+  assignComponentGroup(
+    { componentKey: payload.key, groupId: payload.groupId },
+    comp.componentType,
+  )
+}
+
+// Load package libraries on mount (non-blocking)
+onMounted(() => {
+  pkgLib.loadPackages()
+  thtPkgLib.loadPackages()
+})
 
 // Merge local custom packages (IndexedDB) into the package libraries
 const { customDefinitions: localCustomPkgs } = useCustomPackages()
@@ -1674,6 +1870,12 @@ watch(pnp.hasPnP, (has) => {
     sidebarTab.value = 'smd'
   }
 })
+
+watch(isPanelizedMode, (enabled) => {
+  if (!enabled && sidebarTab.value === 'panel') {
+    sidebarTab.value = 'pcb'
+  }
+}, { immediate: true })
 
 // Auto-switch to BOM tab when BOM data appears and no PnP
 watch(bom.hasBom, (has) => {

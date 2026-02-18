@@ -1,0 +1,28 @@
+{
+  "name": "2016",
+  "type": "PT_OUTLINE",
+  "body": {
+    "length": 2,
+    "width": 1.6
+  },
+  "outline": {
+    "length": 2,
+    "width": 1.6
+  },
+  "aliases": [
+    "C2016",
+    "CAP2016",
+    "L2016",
+    "OSC-2016",
+    "R2016",
+    "RES2016",
+    "XTAL-2016"
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/2016.json",
+    "sourceFootprint": "2016"
+  }
+}

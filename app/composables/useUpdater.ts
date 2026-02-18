@@ -73,6 +73,40 @@ async function consumePostUpdateInfo(): Promise<PostUpdateInfo | null> {
 }
 
 const postUpdateInfo = ref<PostUpdateInfo | null>(null)
+const GITHUB_RELEASES_API_BASE = 'https://api.github.com/repos/newmatik/gerbtrace/releases/tags/'
+const GENERIC_RELEASE_NOTES_RE = /see the assets below to download and install gerbtrace for your platform\.?/i
+let pendingUpdateNotes: string | null = null
+
+function normalizeReleaseNotes(notes: string | null | undefined): string | null {
+  if (!notes) return null
+  const normalized = notes.replace(/\r\n/g, '\n').trim()
+  if (!normalized) return null
+  if (GENERIC_RELEASE_NOTES_RE.test(normalized)) return null
+  return normalized
+}
+
+async function fetchReleaseNotesFromGitHub(version: string): Promise<string | null> {
+  const tag = version.startsWith('v') ? version : `v${version}`
+  const url = `${GITHUB_RELEASES_API_BASE}${encodeURIComponent(tag)}`
+  try {
+    const response = await fetch(url, {
+      headers: {
+        Accept: 'application/vnd.github+json',
+      },
+    })
+    if (!response.ok) return null
+    const payload = await response.json() as { body?: string | null }
+    return normalizeReleaseNotes(payload.body ?? null)
+  } catch {
+    return null
+  }
+}
+
+async function resolveUpdateNotes(version: string, fallbackNotes: string | null | undefined): Promise<string | null> {
+  const githubNotes = await fetchReleaseNotesFromGitHub(version)
+  if (githubNotes) return githubNotes
+  return normalizeReleaseNotes(fallbackNotes)
+}
 
 function toUpdaterErrorMessage(err: unknown, fallback: string) {
   const message = (err as any)?.message || fallback
@@ -112,10 +146,12 @@ async function checkForUpdate() {
     pendingUpdate = null
 
     if (update) {
+      const resolvedNotes = await resolveUpdateNotes(update.version, update.body ?? null)
       status.available = true
       status.version = update.version
-      status.notes = update.body ?? null
+      status.notes = resolvedNotes
       pendingUpdate = update
+      pendingUpdateNotes = resolvedNotes
       promptDismissed.value = false
       status.lastResult = 'update_available'
     } else {
@@ -123,6 +159,7 @@ async function checkForUpdate() {
       status.version = null
       status.notes = null
       status.lastResult = 'up_to_date'
+      pendingUpdateNotes = null
     }
   } catch (err: any) {
     status.error = toUpdaterErrorMessage(err, 'Failed to check for updates')
@@ -150,8 +187,12 @@ async function downloadAndInstall() {
       return
     }
 
+    if (!pendingUpdateNotes) {
+      pendingUpdateNotes = await resolveUpdateNotes(pendingUpdate.version, pendingUpdate.body ?? null)
+    }
+
     await pendingUpdate.download()
-    await savePostUpdateInfo(pendingUpdate.version, pendingUpdate.body ?? null)
+    await savePostUpdateInfo(pendingUpdate.version, pendingUpdateNotes)
     await pendingUpdate.install()
     const { relaunch } = await import('@tauri-apps/plugin-process')
     await relaunch()

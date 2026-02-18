@@ -1,0 +1,23 @@
+{
+  "name": "OSCILLATOR-MEMS_SIT1533AI_H4_DCC_32",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 1.8,
+    "width": 1.4
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 4,
+    "widthOverLeads": 1.85,
+    "leadPitch": 1.4,
+    "leadWidth": 0.3,
+    "leadLength": 0.95
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/Oscillator_MEMS_SIT1533AI-H4-DCC-32.768E.kicad_mod",
+    "sourceFootprint": "Oscillator_MEMS_SIT1533AI-H4-DCC-32.768E"
+  }
+}

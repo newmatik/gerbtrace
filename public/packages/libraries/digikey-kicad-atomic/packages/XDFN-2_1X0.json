@@ -1,0 +1,23 @@
+{
+  "name": "XDFN-2_1X0",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 0.6,
+    "width": 1
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 2,
+    "widthOverLeads": 0.5,
+    "leadPitch": 1,
+    "leadWidth": 0.6,
+    "leadLength": 0.5
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/XDFN-2_1x0.60mm.kicad_mod",
+    "sourceFootprint": "XDFN-2_1x0.60mm"
+  }
+}

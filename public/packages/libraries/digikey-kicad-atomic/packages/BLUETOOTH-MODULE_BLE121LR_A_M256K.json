@@ -1,0 +1,23 @@
+{
+  "name": "BLUETOOTH-MODULE_BLE121LR_A_M256K",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 14.9,
+    "width": 12.7
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 36,
+    "widthOverLeads": 12.2,
+    "leadPitch": 12.9,
+    "leadWidth": 2,
+    "leadLength": 0.5
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/Bluetooth_Module_BLE121LR-A-M256K.kicad_mod",
+    "sourceFootprint": "Bluetooth_Module_BLE121LR-A-M256K"
+  }
+}

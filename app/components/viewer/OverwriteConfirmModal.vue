@@ -34,11 +34,10 @@
               :key="name"
               class="flex items-center gap-2 text-xs py-1.5 px-2 rounded hover:bg-neutral-50 dark:hover:bg-neutral-800 cursor-pointer"
             >
-              <input
-                type="checkbox"
-                :checked="selected.has(name)"
-                class="rounded border-neutral-300 dark:border-neutral-600 text-primary"
-                @change="toggleFile(name)"
+              <USwitch
+                :model-value="selected.has(name)"
+                size="sm"
+                @update:model-value="toggleFile(name)"
               />
               <span class="truncate">{{ name }}</span>
             </label>

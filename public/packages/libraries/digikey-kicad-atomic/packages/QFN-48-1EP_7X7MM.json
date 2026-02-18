@@ -1,0 +1,23 @@
+{
+  "name": "QFN-48-1EP_7X7MM",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 7,
+    "width": 7
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 48,
+    "widthOverLeads": 7.8,
+    "leadPitch": 0.5,
+    "leadWidth": 0.28,
+    "leadLength": 0.85
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/QFN-48-1EP_7x7mm.kicad_mod",
+    "sourceFootprint": "QFN-48-1EP_7x7mm"
+  }
+}

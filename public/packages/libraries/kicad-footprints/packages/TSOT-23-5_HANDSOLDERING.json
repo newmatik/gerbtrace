@@ -1,0 +1,23 @@
+{
+  "name": "TSOT-23-5_HANDSOLDERING",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 1.785,
+    "width": 3.794
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 6,
+    "widthOverLeads": 5.42,
+    "leadPitch": 1.7,
+    "leadWidth": 0.65,
+    "leadLength": 2
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_TO_SOT_SMD.pretty/TSOT-23-5_HandSoldering.kicad_mod",
+    "sourceFootprint": "TSOT-23-5_HandSoldering"
+  }
+}
