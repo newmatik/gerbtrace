@@ -1,0 +1,68 @@
+{
+  "name": "VSON-10",
+  "body": {
+    "length": 4,
+    "width": 4
+  },
+  "type": "PT_TWO_SYM",
+  "twoSymmetric": {
+    "numberOfLeads": 10,
+    "widthOverLeads": 3.2,
+    "leadPitch": 0.8,
+    "leadWidth": 0.6,
+    "leadLength": 0.35
+  },
+  "aliases": [
+    "VSON10"
+  ],
+  "height": {
+    "nominal": 1,
+    "max": 1.1,
+    "min": 0.9
+  },
+  "searchArea": {
+    "x": 3.473,
+    "y": 3.974
+  },
+  "machine": {
+    "mountTools": [
+      "A14"
+    ],
+    "pickWaitTime": 50,
+    "placeWaitTime": 50,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "high",
+      "y": "high",
+      "tape": "high",
+      "theta": "high",
+      "z": "high",
+      "hydraTheta": "high",
+      "hydraZ": "high"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/VSON-10.json",
+    "sourceFootprint": "VSON-10"
+  }
+}

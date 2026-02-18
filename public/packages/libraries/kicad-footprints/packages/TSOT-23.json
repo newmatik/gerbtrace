@@ -1,0 +1,22 @@
+{
+  "name": "TSOT-23",
+  "type": "PT_THREE_POLE",
+  "body": {
+    "length": 1.785,
+    "width": 2.688
+  },
+  "threePole": {
+    "widthOverLeads": 3.84,
+    "ccDistance": 1.275,
+    "leadWidth": 0.65,
+    "leadLength": 1.22
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_TO_SOT_SMD.pretty/TSOT-23.kicad_mod",
+    "sourceFootprint": "TSOT-23"
+  }
+}

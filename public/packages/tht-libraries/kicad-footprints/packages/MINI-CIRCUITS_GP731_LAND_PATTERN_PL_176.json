@@ -1,0 +1,266 @@
+{
+  "name": "MINI-CIRCUITS_GP731_LAND_PATTERN_PL_176",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "width": 11.2,
+      "height": 11.2,
+      "cornerRadius": 0.896,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -5.2,
+      "y1": -5.2,
+      "x2": 5.2,
+      "y2": -5.2,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.2,
+      "y1": 5.2,
+      "x2": -5.2,
+      "y2": 5.2,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.445,
+      "y1": 4.445,
+      "x2": -4.445,
+      "y2": 4.445,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.445,
+      "y1": -4.445,
+      "x2": 4.445,
+      "y2": 4.445,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -3.175,
+      "y1": -4.445,
+      "x2": 4.445,
+      "y2": -4.445,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4.445,
+      "y1": 4.445,
+      "x2": -4.445,
+      "y2": -3.175,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -5.2,
+      "y1": -5.2,
+      "x2": -5.2,
+      "y2": -1.4,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4.445,
+      "y1": -3.175,
+      "x2": -3.175,
+      "y2": -4.445,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.2,
+      "y1": -4,
+      "x2": 5.2,
+      "y2": -5.2,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.2,
+      "y1": 5.2,
+      "x2": 5.2,
+      "y2": 4,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -5.2,
+      "y1": 4,
+      "x2": -5.2,
+      "y2": 5.2,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "circle",
+      "role": "pin1",
+      "x": -1.27,
+      "y": 1.27,
+      "radius": 0.508
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -1.27,
+      "y": 1.27,
+      "radius": 0.254,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin1",
+      "x": 1.27,
+      "y": 1.27,
+      "radius": 0.508
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 1.27,
+      "y": 1.27,
+      "radius": 0.254,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin1",
+      "x": 1.27,
+      "y": -1.27,
+      "radius": 0.508
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 1.27,
+      "y": -1.27,
+      "radius": 0.254,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin1",
+      "x": -1.27,
+      "y": -1.27,
+      "radius": 0.508
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -1.27,
+      "y": -1.27,
+      "radius": 0.254,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin1",
+      "x": -4.445,
+      "y": -4.445,
+      "radius": 0.508
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -4.445,
+      "y": -4.445,
+      "radius": 0.254,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin1",
+      "x": 4.445,
+      "y": -4.445,
+      "radius": 0.508
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 4.445,
+      "y": -4.445,
+      "radius": 0.254,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin1",
+      "x": 4.445,
+      "y": 4.445,
+      "radius": 0.508
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 4.445,
+      "y": 4.445,
+      "radius": 0.254,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin1",
+      "x": -4.445,
+      "y": 4.445,
+      "radius": 0.508
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -4.445,
+      "y": 4.445,
+      "radius": 0.254,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/RF_Mini-Circuits.pretty/Mini-Circuits_GP731_LandPatternPL-176.kicad_mod",
+    "sourceFootprint": "Mini-Circuits_GP731_LandPatternPL-176"
+  }
+}

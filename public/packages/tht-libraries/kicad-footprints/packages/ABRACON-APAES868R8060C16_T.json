@@ -1,0 +1,126 @@
+{
+  "name": "ABRACON-APAES868R8060C16_T",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 0,
+      "y": 11,
+      "width": 83,
+      "height": 83,
+      "cornerRadius": 6.64,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -37,
+      "y1": -30,
+      "x2": 37,
+      "y2": -30,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 41,
+      "y1": -26,
+      "x2": 41,
+      "y2": 48,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 37,
+      "y1": 52,
+      "x2": -37,
+      "y2": 52,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -41,
+      "y1": 48,
+      "x2": -41,
+      "y2": -26,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -37,
+      "y1": -30.099999,
+      "x2": 37,
+      "y2": -30.099999,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 41.099999,
+      "y1": -26,
+      "x2": 41.099999,
+      "y2": 48,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 37,
+      "y1": 52.1,
+      "x2": -37,
+      "y2": 52.1,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -41.1,
+      "y1": 48,
+      "x2": -41.1,
+      "y2": -26,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "width": 1.7,
+      "height": 1.7,
+      "cornerRadius": 0.765
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.55,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/RF_Antenna.pretty/Abracon_APAES868R8060C16-T.kicad_mod",
+    "sourceFootprint": "Abracon_APAES868R8060C16-T"
+  }
+}

@@ -173,7 +173,7 @@ function startNewPackage() {
   isCreating.value = true
   editingDef.value = {
     name: '',
-    type: 'Chip',
+    type: 'PT_TWO_POLE',
     body: { length: 1, width: 0.5 },
     chip: { chipLength: 1, leadWidth: 0.3, leadLength: 0.2 },
   } as PackageDefinition

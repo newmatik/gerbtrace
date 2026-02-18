@@ -1,0 +1,316 @@
+{
+  "name": "POTENTIOMETER-ALPS_RK09L_SINGLE_HORIZONTAL",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 8.775,
+      "y": -2.5,
+      "width": 23.491,
+      "height": 13.14,
+      "cornerRadius": 1.051,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.12,
+      "y1": -8.67,
+      "x2": 5.12,
+      "y2": 3.67,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.45,
+      "y1": -8.55,
+      "x2": -2.45,
+      "y2": 3.55,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5,
+      "y1": 3.55,
+      "x2": 5,
+      "y2": -8.55,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 10.12,
+      "y1": -5.62,
+      "x2": 20.12,
+      "y2": -5.62,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 10.12,
+      "y1": 0.62,
+      "x2": 20.12,
+      "y2": 0.62,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 10,
+      "y1": 0.5,
+      "x2": 20,
+      "y2": 0.5,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 20,
+      "y1": -5.5,
+      "x2": 10,
+      "y2": -5.5,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.12,
+      "y1": -7.12,
+      "x2": 5.12,
+      "y2": 2.12,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 10.12,
+      "y1": -7.12,
+      "x2": 10.12,
+      "y2": 2.12,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5,
+      "y1": -7,
+      "x2": 5,
+      "y2": 2,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 10,
+      "y1": 2,
+      "x2": 10,
+      "y2": -7,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.45,
+      "y1": 3.55,
+      "x2": 5,
+      "y2": 3.55,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5,
+      "y1": -8.55,
+      "x2": -2.45,
+      "y2": -8.55,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.059,
+      "y1": -8.67,
+      "x2": 5.12,
+      "y2": -8.67,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.059,
+      "y1": 3.67,
+      "x2": 5.12,
+      "y2": 3.67,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 10.12,
+      "y1": -5.62,
+      "x2": 10.12,
+      "y2": 0.62,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 20.12,
+      "y1": -5.62,
+      "x2": 20.12,
+      "y2": 0.62,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 10,
+      "y1": -5.5,
+      "x2": 10,
+      "y2": 0.5,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 20,
+      "y1": 0.5,
+      "x2": 20,
+      "y2": -5.5,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5,
+      "y1": 2,
+      "x2": 10,
+      "y2": 2,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 10,
+      "y1": -7,
+      "x2": 5,
+      "y2": -7,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.12,
+      "y1": -7.12,
+      "x2": 10.12,
+      "y2": -7.12,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.12,
+      "y1": 2.12,
+      "x2": 10.12,
+      "y2": 2.12,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.571,
+      "y1": -4.894,
+      "x2": -2.571,
+      "y2": -0.105,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 0,
+      "y": -5,
+      "radius": 0.9
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": -5,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 0,
+      "y": -2.5,
+      "radius": 0.9
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": -2.5,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "radius": 0.9
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Potentiometer_THT.pretty/Potentiometer_Alps_RK09L_Single_Horizontal.kicad_mod",
+    "sourceFootprint": "Potentiometer_Alps_RK09L_Single_Horizontal"
+  }
+}

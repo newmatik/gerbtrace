@@ -1,0 +1,27 @@
+{
+  "name": "LED-0201",
+  "type": "PT_TWO_POLE",
+  "aliases": [
+    "0201 LED",
+    "CHIP-LED0201",
+    "CHIP-LED201",
+    "LED 0201",
+    "LED0201"
+  ],
+  "body": {
+    "length": 0.6,
+    "width": 0.3
+  },
+  "chip": {
+    "chipLength": 0.6,
+    "leadWidth": 0.3,
+    "leadLength": 0.12
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/LED-0201.json",
+    "sourceFootprint": "LED-0201"
+  }
+}

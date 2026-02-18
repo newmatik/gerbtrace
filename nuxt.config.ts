@@ -4,14 +4,26 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      appVersion: '1.0.12',
+      appVersion: '1.0.13',
       supabaseUrl: process.env.SUPABASE_URL || 'http://localhost:54321',
       supabaseAnonKey: process.env.SUPABASE_ANON_KEY || '',
       elexessUrl: process.env.ELEXESS_URL || 'https://api.dev.elexess.com/api',
+      sentry: {
+        dsn: process.env.SENTRY_DSN || '',
+        environment: process.env.SENTRY_ENVIRONMENT || (process.env.NODE_ENV === 'production' ? 'production' : 'development'),
+      },
     },
   },
 
-  modules: ['@nuxt/ui'],
+  modules: ['@nuxt/ui', '@sentry/nuxt/module'],
+
+  sentry: {
+    org: process.env.SENTRY_ORG || 'newmatik',
+    project: process.env.SENTRY_PROJECT || 'gerbtrace',
+    authToken: process.env.SENTRY_AUTH_TOKEN,
+  },
+
+  sourcemap: { client: true, server: false },
 
   icon: {
     clientBundle: {

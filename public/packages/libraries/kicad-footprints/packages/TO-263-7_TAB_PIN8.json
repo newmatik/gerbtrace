@@ -1,0 +1,23 @@
+{
+  "name": "TO-263-7_TAB_PIN8",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 7.56,
+    "width": 11.305
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 12,
+    "widthOverLeads": 16.15,
+    "leadPitch": 4.492,
+    "leadWidth": 3.117,
+    "leadLength": 4.983
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_TO_SOT_SMD.pretty/TO-263-7_TabPin8.kicad_mod",
+    "sourceFootprint": "TO-263-7_TabPin8"
+  }
+}

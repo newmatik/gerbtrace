@@ -1,0 +1,33 @@
+{
+  "name": "PANASONIC_B",
+  "type": "PT_TWO_POLE",
+  "aliases": [
+    "CP_Elec_4x5.8",
+    "ELEC_B",
+    "CAP_ELEC_B",
+    "CHEMI-CON_D",
+    "CHEMI-CON_D61",
+    "CAPAE400X580"
+  ],
+  "body": {
+    "length": 4.2,
+    "width": 2.5
+  },
+  "chip": {
+    "chipLength": 4.2,
+    "leadWidth": 2.5,
+    "leadLength": 1.6
+  },
+  "height": {
+    "nominal": 5.8,
+    "max": 6.1,
+    "min": 5.5
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/PANASONIC_B.json",
+    "sourceFootprint": "PANASONIC_B"
+  }
+}

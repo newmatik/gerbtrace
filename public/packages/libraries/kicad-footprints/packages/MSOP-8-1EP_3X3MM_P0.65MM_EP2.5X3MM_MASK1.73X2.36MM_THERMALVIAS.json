@@ -1,0 +1,23 @@
+{
+  "name": "MSOP-8-1EP_3X3MM_P0.65MM_EP2.5X3MM_MASK1.73X2.36MM_THERMALVIAS",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 3,
+    "width": 3
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 8,
+    "widthOverLeads": 5.7,
+    "leadPitch": 0.65,
+    "leadWidth": 0.35,
+    "leadLength": 1.35
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_SO.pretty/MSOP-8-1EP_3x3mm_P0.65mm_EP2.5x3mm_Mask1.73x2.36mm_ThermalVias.kicad_mod",
+    "sourceFootprint": "MSOP-8-1EP_3x3mm_P0.65mm_EP2.5x3mm_Mask1.73x2.36mm_ThermalVias"
+  }
+}

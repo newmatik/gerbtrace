@@ -1,0 +1,224 @@
+{
+  "name": "SHARP-IS471F",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 1.815,
+      "y": 0.885,
+      "width": 6.17,
+      "height": 3.77,
+      "cornerRadius": 0.302,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.7,
+      "y1": 2.37,
+      "x2": 4.5,
+      "y2": 2.37,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.59,
+      "y1": 2.27,
+      "x2": 4.41,
+      "y2": 2.27,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.15,
+      "y1": -0.23,
+      "x2": 0.66,
+      "y2": -0.23,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.7,
+      "y1": 2.37,
+      "x2": -0.7,
+      "y2": 0.85,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.41,
+      "y1": 2.27,
+      "x2": 4.41,
+      "y2": 0.77,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.59,
+      "y1": 0.77,
+      "x2": -0.59,
+      "y2": 2.27,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.87,
+      "y1": 0.85,
+      "x2": -0.87,
+      "y2": -0.54,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.41,
+      "y1": 0.77,
+      "x2": 3.15,
+      "y2": 0.77,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.66,
+      "y1": 0.77,
+      "x2": -0.59,
+      "y2": 0.77,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.15,
+      "y1": 0.77,
+      "x2": 3.15,
+      "y2": -0.23,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.66,
+      "y1": -0.23,
+      "x2": 0.66,
+      "y2": 0.77,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 1.75,
+      "y1": -0.34,
+      "x2": 0.87,
+      "y2": -0.34,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.5,
+      "y1": 2.37,
+      "x2": 4.5,
+      "y2": 1.81,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "width": 1.2,
+      "height": 1.2,
+      "cornerRadius": 0.54
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.3,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 1.27,
+      "y": 1.27,
+      "radius": 0.6
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 1.27,
+      "y": 1.27,
+      "radius": 0.3,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 2.54,
+      "y": 0,
+      "radius": 0.6
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 2.54,
+      "y": 0,
+      "radius": 0.3,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 3.81,
+      "y": 1.27,
+      "radius": 0.6
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 3.81,
+      "y": 1.27,
+      "radius": 0.3,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/OptoDevice.pretty/Sharp_IS471F.kicad_mod",
+    "sourceFootprint": "Sharp_IS471F"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "LQFP-36_7X7MM_P0",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 7,
+    "width": 7
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 36,
+    "widthOverLeads": 9.9,
+    "leadPitch": 0.65,
+    "leadWidth": 0.4,
+    "leadLength": 1.475
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_QFP.pretty/LQFP-36_7x7mm_P0.65mm.kicad_mod",
+    "sourceFootprint": "LQFP-36_7x7mm_P0.65mm"
+  }
+}

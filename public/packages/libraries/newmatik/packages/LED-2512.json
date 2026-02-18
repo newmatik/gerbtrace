@@ -1,0 +1,26 @@
+{
+  "name": "LED-2512",
+  "type": "PT_TWO_POLE",
+  "aliases": [
+    "2512 LED",
+    "CHIP-LED2512",
+    "LED 2512",
+    "LED2512"
+  ],
+  "body": {
+    "length": 6.3,
+    "width": 3.2
+  },
+  "chip": {
+    "chipLength": 6.3,
+    "leadWidth": 3.2,
+    "leadLength": 0.6
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/LED-2512.json",
+    "sourceFootprint": "LED-2512"
+  }
+}

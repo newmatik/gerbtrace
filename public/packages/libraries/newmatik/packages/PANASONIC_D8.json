@@ -1,0 +1,32 @@
+{
+  "name": "PANASONIC_D8",
+  "type": "PT_TWO_POLE",
+  "aliases": [
+    "CP_Elec_6.3x7.7",
+    "ELEC_D8",
+    "CAP_ELEC_D8",
+    "CHEMI-CON_F80",
+    "CAPAE660X770"
+  ],
+  "body": {
+    "length": 5,
+    "width": 3.2
+  },
+  "chip": {
+    "chipLength": 5,
+    "leadWidth": 3.2,
+    "leadLength": 1.6
+  },
+  "height": {
+    "nominal": 7.7,
+    "max": 8,
+    "min": 7.4
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/PANASONIC_D8.json",
+    "sourceFootprint": "PANASONIC_D8"
+  }
+}

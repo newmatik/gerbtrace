@@ -1,0 +1,222 @@
+{
+  "name": "SOIC-8-1EP_4.57X4.57MM_P1.27MM_EP4.57X4.45MM_THERMALVIAS",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": -1.645,
+      "y": 0,
+      "width": 8.66,
+      "height": 5.83,
+      "cornerRadius": 0.466,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0,
+      "y1": -2.515,
+      "x2": -5.575,
+      "y2": -2.515,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 2.285,
+      "y1": -2.285,
+      "x2": 2.285,
+      "y2": 2.285,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 2.285,
+      "y1": 2.285,
+      "x2": -2.285,
+      "y2": 2.285,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.285,
+      "y1": -2.285,
+      "x2": 2.285,
+      "y2": -2.285,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.285,
+      "y1": 2.285,
+      "x2": -2.285,
+      "y2": -1.285,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0,
+      "y1": 2.515,
+      "x2": 2.285,
+      "y2": 2.515,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0,
+      "y1": 2.515,
+      "x2": -2.285,
+      "y2": 2.515,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0,
+      "y1": -2.515,
+      "x2": 2.285,
+      "y2": -2.515,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.285,
+      "y1": -1.285,
+      "x2": -1.285,
+      "y2": -2.285,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -1.27,
+      "y": -1.27,
+      "radius": 0.405
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -1.27,
+      "y": -1.27,
+      "radius": 0.255,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 1.27,
+      "y": -1.27,
+      "radius": 0.405
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 1.27,
+      "y": -1.27,
+      "radius": 0.255,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -1.27,
+      "y": 0,
+      "radius": 0.405
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -1.27,
+      "y": 0,
+      "radius": 0.255,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 1.27,
+      "y": 0,
+      "radius": 0.405
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 1.27,
+      "y": 0,
+      "radius": 0.255,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -1.27,
+      "y": 1.27,
+      "radius": 0.405
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -1.27,
+      "y": 1.27,
+      "radius": 0.255,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 1.27,
+      "y": 1.27,
+      "radius": 0.405
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 1.27,
+      "y": 1.27,
+      "radius": 0.255,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "polarity-marker",
+      "x": -1.635,
+      "y": -0.905,
+      "radius": 0.203,
+      "color": "#ef4444"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_SO.pretty/SOP-8-1EP_4.57x4.57mm_P1.27mm_EP4.57x4.45mm_ThermalVias.kicad_mod",
+    "sourceFootprint": "SOP-8-1EP_4.57x4.57mm_P1.27mm_EP4.57x4.45mm_ThermalVias"
+  }
+}

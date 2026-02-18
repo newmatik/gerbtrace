@@ -1,0 +1,23 @@
+{
+  "name": "TO-50-4_SHORT_PAD_WITH_HOLE_HOUSING",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 11.9,
+    "width": 12.7
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 50,
+    "widthOverLeads": 13.95,
+    "leadPitch": 10.4,
+    "leadWidth": 2.75,
+    "leadLength": 2.75
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_TO_SOT_SMD.pretty/TO-50-4_ShortPad-WithHole_Housing.kicad_mod",
+    "sourceFootprint": "TO-50-4_ShortPad-WithHole_Housing"
+  }
+}

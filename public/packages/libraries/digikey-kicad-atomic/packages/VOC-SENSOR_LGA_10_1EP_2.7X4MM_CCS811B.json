@@ -1,0 +1,23 @@
+{
+  "name": "VOC-SENSOR_LGA_10_1EP_2.7X4MM_CCS811B",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 1.96,
+    "width": 1.89
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 10,
+    "widthOverLeads": 2.8,
+    "leadPitch": 0.675,
+    "leadWidth": 0.4,
+    "leadLength": 0.6
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/VOC_Sensor_LGA-10-1EP-2.7x4mm_CCS811B.kicad_mod",
+    "sourceFootprint": "VOC_Sensor_LGA-10-1EP-2.7x4mm_CCS811B"
+  }
+}

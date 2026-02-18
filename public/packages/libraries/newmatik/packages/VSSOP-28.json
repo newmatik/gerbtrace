@@ -1,0 +1,25 @@
+{
+  "name": "VSSOP-28",
+  "type": "PT_TWO_SYM",
+  "aliases": [
+    "VSSOP28"
+  ],
+  "body": {
+    "length": 7.7,
+    "width": 5.5
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 28,
+    "widthOverLeads": 6.9,
+    "leadPitch": 0.5,
+    "leadWidth": 0.25,
+    "leadLength": 0.45
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/VSSOP-28.json",
+    "sourceFootprint": "VSSOP-28"
+  }
+}

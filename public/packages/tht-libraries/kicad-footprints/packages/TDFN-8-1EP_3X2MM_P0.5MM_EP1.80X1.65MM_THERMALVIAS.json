@@ -1,0 +1,170 @@
+{
+  "name": "TDFN-8-1EP_3X2MM_P0.5MM_EP1.80X1.65MM_THERMALVIAS",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "width": 3.8,
+      "height": 3.04,
+      "cornerRadius": 0.243,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.5,
+      "y1": 1,
+      "x2": 1.5,
+      "y2": 1,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.45,
+      "y1": 1.12,
+      "x2": 1.45,
+      "y2": 1.12,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 1.5,
+      "y1": -1,
+      "x2": -1,
+      "y2": -1,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 1.5,
+      "y1": 1,
+      "x2": 1.5,
+      "y2": -1,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.25,
+      "y1": -1.12,
+      "x2": 1.45,
+      "y2": -1.12,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.5,
+      "y1": -0.5,
+      "x2": -1.5,
+      "y2": 1,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1,
+      "y1": -1,
+      "x2": -1.5,
+      "y2": -0.5,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -0.5,
+      "y": -0.5,
+      "radius": 0.325
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -0.5,
+      "y": -0.5,
+      "radius": 0.15,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -0.5,
+      "y": 0.5,
+      "radius": 0.325
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -0.5,
+      "y": 0.5,
+      "radius": 0.15,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 0.5,
+      "y": -0.5,
+      "radius": 0.325
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0.5,
+      "y": -0.5,
+      "radius": 0.15,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 0.5,
+      "y": 0.5,
+      "radius": 0.325
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0.5,
+      "y": 0.5,
+      "radius": 0.15,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "polarity-marker",
+      "x": -0.86,
+      "y": -0.14,
+      "radius": 0.2,
+      "color": "#ef4444"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_DFN_QFN.pretty/TDFN-8-1EP_3x2mm_P0.5mm_EP1.80x1.65mm_ThermalVias.kicad_mod",
+    "sourceFootprint": "TDFN-8-1EP_3x2mm_P0.5mm_EP1.80x1.65mm_ThermalVias"
+  }
+}

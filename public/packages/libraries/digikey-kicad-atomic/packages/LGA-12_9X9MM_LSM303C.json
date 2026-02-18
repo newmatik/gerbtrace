@@ -1,0 +1,23 @@
+{
+  "name": "LGA-12_9X9MM_LSM303C",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 9,
+    "width": 9
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 12,
+    "widthOverLeads": 1.9,
+    "leadPitch": 0.5,
+    "leadWidth": 0.35,
+    "leadLength": 0.375
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/LGA-12_9x9mm_LSM303C.kicad_mod",
+    "sourceFootprint": "LGA-12_9x9mm_LSM303C"
+  }
+}

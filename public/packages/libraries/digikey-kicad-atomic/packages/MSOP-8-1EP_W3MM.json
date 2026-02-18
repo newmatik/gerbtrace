@@ -1,0 +1,23 @@
+{
+  "name": "MSOP-8-1EP_W3MM",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 2.35,
+    "width": 5.8
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 8,
+    "widthOverLeads": 5.8,
+    "leadPitch": 0.65,
+    "leadWidth": 0.4,
+    "leadLength": 1.6
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/MSOP-8-1EP_W3mm.kicad_mod",
+    "sourceFootprint": "MSOP-8-1EP_W3mm"
+  }
+}

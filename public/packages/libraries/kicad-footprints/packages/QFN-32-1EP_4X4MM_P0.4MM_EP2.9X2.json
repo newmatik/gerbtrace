@@ -1,0 +1,23 @@
+{
+  "name": "QFN-32-1EP_4X4MM_P0.4MM_EP2.9X2",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 4,
+    "width": 4
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 32,
+    "widthOverLeads": 4.7,
+    "leadPitch": 0.4,
+    "leadWidth": 0.2,
+    "leadLength": 0.7
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_DFN_QFN.pretty/QFN-32-1EP_4x4mm_P0.4mm_EP2.9x2.9mm.kicad_mod",
+    "sourceFootprint": "QFN-32-1EP_4x4mm_P0.4mm_EP2.9x2.9mm"
+  }
+}

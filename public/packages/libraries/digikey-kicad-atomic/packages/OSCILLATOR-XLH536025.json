@@ -1,0 +1,23 @@
+{
+  "name": "OSCILLATOR-XLH536025",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 3.49,
+    "width": 3.83
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 4,
+    "widthOverLeads": 6.37,
+    "leadPitch": 2.25,
+    "leadWidth": 1.24,
+    "leadLength": 1.29
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/Oscillator_XLH536025.000000I.kicad_mod",
+    "sourceFootprint": "Oscillator_XLH536025.000000I"
+  }
+}

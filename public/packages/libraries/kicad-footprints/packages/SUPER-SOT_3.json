@@ -1,0 +1,22 @@
+{
+  "name": "SUPER-SOT_3",
+  "type": "PT_THREE_POLE",
+  "body": {
+    "length": 2.9,
+    "width": 3.6
+  },
+  "threePole": {
+    "widthOverLeads": 3.6,
+    "ccDistance": 1.45,
+    "leadWidth": 1,
+    "leadLength": 1.4
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_TO_SOT_SMD.pretty/SuperSOT-3.kicad_mod",
+    "sourceFootprint": "SuperSOT-3"
+  }
+}

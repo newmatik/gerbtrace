@@ -1,0 +1,75 @@
+{
+  "name": "QFN-32-5x5-P0.65",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 5,
+    "width": 5
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 32,
+    "widthOverLeads": 7,
+    "leadPitch": 0.65,
+    "leadWidth": 0.35,
+    "leadLength": 0.25
+  },
+  "aliases": [
+    "QFN-32-0.65",
+    "QFN32-0.65",
+    "QFN32-5x5-P0.65",
+    "QFN325x5P0.65"
+  ],
+  "height": {
+    "nominal": 0.9,
+    "max": 0.945,
+    "min": 0.855
+  },
+  "searchArea": {
+    "x": 4.956,
+    "y": 4.956
+  },
+  "machine": {
+    "mountTools": [
+      "A14"
+    ],
+    "hydraTools": [
+      "H03"
+    ],
+    "pickWaitTime": 250,
+    "placeWaitTime": 90,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "lowest",
+      "y": "lowest",
+      "tape": "lowest",
+      "theta": "lowest",
+      "z": "lowest",
+      "hydraTheta": "lowest",
+      "hydraZ": "lowest"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL",
+          "HYDRA_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/QFN-32-5x5-P0.65.json",
+    "sourceFootprint": "QFN-32-5x5-P0.65"
+  }
+}

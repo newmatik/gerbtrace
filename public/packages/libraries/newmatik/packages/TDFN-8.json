@@ -1,0 +1,82 @@
+{
+  "name": "TDFN-8",
+  "body": {
+    "length": 2.3,
+    "width": 2.9
+  },
+  "type": "PT_TWO_SYM",
+  "twoSymmetric": {
+    "numberOfLeads": 8,
+    "widthOverLeads": 3,
+    "leadPitch": 0.5,
+    "leadWidth": 0.26,
+    "leadLength": 0.25
+  },
+  "aliases": [
+    "TDFN-08",
+    "TDFN08",
+    "TDFN8"
+  ],
+  "height": {
+    "nominal": 0.78,
+    "max": 0.817,
+    "min": 0.743
+  },
+  "searchArea": {
+    "x": 3.626,
+    "y": 3.938
+  },
+  "machine": {
+    "mountTools": [
+      "A13"
+    ],
+    "pickWaitTime": 50,
+    "placeWaitTime": 50,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "high",
+      "y": "highest",
+      "tape": "high",
+      "theta": "highest",
+      "z": "high",
+      "hydraTheta": "highest",
+      "hydraZ": "high"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false,
+    "glue": {
+      "mode": "CORNER",
+      "matching": "MATCHING",
+      "positions": [
+        {
+          "x": -2.75,
+          "y": 2.75,
+          "param1": 1000,
+          "param2": 30
+        }
+      ]
+    }
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/TDFN-8.json",
+    "sourceFootprint": "TDFN-8"
+  }
+}

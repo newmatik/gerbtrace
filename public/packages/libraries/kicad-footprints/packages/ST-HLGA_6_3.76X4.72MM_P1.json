@@ -1,0 +1,23 @@
+{
+  "name": "ST-HLGA_6_3.76X4.72MM_P1",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 2.947,
+    "width": 2.374
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 6,
+    "widthOverLeads": 4.21,
+    "leadPitch": 1.696,
+    "leadWidth": 0.91,
+    "leadLength": 0.957
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Sensor_Audio.pretty/ST_HLGA-6_3.76x4.72mm_P1.65mm.kicad_mod",
+    "sourceFootprint": "ST_HLGA-6_3.76x4.72mm_P1.65mm"
+  }
+}

@@ -1,0 +1,199 @@
+{
+  "name": "OSCILLATOR-OCXO_MORION_MV317",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 9.5,
+      "y": 9.5,
+      "width": 27,
+      "height": 27,
+      "cornerRadius": 2.16,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 22.6,
+      "y1": -3.6,
+      "x2": -3.6,
+      "y2": -3.6,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 22.6,
+      "y1": 22.6,
+      "x2": 22.6,
+      "y2": -3.6,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -3.6,
+      "y1": 22.6,
+      "x2": 22.6,
+      "y2": 22.6,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -3.6,
+      "y1": -3.6,
+      "x2": -3.6,
+      "y2": 22.6,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 22.425,
+      "y1": -3.375,
+      "x2": 22.425,
+      "y2": 22.425,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 22.425,
+      "y1": 22.425,
+      "x2": -3.375,
+      "y2": 22.425,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -3.375,
+      "y1": 22.425,
+      "x2": -3.375,
+      "y2": -2.35,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.35,
+      "y1": -3.375,
+      "x2": 22.425,
+      "y2": -3.375,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -3.375,
+      "y1": -2.35,
+      "x2": -2.35,
+      "y2": -3.375,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "rect",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "width": 1.7,
+      "height": 1.7
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 0,
+      "y": 19.05,
+      "radius": 0.85
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 19.05,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 19.05,
+      "y": 19.05,
+      "radius": 0.85
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 19.05,
+      "y": 19.05,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 19.05,
+      "y": 0,
+      "radius": 0.85
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 19.05,
+      "y": 0,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 19.05,
+      "y": 9.525,
+      "radius": 0.85
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 19.05,
+      "y": 9.525,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Oscillator.pretty/Oscillator_OCXO_Morion_MV317.kicad_mod",
+    "sourceFootprint": "Oscillator_OCXO_Morion_MV317"
+  }
+}

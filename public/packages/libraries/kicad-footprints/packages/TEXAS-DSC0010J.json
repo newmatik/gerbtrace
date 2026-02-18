@@ -1,0 +1,29 @@
+{
+  "name": "TEXAS-DSC0010J",
+  "type": "PT_GENERIC",
+  "body": {
+    "length": 2.66,
+    "width": 2.66
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "GULLWING",
+        "numLeads": 33,
+        "distFromCenter": 0,
+        "ccHalf": 1.9,
+        "angleMilliDeg": 0,
+        "padLength": 0.54,
+        "padWidth": 0.515
+      }
+    ]
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_SON.pretty/Texas_DSC0010J.kicad_mod",
+    "sourceFootprint": "Texas_DSC0010J"
+  }
+}

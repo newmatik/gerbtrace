@@ -1,0 +1,23 @@
+{
+  "name": "PLCC-52",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 20.19,
+    "width": 20.19
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 52,
+    "widthOverLeads": 20.19,
+    "leadPitch": 1.27,
+    "leadWidth": 0.7,
+    "leadLength": 1.925
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_LCC.pretty/PLCC-52.kicad_mod",
+    "sourceFootprint": "PLCC-52"
+  }
+}

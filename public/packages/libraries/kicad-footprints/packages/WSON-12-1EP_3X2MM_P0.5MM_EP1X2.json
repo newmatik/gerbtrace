@@ -1,0 +1,23 @@
+{
+  "name": "WSON-12-1EP_3X2MM_P0.5MM_EP1X2",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 2,
+    "width": 3
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 12,
+    "widthOverLeads": 2.4,
+    "leadPitch": 0.5,
+    "leadWidth": 0.25,
+    "leadLength": 0.5
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_SON.pretty/WSON-12-1EP_3x2mm_P0.5mm_EP1x2.65.kicad_mod",
+    "sourceFootprint": "WSON-12-1EP_3x2mm_P0.5mm_EP1x2.65"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "name": "SOT-1334_1",
+  "type": "PT_GENERIC",
+  "body": {
+    "length": 2.66,
+    "width": 1.61
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "GULLWING",
+        "numLeads": 14,
+        "distFromCenter": 0,
+        "ccHalf": 1.9,
+        "angleMilliDeg": 0,
+        "padLength": 1.246,
+        "padWidth": 0.3
+      }
+    ]
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_TO_SOT_SMD.pretty/SOT-1334-1.kicad_mod",
+    "sourceFootprint": "SOT-1334-1"
+  }
+}

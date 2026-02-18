@@ -1,0 +1,316 @@
+{
+  "name": "POTENTIOMETER-VISHAY_248GJ_249GJ_SINGLE_HORIZONTAL",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 12.39,
+      "y": -2.54,
+      "width": 30.86,
+      "height": 13.54,
+      "cornerRadius": 1.083,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.64,
+      "y1": -8.91,
+      "x2": -2.64,
+      "y2": 3.83,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.2,
+      "y1": -8.91,
+      "x2": 5.2,
+      "y2": 3.83,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 14.7,
+      "y1": -5.835,
+      "x2": 27.42,
+      "y2": -5.835,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 14.7,
+      "y1": 0.755,
+      "x2": 27.42,
+      "y2": 0.755,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 14.58,
+      "y1": 0.635,
+      "x2": 27.3,
+      "y2": 0.635,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 27.3,
+      "y1": -5.715,
+      "x2": 14.58,
+      "y2": -5.715,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.52,
+      "y1": -8.79,
+      "x2": -2.52,
+      "y2": 3.71,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.08,
+      "y1": 3.71,
+      "x2": 5.08,
+      "y2": -8.79,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.2,
+      "y1": -7.423,
+      "x2": 5.2,
+      "y2": 2.343,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 14.7,
+      "y1": -7.423,
+      "x2": 14.7,
+      "y2": 2.343,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.08,
+      "y1": -7.3025,
+      "x2": 5.08,
+      "y2": 2.2225,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 14.58,
+      "y1": 2.2225,
+      "x2": 14.58,
+      "y2": -7.3025,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.08,
+      "y1": 2.2225,
+      "x2": 14.58,
+      "y2": 2.2225,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 14.58,
+      "y1": -7.3025,
+      "x2": 5.08,
+      "y2": -7.3025,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.2,
+      "y1": -7.423,
+      "x2": 14.7,
+      "y2": -7.423,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.2,
+      "y1": 2.343,
+      "x2": 14.7,
+      "y2": 2.343,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.64,
+      "y1": -8.91,
+      "x2": 5.2,
+      "y2": -8.91,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.64,
+      "y1": 3.83,
+      "x2": 5.2,
+      "y2": 3.83,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.52,
+      "y1": 3.71,
+      "x2": 5.08,
+      "y2": 3.71,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.08,
+      "y1": -8.79,
+      "x2": -2.52,
+      "y2": -8.79,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 14.7,
+      "y1": -5.835,
+      "x2": 14.7,
+      "y2": 0.755,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 27.42,
+      "y1": -5.835,
+      "x2": 27.42,
+      "y2": 0.755,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 14.58,
+      "y1": -5.715,
+      "x2": 14.58,
+      "y2": 0.635,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 27.3,
+      "y1": 0.635,
+      "x2": 27.3,
+      "y2": -5.715,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 0,
+      "y": -5.08,
+      "radius": 0.9
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": -5.08,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 0,
+      "y": -2.54,
+      "radius": 0.9
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": -2.54,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "radius": 0.9
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Potentiometer_THT.pretty/Potentiometer_Vishay_248GJ-249GJ_Single_Horizontal.kicad_mod",
+    "sourceFootprint": "Potentiometer_Vishay_248GJ-249GJ_Single_Horizontal"
+  }
+}

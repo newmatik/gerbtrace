@@ -1,0 +1,96 @@
+{
+  "name": "WDFN-8",
+  "body": {
+    "length": 3.05,
+    "width": 3.05
+  },
+  "type": "PT_TWO_SYM",
+  "twoSymmetric": {
+    "numberOfLeads": 8,
+    "widthOverLeads": 3.3,
+    "leadPitch": 0.62,
+    "leadWidth": 0.45,
+    "leadLength": 0.05
+  },
+  "aliases": [
+    "WDFN-08",
+    "WDFN08",
+    "WDFN8"
+  ],
+  "height": {
+    "nominal": 0.75,
+    "max": 0.84,
+    "min": 0.66
+  },
+  "searchArea": {
+    "x": 3.3,
+    "y": 3.3
+  },
+  "machine": {
+    "mountTools": [
+      "A13"
+    ],
+    "pickWaitTime": 150,
+    "placeWaitTime": 100,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "high",
+      "y": "high",
+      "tape": "low",
+      "theta": "highest",
+      "z": "high",
+      "hydraTheta": "high",
+      "hydraZ": "lowest"
+    },
+    "centering": [
+      {
+        "method": "mechanical",
+        "mechanical": {
+          "angle": 90000,
+          "position": "POS_MIDDLE",
+          "force": "MIDDLE_FORCE"
+        },
+        "jaw": {
+          "nominal": 3.3,
+          "max": 3.6,
+          "min": 3
+        }
+      },
+      {
+        "method": "mechanical",
+        "mechanical": {
+          "angle": 0,
+          "position": "POS_MIDDLE",
+          "force": "MIDDLE_FORCE"
+        },
+        "jaw": {
+          "nominal": 3.3,
+          "max": 3.6,
+          "min": 3
+        }
+      },
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/WDFN-8.json",
+    "sourceFootprint": "WDFN-8"
+  }
+}

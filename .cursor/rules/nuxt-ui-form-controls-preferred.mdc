@@ -1,0 +1,27 @@
+---
+description: Prefer Nuxt UI form controls over native HTML controls
+alwaysApply: true
+---
+
+# Nuxt UI Form Controls Preferred
+
+Use Nuxt UI form controls for consistency across the app.
+
+## Rule
+
+- Prefer Nuxt UI controls over native HTML controls whenever possible:
+  - `USelect` / `USelectMenu` instead of `<select>` / `<option>`
+  - `URadioGroup` instead of native radio groups
+  - `UCheckbox` / `UCheckboxGroup` instead of native checkboxes
+  - `USwitch` for boolean toggle-style settings
+- Keep native controls only when a Nuxt UI component cannot reasonably satisfy behavior, accessibility, or performance needs.
+
+## Pick and Place selectors
+
+- SMD/THT package selectors should be searchable (autocomplete behavior).
+- Option labels should include package source context (for example library/source name).
+
+## Notes
+
+- Keep value payloads unchanged unless the feature explicitly requires a data-model change.
+- Follow existing Nuxt UI patterns in nearby components for size, variant, and density.

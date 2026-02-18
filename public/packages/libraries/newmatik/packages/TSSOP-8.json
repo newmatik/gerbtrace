@@ -1,0 +1,100 @@
+{
+  "name": "TSSOP-8",
+  "type": "PT_TWO_SYM",
+  "aliases": [
+    "TSSOP-08",
+    "TSSOP08",
+    "TSSOP8"
+  ],
+  "body": {
+    "length": 3.35,
+    "width": 4.4
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 8,
+    "widthOverLeads": 6,
+    "leadPitch": 0.65,
+    "leadWidth": 0.3,
+    "leadLength": 0.5
+  },
+  "height": {
+    "nominal": 0.85,
+    "max": 0.893,
+    "min": 0.807
+  },
+  "searchArea": {
+    "x": 2.311,
+    "y": 4.996
+  },
+  "machine": {
+    "mountTools": [
+      "A13"
+    ],
+    "pickWaitTime": 150,
+    "placeWaitTime": 100,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "high",
+      "y": "high",
+      "tape": "high",
+      "theta": "high",
+      "z": "high",
+      "hydraTheta": "high",
+      "hydraZ": "high"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": true
+  },
+  "variations": [
+    {
+      "id": "slow",
+      "label": "Slow (no Hydra)",
+      "machine": {
+        "centering": [
+          {
+            "method": "mechanical",
+            "mechanical": {
+              "angle": 0,
+              "position": "POS_UPPER",
+              "force": "MIDDLE_FORCE"
+            },
+            "jaw": {
+              "nominal": 3.15,
+              "max": 3.8,
+              "min": 2.8
+            }
+          },
+          {
+            "method": "optical",
+            "tools": [
+              "Z_TOOL",
+              "HYDRA_TOOL"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/TSSOP-8.json",
+    "sourceFootprint": "TSSOP-8"
+  }
+}

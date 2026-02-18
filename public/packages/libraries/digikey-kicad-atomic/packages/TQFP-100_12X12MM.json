@@ -1,0 +1,23 @@
+{
+  "name": "TQFP-100_12X12MM",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 12,
+    "width": 12
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 100,
+    "widthOverLeads": 14.9,
+    "leadPitch": 0.4,
+    "leadWidth": 0.2,
+    "leadLength": 1.5
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/TQFP-100_12x12mm.kicad_mod",
+    "sourceFootprint": "TQFP-100_12x12mm"
+  }
+}

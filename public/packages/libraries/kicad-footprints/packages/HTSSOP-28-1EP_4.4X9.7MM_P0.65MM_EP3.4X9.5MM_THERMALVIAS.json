@@ -1,0 +1,23 @@
+{
+  "name": "HTSSOP-28-1EP_4.4X9.7MM_P0.65MM_EP3.4X9.5MM_THERMALVIAS",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 9.7,
+    "width": 4.4
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 28,
+    "widthOverLeads": 6.8,
+    "leadPitch": 0.65,
+    "leadWidth": 0.4,
+    "leadLength": 1.1
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_SO.pretty/HTSSOP-28-1EP_4.4x9.7mm_P0.65mm_EP3.4x9.5mm_ThermalVias.kicad_mod",
+    "sourceFootprint": "HTSSOP-28-1EP_4.4x9.7mm_P0.65mm_EP3.4x9.5mm_ThermalVias"
+  }
+}

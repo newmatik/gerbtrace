@@ -1,0 +1,26 @@
+{
+  "name": "WLCSP-16",
+  "type": "PT_BGA",
+  "aliases": [
+    "WLCSP16"
+  ],
+  "body": {
+    "length": 3.2,
+    "width": 3.2
+  },
+  "bga": {
+    "leadsPerRow": 4,
+    "leadsPerColumn": 4,
+    "leadPitch": 0.4,
+    "leadDiameter": 0.25,
+    "leadsPerRowInHole": 0,
+    "leadsPerColumnInHole": 0
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/WLCSP-16.json",
+    "sourceFootprint": "WLCSP-16"
+  }
+}

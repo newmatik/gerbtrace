@@ -1,0 +1,23 @@
+{
+  "name": "SSOP-28_5.3X10.2MM_P0",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 10.2,
+    "width": 5.3
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 28,
+    "widthOverLeads": 8.95,
+    "leadPitch": 0.65,
+    "leadWidth": 0.45,
+    "leadLength": 1.75
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_SO.pretty/SSOP-28_5.3x10.2mm_P0.65mm.kicad_mod",
+    "sourceFootprint": "SSOP-28_5.3x10.2mm_P0.65mm"
+  }
+}

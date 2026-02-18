@@ -1,5 +1,5 @@
 <template>
-  <div class="flex-1 flex flex-col overflow-hidden p-2 gap-2">
+  <div class="flex-1 min-h-0 flex flex-col overflow-x-hidden overflow-y-auto p-2 gap-2">
     <div class="grid grid-cols-2 gap-2">
       <UButton
         size="xs"
@@ -46,7 +46,7 @@
     >
       Panel: {{ panelWidth.toFixed(2) }} x {{ panelHeight.toFixed(2) }} mm
       <span v-if="panelExceedsLimits">
-        (max {{ PANEL_MAX_WIDTH }} x {{ PANEL_MAX_HEIGHT }})
+        (max {{ effectiveMaxPanelWidth }} x {{ effectiveMaxPanelHeight }})
       </span>
     </div>
 
@@ -61,6 +61,62 @@
     >
       <template #layout>
         <div class="pt-1 space-y-2">
+          <div v-if="boardSizeMm" class="rounded border border-neutral-200 dark:border-neutral-800 p-2 space-y-2">
+            <div class="flex items-center justify-between">
+              <div class="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">Suggestions</div>
+              <div class="flex items-center gap-1">
+                <UButton
+                  size="xs"
+                  color="neutral"
+                  variant="ghost"
+                  :icon="showSuggestions ? 'i-lucide-chevrons-up' : 'i-lucide-chevrons-down'"
+                  @click="showSuggestions = !showSuggestions"
+                />
+                <UButton size="xs" color="neutral" variant="outline" @click="generateSuggestions">
+                  Generate
+                </UButton>
+                <UButton size="xs" color="primary" variant="soft" :disabled="!panelSuggestions.length" @click="autoPanelize">
+                  Auto-panelize
+                </UButton>
+              </div>
+            </div>
+            <p v-if="showSuggestions" class="text-[10px] text-neutral-400">
+              Deterministic suggestions based on preferred/max panel envelope and PCB thickness.
+            </p>
+            <div v-if="!showSuggestions" class="text-[10px] text-neutral-500">
+              Suggestions dismissed to save space.
+            </div>
+            <div v-else-if="!panelSuggestions.length" class="text-[10px] text-neutral-500">
+              Click Generate to compute panel layouts.
+            </div>
+            <div v-else class="space-y-2">
+              <div
+                v-for="(suggestion, idx) in panelSuggestions"
+                :key="suggestion.id"
+                class="rounded border border-neutral-200 dark:border-neutral-700 p-2 space-y-1"
+              >
+                <div class="flex items-center justify-between gap-2">
+                  <div class="text-[10px] text-neutral-300">{{ idx + 1 }}.</div>
+                  <div class="flex-1 min-w-0">
+                    <div class="text-[11px] font-medium truncate">{{ suggestion.title }}</div>
+                    <div class="text-[10px] text-neutral-400 tabular-nums">
+                      {{ suggestion.panelWidthMm.toFixed(2) }} x {{ suggestion.panelHeightMm.toFixed(2) }} mm
+                    </div>
+                  </div>
+                  <UButton size="xs" color="primary" variant="outline" @click="applySuggestion(suggestion)">
+                    Apply
+                  </UButton>
+                </div>
+                <ul class="text-[10px] text-neutral-400 space-y-0.5">
+                  <li v-for="reason in suggestion.reasons" :key="reason">- {{ reason }}</li>
+                </ul>
+                <ul v-if="suggestion.warnings.length" class="text-[10px] text-orange-500 dark:text-orange-400 space-y-0.5">
+                  <li v-for="warning in suggestion.warnings" :key="warning">- {{ warning }}</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
           <div class="rounded border border-neutral-200 dark:border-neutral-800 p-2 space-y-2">
             <div class="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">General</div>
             <div class="grid grid-cols-3 gap-2 text-[10px] text-neutral-400">
@@ -108,14 +164,22 @@
                 <div>
                   <div class="text-neutral-400 mb-1">Columns</div>
                   <label v-for="i in (local.countX - 1)" :key="`xgap-${i}`" class="flex items-center gap-1 text-neutral-500">
-                    <input type="checkbox" :checked="local.supports.xGaps.includes(i - 1)" class="rounded border-neutral-300 dark:border-neutral-600 text-primary focus:ring-primary/30 w-3 h-3" @change="toggleSupportGap('x', i - 1)">
+                    <USwitch
+                      :model-value="local.supports.xGaps.includes(i - 1)"
+                      size="sm"
+                      @update:model-value="toggleSupportGap('x', i - 1)"
+                    />
                     Col {{ i }}-{{ i + 1 }}
                   </label>
                 </div>
                 <div>
                   <div class="text-neutral-400 mb-1">Rows</div>
                   <label v-for="i in (local.countY - 1)" :key="`ygap-${i}`" class="flex items-center gap-1 text-neutral-500">
-                    <input type="checkbox" :checked="local.supports.yGaps.includes(i - 1)" class="rounded border-neutral-300 dark:border-neutral-600 text-primary focus:ring-primary/30 w-3 h-3" @change="toggleSupportGap('y', i - 1)">
+                    <USwitch
+                      :model-value="local.supports.yGaps.includes(i - 1)"
+                      size="sm"
+                      @update:model-value="toggleSupportGap('y', i - 1)"
+                    />
                     Row {{ i }}-{{ i + 1 }}
                   </label>
                 </div>
@@ -133,7 +197,11 @@
                 <div class="text-[10px] text-neutral-400">Diameter (mm)</div>
                 <UInput :model-value="local.fiducials.diameter" type="number" size="xs" :min="0.5" :max="5" :step="0.1" @update:model-value="updateFiducials('diameter', clampFloat(String($event), 0.5, 5))" />
                 <label v-for="pos in fiducialPositionOptions" :key="pos.value" class="flex items-center gap-1 text-[10px] text-neutral-500">
-                  <input type="checkbox" :checked="local.fiducials.positions.includes(pos.value)" class="rounded border-neutral-300 dark:border-neutral-600 text-primary focus:ring-primary/30 w-3 h-3" @change="toggleFiducialPosition(pos.value)">
+                  <USwitch
+                    :model-value="local.fiducials.positions.includes(pos.value)"
+                    size="sm"
+                    @update:model-value="toggleFiducialPosition(pos.value)"
+                  />
                   {{ pos.label }}
                 </label>
               </template>
@@ -156,7 +224,11 @@
                   </div>
                 </div>
                 <label v-for="pos in toolingHolePositionOptions" :key="pos.value" class="flex items-center gap-1 text-[10px] text-neutral-500">
-                  <input type="checkbox" :checked="local.toolingHoles.positions.includes(pos.value)" class="rounded border-neutral-300 dark:border-neutral-600 text-primary focus:ring-primary/30 w-3 h-3" @change="toggleToolingHolePosition(pos.value)">
+                  <USwitch
+                    :model-value="local.toolingHoles.positions.includes(pos.value)"
+                    size="sm"
+                    @update:model-value="toggleToolingHolePosition(pos.value)"
+                  />
                   {{ pos.label }}
                 </label>
               </template>
@@ -205,7 +277,10 @@
                 <USelect
                   :model-value="local.edges[edge].type"
                   size="xs"
-                  :items="[{ label: 'Routed', value: 'routed' }, { label: 'V-Cut', value: 'scored' }]"
+                  :items="[
+                    { label: 'Routed', value: 'routed' },
+                    { label: isScoredDisallowed(edge) ? 'V-Cut (blocked by protruding components)' : 'V-Cut', value: 'scored', disabled: isScoredDisallowed(edge) },
+                  ]"
                   class="flex-1"
                   @update:model-value="updateEdge(edge, String($event) as 'routed' | 'scored')"
                 />
@@ -244,17 +319,27 @@
               <USwitch :model-value="local.tabs.syncAcrossPanel" size="sm" @update:model-value="updateTabs('syncAcrossPanel', !!$event)" />
             </div>
 
-            <div class="grid grid-cols-4 gap-2 text-[10px] text-neutral-400">
-              <span>Top</span>
-              <span>Bottom</span>
-              <span>Left</span>
-              <span>Right</span>
+            <div
+              class="grid gap-2 text-[10px] text-neutral-400"
+              :style="{ gridTemplateColumns: `repeat(${tabEdgeControlFields.length}, minmax(0, 1fr))` }"
+            >
+              <span v-for="item in tabEdgeControlFields" :key="`${item.edge}-label`">{{ item.label }}</span>
             </div>
-            <div class="grid grid-cols-4 gap-2">
-              <UInput :model-value="local.tabs.defaultCountTop" type="number" size="xs" :min="0" :max="10" :step="1" @update:model-value="updateTabSideCount('defaultCountTop', clampInt(String($event), 0, 10))" />
-              <UInput :model-value="local.tabs.defaultCountBottom" type="number" size="xs" :min="0" :max="10" :step="1" @update:model-value="updateTabSideCount('defaultCountBottom', clampInt(String($event), 0, 10))" />
-              <UInput :model-value="local.tabs.defaultCountLeft" type="number" size="xs" :min="0" :max="10" :step="1" @update:model-value="updateTabSideCount('defaultCountLeft', clampInt(String($event), 0, 10))" />
-              <UInput :model-value="local.tabs.defaultCountRight" type="number" size="xs" :min="0" :max="10" :step="1" @update:model-value="updateTabSideCount('defaultCountRight', clampInt(String($event), 0, 10))" />
+            <div
+              class="grid gap-2"
+              :style="{ gridTemplateColumns: `repeat(${tabEdgeControlFields.length}, minmax(0, 1fr))` }"
+            >
+              <UInput
+                v-for="item in tabEdgeControlFields"
+                :key="`${item.edge}-input`"
+                :model-value="getTabSideCount(item.field)"
+                type="number"
+                size="xs"
+                :min="0"
+                :max="10"
+                :step="1"
+                @update:model-value="updateTabSideCount(item.field, clampInt(String($event), 0, 10))"
+              />
             </div>
 
             <div v-if="local.tabs.perforation !== 'none'" class="grid grid-cols-2 gap-2 text-[10px] text-neutral-400">
@@ -297,10 +382,18 @@ import type { TabsItem } from '@nuxt/ui'
 import type { PanelConfig, FiducialPosition, DangerZoneConfig, TabPerforationMode, ToolingHolePosition } from '~/utils/panel-types'
 import { DEFAULT_PANEL_CONFIG, PANEL_MAX_WIDTH, PANEL_MAX_HEIGHT } from '~/utils/panel-types'
 import { computePanelLayout } from '~/utils/panel-geometry'
+import { generatePanelSuggestions, type PanelSuggestion, type PanelSuggestionLimits, type PanelSuggestionEdgeConstraints } from '~/utils/panel-suggestions'
+import { generateVcutPadProtectionRoutes } from '~/utils/panel-vcut-pad-protection'
+import type { ImageTree } from '@lib/gerber/types'
 
 const props = defineProps<{
   panelData: PanelConfig
   boardSizeMm?: { width: number; height: number } | null
+  teamPanelLimits?: PanelSuggestionLimits | null
+  thicknessMm?: number | null
+  edgeConstraints?: PanelSuggestionEdgeConstraints | null
+  copperTrees?: ImageTree[] | null
+  outlineOriginMm?: { x: number; y: number } | null
 }>()
 
 const emit = defineEmits<{
@@ -329,10 +422,34 @@ const panelTabItems: TabsItem[] = [
 ]
 
 const edgeNames = ['top', 'bottom', 'left', 'right'] as const
+type PanelEdge = typeof edgeNames[number]
+type TabSideCountField = 'defaultCountTop' | 'defaultCountBottom' | 'defaultCountLeft' | 'defaultCountRight'
 type PanelSubtab = 'layout' | 'tabs'
+const tabCountFieldToEdge: Record<TabSideCountField, PanelEdge> = {
+  defaultCountTop: 'top',
+  defaultCountBottom: 'bottom',
+  defaultCountLeft: 'left',
+  defaultCountRight: 'right',
+}
 const route = useRoute()
 const activePanelSubtab = ref<PanelSubtab>('layout')
 const panelSubtabStorageKey = computed(() => `gerbtrace:panel-subtab:${String(route.params.id ?? 'default')}`)
+
+const tabEdgeControlFields = computed((): Array<{ edge: PanelEdge, label: string, field: TabSideCountField }> => {
+  const edgeToField: Record<PanelEdge, TabSideCountField> = {
+    top: 'defaultCountTop',
+    bottom: 'defaultCountBottom',
+    left: 'defaultCountLeft',
+    right: 'defaultCountRight',
+  }
+  return edgeNames
+    .filter(edge => isPanelEdgeRouted(local.value, edge))
+    .map(edge => ({
+      edge,
+      label: edge.charAt(0).toUpperCase() + edge.slice(1),
+      field: edgeToField[edge],
+    }))
+})
 
 onMounted(() => {
   if (typeof window === 'undefined') return
@@ -356,7 +473,7 @@ function hasAnyRoutedSeparation(config: PanelConfig): boolean {
     || config.edges.right.type === 'routed'
 }
 
-function isPanelEdgeRouted(config: PanelConfig, edge: 'top' | 'bottom' | 'left' | 'right'): boolean {
+function isPanelEdgeRouted(config: PanelConfig, edge: PanelEdge): boolean {
   if (config.separationType === 'routed') return true
   if (config.separationType === 'scored') return false
   return config.edges[edge].type === 'routed'
@@ -383,22 +500,88 @@ const panelLayout = computed(() => {
 
 const panelWidth = computed(() => panelLayout.value?.totalWidth ?? 0)
 const panelHeight = computed(() => panelLayout.value?.totalHeight ?? 0)
+const effectiveMaxPanelWidth = computed(() => props.teamPanelLimits?.maxWidthMm ?? PANEL_MAX_WIDTH)
+const effectiveMaxPanelHeight = computed(() => props.teamPanelLimits?.maxHeightMm ?? PANEL_MAX_HEIGHT)
 
 const panelExceedsLimits = computed(() => {
   const w = panelWidth.value
   const h = panelHeight.value
   if (w <= 0 || h <= 0) return false
   // Check both orientations
-  const fitsNormal = w <= PANEL_MAX_WIDTH && h <= PANEL_MAX_HEIGHT
-  const fitsRotated = h <= PANEL_MAX_WIDTH && w <= PANEL_MAX_HEIGHT
+  const fitsNormal = w <= effectiveMaxPanelWidth.value && h <= effectiveMaxPanelHeight.value
+  const fitsRotated = h <= effectiveMaxPanelWidth.value && w <= effectiveMaxPanelHeight.value
   return !fitsNormal && !fitsRotated
 })
+
+const panelSuggestions = ref<PanelSuggestion[]>([])
+const showSuggestions = ref(true)
+
+function generateSuggestions() {
+  if (!props.boardSizeMm) {
+    panelSuggestions.value = []
+    return
+  }
+  panelSuggestions.value = generatePanelSuggestions({
+    boardWidthMm: props.boardSizeMm.width,
+    boardHeightMm: props.boardSizeMm.height,
+    thicknessMm: props.thicknessMm ?? 1.6,
+    limits: props.teamPanelLimits ?? undefined,
+    edgeConstraints: props.edgeConstraints ?? undefined,
+    maxSuggestions: 3,
+  })
+}
+
+function applySuggestion(suggestion: PanelSuggestion) {
+  const fullSnapshot = JSON.parse(JSON.stringify(suggestion.config)) as PanelConfig
+
+  if (props.boardSizeMm && props.copperTrees?.length) {
+    const protectionRoutes = generateVcutPadProtectionRoutes(
+      fullSnapshot,
+      props.boardSizeMm.width,
+      props.boardSizeMm.height,
+      props.copperTrees,
+      props.outlineOriginMm ?? undefined,
+    )
+    if (protectionRoutes.length) {
+      fullSnapshot.addedRoutings = [
+        ...(fullSnapshot.addedRoutings ?? []),
+        ...protectionRoutes,
+      ]
+    }
+  }
+
+  emit('update:panelData', fullSnapshot)
+}
+
+function autoPanelize() {
+  if (!panelSuggestions.value.length) generateSuggestions()
+  const top = panelSuggestions.value[0]
+  if (!top) return
+  applySuggestion(top)
+}
+
+watch(
+  () => [props.boardSizeMm?.width, props.boardSizeMm?.height, props.teamPanelLimits, props.thicknessMm, props.edgeConstraints],
+  () => {
+    panelSuggestions.value = []
+    showSuggestions.value = true
+  },
+  { deep: true },
+)
+
+function isScoredDisallowed(edge: PanelEdge): boolean {
+  return !!props.edgeConstraints?.prohibitScoredEdges?.[edge]
+}
 
 function update<K extends keyof PanelConfig>(field: K, value: PanelConfig[K]) {
   emit('update:panelData', { ...local.value, [field]: value })
 }
 
 function updateSeparationType(type: PanelConfig['separationType']) {
+  if (type === 'scored') {
+    const disallowed = edgeNames.some(edge => isScoredDisallowed(edge))
+    if (disallowed) type = 'mixed'
+  }
   const updated = { ...local.value, separationType: type }
   if (type === 'routed') {
     updated.edges = {
@@ -414,11 +597,19 @@ function updateSeparationType(type: PanelConfig['separationType']) {
       left: { type: 'scored' },
       right: { type: 'scored' },
     }
+  } else if (type === 'mixed') {
+    updated.edges = {
+      top: { type: isScoredDisallowed('top') ? 'routed' : 'scored' },
+      bottom: { type: isScoredDisallowed('bottom') ? 'routed' : 'scored' },
+      left: { type: isScoredDisallowed('left') ? 'routed' : 'scored' },
+      right: { type: isScoredDisallowed('right') ? 'routed' : 'scored' },
+    }
   }
   emit('update:panelData', updated)
 }
 
 function updateEdge(edge: 'top' | 'bottom' | 'left' | 'right', type: 'routed' | 'scored') {
+  if (type === 'scored' && isScoredDisallowed(edge)) type = 'routed'
   const edges = { ...local.value.edges, [edge]: { type } }
   emit('update:panelData', { ...local.value, edges })
 }
@@ -431,8 +622,26 @@ function updateTabs<K extends keyof PanelConfig['tabs']>(field: K, value: PanelC
   emit('update:panelData', { ...local.value, tabs: { ...local.value.tabs, [field]: value } })
 }
 
+function getTabSideCount(field: TabSideCountField): number {
+  const tabs = local.value.tabs
+  const fallbackCount = tabs[field] ?? tabs.defaultCountPerEdge
+  if (!tabs.syncAcrossPanel) return fallbackCount
+  const edge = tabCountFieldToEdge[field]
+  const syncKey = `sync-${edge}-main`
+  const syncedPositions = tabs.edgeOverrides[syncKey]
+  return Array.isArray(syncedPositions) ? syncedPositions.length : fallbackCount
+}
+
 function updateTabSideCount(field: 'defaultCountTop' | 'defaultCountBottom' | 'defaultCountLeft' | 'defaultCountRight', value: number) {
-  emit('update:panelData', { ...local.value, tabs: { ...local.value.tabs, [field]: value } })
+  const nextTabs: PanelConfig['tabs'] = { ...local.value.tabs, [field]: value }
+  if (nextTabs.syncAcrossPanel) {
+    const edge = tabCountFieldToEdge[field]
+    nextTabs.edgeOverrides = {
+      ...nextTabs.edgeOverrides,
+      [`sync-${edge}-main`]: evenTabPositions(value),
+    }
+  }
+  emit('update:panelData', { ...local.value, tabs: nextTabs })
 }
 
 function updateFiducials<K extends keyof PanelConfig['fiducials']>(field: K, value: PanelConfig['fiducials'][K]) {
@@ -574,6 +783,10 @@ function getTabOverrideKey(col: number, row: number, edge: string, channelId: st
 function getTabPositions(col: number, row: number, edge: string, channelId: string = 'main'): number[] {
   const key = getTabOverrideKey(col, row, edge, channelId)
   if (key in local.value.tabs.edgeOverrides) return local.value.tabs.edgeOverrides[key]
+  const oppositeModeKey = local.value.tabs.syncAcrossPanel
+    ? `${col}-${row}-${edge}-${channelId}`
+    : `sync-${edge}-${channelId}`
+  if (oppositeModeKey in local.value.tabs.edgeOverrides) return local.value.tabs.edgeOverrides[oppositeModeKey]
   const legacyEdge = `${col}-${row}-${edge}`
   if (legacyEdge in local.value.tabs.edgeOverrides) return local.value.tabs.edgeOverrides[legacyEdge]
   const perEdgeDefault = edge === 'top'

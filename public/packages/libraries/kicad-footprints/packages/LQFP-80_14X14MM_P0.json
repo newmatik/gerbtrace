@@ -1,0 +1,23 @@
+{
+  "name": "LQFP-80_14X14MM_P0",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 14,
+    "width": 14
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 80,
+    "widthOverLeads": 16.9,
+    "leadPitch": 0.65,
+    "leadWidth": 0.4,
+    "leadLength": 1.55
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_QFP.pretty/LQFP-80_14x14mm_P0.65mm.kicad_mod",
+    "sourceFootprint": "LQFP-80_14x14mm_P0.65mm"
+  }
+}

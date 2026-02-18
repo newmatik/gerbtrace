@@ -1,0 +1,23 @@
+{
+  "name": "BLUETOOTH-MODULE_RFD22301",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 9.459,
+    "width": 11.735
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 20,
+    "widthOverLeads": 16.764,
+    "leadPitch": 1.59,
+    "leadWidth": 0.813,
+    "leadLength": 3.353
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/Bluetooth_Module_RFD22301.kicad_mod",
+    "sourceFootprint": "Bluetooth_Module_RFD22301"
+  }
+}

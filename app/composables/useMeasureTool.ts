@@ -13,6 +13,23 @@ export interface MeasurePoint {
 }
 
 const SNAP_THRESHOLD_PX = 10
+const SNAP_TYPE_PRIORITY: Record<SnapPoint['type'], number> = {
+  center: 0,
+  quadrant: 1,
+  endpoint: 2,
+  midpoint: 3,
+}
+
+function pointKey(x: number, y: number): string {
+  return `${x.toFixed(6)},${y.toFixed(6)}`
+}
+
+function pushUniquePoint(out: SnapPoint[], seen: Set<string>, point: SnapPoint) {
+  const key = pointKey(point.x, point.y)
+  if (seen.has(key)) return
+  seen.add(key)
+  out.push(point)
+}
 
 export function useMeasureTool() {
   const active = ref(false)
@@ -49,15 +66,21 @@ export function useMeasureTool() {
     const cursorScreen = gerberToScreen(gerberPos.x, gerberPos.y, transform)
     let best: SnapPoint | null = null
     let bestDist = SNAP_THRESHOLD_PX
+    let bestPriority = Number.POSITIVE_INFINITY
 
     for (const sp of snapTargets.value) {
       const spScreen = gerberToScreen(sp.x, sp.y, transform)
       const dx = spScreen.sx - cursorScreen.sx
       const dy = spScreen.sy - cursorScreen.sy
       const dist = Math.sqrt(dx * dx + dy * dy)
-      if (dist < bestDist) {
+      const priority = SNAP_TYPE_PRIORITY[sp.type]
+      if (
+        dist < bestDist - 0.25
+        || (Math.abs(dist - bestDist) <= 1 && priority < bestPriority)
+      ) {
         bestDist = dist
         best = sp
+        bestPriority = priority
       }
     }
 
@@ -187,6 +210,7 @@ export function useMeasureTool() {
 
   function collectSnapPoints(trees: ImageTree[]) {
     const points: SnapPoint[] = []
+    const seen = new Set<string>()
     for (const tree of trees) {
       // Determine unit conversion from tree
       if (tree.units === 'in') {
@@ -195,82 +219,90 @@ export function useMeasureTool() {
         unitsToMm.value = 1
       }
       for (const graphic of tree.children) {
-        extractFromGraphic(graphic, points)
+        extractFromGraphic(graphic, points, seen)
       }
     }
     snapTargets.value = points
   }
 
-  function extractFromGraphic(graphic: ImageGraphic, out: SnapPoint[]) {
+  function extractFromGraphic(graphic: ImageGraphic, out: SnapPoint[], seen: Set<string>) {
+    if ('erase' in graphic && graphic.erase) return
+
     switch (graphic.type) {
       case 'shape':
-        extractFromShape(graphic.shape, out)
+        extractFromShape(graphic.shape, out, seen)
         break
       case 'path':
-        extractFromSegments(graphic.segments, out)
+        extractFromSegments(graphic.segments, out, seen)
         break
       case 'region':
-        extractFromSegments(graphic.segments, out)
+        extractFromSegments(graphic.segments, out, seen)
         break
     }
   }
 
-  function extractFromShape(shape: Shape, out: SnapPoint[]) {
+  function extractFromShape(shape: Shape, out: SnapPoint[], seen: Set<string>) {
     switch (shape.type) {
       case 'circle':
-        out.push({ x: shape.cx, y: shape.cy, type: 'center' })
-        out.push({ x: shape.cx + shape.r, y: shape.cy, type: 'quadrant' })
-        out.push({ x: shape.cx - shape.r, y: shape.cy, type: 'quadrant' })
-        out.push({ x: shape.cx, y: shape.cy + shape.r, type: 'quadrant' })
-        out.push({ x: shape.cx, y: shape.cy - shape.r, type: 'quadrant' })
+        pushUniquePoint(out, seen, { x: shape.cx, y: shape.cy, type: 'center' })
+        pushUniquePoint(out, seen, { x: shape.cx + shape.r, y: shape.cy, type: 'quadrant' })
+        pushUniquePoint(out, seen, { x: shape.cx - shape.r, y: shape.cy, type: 'quadrant' })
+        pushUniquePoint(out, seen, { x: shape.cx, y: shape.cy + shape.r, type: 'quadrant' })
+        pushUniquePoint(out, seen, { x: shape.cx, y: shape.cy - shape.r, type: 'quadrant' })
         break
       case 'rect': {
         const cx = shape.x + shape.w / 2
         const cy = shape.y + shape.h / 2
-        out.push({ x: cx, y: cy, type: 'center' })
-        out.push({ x: shape.x, y: shape.y, type: 'endpoint' })
-        out.push({ x: shape.x + shape.w, y: shape.y, type: 'endpoint' })
-        out.push({ x: shape.x + shape.w, y: shape.y + shape.h, type: 'endpoint' })
-        out.push({ x: shape.x, y: shape.y + shape.h, type: 'endpoint' })
-        out.push({ x: cx, y: shape.y, type: 'midpoint' })
-        out.push({ x: shape.x + shape.w, y: cy, type: 'midpoint' })
-        out.push({ x: cx, y: shape.y + shape.h, type: 'midpoint' })
-        out.push({ x: shape.x, y: cy, type: 'midpoint' })
+        pushUniquePoint(out, seen, { x: cx, y: cy, type: 'center' })
+        pushUniquePoint(out, seen, { x: shape.x, y: shape.y, type: 'endpoint' })
+        pushUniquePoint(out, seen, { x: shape.x + shape.w, y: shape.y, type: 'endpoint' })
+        pushUniquePoint(out, seen, { x: shape.x + shape.w, y: shape.y + shape.h, type: 'endpoint' })
+        pushUniquePoint(out, seen, { x: shape.x, y: shape.y + shape.h, type: 'endpoint' })
+        pushUniquePoint(out, seen, { x: cx, y: shape.y, type: 'midpoint' })
+        pushUniquePoint(out, seen, { x: shape.x + shape.w, y: cy, type: 'midpoint' })
+        pushUniquePoint(out, seen, { x: cx, y: shape.y + shape.h, type: 'midpoint' })
+        pushUniquePoint(out, seen, { x: shape.x, y: cy, type: 'midpoint' })
         break
       }
       case 'polygon':
         for (const pt of shape.points) {
-          out.push({ x: pt[0], y: pt[1], type: 'endpoint' })
+          pushUniquePoint(out, seen, { x: pt[0], y: pt[1], type: 'endpoint' })
         }
         for (let i = 0; i < shape.points.length; i++) {
           const a = shape.points[i]!
           const b = shape.points[(i + 1) % shape.points.length]!
-          out.push({ x: (a[0] + b[0]) / 2, y: (a[1] + b[1]) / 2, type: 'midpoint' })
+          pushUniquePoint(out, seen, {
+            x: (a[0] + b[0]) / 2,
+            y: (a[1] + b[1]) / 2,
+            type: 'midpoint',
+          })
         }
         break
       case 'outline':
-        extractFromSegments(shape.segments, out)
+        extractFromSegments(shape.segments, out, seen)
         break
       case 'layered':
         for (const sub of shape.shapes) {
-          extractFromShape(sub, out)
+          if (!sub.erase) {
+            extractFromShape(sub, out, seen)
+          }
         }
         break
     }
   }
 
-  function extractFromSegments(segments: PathSegment[], out: SnapPoint[]) {
+  function extractFromSegments(segments: PathSegment[], out: SnapPoint[], seen: Set<string>) {
     for (const seg of segments) {
-      out.push({ x: seg.start[0], y: seg.start[1], type: 'endpoint' })
-      out.push({ x: seg.end[0], y: seg.end[1], type: 'endpoint' })
+      pushUniquePoint(out, seen, { x: seg.start[0], y: seg.start[1], type: 'endpoint' })
+      pushUniquePoint(out, seen, { x: seg.end[0], y: seg.end[1], type: 'endpoint' })
       if (seg.type === 'line') {
-        out.push({
+        pushUniquePoint(out, seen, {
           x: (seg.start[0] + seg.end[0]) / 2,
           y: (seg.start[1] + seg.end[1]) / 2,
           type: 'midpoint',
         })
       } else {
-        out.push({ x: seg.center[0], y: seg.center[1], type: 'center' })
+        pushUniquePoint(out, seen, { x: seg.center[0], y: seg.center[1], type: 'center' })
       }
     }
   }

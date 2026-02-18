@@ -1,0 +1,108 @@
+{
+  "name": "USB-MINI_B_FEMALE_UX60_MB_5ST",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 0,
+      "y": 2.2,
+      "width": 8.5,
+      "height": 9.2,
+      "cornerRadius": 0.68,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -3.85,
+      "y1": -2,
+      "x2": -3.85,
+      "y2": 6.4,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.85,
+      "y1": -2,
+      "x2": 3.85,
+      "y2": 6.4,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.85,
+      "y1": -2,
+      "x2": -3.85,
+      "y2": -2,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -3.85,
+      "y1": 6.4,
+      "x2": 3.85,
+      "y2": 6.4,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -1.75,
+      "y": 0,
+      "radius": 0.75
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -1.75,
+      "y": 0,
+      "radius": 0.45,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 1.75,
+      "y": 0,
+      "radius": 0.75
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 1.75,
+      "y": 0,
+      "radius": 0.45,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "polarity-marker",
+      "x": -2.425,
+      "y": 0.675,
+      "radius": 0.375,
+      "color": "#ef4444"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/USB_Mini_B_Female_UX60-MB-5ST.kicad_mod",
+    "sourceFootprint": "USB_Mini_B_Female_UX60-MB-5ST"
+  }
+}

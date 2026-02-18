@@ -1,0 +1,29 @@
+{
+  "name": "BLUETOOTH-MODULE_RFD77101",
+  "type": "PT_GENERIC",
+  "body": {
+    "length": 6.942,
+    "width": 5.327
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "GULLWING",
+        "numLeads": 45,
+        "distFromCenter": 0,
+        "ccHalf": 4.959,
+        "angleMilliDeg": 0,
+        "padLength": 0.879,
+        "padWidth": 0.531
+      }
+    ]
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/Bluetooth_Module_RFD77101.kicad_mod",
+    "sourceFootprint": "Bluetooth_Module_RFD77101"
+  }
+}

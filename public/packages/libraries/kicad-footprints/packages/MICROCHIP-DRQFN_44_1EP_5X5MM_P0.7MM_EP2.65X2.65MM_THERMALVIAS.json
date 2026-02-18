@@ -1,0 +1,23 @@
+{
+  "name": "MICROCHIP-DRQFN_44_1EP_5X5MM_P0.7MM_EP2.65X2.65MM_THERMALVIAS",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 5,
+    "width": 5
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 44,
+    "widthOverLeads": 5.5,
+    "leadPitch": 0.7,
+    "leadWidth": 0.3,
+    "leadLength": 0.6
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_DFN_QFN.pretty/Microchip_DRQFN-44-1EP_5x5mm_P0.7mm_EP2.65x2.65mm_ThermalVias.kicad_mod",
+    "sourceFootprint": "Microchip_DRQFN-44-1EP_5x5mm_P0.7mm_EP2.65x2.65mm_ThermalVias"
+  }
+}

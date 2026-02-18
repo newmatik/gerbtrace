@@ -159,7 +159,8 @@ function drawShape(
 function resolveColor(role: THTShapeRole, override: string | undefined, pkg: THTPackageDefinition, isDark: boolean): string {
   if (override) return override
   if (role === 'body') return pkg.bodyColor || (isDark ? 'rgba(50,50,50,0.85)' : 'rgba(60,60,60,0.85)')
-  if (role === 'pin' || role === 'pin1') return pkg.pinColor || (isDark ? 'rgba(200,200,200,0.9)' : 'rgba(180,180,180,0.9)')
+  if (role === 'pin1') return isDark ? 'rgba(255,92,92,0.95)' : 'rgba(220,38,38,0.95)'
+  if (role === 'pin') return pkg.pinColor || (isDark ? 'rgba(200,200,200,0.9)' : 'rgba(180,180,180,0.9)')
   if (role === 'polarity-marker') return isDark ? 'rgba(255,80,80,0.9)' : 'rgba(220,50,50,0.9)'
   return isDark ? '#666' : '#999'
 }
@@ -167,7 +168,8 @@ function resolveColor(role: THTShapeRole, override: string | undefined, pkg: THT
 function resolveStroke(role: THTShapeRole, override: string | undefined, pkg: THTPackageDefinition, isDark: boolean): string {
   if (override) return override
   if (role === 'body') return pkg.bodyStrokeColor || (isDark ? 'rgba(80,80,80,0.9)' : 'rgba(100,100,100,0.9)')
-  if (role === 'pin' || role === 'pin1') return pkg.pinStrokeColor || (isDark ? 'rgba(150,150,150,0.8)' : 'rgba(120,120,120,0.8)')
+  if (role === 'pin1') return isDark ? 'rgba(255,140,140,1)' : 'rgba(185,28,28,1)'
+  if (role === 'pin') return pkg.pinStrokeColor || (isDark ? 'rgba(150,150,150,0.8)' : 'rgba(120,120,120,0.8)')
   return isDark ? '#888' : '#aaa'
 }
 

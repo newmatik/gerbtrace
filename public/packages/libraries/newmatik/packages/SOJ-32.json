@@ -1,0 +1,25 @@
+{
+  "name": "SOJ-32",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 20,
+    "width": 7.5
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 32,
+    "widthOverLeads": 10.3,
+    "leadPitch": 1.27,
+    "leadWidth": 0.4,
+    "leadLength": 0.6
+  },
+  "aliases": [
+    "SOJ32"
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/SOJ-32.json",
+    "sourceFootprint": "SOJ-32"
+  }
+}

@@ -1,0 +1,206 @@
+{
+  "name": "TOGGLE-SWITCH_100SP1T1B4M2QE",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 4.7,
+      "y": 0,
+      "width": 13.7,
+      "height": 7.85,
+      "cornerRadius": 0.628,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 4.7,
+      "y": 0,
+      "radius": 3.4,
+      "color": "#374151",
+      "strokeColor": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.65,
+      "y1": 3.43,
+      "x2": 11.05,
+      "y2": 3.43,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.65,
+      "y1": -3.43,
+      "x2": 11.05,
+      "y2": -3.43,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 11.05,
+      "y1": 3.43,
+      "x2": 11.05,
+      "y2": -3.43,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.65,
+      "y1": -3.43,
+      "x2": -1.65,
+      "y2": 3.43,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.75,
+      "y1": 3.525,
+      "x2": -1.3,
+      "y2": 3.525,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 11.125,
+      "y1": 3.525,
+      "x2": 10.675,
+      "y2": 3.525,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 11.15,
+      "y1": 3.525,
+      "x2": 11.15,
+      "y2": 3.1,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.75,
+      "y1": 3.525,
+      "x2": -1.75,
+      "y2": 3.1,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.75,
+      "y1": -3.525,
+      "x2": -1.35,
+      "y2": -3.525,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.75,
+      "y1": -3.525,
+      "x2": -1.75,
+      "y2": -3.15,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 10.775,
+      "y1": -3.525,
+      "x2": 11.15,
+      "y2": -3.525,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 11.15,
+      "y1": -3.525,
+      "x2": 11.15,
+      "y2": -3.175,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "rect",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "width": 2.85,
+      "height": 2.85
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.925,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 4.7,
+      "y": 0,
+      "radius": 1.425
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 4.7,
+      "y": 0,
+      "radius": 0.925,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 9.4,
+      "y": 0,
+      "radius": 1.425
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 9.4,
+      "y": 0,
+      "radius": 0.925,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/Toggle_Switch_100SP1T1B4M2QE.kicad_mod",
+    "sourceFootprint": "Toggle_Switch_100SP1T1B4M2QE"
+  }
+}

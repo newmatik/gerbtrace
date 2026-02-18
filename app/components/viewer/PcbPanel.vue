@@ -59,16 +59,16 @@
           <div class="space-y-0.5">
             <label class="text-[10px] text-neutral-400">Layers</label>
             <div class="flex items-center gap-1">
-              <select
-                :value="localData.layerCount ?? ''"
-                class="w-full text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded px-2 py-1 outline-none focus:border-primary transition-colors"
-                @change="updateLayerCount(parseInt(($event.target as HTMLSelectElement).value) || undefined)"
-              >
-                <option value="" disabled>Select...</option>
-                <option v-for="n in LAYER_COUNT_OPTIONS" :key="n" :value="n">
-                  {{ n }}L
-                </option>
-              </select>
+              <USelect
+                :model-value="localData.layerCount"
+                size="xs"
+                class="w-full"
+                :items="layerCountOptions"
+                value-key="value"
+                label-key="label"
+                placeholder="Select..."
+                @update:model-value="updateLayerCount(($event as number | undefined))"
+              />
               <button
                 v-if="detectedLayerCount && detectedLayerCount !== localData.layerCount"
                 class="shrink-0 text-[9px] px-1 py-0.5 rounded border border-neutral-200 dark:border-neutral-700 text-neutral-400 hover:text-primary hover:border-primary/30 transition-colors whitespace-nowrap"
@@ -83,45 +83,114 @@
           <!-- Surface Finish -->
           <div class="space-y-0.5">
             <label class="text-[10px] text-neutral-400">Surface Finish</label>
-            <select
-              :value="localData.surfaceFinish ?? ''"
-              class="w-full text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded px-2 py-1 outline-none focus:border-primary transition-colors"
-              @change="updateField('surfaceFinish', ($event.target as HTMLSelectElement).value || undefined)"
-            >
-              <option value="" disabled>Select...</option>
-              <option v-for="opt in SURFACE_FINISH_OPTIONS" :key="opt.value" :value="opt.value">
-                {{ opt.label }}
-              </option>
-            </select>
+            <USelect
+              :model-value="localData.surfaceFinish"
+              size="xs"
+              class="w-full"
+              :items="SURFACE_FINISH_OPTIONS"
+              value-key="value"
+              label-key="label"
+              placeholder="Select..."
+              @update:model-value="updateField('surfaceFinish', ($event as SurfaceFinish | undefined))"
+            />
           </div>
 
           <!-- Copper Weight -->
           <div class="space-y-0.5">
             <label class="text-[10px] text-neutral-400">Copper Weight</label>
-            <select
-              :value="localData.copperWeight ?? ''"
-              class="w-full text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded px-2 py-1 outline-none focus:border-primary transition-colors"
-              @change="updateField('copperWeight', ($event.target as HTMLSelectElement).value || undefined)"
-            >
-              <option value="" disabled>Select...</option>
-              <option v-for="opt in COPPER_WEIGHT_OPTIONS" :key="opt.value" :value="opt.value">
-                {{ opt.label }}
-              </option>
-            </select>
+            <USelect
+              :model-value="localData.copperWeight"
+              size="xs"
+              class="w-full"
+              :items="COPPER_WEIGHT_OPTIONS"
+              value-key="value"
+              label-key="label"
+              placeholder="Select..."
+              @update:model-value="updateField('copperWeight', ($event as CopperWeight | undefined))"
+            />
+          </div>
+
+          <!-- Thickness -->
+          <div class="space-y-0.5">
+            <label class="text-[10px] text-neutral-400">Thickness</label>
+            <USelect
+              :model-value="localData.thicknessMm ?? 1.6"
+              size="xs"
+              class="w-full"
+              :items="PCB_THICKNESS_OPTIONS"
+              value-key="value"
+              label-key="label"
+              @update:model-value="updateField('thicknessMm', (($event as PcbThicknessMm | undefined) ?? 1.6))"
+            />
           </div>
 
           <!-- Inner Copper Weight (only for multilayer boards) -->
           <div v-if="(localData.layerCount ?? 0) > 2" class="space-y-0.5">
             <label class="text-[10px] text-neutral-400">Inner Copper</label>
-            <select
-              :value="localData.innerCopperWeight ?? '0.5oz'"
-              class="w-full text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded px-2 py-1 outline-none focus:border-primary transition-colors"
-              @change="updateField('innerCopperWeight', ($event.target as HTMLSelectElement).value || undefined)"
-            >
-              <option v-for="opt in INNER_COPPER_WEIGHT_OPTIONS" :key="opt.value" :value="opt.value">
-                {{ opt.label }}
-              </option>
-            </select>
+            <USelect
+              :model-value="localData.innerCopperWeight ?? '0.5oz'"
+              size="xs"
+              class="w-full"
+              :items="INNER_COPPER_WEIGHT_OPTIONS"
+              value-key="value"
+              label-key="label"
+              @update:model-value="updateField('innerCopperWeight', ($event as '0.5oz' | '1oz' | '2oz' | undefined))"
+            />
+          </div>
+
+          <!-- Solder Mask Color -->
+          <div class="space-y-0.5">
+            <label class="text-[10px] text-neutral-400">Solder Mask Color</label>
+            <UPopover v-model:open="showSolderMaskDropdown" :content="{ align: 'start', sideOffset: 6 }">
+              <button
+                class="w-full flex items-center gap-2 text-xs px-2 py-1 rounded border border-neutral-200 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-600 transition-colors cursor-pointer"
+              >
+                <span
+                  class="inline-block w-2.5 h-2.5 rounded-full border border-neutral-300/60 dark:border-neutral-600/70 shrink-0"
+                  :style="{ backgroundColor: selectedSolderMaskOption.hex }"
+                />
+                <span class="truncate">{{ selectedSolderMaskOption.label }}</span>
+                <UIcon name="i-lucide-chevron-down" class="ml-auto text-[10px] opacity-60 shrink-0" />
+              </button>
+              <template #content>
+                <div class="p-1.5 min-w-44 bg-white dark:bg-neutral-900 rounded-md border border-neutral-200 dark:border-neutral-700 shadow-lg">
+                  <button
+                    v-for="opt in solderMaskOptions"
+                    :key="opt.value"
+                    class="w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+                    :class="localData.solderMaskColor === opt.value || (!localData.solderMaskColor && opt.value === 'green')
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-neutral-700 dark:text-neutral-200'"
+                    @click="setSolderMaskColor(opt.value)"
+                  >
+                    <span
+                      class="inline-block w-2.5 h-2.5 rounded-full border border-neutral-300/60 dark:border-neutral-600/70 shrink-0"
+                      :style="{ backgroundColor: opt.hex }"
+                    />
+                    <span class="flex-1 text-left">{{ opt.label }}</span>
+                    <UIcon
+                      v-if="localData.solderMaskColor === opt.value || (!localData.solderMaskColor && opt.value === 'green')"
+                      name="i-lucide-check"
+                      class="text-[11px] shrink-0"
+                    />
+                  </button>
+                </div>
+              </template>
+            </UPopover>
+          </div>
+
+          <!-- Panelization -->
+          <div class="space-y-0.5">
+            <label class="text-[10px] text-neutral-400">Panelization</label>
+            <USelect
+              :model-value="localData.panelizationMode ?? 'single'"
+              size="xs"
+              class="w-full"
+              :items="panelizationOptions"
+              value-key="value"
+              label-key="label"
+              @update:model-value="updateField('panelizationMode', ($event as 'single' | 'panelized' | undefined))"
+            />
           </div>
 
           <!-- Board Area (computed) -->
@@ -132,29 +201,9 @@
             </div>
           </div>
         </div>
-
       </div>
 
-      <!-- Section 2: Board Color / Preset Selector -->
-      <div class="px-4 py-2 border-t border-neutral-200 dark:border-neutral-800">
-        <div class="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider mb-2">
-          Board Color
-        </div>
-        <UDropdownMenu :items="presetMenuItems">
-          <button
-            class="w-full flex items-center gap-2 text-xs px-2.5 py-1.5 rounded-md border border-neutral-200 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-600 transition-colors cursor-pointer"
-          >
-            <span
-              class="inline-block w-3 h-3 rounded-full border border-neutral-300/50 dark:border-neutral-600/50 shrink-0"
-              :style="{ backgroundColor: selectedPreset.solderMask }"
-            />
-            <span class="flex-1 text-left truncate">{{ selectedPreset.name }}</span>
-            <UIcon name="i-lucide-chevron-down" class="text-[10px] opacity-50 shrink-0" />
-          </button>
-        </UDropdownMenu>
-      </div>
-
-      <!-- Section 3: Gerber & Drill Files -->
+      <!-- Section 2: Gerber & Drill Files -->
       <div class="px-3 py-2 border-t border-neutral-200 dark:border-neutral-800">
         <div v-if="gerberDrillGroups.length === 0" class="text-xs text-neutral-400 py-4 text-center">
           No Gerber or drill files loaded
@@ -219,11 +268,12 @@ import {
   LAYER_COUNT_OPTIONS,
   SURFACE_FINISH_OPTIONS,
   COPPER_WEIGHT_OPTIONS,
+  PCB_THICKNESS_OPTIONS,
 } from '~/utils/pcb-pricing'
-import type { SurfaceFinish, CopperWeight } from '~/utils/pcb-pricing'
+import type { SurfaceFinish, CopperWeight, PcbThicknessMm } from '~/utils/pcb-pricing'
 import type { LayerInfo } from '~/utils/gerber-helpers'
 import { getLayerGroup, LAYER_GROUP_LABELS, type LayerGroupKey } from '~/utils/gerber-helpers'
-import { PCB_PRESETS, type PcbPreset } from '~/utils/pcb-presets'
+import { SOLDER_MASK_COLOR_OPTIONS, type SolderMaskColor } from '~/utils/pcb-presets'
 
 interface PcbData {
   sizeX?: number
@@ -232,6 +282,9 @@ interface PcbData {
   surfaceFinish?: SurfaceFinish
   copperWeight?: CopperWeight
   innerCopperWeight?: '0.5oz' | '1oz' | '2oz'
+  thicknessMm?: PcbThicknessMm
+  solderMaskColor?: SolderMaskColor
+  panelizationMode?: 'single' | 'panelized'
 }
 
 interface LayerGroupData {
@@ -246,12 +299,10 @@ const props = defineProps<{
   detectedLayerCount?: number | null
   layers: LayerInfo[]
   editedLayers?: Set<string>
-  selectedPreset: PcbPreset
 }>()
 
 const emit = defineEmits<{
   'update:pcbData': [data: PcbData]
-  'selectPreset': [preset: PcbPreset]
   'toggleVisibility': [index: number]
   'toggleGroupVisibility': [indices: number[]]
   'changeColor': [index: number, color: string]
@@ -263,6 +314,7 @@ const emit = defineEmits<{
 }>()
 
 const localData = computed<PcbData>(() => props.pcbData ?? {})
+const showSolderMaskDropdown = ref(false)
 
 function updateField(field: keyof PcbData, value: number | string | undefined) {
   const updated = { ...localData.value, [field]: value }
@@ -288,20 +340,47 @@ function roundMm(val: number): number {
   return Math.round(val * 100) / 100
 }
 
+const SOLDER_MASK_SWATCHES: Record<SolderMaskColor, string> = {
+  green: '#146b3a',
+  black: '#1a1a1a',
+  blue: '#1a3a6b',
+  red: '#8b1a1a',
+  white: '#e8e8e8',
+  purple: '#4a1a6b',
+}
+
+const solderMaskOptions = computed(() =>
+  SOLDER_MASK_COLOR_OPTIONS.map(opt => ({
+    ...opt,
+    hex: SOLDER_MASK_SWATCHES[opt.value],
+  })),
+)
+
+const selectedSolderMaskOption = computed(() => {
+  const selected = localData.value.solderMaskColor ?? 'green'
+  return solderMaskOptions.value.find(opt => opt.value === selected) ?? solderMaskOptions.value[0]
+})
+
+function setSolderMaskColor(value: SolderMaskColor) {
+  updateField('solderMaskColor', value)
+  showSolderMaskDropdown.value = false
+}
+
 const INNER_COPPER_WEIGHT_OPTIONS: { value: '0.5oz' | '1oz' | '2oz'; label: string }[] = [
   { value: '0.5oz', label: '0.5 oz (18 µm)' },
   { value: '1oz', label: '1 oz (35 µm)' },
   { value: '2oz', label: '2 oz (70 µm)' },
 ]
 
-// Preset dropdown
-const presetMenuItems = computed(() => [
-  PCB_PRESETS.map(preset => ({
-    label: preset.name,
-    icon: preset.id === props.selectedPreset.id ? 'i-lucide-check' : undefined,
-    onSelect: () => emit('selectPreset', preset),
-  })),
-])
+const layerCountOptions: { label: string; value: number }[] = LAYER_COUNT_OPTIONS.map(n => ({
+  label: `${n}L`,
+  value: n as number,
+}))
+
+const panelizationOptions: { label: string; value: 'single' | 'panelized' }[] = [
+  { label: 'Single PCB', value: 'single' },
+  { label: 'Panelized PCB', value: 'panelized' },
+]
 
 // Collapsible groups — only gerber and drill
 const collapsed = ref(new Set<LayerGroupKey>())

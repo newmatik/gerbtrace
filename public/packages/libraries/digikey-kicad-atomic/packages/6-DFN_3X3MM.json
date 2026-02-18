@@ -1,0 +1,29 @@
+{
+  "name": "6-DFN_3X3MM",
+  "type": "PT_GENERIC",
+  "body": {
+    "length": 1.68,
+    "width": 2.31
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "GULLWING",
+        "numLeads": 7,
+        "distFromCenter": 0,
+        "ccHalf": 1.65,
+        "angleMilliDeg": 0,
+        "padLength": 0.729,
+        "padWidth": 0.686
+      }
+    ]
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/6-DFN_3x3mm.kicad_mod",
+    "sourceFootprint": "6-DFN_3x3mm"
+  }
+}

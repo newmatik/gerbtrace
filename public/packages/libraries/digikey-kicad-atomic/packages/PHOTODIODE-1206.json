@@ -1,0 +1,23 @@
+{
+  "name": "PHOTODIODE-1206",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 4.9,
+    "width": 1.8
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 2,
+    "widthOverLeads": 1.8,
+    "leadPitch": 3.4,
+    "leadWidth": 1.5,
+    "leadLength": 1.8
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/Photodiode_1206.kicad_mod",
+    "sourceFootprint": "Photodiode_1206"
+  }
+}

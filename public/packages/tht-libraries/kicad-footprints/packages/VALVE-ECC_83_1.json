@@ -1,0 +1,190 @@
+{
+  "name": "VALVE-ECC_83_1",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": -3.45,
+      "y": -4.75,
+      "width": 21.278,
+      "height": 21.278,
+      "cornerRadius": 1.702,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -3.45,
+      "y": -4.75,
+      "radius": 10,
+      "color": "#374151",
+      "strokeColor": "#6b7280"
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -3.45,
+      "y": -4.75,
+      "radius": 10.239,
+      "color": "#4b5563",
+      "strokeColor": "#6b7280"
+    },
+    {
+      "kind": "circle",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "radius": 1.015
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.51,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 2.15,
+      "y": -2.93,
+      "radius": 1.015
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 2.15,
+      "y": -2.93,
+      "radius": 0.51,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 2.15,
+      "y": -6.58,
+      "radius": 1.015
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 2.15,
+      "y": -6.58,
+      "radius": 0.51,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 0,
+      "y": -9.51,
+      "radius": 1.015
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": -9.51,
+      "radius": 0.51,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -3.45,
+      "y": -10.65,
+      "radius": 1.015
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -3.45,
+      "y": -10.65,
+      "radius": 0.51,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -6.91,
+      "y": -9.51,
+      "radius": 1.015
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -6.91,
+      "y": -9.51,
+      "radius": 0.51,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -9.06,
+      "y": -6.58,
+      "radius": 1.015
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -9.06,
+      "y": -6.58,
+      "radius": 0.51,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -9.06,
+      "y": -2.97,
+      "radius": 1.015
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -9.06,
+      "y": -2.97,
+      "radius": 0.51,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -6.91,
+      "y": 0,
+      "radius": 1.015
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -6.91,
+      "y": 0,
+      "radius": 0.51,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Valve.pretty/Valve_ECC-83-1.kicad_mod",
+    "sourceFootprint": "Valve_ECC-83-1"
+  }
+}

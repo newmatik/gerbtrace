@@ -1,0 +1,233 @@
+{
+  "name": "POTENTIOMETER-P120PK_Y25BR10K",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 3.75,
+      "y": -6.425,
+      "width": 14.05,
+      "height": 17.25,
+      "cornerRadius": 1.124,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 10.25,
+      "y1": -14.525,
+      "x2": 10.25,
+      "y2": 1.675,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.75,
+      "y1": 1.275,
+      "x2": -2.75,
+      "y2": -14.525,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.75,
+      "y1": -14.525,
+      "x2": 10.25,
+      "y2": -14.525,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.375,
+      "y1": 1.675,
+      "x2": 10.25,
+      "y2": 1.675,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.45,
+      "y1": 1.8,
+      "x2": -1.15,
+      "y2": 1.8,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.8,
+      "y1": -14.65,
+      "x2": -2.875,
+      "y2": -14.65,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.875,
+      "y1": -14.65,
+      "x2": -2.875,
+      "y2": -13.75,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 9.525,
+      "y1": -14.65,
+      "x2": 10.375,
+      "y2": -14.65,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.875,
+      "y1": 0.575,
+      "x2": -2.875,
+      "y2": 1.35,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 10.375,
+      "y1": 1.025,
+      "x2": 10.375,
+      "y2": 1.8,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 10.375,
+      "y1": 1.8,
+      "x2": 9.625,
+      "y2": 1.8,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 10.375,
+      "y1": -14.65,
+      "x2": 10.375,
+      "y2": -14,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.875,
+      "y1": 1.35,
+      "x2": -2.45,
+      "y2": 1.8,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.75,
+      "y1": 1.275,
+      "x2": -2.375,
+      "y2": 1.675,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "rect",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "width": 2,
+      "height": 2
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 3.75,
+      "y": 0,
+      "radius": 1
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 3.75,
+      "y": 0,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 7.5,
+      "y": 0,
+      "radius": 1
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 7.5,
+      "y": 0,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "rect",
+      "role": "pin",
+      "x": -1.45,
+      "y": -8.325,
+      "width": 2.8,
+      "height": 3.8
+    },
+    {
+      "kind": "rect",
+      "role": "pin",
+      "x": 8.95,
+      "y": -8.325,
+      "width": 2.8,
+      "height": 3.8
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/Potentiometer_P120PK-Y25BR10K.kicad_mod",
+    "sourceFootprint": "Potentiometer_P120PK-Y25BR10K"
+  }
+}

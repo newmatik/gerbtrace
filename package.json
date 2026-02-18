@@ -1,14 +1,22 @@
 {
   "name": "gerbtrace",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "private": true,
   "description": "Gerbtrace — View and compare Gerber PCB files in the browser",
   "author": "Newmatik GmbH",
   "license": "MIT",
   "type": "module",
   "scripts": {
+    "libraries:sync": "node scripts/sync-cad-libraries.mjs",
+    "libraries:parse": "node scripts/parse-cad-libraries-to-tpsys.mjs",
+    "libraries:parse:tht": "node scripts/parse-cad-libraries-to-tht.mjs",
+    "packages:migrate:newmatik": "node scripts/migrate-builtins-to-library-tree.mjs",
+    "packages:cleanup:legacy-root": "node scripts/cleanup-legacy-package-root.mjs",
     "packages:manifest": "node scripts/build-packages-manifest.mjs",
+    "packages:tht:manifest": "node scripts/build-tht-packages-manifest.mjs",
     "packages:check": "node scripts/check-packages.mjs",
+    "packages:tree:manifest": "node scripts/build-packages-manifest.mjs",
+    "packages:tree:check": "node scripts/check-packages.mjs",
     "packages:extract-mycenter": "node scripts/extract-mycenter-packages.mjs",
     "precommit": "npm run packages:manifest && npm run packages:check",
     "dev": "npm run precommit && nuxt dev",
@@ -28,6 +36,7 @@
   },
   "dependencies": {
     "@nuxt/ui": "^4.4.0",
+    "@sentry/nuxt": "^10.39.0",
     "@supabase/supabase-js": "^2.95.3",
     "@tanstack/vue-virtual": "^3.13.18",
     "@tauri-apps/plugin-opener": "^2.5.3",
@@ -54,5 +63,8 @@
   },
   "simple-git-hooks": {
     "pre-commit": "npm run precommit"
+  },
+  "overrides": {
+    "@vercel/nft": "^0.27.4"
   }
 }

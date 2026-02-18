@@ -1,0 +1,23 @@
+{
+  "name": "TFLGA-16_3X3",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 3.25,
+    "width": 3
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 16,
+    "widthOverLeads": 3.5,
+    "leadPitch": 0.5,
+    "leadWidth": 0.3,
+    "leadLength": 0.925
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/TFLGA-16_3x3.25mm.kicad_mod",
+    "sourceFootprint": "TFLGA-16_3x3.25mm"
+  }
+}

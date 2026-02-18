@@ -1,0 +1,29 @@
+{
+  "name": "INFINEON-PQFN_22_15_4EP_6X5MM_P0",
+  "type": "PT_GENERIC",
+  "body": {
+    "length": 3.92,
+    "width": 4.616
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "GULLWING",
+        "numLeads": 55,
+        "distFromCenter": 0,
+        "ccHalf": 3.298,
+        "angleMilliDeg": 0,
+        "padLength": 0.706,
+        "padWidth": 0.684
+      }
+    ]
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_DFN_QFN.pretty/Infineon_PQFN-22-15-4EP_6x5mm_P0.65mm.kicad_mod",
+    "sourceFootprint": "Infineon_PQFN-22-15-4EP_6x5mm_P0.65mm"
+  }
+}

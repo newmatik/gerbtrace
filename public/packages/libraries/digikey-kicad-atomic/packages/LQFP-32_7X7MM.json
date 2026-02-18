@@ -1,0 +1,23 @@
+{
+  "name": "LQFP-32_7X7MM",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 7,
+    "width": 7
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 32,
+    "widthOverLeads": 9.7,
+    "leadPitch": 0.8,
+    "leadWidth": 0.5,
+    "leadLength": 1.2
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/LQFP-32_7x7mm.kicad_mod",
+    "sourceFootprint": "LQFP-32_7x7mm"
+  }
+}

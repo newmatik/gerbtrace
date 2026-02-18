@@ -1,0 +1,23 @@
+{
+  "name": "DFN-8-1EP_3X3MM_P0.65MM_EP1.7X2",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 3,
+    "width": 3
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 8,
+    "widthOverLeads": 3.7,
+    "leadPitch": 0.65,
+    "leadWidth": 0.3,
+    "leadLength": 0.8
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_DFN_QFN.pretty/DFN-8-1EP_3x3mm_P0.65mm_EP1.7x2.05mm.kicad_mod",
+    "sourceFootprint": "DFN-8-1EP_3x3mm_P0.65mm_EP1.7x2.05mm"
+  }
+}

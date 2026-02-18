@@ -1,0 +1,23 @@
+{
+  "name": "SOT-343_SC_70_4_HANDSOLDERING",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 1.19,
+    "width": 2.912
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 4,
+    "widthOverLeads": 4.16,
+    "leadPitch": 1.7,
+    "leadWidth": 0.4,
+    "leadLength": 1.5
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_TO_SOT_SMD.pretty/SOT-343_SC-70-4_Handsoldering.kicad_mod",
+    "sourceFootprint": "SOT-343_SC-70-4_Handsoldering"
+  }
+}

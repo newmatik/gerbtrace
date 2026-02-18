@@ -1,0 +1,93 @@
+{
+  "name": "TEXAS-SWRA117D_2.4GHZ_LEFT",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": -4.55,
+      "y": -2.625,
+      "width": 16.3,
+      "height": 6.75,
+      "cornerRadius": 0.54,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -12.3,
+      "y1": 0.35,
+      "x2": 3.2,
+      "y2": 0.35,
+      "strokeWidth": 0.15,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.2,
+      "y1": -5.6,
+      "x2": -12.3,
+      "y2": -5.6,
+      "strokeWidth": 0.15,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -12.3,
+      "y1": -5.6,
+      "x2": -12.3,
+      "y2": 0.35,
+      "strokeWidth": 0.15,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.2,
+      "y1": 0.35,
+      "x2": 3.2,
+      "y2": -5.6,
+      "strokeWidth": 0.15,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "rect",
+      "role": "pin",
+      "x": 2.1,
+      "y": 0,
+      "width": 0.9,
+      "height": 0.5
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 2.1,
+      "y": 0,
+      "radius": 0.15,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "polarity-marker",
+      "x": 1.74,
+      "y": 0.36,
+      "radius": 0.2,
+      "color": "#ef4444"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/RF_Antenna.pretty/Texas_SWRA117D_2.4GHz_Left.kicad_mod",
+    "sourceFootprint": "Texas_SWRA117D_2.4GHz_Left"
+  }
+}

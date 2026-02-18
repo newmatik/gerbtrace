@@ -1,0 +1,76 @@
+{
+  "name": "NET-TIE_3_THT_PAD0",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 1.2,
+      "y": 0,
+      "width": 3.8,
+      "height": 1.4,
+      "cornerRadius": 0.112,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "circle",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "radius": 0.3
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.15,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 1.2,
+      "y": 0,
+      "radius": 0.3
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 1.2,
+      "y": 0,
+      "radius": 0.15,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 2.4,
+      "y": 0,
+      "radius": 0.3
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 2.4,
+      "y": 0,
+      "radius": 0.15,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/NetTie.pretty/NetTie-3_THT_Pad0.3mm.kicad_mod",
+    "sourceFootprint": "NetTie-3_THT_Pad0.3mm"
+  }
+}

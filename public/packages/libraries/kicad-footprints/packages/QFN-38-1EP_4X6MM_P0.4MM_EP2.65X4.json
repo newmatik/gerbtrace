@@ -1,0 +1,29 @@
+{
+  "name": "QFN-38-1EP_4X6MM_P0.4MM_EP2.65X4",
+  "type": "PT_GENERIC",
+  "body": {
+    "length": 4.725,
+    "width": 3.325
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "GULLWING",
+        "numLeads": 46,
+        "distFromCenter": 0,
+        "ccHalf": 3.375,
+        "angleMilliDeg": 0,
+        "padLength": 0.69,
+        "padWidth": 0.527
+      }
+    ]
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_DFN_QFN.pretty/QFN-38-1EP_4x6mm_P0.4mm_EP2.65x4.65mm.kicad_mod",
+    "sourceFootprint": "QFN-38-1EP_4x6mm_P0.4mm_EP2.65x4.65mm"
+  }
+}

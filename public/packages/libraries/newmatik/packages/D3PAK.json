@@ -1,0 +1,19 @@
+{
+  "name": "D3PAK",
+  "type": "PT_OUTLINE",
+  "body": {
+    "length": 9,
+    "width": 8
+  },
+  "outline": {
+    "length": 9,
+    "width": 8
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/D3PAK.json",
+    "sourceFootprint": "D3PAK"
+  }
+}

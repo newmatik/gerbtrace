@@ -1,0 +1,22 @@
+{
+  "name": "SOT-93",
+  "type": "PT_OUTLINE",
+  "body": {
+    "length": 15,
+    "width": 15
+  },
+  "outline": {
+    "length": 15,
+    "width": 15
+  },
+  "aliases": [
+    "SOT93"
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/SOT-93.json",
+    "sourceFootprint": "SOT-93"
+  }
+}

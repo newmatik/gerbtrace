@@ -1,0 +1,23 @@
+{
+  "name": "TFSOP-12-16_W3",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 3.8,
+    "width": 5.1
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 12,
+    "widthOverLeads": 5.1,
+    "leadPitch": 0.5,
+    "leadWidth": 0.3,
+    "leadLength": 0.9
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/TFSOP-12-16_W3.00mm.kicad_mod",
+    "sourceFootprint": "TFSOP-12-16_W3.00mm"
+  }
+}

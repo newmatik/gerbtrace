@@ -1,0 +1,29 @@
+{
+  "name": "TEXAS-PWSON_N6",
+  "type": "PT_GENERIC",
+  "body": {
+    "length": 1.68,
+    "width": 2.38
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "GULLWING",
+        "numLeads": 7,
+        "distFromCenter": 0,
+        "ccHalf": 1.7,
+        "angleMilliDeg": 0,
+        "padLength": 0.729,
+        "padWidth": 0.686
+      }
+    ]
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_SON.pretty/Texas_PWSON-N6.kicad_mod",
+    "sourceFootprint": "Texas_PWSON-N6"
+  }
+}

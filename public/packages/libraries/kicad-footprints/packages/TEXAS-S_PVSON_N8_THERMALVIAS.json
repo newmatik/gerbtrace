@@ -1,0 +1,23 @@
+{
+  "name": "TEXAS-S_PVSON_N8_THERMALVIAS",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 2.4,
+    "width": 3.8
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 22,
+    "widthOverLeads": 4.15,
+    "leadPitch": 0.65,
+    "leadWidth": 0.4,
+    "leadLength": 0.65
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_SON.pretty/Texas_S-PVSON-N8_ThermalVias.kicad_mod",
+    "sourceFootprint": "Texas_S-PVSON-N8_ThermalVias"
+  }
+}

@@ -1,0 +1,272 @@
+{
+  "name": "TEXAS-RGY_R_PVQFN_N24_EP2.05X3.1MM_THERMALVIAS",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "width": 4.52,
+      "height": 6.52,
+      "cornerRadius": 0.362,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 1.75,
+      "y1": -2.75,
+      "x2": 1.75,
+      "y2": 2.75,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.75,
+      "y1": 2.75,
+      "x2": -1.75,
+      "y2": -1.875,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 1.75,
+      "y1": 2.75,
+      "x2": -1.75,
+      "y2": 2.75,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.875,
+      "y1": -2.75,
+      "x2": 1.75,
+      "y2": -2.75,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.75,
+      "y1": -1.875,
+      "x2": -0.875,
+      "y2": -2.75,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 1.15,
+      "y1": -2.86,
+      "x2": 1.86,
+      "y2": -2.86,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.15,
+      "y1": 2.86,
+      "x2": -1.86,
+      "y2": 2.86,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 1.15,
+      "y1": 2.86,
+      "x2": 1.86,
+      "y2": 2.86,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.15,
+      "y1": -2.86,
+      "x2": -1.86,
+      "y2": -2.86,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.35,
+      "y1": -2.86,
+      "x2": -0.35,
+      "y2": -2.86,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.35,
+      "y1": 2.86,
+      "x2": -0.35,
+      "y2": 2.86,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 1.86,
+      "y1": -2.86,
+      "x2": 1.86,
+      "y2": -2.65,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.86,
+      "y1": 2.86,
+      "x2": -1.86,
+      "y2": 2.65,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 1.86,
+      "y1": 2.86,
+      "x2": 1.86,
+      "y2": 2.65,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 0.5,
+      "y": 0,
+      "radius": 0.3
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0.5,
+      "y": 0,
+      "radius": 0.15,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 0.5,
+      "y": -1,
+      "radius": 0.3
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0.5,
+      "y": -1,
+      "radius": 0.15,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -0.5,
+      "y": -1,
+      "radius": 0.3
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -0.5,
+      "y": -1,
+      "radius": 0.15,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -0.5,
+      "y": 0,
+      "radius": 0.3
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -0.5,
+      "y": 0,
+      "radius": 0.15,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 0.5,
+      "y": 1,
+      "radius": 0.3
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0.5,
+      "y": 1,
+      "radius": 0.15,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -0.5,
+      "y": 1,
+      "radius": 0.3
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -0.5,
+      "y": 1,
+      "radius": 0.15,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "polarity-marker",
+      "x": 0.14,
+      "y": 0.36,
+      "radius": 0.2,
+      "color": "#ef4444"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_DFN_QFN.pretty/Texas_RGY_R-PVQFN-N24_EP2.05x3.1mm_ThermalVias.kicad_mod",
+    "sourceFootprint": "Texas_RGY_R-PVQFN-N24_EP2.05x3.1mm_ThermalVias"
+  }
+}

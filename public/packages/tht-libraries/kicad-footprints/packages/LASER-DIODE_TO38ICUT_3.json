@@ -1,0 +1,207 @@
+{
+  "name": "LASER-DIODE_TO38ICUT_3",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 0.7,
+      "y": 0,
+      "width": 4.5,
+      "height": 4.2,
+      "cornerRadius": 0.336,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0.71,
+      "y": 0,
+      "radius": 1.26,
+      "color": "#374151",
+      "strokeColor": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.4,
+      "y1": 1.6,
+      "x2": 1.8,
+      "y2": 1.6,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 1.8,
+      "y1": -1.6,
+      "x2": -0.4,
+      "y2": -1.6,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 1.8,
+      "y1": -1.7,
+      "x2": -0.4,
+      "y2": -1.7,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.4,
+      "y1": 1.7,
+      "x2": 1.8,
+      "y2": 1.7,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.95,
+      "y1": 0,
+      "x2": -1.15,
+      "y2": 0.3,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.15,
+      "y1": -0.3,
+      "x2": -0.95,
+      "y2": 0,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.15,
+      "y1": -0.3,
+      "x2": -0.95,
+      "y2": 0,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.95,
+      "y1": 0,
+      "x2": -1.15,
+      "y2": 0.3,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 2.35,
+      "y1": 0,
+      "x2": 2.55,
+      "y2": 0.3,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 2.55,
+      "y1": -0.3,
+      "x2": 2.35,
+      "y2": 0,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 2.55,
+      "y1": -0.3,
+      "x2": 2.35,
+      "y2": 0,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 2.35,
+      "y1": 0,
+      "x2": 2.55,
+      "y2": 0.3,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "width": 0.8,
+      "height": 0.8,
+      "cornerRadius": 0.36
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.25,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 0.71,
+      "y": 0.71,
+      "radius": 0.4
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0.71,
+      "y": 0.71,
+      "radius": 0.25,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 1.43,
+      "y": 0,
+      "radius": 0.4
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 1.43,
+      "y": 0,
+      "radius": 0.25,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/OptoDevice.pretty/LaserDiode_TO38ICut-3.kicad_mod",
+    "sourceFootprint": "LaserDiode_TO38ICut-3"
+  }
+}

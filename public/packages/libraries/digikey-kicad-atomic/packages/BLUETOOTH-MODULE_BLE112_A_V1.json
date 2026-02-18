@@ -1,0 +1,23 @@
+{
+  "name": "BLUETOOTH-MODULE_BLE112_A_V1",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 19.125,
+    "width": 15.5
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 30,
+    "widthOverLeads": 15.5,
+    "leadPitch": 1.25,
+    "leadWidth": 0.85,
+    "leadLength": 3
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/Bluetooth_Module_BLE112-A-V1.kicad_mod",
+    "sourceFootprint": "Bluetooth_Module_BLE112-A-V1"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "SOT-1123",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 0.58,
+    "width": 1.2
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 112,
+    "widthOverLeads": 1.2,
+    "leadPitch": 0.38,
+    "leadWidth": 0.2,
+    "leadLength": 0.34
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_TO_SOT_SMD.pretty/SOT-1123.kicad_mod",
+    "sourceFootprint": "SOT-1123"
+  }
+}

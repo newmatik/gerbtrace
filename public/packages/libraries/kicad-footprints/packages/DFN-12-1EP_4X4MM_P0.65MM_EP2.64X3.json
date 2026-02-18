@@ -1,0 +1,23 @@
+{
+  "name": "DFN-12-1EP_4X4MM_P0.65MM_EP2.64X3",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 4,
+    "width": 4
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 12,
+    "widthOverLeads": 4.3,
+    "leadPitch": 0.65,
+    "leadWidth": 0.36,
+    "leadLength": 0.63
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_DFN_QFN.pretty/DFN-12-1EP_4x4mm_P0.65mm_EP2.64x3.54mm.kicad_mod",
+    "sourceFootprint": "DFN-12-1EP_4x4mm_P0.65mm_EP2.64x3.54mm"
+  }
+}

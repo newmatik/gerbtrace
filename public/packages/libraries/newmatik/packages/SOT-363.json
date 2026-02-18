@@ -1,0 +1,73 @@
+{
+  "name": "SOT-363",
+  "body": {
+    "length": 2,
+    "width": 1.25
+  },
+  "type": "PT_TWO_SYM",
+  "twoSymmetric": {
+    "numberOfLeads": 6,
+    "widthOverLeads": 1.6,
+    "leadPitch": 0.65,
+    "leadWidth": 0.35,
+    "leadLength": 0.2
+  },
+  "aliases": [
+    "SOT363"
+  ],
+  "height": {
+    "nominal": 0.9,
+    "max": 1.1,
+    "min": 0.8
+  },
+  "searchArea": {
+    "x": 1.565,
+    "y": 2.16
+  },
+  "machine": {
+    "mountTools": [
+      "A12"
+    ],
+    "hydraTools": [
+      "H02"
+    ],
+    "pickWaitTime": 50,
+    "placeWaitTime": 50,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "high",
+      "y": "high",
+      "tape": "high",
+      "theta": "high",
+      "z": "high",
+      "hydraTheta": "high",
+      "hydraZ": "high"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL",
+          "HYDRA_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan",
+      "hydra"
+    ],
+    "coplanarityCheck": false
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/SOT-363.json",
+    "sourceFootprint": "SOT-363"
+  }
+}

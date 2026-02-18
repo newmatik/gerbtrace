@@ -1,0 +1,23 @@
+{
+  "name": "BLUETOOTH-MODULE_RN52_IRM",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 22.5,
+    "width": 15.3
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 50,
+    "widthOverLeads": 28.8,
+    "leadPitch": 1.2,
+    "leadWidth": 0.8,
+    "leadLength": 1.8
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/Bluetooth_Module_RN52-IRM.kicad_mod",
+    "sourceFootprint": "Bluetooth_Module_RN52-IRM"
+  }
+}

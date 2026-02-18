@@ -1,0 +1,232 @@
+{
+  "name": "FINDER-34",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 9.15,
+      "y": 1.1,
+      "width": 29,
+      "height": 6.2,
+      "cornerRadius": 0.496,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 23.25,
+      "y1": 3.8,
+      "x2": -4.95,
+      "y2": 3.8,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4.95,
+      "y1": -1.4,
+      "x2": 23.25,
+      "y2": -1.4,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 23.15,
+      "y1": 3.7,
+      "x2": -4.85,
+      "y2": 3.7,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 1,
+      "y1": -1.3,
+      "x2": 23.15,
+      "y2": -1.3,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 23.25,
+      "y1": -1.4,
+      "x2": 23.25,
+      "y2": 3.8,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 23.15,
+      "y1": -1.3,
+      "x2": 23.15,
+      "y2": 3.7,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4.85,
+      "y1": 3.7,
+      "x2": -4.85,
+      "y2": -1.3,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4.85,
+      "y1": -1.3,
+      "x2": -1,
+      "y2": -1.3,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4.95,
+      "y1": 3.8,
+      "x2": -4.95,
+      "y2": 1,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 1,
+      "y1": -1.6,
+      "x2": -1,
+      "y2": -1.6,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0,
+      "y1": -0.3,
+      "x2": -1,
+      "y2": -1.3,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0,
+      "y1": -0.3,
+      "x2": 1,
+      "y2": -1.3,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -4.95,
+      "y1": -1.4,
+      "x2": -4.95,
+      "y2": -1,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 21.25,
+      "y": 0,
+      "radius": 1.2
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 21.25,
+      "y": 0,
+      "radius": 0.65,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 16.25,
+      "y": 0,
+      "radius": 1.2
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 16.25,
+      "y": 0,
+      "radius": 0.65,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -3.75,
+      "y": 0,
+      "radius": 1.2
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -3.75,
+      "y": 0,
+      "radius": 0.65,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 0,
+      "y": 0,
+      "width": 2.4,
+      "height": 2.4,
+      "cornerRadius": 1.08
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.65,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "polarity-marker",
+      "x": 20.17,
+      "y": 1.08,
+      "radius": 0.6,
+      "color": "#ef4444"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/OptoDevice.pretty/Finder_34.81.kicad_mod",
+    "sourceFootprint": "Finder_34.81"
+  }
+}

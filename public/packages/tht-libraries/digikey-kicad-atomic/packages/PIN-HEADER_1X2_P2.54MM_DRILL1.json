@@ -1,0 +1,180 @@
+{
+  "name": "PIN-HEADER_1X2_P2.54MM_DRILL1",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 1.275,
+      "y": 0,
+      "width": 5.95,
+      "height": 7.4,
+      "cornerRadius": 0.476,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.73,
+      "y1": -3.17,
+      "x2": 3.73,
+      "y2": 3.17,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.2,
+      "y1": -3.17,
+      "x2": -1.2,
+      "y2": 3.17,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.2,
+      "y1": 3.17,
+      "x2": 3.73,
+      "y2": 3.17,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.2,
+      "y1": -3.17,
+      "x2": 3.73,
+      "y2": -3.17,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.84,
+      "y1": -3.28,
+      "x2": 3.84,
+      "y2": -2.78,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.84,
+      "y1": -3.28,
+      "x2": 3.34,
+      "y2": -3.28,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.3,
+      "y1": -3.3,
+      "x2": -1.3,
+      "y2": -2.8,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.3,
+      "y1": -3.3,
+      "x2": -0.8,
+      "y2": -3.3,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.3,
+      "y1": 3.3,
+      "x2": -1.3,
+      "y2": 2.8,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.3,
+      "y1": 3.3,
+      "x2": -0.8,
+      "y2": 3.3,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.85,
+      "y1": 3.29,
+      "x2": 3.85,
+      "y2": 2.79,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.85,
+      "y1": 3.29,
+      "x2": 3.35,
+      "y2": 3.29,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "circle",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "radius": 1.01
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.51,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 2.54,
+      "y": 0,
+      "radius": 1.01
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 2.54,
+      "y": 0,
+      "radius": 0.51,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/PinHeader_1x2_P2.54mm_Drill1.02mm.kicad_mod",
+    "sourceFootprint": "PinHeader_1x2_P2.54mm_Drill1.02mm"
+  }
+}

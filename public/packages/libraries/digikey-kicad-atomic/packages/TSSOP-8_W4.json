@@ -1,0 +1,23 @@
+{
+  "name": "TSSOP-8_W4",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 2.35,
+    "width": 6.6
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 8,
+    "widthOverLeads": 6.6,
+    "leadPitch": 0.65,
+    "leadWidth": 0.4,
+    "leadLength": 1.2
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/TSSOP-8_W4.4mm.kicad_mod",
+    "sourceFootprint": "TSSOP-8_W4.4mm"
+  }
+}

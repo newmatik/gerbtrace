@@ -1,0 +1,23 @@
+{
+  "name": "HTQFP-100_14X14MM",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 14,
+    "width": 14
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 100,
+    "widthOverLeads": 16.8,
+    "leadPitch": 0.5,
+    "leadWidth": 0.3,
+    "leadLength": 1.6
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/HTQFP-100_14x14mm.kicad_mod",
+    "sourceFootprint": "HTQFP-100_14x14mm"
+  }
+}

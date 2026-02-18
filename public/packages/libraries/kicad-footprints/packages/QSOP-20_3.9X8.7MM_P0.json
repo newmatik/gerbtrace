@@ -1,0 +1,23 @@
+{
+  "name": "QSOP-20_3.9X8.7MM_P0",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 8.7,
+    "width": 3.9
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 20,
+    "widthOverLeads": 6.909,
+    "leadPitch": 0.635,
+    "leadWidth": 0.41,
+    "leadLength": 1.6
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_SO.pretty/QSOP-20_3.9x8.7mm_P0.635mm.kicad_mod",
+    "sourceFootprint": "QSOP-20_3.9x8.7mm_P0.635mm"
+  }
+}

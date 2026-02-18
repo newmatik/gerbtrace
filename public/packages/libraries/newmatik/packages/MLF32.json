@@ -1,0 +1,22 @@
+{
+  "name": "MLF32",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 5,
+    "width": 5
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 32,
+    "widthOverLeads": 5,
+    "leadPitch": 0.5,
+    "leadWidth": 0.3,
+    "leadLength": 0.5
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/MLF32.json",
+    "sourceFootprint": "MLF32"
+  }
+}

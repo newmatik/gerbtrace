@@ -1,0 +1,26 @@
+{
+  "name": "WLCSP-9",
+  "type": "PT_BGA",
+  "aliases": [
+    "WLCSP9"
+  ],
+  "body": {
+    "length": 2.8,
+    "width": 2.8
+  },
+  "bga": {
+    "leadsPerRow": 3,
+    "leadsPerColumn": 3,
+    "leadPitch": 0.4,
+    "leadDiameter": 0.25,
+    "leadsPerRowInHole": 0,
+    "leadsPerColumnInHole": 0
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/WLCSP-9.json",
+    "sourceFootprint": "WLCSP-9"
+  }
+}

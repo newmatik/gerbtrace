@@ -93,16 +93,16 @@
       </div>
 
       <!-- Convention selector -->
-      <select
-        :value="pnpConvention"
-        class="text-[10px] bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded px-1 py-0.5 outline-none text-neutral-500 dark:text-neutral-400 cursor-pointer"
+      <USelect
+        :model-value="pnpConvention"
+        size="xs"
+        class="w-36"
+        :items="conventionSelectItems"
+        value-key="value"
+        label-key="label"
         title="PnP orientation standard"
-        @change="$emit('update:pnpConvention', ($event.target as HTMLSelectElement).value as PnPConvention)"
-      >
-        <option v-for="[value, label] in conventionOptions" :key="value" :value="value">
-          {{ label }}
-        </option>
-      </select>
+        @update:model-value="$emit('update:pnpConvention', String($event) as PnPConvention)"
+      />
     </div>
 
     <!-- Alignment controls -->
@@ -202,6 +202,8 @@
           v-for="vRow in rowVirtualizer.getVirtualItems()"
           :key="groupedRows[vRow.index].kind === 'group'
             ? `group-${groupedRows[vRow.index].group.id}`
+            : groupedRows[vRow.index].kind === 'ungrouped'
+              ? 'group-ungrouped'
             : `${groupedRows[vRow.index].component.key}-${groupedRows[vRow.index].component.side}`"
           :style="{
             position: 'absolute',
@@ -215,11 +217,26 @@
           class="group/row px-3 py-1 text-[11px] transition-colors border-b border-neutral-100 dark:border-neutral-800/50"
         >
           <div
-            v-if="groupedRows[vRow.index].kind === 'group'"
+            v-if="groupedRows[vRow.index].kind === 'ungrouped'"
+            class="flex items-center gap-2 w-full text-[10px]"
+            @dragover.prevent="onUngroupedDragOver"
+            @drop.prevent="onDropToUngrouped()"
+          >
+            <span class="font-medium text-neutral-700 dark:text-neutral-200 truncate">
+              No section
+            </span>
+            <span class="text-neutral-400">({{ groupedRows[vRow.index].count }})</span>
+          </div>
+
+          <div
+            v-else-if="groupedRows[vRow.index].kind === 'group'"
             class="flex items-center gap-2 w-full text-[10px]"
             :class="groupedRows[vRow.index].group.hidden ? 'opacity-60' : ''"
-            @dragover.prevent
+            draggable="true"
+            @dragstart="onGroupDragStart($event, groupedRows[vRow.index].group.id)"
+            @dragover.prevent="onGroupHeaderDragOver"
             @drop.prevent="onDropToGroup(groupedRows[vRow.index].group.id)"
+            @dragend="onGroupDragEnd"
           >
             <button
               class="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
@@ -291,6 +308,29 @@
                 class="text-[11px]"
               />
             </button>
+            <button
+              class="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              title="Move group up"
+              :disabled="!canMoveGroup(groupedRows[vRow.index].group.id, -1)"
+              @click.stop="moveGroup(groupedRows[vRow.index].group.id, -1)"
+            >
+              <UIcon name="i-lucide-chevron-up" class="text-[11px]" />
+            </button>
+            <button
+              class="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              title="Move group down"
+              :disabled="!canMoveGroup(groupedRows[vRow.index].group.id, 1)"
+              @click.stop="moveGroup(groupedRows[vRow.index].group.id, 1)"
+            >
+              <UIcon name="i-lucide-chevron-down" class="text-[11px]" />
+            </button>
+            <button
+              class="text-neutral-400 hover:text-red-500 transition-colors"
+              title="Delete group"
+              @click.stop="emit('delete:group', groupedRows[vRow.index].group.id)"
+            >
+              <UIcon name="i-lucide-trash-2" class="text-[11px]" />
+            </button>
           </div>
 
           <div
@@ -303,8 +343,8 @@
               'hover:bg-neutral-100 dark:hover:bg-neutral-800': selectedDesignator !== groupedRows[vRow.index].component.designator && !groupedRows[vRow.index].component.dnp,
               'opacity-40': groupedRows[vRow.index].component.dnp && activeFilters.size === 0,
             }"
-            @dragstart="onDragStart(groupedRows[vRow.index].component)"
-            @dragover.prevent
+            @dragstart="onDragStart($event, groupedRows[vRow.index].component)"
+            @dragover.prevent="onComponentRowDragOver"
             @drop.prevent="onDropBeforeComponent(groupedRows[vRow.index].component.key)"
             @dragend="onDragEnd"
             @click="onRowClick(groupedRows[vRow.index].component.designator)"
@@ -376,31 +416,47 @@
             </div>
             <!-- Polarized toggle -->
             <div class="flex items-center justify-center" @click.stop>
-              <input
-                type="checkbox"
-                class="h-3 w-3 rounded border-neutral-300 dark:border-neutral-600 text-primary focus:ring-primary/50 cursor-pointer"
-                :checked="groupedRows[vRow.index].component.polarized"
+              <USwitch
+                :model-value="groupedRows[vRow.index].component.polarized"
+                size="xs"
                 :title="groupedRows[vRow.index].component.polarized ? 'Polarized (pin 1 marked)' : 'Not polarized (no pin 1 marker)'"
-                @change="emit('update:polarized', { key: groupedRows[vRow.index].component.key, polarized: ($event.target as HTMLInputElement).checked })"
+                @update:model-value="emit('update:polarized', { key: groupedRows[vRow.index].component.key, polarized: !!$event })"
               />
             </div>
             <span class="truncate text-neutral-500" :title="groupedRows[vRow.index].component.value">{{ groupedRows[vRow.index].component.value || '—' }}</span>
             <!-- CAD Package (customer footprint name) -->
             <span class="truncate text-neutral-500" :title="groupedRows[vRow.index].component.cadPackage">{{ groupedRows[vRow.index].component.cadPackage || '—' }}</span>
             <!-- Package (our matched package) -->
-            <select
-              class="text-[11px] bg-transparent border border-transparent hover:border-neutral-200 dark:hover:border-neutral-700 rounded px-1 py-0.5 outline-none text-neutral-600 dark:text-neutral-300 cursor-pointer"
+            <USelectMenu
+              :model-value="groupedRows[vRow.index].component.matchedPackage || undefined"
+              v-model:search-term="pkgSearchTerm"
+              :items="packageSelectItems"
+              value-key="value"
+              label-key="displayLabel"
+              size="xs"
+              searchable
+              ignore-filter
+              placeholder="—"
+              class="w-full min-w-0"
               :class="groupedRows[vRow.index].component.packageMapped ? 'text-blue-700 dark:text-blue-300' : ''"
-              :value="groupedRows[vRow.index].component.matchedPackage"
-              title="Matched package (library)"
+              :search-input="{ placeholder: 'Search package or library...' }"
+              :ui="{ content: 'min-w-[28rem] max-w-[40rem]', itemLabel: 'whitespace-normal leading-tight' }"
               @mousedown.stop
-              @change="emit('update:packageMapping', { cadPackage: groupedRows[vRow.index].component.cadPackage, packageName: ($event.target as HTMLSelectElement).value || null, componentKey: groupedRows[vRow.index].component.key, isManual: groupedRows[vRow.index].component.manual })"
+              @highlight="onPkgHighlight(groupedRows[vRow.index].component.key, $event as any)"
+              @update:open="!$event && emit('preview:package', null)"
+              @update:model-value="onPackageMappingSelect(groupedRows[vRow.index].component, $event)"
             >
-              <option value="">—</option>
-              <option v-for="p in packageOptions" :key="p" :value="p">
-                {{ p }}
-              </option>
-            </select>
+              <template #item="{ item }">
+                <div class="w-full py-0.5">
+                  <div class="text-xs font-medium text-neutral-800 dark:text-neutral-100 break-all leading-tight">
+                    {{ getPackageOption(item)?.label ?? getItemLabel(item) }}
+                  </div>
+                  <div class="text-[10px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                    {{ getPackageOption(item)?.libraryLabel ?? 'Local' }}
+                  </div>
+                </div>
+              </template>
+            </USelectMenu>
             <!-- Note indicator / edit button -->
             <div class="flex items-center justify-center" @click.stop>
               <button
@@ -445,7 +501,15 @@ const props = defineProps<{
   originY: number | null
   showPackages: boolean
   pnpConvention: PnPConvention
-  packageOptions: string[]
+  packageOptions: Array<{
+    value: string
+    label: string
+    libraryLabel: string
+    searchText: string
+    previewKind: 'smd' | 'tht'
+    previewPkg?: Record<string, any>
+    packageType?: string
+  }>
   sortState: SortState
   manualOrder: string[]
   groups: ComponentGroup[]
@@ -475,12 +539,72 @@ const emit = defineEmits<{
   'update:groupMeta': [payload: { groupId: string; name: string; comment: string }]
   'toggle:groupHidden': [groupId: string]
   'toggle:groupCollapsed': [groupId: string]
+  'delete:group': [groupId: string]
+  'reorder:groups': [groupIds: string[]]
   'assign:group': [payload: { componentKey: string; groupId: string | null }]
   edit: [component: EditablePnPComponent]
   addComponent: []
+  'preview:package': [payload: { componentKey: string; packageName: string } | null]
 }>()
 
 const conventionOptions = Object.entries(PNP_CONVENTION_LABELS) as [PnPConvention, string][]
+const conventionSelectItems = computed(() =>
+  conventionOptions.map(([value, label]) => ({ value, label })),
+)
+const PKG_DROPDOWN_LIMIT = 80
+
+const allPackageSelectItems = computed(() =>
+  props.packageOptions.map((opt) => ({
+    ...opt,
+    displayLabel: `${opt.label} · ${opt.libraryLabel}`,
+  })),
+)
+const pkgSearchTerm = ref('')
+const packageSelectItems = computed(() => {
+  const q = pkgSearchTerm.value.trim().toLowerCase()
+  const source = allPackageSelectItems.value
+  if (!q) return source.slice(0, PKG_DROPDOWN_LIMIT)
+  const out: typeof source = []
+  for (const item of source) {
+    if (item.searchText.toLowerCase().includes(q)) {
+      out.push(item)
+      if (out.length >= PKG_DROPDOWN_LIMIT) break
+    }
+  }
+  return out
+})
+function onPkgHighlight(componentKey: string, payload: { value: string } | undefined) {
+  emit('preview:package', payload?.value ? { componentKey, packageName: payload.value } : null)
+}
+const packageOptionsByValue = computed(() => {
+  const map = new Map<string, (typeof props.packageOptions)[number]>()
+  for (const opt of props.packageOptions) map.set(opt.value, opt)
+  return map
+})
+
+function getItemValue(item: any): string | undefined {
+  if (!item || typeof item !== 'object') return undefined
+  if (typeof item.value === 'string') return item.value
+  if (item.raw && typeof item.raw === 'object' && typeof item.raw.value === 'string') return item.raw.value
+  return undefined
+}
+
+function getItemLabel(item: any): string {
+  if (!item || typeof item !== 'object') return ''
+  if (typeof item.label === 'string') return item.label
+  if (typeof item.displayLabel === 'string') return item.displayLabel
+  if (item.raw && typeof item.raw === 'object') {
+    if (typeof item.raw.label === 'string') return item.raw.label
+    if (typeof item.raw.displayLabel === 'string') return item.raw.displayLabel
+  }
+  return ''
+}
+
+function getPackageOption(item: any) {
+  const value = getItemValue(item)
+  if (!value) return null
+  return packageOptionsByValue.value.get(value) ?? null
+}
 
 const filterOptions: { key: PnPFilterKey; label: string; title: string }[] = [
   { key: 'polarized', label: 'Polarized', title: 'Show polarized components only' },
@@ -512,6 +636,7 @@ type ComponentGroup = {
   collapsed: boolean
 }
 type DisplayRow =
+  | { kind: 'ungrouped'; count: number }
   | { kind: 'group'; group: ComponentGroup; count: number }
   | { kind: 'component'; component: EditablePnPComponent }
 
@@ -637,9 +762,8 @@ const groupedRows = computed<any[]>(() => {
     groupMap.get(groupId)?.push(comp)
   }
 
-  for (const comp of ungrouped) {
-    rows.push({ kind: 'component', component: comp })
-  }
+  rows.push({ kind: 'ungrouped', count: ungrouped.length })
+  for (const comp of ungrouped) rows.push({ kind: 'component', component: comp })
 
   for (const group of props.groups) {
     const comps = groupMap.get(group.id) ?? []
@@ -745,6 +869,7 @@ function createGroup() {
 }
 
 const dragComponentKey = ref<string | null>(null)
+const dragGroupId = ref<string | null>(null)
 
 function ensureManualSortMode() {
   if (sortKey.value !== null) {
@@ -752,14 +877,21 @@ function ensureManualSortMode() {
   }
 }
 
-function onDragStart(comp: EditablePnPComponent) {
+function onDragStart(event: DragEvent, comp: EditablePnPComponent) {
+  dragGroupId.value = null
   ensureManualSortMode()
   dragComponentKey.value = comp.key
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'copyMove'
+    event.dataTransfer.setData('text/plain', comp.key)
+  }
 }
 
 function onDropBeforeComponent(targetKey: string) {
   const dragged = dragComponentKey.value
   if (!dragged || dragged === targetKey) return
+  const targetGroupId = props.groupAssignments[targetKey] ?? null
+  emit('assign:group', { componentKey: dragged, groupId: targetGroupId })
   const next = props.manualOrder.filter(k => k !== dragged)
   const idx = next.indexOf(targetKey)
   if (idx < 0) {
@@ -771,6 +903,17 @@ function onDropBeforeComponent(targetKey: string) {
 }
 
 function onDropToGroup(groupId: string) {
+  const draggedGroupId = dragGroupId.value
+  if (draggedGroupId) {
+    if (draggedGroupId === groupId) return
+    const nextIds = props.groups.filter(g => g.id !== draggedGroupId).map(g => g.id)
+    const idx = nextIds.indexOf(groupId)
+    if (idx < 0) nextIds.push(draggedGroupId)
+    else nextIds.splice(idx, 0, draggedGroupId)
+    emit('reorder:groups', nextIds)
+    return
+  }
+
   const dragged = dragComponentKey.value
   if (!dragged) return
   emit('assign:group', { componentKey: dragged, groupId })
@@ -779,8 +922,71 @@ function onDropToGroup(groupId: string) {
   emit('update:manualOrder', next)
 }
 
+function onDropToUngrouped() {
+  const dragged = dragComponentKey.value
+  if (!dragged) return
+  emit('assign:group', { componentKey: dragged, groupId: null })
+  const next = props.manualOrder.filter(k => k !== dragged)
+  next.push(dragged)
+  emit('update:manualOrder', next)
+}
+
 function onDragEnd() {
   dragComponentKey.value = null
+}
+
+function onGroupDragStart(event: DragEvent, groupId: string) {
+  dragComponentKey.value = null
+  dragGroupId.value = groupId
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData('text/plain', groupId)
+  }
+}
+
+function onGroupDragEnd() {
+  dragGroupId.value = null
+}
+
+function onComponentRowDragOver(event: DragEvent) {
+  if (!event.dataTransfer) return
+  // Reordering rows is always a move operation.
+  event.dataTransfer.dropEffect = 'move'
+}
+
+function onGroupHeaderDragOver(event: DragEvent) {
+  if (!event.dataTransfer) return
+  if (dragGroupId.value) {
+    // Dragging a group over a group means reordering groups.
+    event.dataTransfer.dropEffect = 'move'
+    return
+  }
+  // Dragging a component over a group means assign to that group.
+  event.dataTransfer.dropEffect = 'copy'
+}
+
+function onUngroupedDragOver(event: DragEvent) {
+  if (!event.dataTransfer) return
+  // Moving into "No section" is still a move assignment.
+  event.dataTransfer.dropEffect = 'move'
+}
+
+function canMoveGroup(groupId: string, direction: -1 | 1): boolean {
+  const idx = props.groups.findIndex(g => g.id === groupId)
+  if (idx < 0) return false
+  const nextIdx = idx + direction
+  return nextIdx >= 0 && nextIdx < props.groups.length
+}
+
+function moveGroup(groupId: string, direction: -1 | 1) {
+  const idx = props.groups.findIndex(g => g.id === groupId)
+  if (idx < 0) return
+  const nextIdx = idx + direction
+  if (nextIdx < 0 || nextIdx >= props.groups.length) return
+  const nextIds = props.groups.map(g => g.id)
+  const [moved] = nextIds.splice(idx, 1)
+  nextIds.splice(nextIdx, 0, moved)
+  emit('reorder:groups', nextIds)
 }
 
 const editingGroupId = ref<string | null>(null)
@@ -844,6 +1050,16 @@ function commitRotation(comp: EditablePnPComponent, event: Event) {
 /** Rotate 90° counter-clockwise: 0 → 270 → 180 → 90 → 0 … */
 function rotateCCW(comp: EditablePnPComponent) {
   emit('update:rotation', { key: comp.key, rotation: normaliseRotation(comp.rotation - 90) })
+}
+
+function onPackageMappingSelect(comp: EditablePnPComponent, value: unknown) {
+  const packageName = typeof value === 'string' ? value : ''
+  emit('update:packageMapping', {
+    cadPackage: comp.cadPackage,
+    packageName: packageName || null,
+    componentKey: comp.key,
+    isManual: comp.manual,
+  })
 }
 
 // Auto-scroll to selected component when it changes from canvas click

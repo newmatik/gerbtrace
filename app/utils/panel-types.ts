@@ -82,6 +82,14 @@ export interface DangerZoneConfig {
   insetMm: number
 }
 
+export interface AddedRoutingPath {
+  id: string
+  x1: number
+  y1: number
+  x2: number
+  y2: number
+}
+
 export interface PanelConfig {
   /** Number of PCBs along X axis */
   countX: number
@@ -114,6 +122,8 @@ export interface PanelConfig {
   tabs: TabConfig
   /** Support bar intermediate frame rails */
   supports: SupportBarConfig
+  /** User-added milling paths on frame/support bars only */
+  addedRoutings: AddedRoutingPath[]
   /** Rotation of individual PCBs within the panel (degrees) */
   pcbRotation: number
   /** Whether to show component overlay on panel view */
@@ -184,6 +194,7 @@ export function DEFAULT_PANEL_CONFIG(): PanelConfig {
       xGaps: [],
       yGaps: [],
     },
+    addedRoutings: [],
     pcbRotation: 0,
     showComponents: false,
   }
@@ -259,6 +270,7 @@ export function migratePanelConfig(raw: Record<string, any>): PanelConfig {
     toolingHoles: raw.toolingHoles ?? defaults.toolingHoles,
     tabs,
     supports,
+    addedRoutings: raw.addedRoutings ?? [],
     pcbRotation: raw.pcbRotation ?? defaults.pcbRotation,
     showComponents: raw.showComponents ?? defaults.showComponents,
   }

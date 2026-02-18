@@ -1,0 +1,252 @@
+{
+  "name": "USB-MALE_A_UP2_AH_1_TH",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 0,
+      "y": 7.463,
+      "width": 14.5,
+      "height": 21.725,
+      "cornerRadius": 1.16,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 6,
+      "y1": -1,
+      "x2": 6,
+      "y2": 17.8,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -6,
+      "y1": -1,
+      "x2": -6,
+      "y2": 17.8,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -6,
+      "y1": -1,
+      "x2": 6,
+      "y2": -1,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -6,
+      "y1": 17.8,
+      "x2": 6,
+      "y2": 17.8,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -6.125,
+      "y1": 1.8,
+      "x2": -6.125,
+      "y2": 3.575,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 6.125,
+      "y1": 2.55,
+      "x2": 6.125,
+      "y2": 3.5,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 6.125,
+      "y1": 1.8,
+      "x2": 6.125,
+      "y2": 2.575,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.4,
+      "y1": 17.925,
+      "x2": 6.125,
+      "y2": 17.925,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -5.425,
+      "y1": 17.925,
+      "x2": -6.125,
+      "y2": 17.925,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 6.125,
+      "y1": 17.925,
+      "x2": 6.125,
+      "y2": 17.325,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -6.125,
+      "y1": 17.925,
+      "x2": -6.125,
+      "y2": 17.375,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": -5.85,
+      "y": 0,
+      "width": 2,
+      "height": 3.5,
+      "cornerRadius": 0.9
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 5.85,
+      "y": 0,
+      "width": 2,
+      "height": 3.5,
+      "cornerRadius": 0.9
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -2.3,
+      "y": 0,
+      "radius": 1.1
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -2.3,
+      "y": 0,
+      "radius": 0.6,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 2.3,
+      "y": 0,
+      "radius": 1.1
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 2.3,
+      "y": 0,
+      "radius": 0.6,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -3.5,
+      "y": -2.1,
+      "radius": 0.9
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -3.5,
+      "y": -2.1,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": -1,
+      "y": -2.1,
+      "radius": 0.9
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": -1,
+      "y": -2.1,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 1,
+      "y": -2.1,
+      "radius": 0.9
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 1,
+      "y": -2.1,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin1",
+      "x": 3.5,
+      "y": -2.1,
+      "radius": 0.9
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 3.5,
+      "y": -2.1,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/USB_Male_A_UP2-AH-1-TH.kicad_mod",
+    "sourceFootprint": "USB_Male_A_UP2-AH-1-TH"
+  }
+}

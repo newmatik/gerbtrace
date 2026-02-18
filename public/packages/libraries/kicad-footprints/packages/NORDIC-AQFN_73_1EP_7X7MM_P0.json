@@ -1,0 +1,29 @@
+{
+  "name": "NORDIC-AQFN_73_1EP_7X7MM_P0",
+  "type": "PT_GENERIC",
+  "body": {
+    "length": 4.725,
+    "width": 4.725
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "GULLWING",
+        "numLeads": 77,
+        "distFromCenter": 0,
+        "ccHalf": 3.375,
+        "angleMilliDeg": 0,
+        "padLength": 0.341,
+        "padWidth": 0.341
+      }
+    ]
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_DFN_QFN.pretty/Nordic_AQFN-73-1EP_7x7mm_P0.5mm.kicad_mod",
+    "sourceFootprint": "Nordic_AQFN-73-1EP_7x7mm_P0.5mm"
+  }
+}

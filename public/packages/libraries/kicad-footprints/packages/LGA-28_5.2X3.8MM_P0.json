@@ -1,0 +1,23 @@
+{
+  "name": "LGA-28_5.2X3.8MM_P0",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 3.8,
+    "width": 5.2
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 28,
+    "widthOverLeads": 5.45,
+    "leadPitch": 0.5,
+    "leadWidth": 0.254,
+    "leadLength": 0.675
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_LGA.pretty/LGA-28_5.2x3.8mm_P0.5mm.kicad_mod",
+    "sourceFootprint": "LGA-28_5.2x3.8mm_P0.5mm"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "name": "BLUETOOTH-MODULE_RN4677_VRM100",
+  "type": "PT_GENERIC",
+  "body": {
+    "length": 15.435,
+    "width": 9.1
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "GULLWING",
+        "numLeads": 33,
+        "distFromCenter": 0,
+        "ccHalf": 11.025,
+        "angleMilliDeg": 0,
+        "padLength": 1.33,
+        "padWidth": 0.87
+      }
+    ]
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/Bluetooth_Module_RN4677-VRM100.kicad_mod",
+    "sourceFootprint": "Bluetooth_Module_RN4677-VRM100"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "UDFN-6-1EP_2X2MM",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 2,
+    "width": 2
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 6,
+    "widthOverLeads": 2.33,
+    "leadPitch": 0.65,
+    "leadWidth": 0.36,
+    "leadLength": 0.48
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/UDFN-6-1EP_2x2mm.kicad_mod",
+    "sourceFootprint": "UDFN-6-1EP_2x2mm"
+  }
+}

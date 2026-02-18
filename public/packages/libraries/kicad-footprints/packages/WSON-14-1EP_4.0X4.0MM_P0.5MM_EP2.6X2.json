@@ -1,0 +1,23 @@
+{
+  "name": "WSON-14-1EP_4.0X4.0MM_P0.5MM_EP2.6X2",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 4,
+    "width": 4
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 14,
+    "widthOverLeads": 4.05,
+    "leadPitch": 0.5,
+    "leadWidth": 0.6,
+    "leadLength": 0.25
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_SON.pretty/WSON-14-1EP_4.0x4.0mm_P0.5mm_EP2.6x2.6mm.kicad_mod",
+    "sourceFootprint": "WSON-14-1EP_4.0x4.0mm_P0.5mm_EP2.6x2.6mm"
+  }
+}

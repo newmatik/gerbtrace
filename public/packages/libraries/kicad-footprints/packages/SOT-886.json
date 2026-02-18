@@ -1,0 +1,23 @@
+{
+  "name": "SOT-886",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 1.27,
+    "width": 1.01
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 886,
+    "widthOverLeads": 1.01,
+    "leadPitch": 0.5,
+    "leadWidth": 0.27,
+    "leadLength": 0.33
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_TO_SOT_SMD.pretty/SOT-886.kicad_mod",
+    "sourceFootprint": "SOT-886"
+  }
+}

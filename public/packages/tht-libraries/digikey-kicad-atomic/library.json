@@ -1,0 +1,18 @@
+{
+  "id": "digikey-kicad-atomic",
+  "displayName": "DigiKey KiCad",
+  "owner": "newmatik",
+  "sourceType": "KiCad-THT",
+  "license": "Digi-Key custom (read LICENSE before redistribution)",
+  "redistribution": "conditional",
+  "attribution": {
+    "upstreamOwner": "Digi-Key",
+    "upstreamRepo": "digikey-kicad-library",
+    "upstreamUrl": "https://github.com/Digi-Key/digikey-kicad-library.git",
+    "notice": "Redistribution terms are conditional. Review upstream license text before publishing."
+  },
+  "source": {
+    "id": "digikey-kicad-atomic",
+    "path": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library"
+  }
+}

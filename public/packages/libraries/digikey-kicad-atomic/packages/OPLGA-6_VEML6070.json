@@ -1,0 +1,23 @@
+{
+  "name": "OPLGA-6_VEML6070",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 1.12,
+    "width": 2.205
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 6,
+    "widthOverLeads": 3.15,
+    "leadPitch": 0.8,
+    "leadWidth": 0.4,
+    "leadLength": 1
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/OPLGA-6_VEML6070.kicad_mod",
+    "sourceFootprint": "OPLGA-6_VEML6070"
+  }
+}

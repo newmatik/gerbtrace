@@ -1,0 +1,172 @@
+{
+  "name": "HDMI-FEMALE_DC3RX19JA3R1700",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 0,
+      "y": 2.97,
+      "width": 8.95,
+      "height": 7.64,
+      "cornerRadius": 0.611,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.25,
+      "y1": -0.36,
+      "x2": 3.25,
+      "y2": 6.39,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -3.25,
+      "y1": -0.36,
+      "x2": -3.25,
+      "y2": 6.39,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -3.25,
+      "y1": 6.39,
+      "x2": 3.25,
+      "y2": 6.39,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -3.25,
+      "y1": -0.36,
+      "x2": 3.25,
+      "y2": -0.36,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.4,
+      "y1": 2.3,
+      "x2": 3.4,
+      "y2": 3.3,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -3.4,
+      "y1": 2.3,
+      "x2": -3.4,
+      "y2": 3.3,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -2.85,
+      "y1": -0.45,
+      "x2": -3.35,
+      "y2": -0.45,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -3.35,
+      "y1": -0.45,
+      "x2": -3.35,
+      "y2": 0.05,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.35,
+      "y1": -0.45,
+      "x2": 3.35,
+      "y2": 0.05,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.35,
+      "y1": -0.45,
+      "x2": 2.85,
+      "y2": -0.45,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": -3.1,
+      "y": 1.25,
+      "width": 1.15,
+      "height": 1.8,
+      "cornerRadius": 0.518
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": -3.5,
+      "y": 4.5,
+      "width": 1.15,
+      "height": 2,
+      "cornerRadius": 0.518
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 3.1,
+      "y": 1.25,
+      "width": 1.15,
+      "height": 1.8,
+      "cornerRadius": 0.518
+    },
+    {
+      "kind": "roundedRect",
+      "role": "pin",
+      "x": 3.5,
+      "y": 4.5,
+      "width": 1.15,
+      "height": 2,
+      "cornerRadius": 0.518
+    },
+    {
+      "kind": "circle",
+      "role": "polarity-marker",
+      "x": -3.618,
+      "y": 1.768,
+      "radius": 0.288,
+      "color": "#ef4444"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/HDMI_Female_DC3RX19JA3R1700.kicad_mod",
+    "sourceFootprint": "HDMI_Female_DC3RX19JA3R1700"
+  }
+}

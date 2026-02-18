@@ -1,0 +1,23 @@
+{
+  "name": "VSON-10-1EP_3X3MM_P0.5MM_EP1.2X2MM_THERMALVIAS",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 3,
+    "width": 3
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 10,
+    "widthOverLeads": 3.75,
+    "leadPitch": 0.5,
+    "leadWidth": 0.25,
+    "leadLength": 0.875
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_SON.pretty/VSON-10-1EP_3x3mm_P0.5mm_EP1.2x2mm_ThermalVias.kicad_mod",
+    "sourceFootprint": "VSON-10-1EP_3x3mm_P0.5mm_EP1.2x2mm_ThermalVias"
+  }
+}

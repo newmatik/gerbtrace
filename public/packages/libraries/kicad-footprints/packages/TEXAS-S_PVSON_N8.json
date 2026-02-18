@@ -1,0 +1,29 @@
+{
+  "name": "TEXAS-S_PVSON_N8",
+  "type": "PT_GENERIC",
+  "body": {
+    "length": 1.68,
+    "width": 2.66
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "GULLWING",
+        "numLeads": 21,
+        "distFromCenter": 0,
+        "ccHalf": 1.9,
+        "angleMilliDeg": 0,
+        "padLength": 0.61,
+        "padWidth": 0.564
+      }
+    ]
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_SON.pretty/Texas_S-PVSON-N8.kicad_mod",
+    "sourceFootprint": "Texas_S-PVSON-N8"
+  }
+}

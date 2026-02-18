@@ -1,0 +1,23 @@
+{
+  "name": "VFLGA-12_2X2MM",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 2,
+    "width": 2
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 12,
+    "widthOverLeads": 2.025,
+    "leadPitch": 0.5,
+    "leadWidth": 0.3,
+    "leadLength": 0.5
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/VFLGA-12_2x2mm.kicad_mod",
+    "sourceFootprint": "VFLGA-12_2x2mm"
+  }
+}

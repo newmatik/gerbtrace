@@ -1,0 +1,325 @@
+{
+  "name": "RELAY-SPDT_HSIN_DA_Y14",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 4.946,
+      "y": 2.412,
+      "width": 13.588,
+      "height": 8.876,
+      "cornerRadius": 0.71,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.18,
+      "y1": 6.45,
+      "x2": 11.34,
+      "y2": 6.45,
+      "strokeWidth": 0.15,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 11.34,
+      "y1": -1.37,
+      "x2": -1.18,
+      "y2": -1.37,
+      "strokeWidth": 0.15,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 11.23,
+      "y1": 6.34,
+      "x2": -1.07,
+      "y2": 6.34,
+      "strokeWidth": 0.15,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.381,
+      "y1": -1.26,
+      "x2": 11.23,
+      "y2": -1.26,
+      "strokeWidth": 0.15,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.18,
+      "y1": -1.37,
+      "x2": -1.18,
+      "y2": 6.45,
+      "strokeWidth": 0.15,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 11.34,
+      "y1": 6.45,
+      "x2": 11.34,
+      "y2": -1.37,
+      "strokeWidth": 0.15,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 11.23,
+      "y1": -1.26,
+      "x2": 11.23,
+      "y2": 6.34,
+      "strokeWidth": 0.15,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.07,
+      "y1": 6.34,
+      "x2": -1.07,
+      "y2": -0.5461,
+      "strokeWidth": 0.15,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.826,
+      "y1": 1.27,
+      "x2": 4.826,
+      "y2": 3.81,
+      "strokeWidth": 0.15,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.302,
+      "y1": 3.81,
+      "x2": 3.302,
+      "y2": 1.27,
+      "strokeWidth": 0.15,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.302,
+      "y1": 2.032,
+      "x2": 4.826,
+      "y2": 3.048,
+      "strokeWidth": 0.15,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.302,
+      "y1": 1.27,
+      "x2": 4.826,
+      "y2": 1.27,
+      "strokeWidth": 0.15,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.826,
+      "y1": 3.81,
+      "x2": 3.302,
+      "y2": 3.81,
+      "strokeWidth": 0.15,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.4478,
+      "y1": -1.6256,
+      "x2": -1.4478,
+      "y2": -0.2921,
+      "strokeWidth": 0.15,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.064,
+      "y1": 0,
+      "x2": 4.064,
+      "y2": 1.27,
+      "strokeWidth": 0.15,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.064,
+      "y1": 3.81,
+      "x2": 4.064,
+      "y2": 5.08,
+      "strokeWidth": 0.15,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.3048,
+      "y1": -1.6256,
+      "x2": -1.4478,
+      "y2": -1.6256,
+      "strokeWidth": 0.15,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.381,
+      "y1": -1.2446,
+      "x2": -1.0795,
+      "y2": -0.5461,
+      "strokeWidth": 0.15,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 3.556,
+      "y1": 0,
+      "x2": 4.064,
+      "y2": 0,
+      "strokeWidth": 0.15,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 4.064,
+      "y1": 5.08,
+      "x2": 3.556,
+      "y2": 5.08,
+      "strokeWidth": 0.15,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "rect",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "width": 1.524,
+      "height": 1.524
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.381,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 0,
+      "y": 5.08,
+      "radius": 0.762
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 5.08,
+      "radius": 0.381,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 2.54,
+      "y": 0,
+      "radius": 0.762
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 2.54,
+      "y": 0,
+      "radius": 0.381,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 2.54,
+      "y": 5.08,
+      "radius": 0.762
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 2.54,
+      "y": 5.08,
+      "radius": 0.381,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 10.16,
+      "y": 0,
+      "radius": 0.762
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 10.16,
+      "y": 0,
+      "radius": 0.381,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 10.16,
+      "y": 5.08,
+      "radius": 0.762
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 10.16,
+      "y": 5.08,
+      "radius": 0.381,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Relay_THT.pretty/Relay_SPDT_HsinDa_Y14.kicad_mod",
+    "sourceFootprint": "Relay_SPDT_HsinDa_Y14"
+  }
+}

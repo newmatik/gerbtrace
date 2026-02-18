@@ -1,0 +1,23 @@
+{
+  "name": "PLCC-20",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 10.03,
+    "width": 10.03
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 20,
+    "widthOverLeads": 10.03,
+    "leadPitch": 1.27,
+    "leadWidth": 0.7,
+    "leadLength": 1.925
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_LCC.pretty/PLCC-20.kicad_mod",
+    "sourceFootprint": "PLCC-20"
+  }
+}

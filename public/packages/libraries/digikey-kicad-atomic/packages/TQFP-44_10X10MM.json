@@ -1,0 +1,23 @@
+{
+  "name": "TQFP-44_10X10MM",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 10,
+    "width": 10
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 44,
+    "widthOverLeads": 12.9,
+    "leadPitch": 0.8,
+    "leadWidth": 0.6,
+    "leadLength": 1.5
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/TQFP-44_10x10mm.kicad_mod",
+    "sourceFootprint": "TQFP-44_10x10mm"
+  }
+}

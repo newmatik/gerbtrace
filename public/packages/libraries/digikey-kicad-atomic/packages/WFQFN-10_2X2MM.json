@@ -1,0 +1,29 @@
+{
+  "name": "WFQFN-10_2X2MM",
+  "type": "PT_GENERIC",
+  "body": {
+    "length": 1.89,
+    "width": 1.89
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "GULLWING",
+        "numLeads": 10,
+        "distFromCenter": 0,
+        "ccHalf": 1.35,
+        "angleMilliDeg": 0,
+        "padLength": 0.7,
+        "padWidth": 0.4
+      }
+    ]
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/WFQFN-10_2x2mm.kicad_mod",
+    "sourceFootprint": "WFQFN-10_2x2mm"
+  }
+}

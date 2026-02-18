@@ -1,0 +1,23 @@
+{
+  "name": "WFDFN-8-1EP_3X3MM",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 3,
+    "width": 3
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 8,
+    "widthOverLeads": 3.5,
+    "leadPitch": 0.5,
+    "leadWidth": 0.25,
+    "leadLength": 0.7
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/WFDFN-8-1EP_3x3mm.kicad_mod",
+    "sourceFootprint": "WFDFN-8-1EP_3x3mm"
+  }
+}

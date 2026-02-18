@@ -32,6 +32,9 @@
             <div class="tabular-nums">
               Board area: {{ ((pcbData!.sizeX! * pcbData!.sizeY!) / 100).toFixed(1) }} cm²
             </div>
+            <div class="tabular-nums">
+              Thickness: {{ pcbData!.thicknessMm ?? 1.6 }} mm (panel recommendation only in v1)
+            </div>
           </div>
 
           <!-- NRE cost -->
@@ -104,7 +107,7 @@
 
 <script setup lang="ts">
 import { computePricingTable } from '~/utils/pcb-pricing'
-import type { SurfaceFinish, CopperWeight, PricingResult } from '~/utils/pcb-pricing'
+import type { SurfaceFinish, CopperWeight, PcbThicknessMm, PricingResult } from '~/utils/pcb-pricing'
 
 interface PcbData {
   sizeX?: number
@@ -112,6 +115,7 @@ interface PcbData {
   layerCount?: number
   surfaceFinish?: SurfaceFinish
   copperWeight?: CopperWeight
+  thicknessMm?: PcbThicknessMm
 }
 
 const props = defineProps<{

@@ -1,0 +1,33 @@
+{
+  "name": "PANASONIC_C",
+  "type": "PT_TWO_POLE",
+  "aliases": [
+    "CP_Elec_5x5.8",
+    "ELEC_C",
+    "CAP_ELEC_C",
+    "CHEMI-CON_E",
+    "CHEMI-CON_E61",
+    "CAPAE500X580"
+  ],
+  "body": {
+    "length": 4.7,
+    "width": 2.8
+  },
+  "chip": {
+    "chipLength": 4.7,
+    "leadWidth": 2.8,
+    "leadLength": 1.6
+  },
+  "height": {
+    "nominal": 5.8,
+    "max": 6.1,
+    "min": 5.5
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/PANASONIC_C.json",
+    "sourceFootprint": "PANASONIC_C"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "source": "sparkfun-eagle",
+  "parsed": 32,
+  "emitted": 32,
+  "skipped": [
+    {
+      "file": ".local/libraries/custom-terms/sparkfun/SparkFun-Eagle-Libraries/SparkFun-Buzzard.lbr",
+      "reason": "no_pads"
+    }
+  ],
+  "collisions": []
+}

@@ -1,0 +1,83 @@
+{
+  "name": "0201",
+  "type": "PT_TWO_POLE",
+  "aliases": [
+    "C0201",
+    "CAP0201",
+    "CHIP-0201",
+    "L0201",
+    "R0201",
+    "RES0201"
+  ],
+  "body": {
+    "length": 0.6,
+    "width": 0.3
+  },
+  "chip": {
+    "chipLength": 0.6,
+    "leadWidth": 0.3,
+    "leadLength": 0.12
+  },
+  "height": {
+    "nominal": 0.25,
+    "max": 0.263,
+    "min": 0.237
+  },
+  "searchArea": {
+    "x": 0.657,
+    "y": 0.375
+  },
+  "machine": {
+    "mountTools": [
+      "C14"
+    ],
+    "hydraTools": [
+      "H06"
+    ],
+    "pickWaitTime": 100,
+    "placeWaitTime": 100,
+    "zMountForce": null,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "highest",
+      "y": "highest",
+      "tape": "highest",
+      "theta": "highest",
+      "z": "highest",
+      "hydraTheta": "highest",
+      "hydraZ": "high"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL",
+          "HYDRA_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan",
+      "hydra"
+    ],
+    "coplanarityCheck": false,
+    "markingPositions": [
+      {
+        "x": 0,
+        "y": 0,
+        "dotType": "DOT0.5mm"
+      }
+    ]
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/0201.json",
+    "sourceFootprint": "0201"
+  }
+}

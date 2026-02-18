@@ -1,0 +1,23 @@
+{
+  "name": "ROHM-DFN0604_3",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 0.57,
+    "width": 0.65
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 60,
+    "widthOverLeads": 0.64,
+    "leadPitch": 0.3,
+    "leadWidth": 0.27,
+    "leadLength": 0.25
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_DFN_QFN.pretty/ROHM_DFN0604-3.kicad_mod",
+    "sourceFootprint": "ROHM_DFN0604-3"
+  }
+}

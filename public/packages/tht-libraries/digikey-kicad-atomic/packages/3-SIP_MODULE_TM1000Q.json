@@ -1,0 +1,197 @@
+{
+  "name": "3-SIP_MODULE_TM1000Q",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 2.15,
+      "y": 4.538,
+      "width": 7.5,
+      "height": 11.625,
+      "cornerRadius": 0.6,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.4,
+      "y1": 1.5,
+      "x2": 5.4,
+      "y2": 9.85,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.1,
+      "y1": 1.5,
+      "x2": -1.1,
+      "y2": 9.85,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.1,
+      "y1": 9.85,
+      "x2": 5.4,
+      "y2": 9.85,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.1,
+      "y1": 1.5,
+      "x2": 5.4,
+      "y2": 1.5,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.5,
+      "y1": 1.9,
+      "x2": 5.5,
+      "y2": 1.4,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.5,
+      "y1": 1.4,
+      "x2": 5,
+      "y2": 1.4,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.2,
+      "y1": 1.9,
+      "x2": -1.2,
+      "y2": 1.4,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.7,
+      "y1": 1.4,
+      "x2": -1.2,
+      "y2": 1.4,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.7,
+      "y1": 9.95,
+      "x2": -1.2,
+      "y2": 9.95,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.2,
+      "y1": 9.95,
+      "x2": -1.2,
+      "y2": 9.45,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.5,
+      "y1": 9.95,
+      "x2": 5.5,
+      "y2": 9.45,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.5,
+      "y1": 9.95,
+      "x2": 5,
+      "y2": 9.95,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "rect",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "width": 1.75,
+      "height": 1.75
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 2.15,
+      "y": 0,
+      "radius": 0.875
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 2.15,
+      "y": 0,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 4.3,
+      "y": 0,
+      "radius": 0.875
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 4.3,
+      "y": 0,
+      "radius": 0.5,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/3-SIP_Module_TM1000Q.kicad_mod",
+    "sourceFootprint": "3-SIP_Module_TM1000Q"
+  }
+}

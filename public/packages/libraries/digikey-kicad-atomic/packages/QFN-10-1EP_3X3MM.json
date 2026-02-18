@@ -1,0 +1,23 @@
+{
+  "name": "QFN-10-1EP_3X3MM",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 1.575,
+    "width": 2.52
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 10,
+    "widthOverLeads": 3.6,
+    "leadPitch": 0.563,
+    "leadWidth": 0.25,
+    "leadLength": 0.7
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/QFN-10-1EP_3x3mm.kicad_mod",
+    "sourceFootprint": "QFN-10-1EP_3x3mm"
+  }
+}

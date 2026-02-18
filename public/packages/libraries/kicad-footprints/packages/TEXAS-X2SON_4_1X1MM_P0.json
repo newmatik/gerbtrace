@@ -1,0 +1,23 @@
+{
+  "name": "TEXAS-X2SON_4_1X1MM_P0",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 1,
+    "width": 1
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 4,
+    "widthOverLeads": 1.008,
+    "leadPitch": 0.65,
+    "leadWidth": 0.148,
+    "leadLength": 0.148
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_SON.pretty/Texas_X2SON-4_1x1mm_P0.65mm.kicad_mod",
+    "sourceFootprint": "Texas_X2SON-4_1x1mm_P0.65mm"
+  }
+}

@@ -1,0 +1,110 @@
+{
+  "name": "TEST-POINT_BRIDGE_PITCH7.62MM_DRILL1",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 3.85,
+      "y": 0,
+      "width": 11.7,
+      "height": 4,
+      "cornerRadius": 0.32,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 9.3,
+      "y1": 1.6,
+      "x2": -1.6,
+      "y2": 1.6,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.6,
+      "y1": -1.6,
+      "x2": 9.3,
+      "y2": -1.6,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 7.62,
+      "y1": 0,
+      "x2": 0,
+      "y2": 0,
+      "strokeWidth": 0.12,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 9.3,
+      "y1": -1.6,
+      "x2": 9.3,
+      "y2": 1.6,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.6,
+      "y1": 1.6,
+      "x2": -1.6,
+      "y2": -1.6,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "circle",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "radius": 1.3
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.65,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin1",
+      "x": 7.62,
+      "y": 0,
+      "radius": 1.3
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 7.62,
+      "y": 0,
+      "radius": 0.65,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/TestPoint.pretty/TestPoint_Bridge_Pitch7.62mm_Drill1.3mm.kicad_mod",
+    "sourceFootprint": "TestPoint_Bridge_Pitch7.62mm_Drill1.3mm"
+  }
+}

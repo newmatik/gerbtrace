@@ -1,0 +1,23 @@
+{
+  "name": "LGA-24_3X3.5MM_LSM9DS1",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 3.5,
+    "width": 3
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 24,
+    "widthOverLeads": 3.56,
+    "leadPitch": 0.43,
+    "leadWidth": 0.28,
+    "leadLength": 0.55
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/LGA-24_3x3.5mm_LSM9DS1.kicad_mod",
+    "sourceFootprint": "LGA-24_3x3.5mm_LSM9DS1"
+  }
+}

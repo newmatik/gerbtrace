@@ -1,18 +1,51 @@
 import type { PackageDefinition } from '~/utils/package-types'
 
-/**
- * Composable that loads package definitions from `/packages/*.json`,
- * builds a lookup map keyed by name + aliases, and exposes a match function.
- *
- * The library is loaded once (lazily on first access) and cached.
- * Custom packages (from IndexedDB) can be merged in via `setCustomPackages()`.
- */
+export interface BuiltinLibraryAttribution {
+  upstreamOwner?: string
+  upstreamRepo?: string
+  upstreamUrl?: string
+  notice?: string
+}
+
+export interface BuiltinLibraryInfo {
+  id: string
+  name: string
+  owner: string
+  sourceType?: string
+  license?: string
+  redistribution?: string
+  attribution?: BuiltinLibraryAttribution
+  packageCount: number
+}
+
+type PackageWithLibrary = PackageDefinition & {
+  libraryId?: string
+  libraryName?: string
+  owner?: string
+  attribution?: BuiltinLibraryAttribution
+  sourceType?: string
+}
+
 export function usePackageLibrary() {
-  const packages = ref<PackageDefinition[]>([])
+  const packageCache = ref<Record<string, PackageWithLibrary[]>>({})
+  const packages = computed<PackageDefinition[]>(() => {
+    const ids = selectedLibraryIds.value.length
+      ? selectedLibraryIds.value
+      : libraries.value.map((l) => l.id)
+    const out: PackageDefinition[] = []
+    for (const id of ids) {
+      const fromLib = packageCache.value[id] ?? []
+      out.push(...fromLib)
+    }
+    return out
+  })
   const customPackages = ref<PackageDefinition[]>([])
   const teamPackages = ref<PackageDefinition[]>([])
   const loaded = ref(false)
   const loading = ref(false)
+  const selectedLibraryIds = ref<string[]>([])
+  const libraries = ref<BuiltinLibraryInfo[]>([])
+  const treeManifest = ref<any>(null)
 
   /** All packages: local custom first (highest), then team, then built-in */
   const allPackages = computed(() => [...customPackages.value, ...teamPackages.value, ...packages.value])
@@ -68,34 +101,104 @@ export function usePackageLibrary() {
     teamPackages.value = pkgs
   }
 
-  /** Load all package JSONs from /packages/ directory */
+  async function loadLegacyFlatManifest() {
+    const manifestRes = await fetch('/packages/_manifest.json')
+    if (!manifestRes.ok) return
+    const filenames: string[] = await manifestRes.json()
+    const results = await Promise.all(
+      filenames.map(async (fname) => {
+        try {
+          const res = await fetch(`/packages/${fname}`)
+          if (!res.ok) return null
+          return (await res.json()) as PackageDefinition
+        } catch {
+          return null
+        }
+      }),
+    )
+    packageCache.value = {
+      legacy: results.filter((p): p is PackageWithLibrary => p !== null),
+    }
+    libraries.value = [{
+      id: 'legacy',
+      name: 'Built-in',
+      owner: 'newmatik',
+      sourceType: 'TPSys',
+      packageCount: packageCache.value.legacy.length,
+    }]
+    selectedLibraryIds.value = ['legacy']
+  }
+
+  async function ensureLibrariesLoaded(ids: string[]) {
+    if (!treeManifest.value?.libraries) return
+    const misses = ids.filter((id) => !(id in packageCache.value))
+    if (misses.length === 0) return
+
+    const nextCache: Record<string, PackageWithLibrary[]> = { ...packageCache.value }
+    for (const id of misses) {
+      const entry = treeManifest.value.libraries.find((l: any) => l.id === id)
+      if (!entry) continue
+      const files = Array.isArray(entry.packages) ? entry.packages : []
+      const loadedPkgs = await Promise.all(
+        files.map(async (p: any) => {
+          const rel = `/packages/libraries/${id}/packages/${p.file}`
+          try {
+            const res = await fetch(rel)
+            if (!res.ok) return null
+            const pkg = (await res.json()) as PackageWithLibrary
+            pkg.libraryId = id
+            pkg.libraryName = entry.library?.displayName ?? id
+            pkg.owner = entry.library?.owner ?? 'newmatik'
+            pkg.attribution = entry.library?.attribution
+            pkg.sourceType = entry.library?.sourceType
+            return pkg
+          } catch {
+            return null
+          }
+        }),
+      )
+      nextCache[id] = loadedPkgs.filter((p): p is PackageWithLibrary => p !== null)
+    }
+    packageCache.value = nextCache
+  }
+
+  async function setSelectedLibraries(ids: string[]) {
+    const unique = [...new Set(ids)]
+    selectedLibraryIds.value = unique
+    const targetIds = unique.length ? unique : libraries.value.map((l) => l.id)
+    await ensureLibrariesLoaded(targetIds)
+  }
+
+  /** Load package tree from /packages/libraries/_tree.json */
   async function loadPackages() {
     if (loaded.value || loading.value) return
     loading.value = true
 
     try {
-      // Fetch the manifest (a JSON array of filenames)
-      const manifestRes = await fetch('/packages/_manifest.json')
-      if (!manifestRes.ok) {
-        console.warn('[PackageLibrary] No _manifest.json found at /packages/')
+      const treeRes = await fetch('/packages/libraries/_tree.json')
+      if (!treeRes.ok) {
+        await loadLegacyFlatManifest()
+        loaded.value = true
         return
       }
-      const filenames: string[] = await manifestRes.json()
+      const tree = await treeRes.json()
+      treeManifest.value = tree
+      const libs = Array.isArray(tree?.libraries) ? tree.libraries : []
+      libraries.value = libs.map((l: any) => ({
+        id: l.id,
+        name: l.library?.displayName ?? l.id,
+        owner: l.library?.owner ?? 'newmatik',
+        sourceType: l.library?.sourceType,
+        license: l.library?.license,
+        redistribution: l.library?.redistribution,
+        attribution: l.library?.attribution,
+        packageCount: l.packageCount ?? (Array.isArray(l.packages) ? l.packages.length : 0),
+      }))
 
-      const results = await Promise.all(
-        filenames.map(async (fname) => {
-          try {
-            const res = await fetch(`/packages/${fname}`)
-            if (!res.ok) return null
-            return (await res.json()) as PackageDefinition
-          } catch {
-            console.warn(`[PackageLibrary] Failed to load /packages/${fname}`)
-            return null
-          }
-        }),
-      )
-
-      packages.value = results.filter((p): p is PackageDefinition => p !== null)
+      const defaultSelection = libraries.value.some((l) => l.id === 'newmatik')
+        ? ['newmatik']
+        : libraries.value.slice(0, 1).map((l) => l.id)
+      await setSelectedLibraries(defaultSelection)
       loaded.value = true
     } catch (err) {
       console.warn('[PackageLibrary] Failed to load package manifest', err)
@@ -111,10 +214,13 @@ export function usePackageLibrary() {
     allPackages,
     loaded,
     loading,
+    libraries,
+    selectedLibraryIds,
     lookupMap,
     matchPackage,
     setCustomPackages,
     setTeamPackages,
+    setSelectedLibraries,
     loadPackages,
   }
 }
@@ -191,6 +297,18 @@ function normaliseCandidates(name: string): string[] {
     const m = base.match(/^(sod|sot|qfn|dfn|wson|xson)(\d{2,})$/)
     if (m?.[1] && m?.[2]) {
       push(`${m[1]}-${m[2]}`)
+    }
+  }
+
+  // SO naming compatibility: SO-8 <-> SOIC-8 (and compact forms).
+  {
+    const m = base.match(/^(?:soic|so|sop)-?0*(\d+)(?:$|[^0-9].*)/i)
+    if (m?.[1]) {
+      const pinCount = String(Number(m[1]))
+      push(`soic-${pinCount}`)
+      push(`so-${pinCount}`)
+      push(`soic${pinCount}`)
+      push(`so${pinCount}`)
     }
   }
 

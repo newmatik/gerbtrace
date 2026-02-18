@@ -1,0 +1,23 @@
+{
+  "name": "SOD-80C",
+  "type": "PT_TWO_POLE",
+  "body": {
+    "length": 3.5,
+    "width": 1.5
+  },
+  "chip": {
+    "chipLength": 3.5,
+    "leadWidth": 1.5,
+    "leadLength": 0.3
+  },
+  "aliases": [
+    "SOD80C"
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/SOD-80C.json",
+    "sourceFootprint": "SOD-80C"
+  }
+}

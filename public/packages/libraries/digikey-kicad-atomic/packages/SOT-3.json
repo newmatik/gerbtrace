@@ -1,0 +1,22 @@
+{
+  "name": "SOT-3",
+  "type": "PT_THREE_POLE",
+  "body": {
+    "length": 1,
+    "width": 1.15
+  },
+  "threePole": {
+    "widthOverLeads": 1.15,
+    "ccDistance": 0.5,
+    "leadWidth": 0.3,
+    "leadLength": 0.3
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/SOT-3.kicad_mod",
+    "sourceFootprint": "SOT-3"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "name": "7050",
+  "type": "PT_OUTLINE",
+  "body": {
+    "length": 7,
+    "width": 5
+  },
+  "outline": {
+    "length": 7,
+    "width": 5
+  },
+  "aliases": [
+    "C7050",
+    "CAP7050",
+    "L7050",
+    "OSC-7050",
+    "R7050",
+    "RES7050",
+    "XTAL-7050"
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/7050.json",
+    "sourceFootprint": "7050"
+  }
+}

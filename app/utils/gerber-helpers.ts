@@ -143,9 +143,9 @@ const VALID_LAYER_TYPES = new Set(ALL_LAYER_TYPES)
  * type strings persisted in older DB records.
  */
 export function resolveLayerType(fileName: string, storedLayerType?: string | null): string {
-  // Re-detect if stored type is missing, unknown, or 'Unmatched' (may have been imported
-  // before support for new layer types like BOM was added).
-  if (storedLayerType && storedLayerType !== 'Unmatched' && VALID_LAYER_TYPES.has(storedLayerType)) return storedLayerType
+  // Respect any valid persisted assignment, including an explicit "Unmatched".
+  // Only re-detect when missing or unknown.
+  if (storedLayerType && VALID_LAYER_TYPES.has(storedLayerType)) return storedLayerType
   return detectLayerType(fileName)
 }
 

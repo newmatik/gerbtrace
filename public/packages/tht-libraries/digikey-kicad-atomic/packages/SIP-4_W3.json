@@ -1,0 +1,213 @@
+{
+  "name": "SIP-4_W3",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 5.675,
+      "y": 0,
+      "width": 15.55,
+      "height": 4.5,
+      "cornerRadius": 0.36,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.57,
+      "y1": 1.75,
+      "x2": 12.93,
+      "y2": 1.75,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.57,
+      "y1": -1.75,
+      "x2": 12.93,
+      "y2": -1.75,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 12.93,
+      "y1": 1.75,
+      "x2": 12.93,
+      "y2": -1.75,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.57,
+      "y1": 1.75,
+      "x2": -1.57,
+      "y2": -1.75,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 13.05,
+      "y1": 1.85,
+      "x2": 13.05,
+      "y2": 1.35,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 13.05,
+      "y1": 1.85,
+      "x2": 12.55,
+      "y2": 1.85,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.7,
+      "y1": 1.85,
+      "x2": -1.7,
+      "y2": 1.35,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.7,
+      "y1": 1.85,
+      "x2": -1.2,
+      "y2": 1.85,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.7,
+      "y1": -1.85,
+      "x2": -1.7,
+      "y2": -1.35,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.7,
+      "y1": -1.85,
+      "x2": -1.2,
+      "y2": -1.85,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 13.05,
+      "y1": -1.85,
+      "x2": 13.05,
+      "y2": -1.35,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 13,
+      "y1": -1.85,
+      "x2": 12.5,
+      "y2": -1.85,
+      "strokeWidth": 0.1,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "rect",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "width": 2.67,
+      "height": 2.67
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.835,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 3.81,
+      "y": 0,
+      "radius": 1.335
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 3.81,
+      "y": 0,
+      "radius": 0.835,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 7.62,
+      "y": 0,
+      "radius": 1.335
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 7.62,
+      "y": 0,
+      "radius": 0.835,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 11.43,
+      "y": 0,
+      "radius": 1.335
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 11.43,
+      "y": 0,
+      "radius": 0.835,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/SIP-4_W3.81mm.kicad_mod",
+    "sourceFootprint": "SIP-4_W3.81mm"
+  }
+}

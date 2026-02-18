@@ -1,0 +1,23 @@
+{
+  "name": "TRANS-SOT_223_4",
+  "type": "PT_TWO_SYM",
+  "body": {
+    "length": 3.885,
+    "width": 5.565
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 4,
+    "widthOverLeads": 7.95,
+    "leadPitch": 5.55,
+    "leadWidth": 1.525,
+    "leadLength": 2.15
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/Trans-SOT-223-4.kicad_mod",
+    "sourceFootprint": "Trans-SOT-223-4"
+  }
+}

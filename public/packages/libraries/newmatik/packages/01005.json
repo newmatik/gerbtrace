@@ -1,0 +1,28 @@
+{
+  "name": "01005",
+  "type": "PT_TWO_POLE",
+  "aliases": [
+    "C01005",
+    "CAP01005",
+    "CHIP-01005",
+    "L01005",
+    "R01005",
+    "RES01005"
+  ],
+  "body": {
+    "length": 0.4,
+    "width": 0.2
+  },
+  "chip": {
+    "chipLength": 0.4,
+    "leadWidth": 0.2,
+    "leadLength": 0.08
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/01005.json",
+    "sourceFootprint": "01005"
+  }
+}

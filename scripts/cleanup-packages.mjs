@@ -51,7 +51,7 @@ function canonicalizeFilenameBase(pkg) {
 
   // Chip passives: canonical is bare size code, no C/R/L prefix.
   // Some files currently store `name` as the size already; duplicates come from filenames like C0603.json.
-  if (pkg.type === 'Chip') {
+  if (pkg.type === 'PT_TWO_POLE') {
     if (isChipSizeCode(name)) return name
     const m = name.match(/^(LED-)(01005|0201|0402|0603|0805|1206|1210|1812|2010|2220|2512|2920)$/)
     if (m) return name // LED-xxxx stays canonical as-is
@@ -59,7 +59,7 @@ function canonicalizeFilenameBase(pkg) {
 
   // BGA: canonical should include pins + grid + pitch when known/ambiguous.
   // Example legacy export name: BGA100C65P10X10_800X800X170 -> BGA-100-10x10-P0.65
-  if (pkg.type === 'BGA') {
+  if (pkg.type === 'PT_BGA') {
     const m = name.match(/^BGA(\d+)C(\d+)P(\d+)X(\d+)(?:_.+)?$/i)
     if (m) {
       const pins = Number(m[1])
@@ -76,7 +76,7 @@ function canonicalizeFilenameBase(pkg) {
   if (/^DO-?214AB$/i.test(name)) return 'SMC'
 
   // SOIC family: canonical wants SO-<pins>
-  if (pkg.type === 'TwoSymmetricLeadGroups') {
+  if (pkg.type === 'PT_TWO_SYM') {
     const m1 = name.match(/^SOIC-?(\d+)(W)?$/i)
     if (m1 && !m1[2]) return `SO-${Number(m1[1])}`
     const m2 = name.match(/^SO(\d+)$/i)
@@ -93,7 +93,7 @@ function canonicalizeFilenameBase(pkg) {
 
   // QFN/DFN: canonical wants pins + body + pitch in name
   // Example: QFN-32-5x5-P0.50
-  if (pkg.type === 'FourSymmetricLeadGroups' || pkg.type === 'TwoSymmetricLeadGroups') {
+  if (pkg.type === 'PT_FOUR_SYM' || pkg.type === 'PT_TWO_SYM') {
     const qfn = name.match(/^QFN-?(\d+)$/i) || name.match(/^QFN(\d+)$/i)
     if (qfn) {
       const pins = Number(qfn[1])
@@ -182,11 +182,11 @@ async function main() {
 
     // Canonical special cases:
     // - Chip sizes should accept Cxxxx/Rxxxx/Lxxxx as aliases
-    if (basePkg.type === 'Chip' && isChipSizeCode(basePkg.name)) {
+    if (basePkg.type === 'PT_TWO_POLE' && isChipSizeCode(basePkg.name)) {
       aliases.push(`C${basePkg.name}`, `R${basePkg.name}`, `L${basePkg.name}`, `CHIP-${basePkg.name}`)
     }
     // - SO canonical should accept SOIC variants
-    if (basePkg.type === 'TwoSymmetricLeadGroups' && /^SO-\d+$/.test(basePkg.name)) {
+    if (basePkg.type === 'PT_TWO_SYM' && /^SO-\d+$/.test(basePkg.name)) {
       const pins = basePkg.name.split('-')[1]
       aliases.push(`SO${pins}`, `SOIC-${pins}`, `SOIC${pins}`, `SO-${String(pins).padStart(2, '0')}`)
     }

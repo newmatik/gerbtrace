@@ -1,0 +1,18 @@
+{
+  "id": "kicad-footprints",
+  "displayName": "KiCad",
+  "owner": "newmatik",
+  "sourceType": "KiCad",
+  "license": "CC-BY-SA-4.0 + KiCad Libraries Exception",
+  "redistribution": "share-alike-conditions",
+  "attribution": {
+    "upstreamOwner": "KiCad",
+    "upstreamRepo": "kicad-footprints",
+    "upstreamUrl": "https://github.com/KiCad/kicad-footprints.git",
+    "notice": "Attribution retained from upstream source metadata."
+  },
+  "source": {
+    "id": "kicad-footprints",
+    "path": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints"
+  }
+}

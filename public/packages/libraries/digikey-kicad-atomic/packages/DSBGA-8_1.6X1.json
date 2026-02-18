@@ -1,0 +1,22 @@
+{
+  "name": "DSBGA-8_1.6X1",
+  "type": "PT_BGA",
+  "body": {
+    "length": 0.925,
+    "width": 0.925
+  },
+  "bga": {
+    "leadsPerRow": 3,
+    "leadsPerColumn": 3,
+    "leadPitch": 0.66,
+    "leadDiameter": 0.313
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/DSBGA-8_1.6x1.6mm.kicad_mod",
+    "sourceFootprint": "DSBGA-8_1.6x1.6mm"
+  }
+}

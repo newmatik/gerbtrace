@@ -1,0 +1,65 @@
+{
+  "name": "VDFN8",
+  "body": {
+    "length": 3.25,
+    "width": 3.25
+  },
+  "type": "PT_TWO_SYM",
+  "twoSymmetric": {
+    "numberOfLeads": 8,
+    "widthOverLeads": 3,
+    "leadPitch": 0.8,
+    "leadWidth": 0.3,
+    "leadLength": 0.3
+  },
+  "height": {
+    "nominal": 0.85,
+    "max": 1,
+    "min": 0.6
+  },
+  "searchArea": {
+    "x": 3.22,
+    "y": 3.252
+  },
+  "machine": {
+    "mountTools": [
+      "A14"
+    ],
+    "pickWaitTime": 180,
+    "placeWaitTime": 90,
+    "zMountForce": null,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "high",
+      "y": "highest",
+      "tape": "high",
+      "theta": "highest",
+      "z": "high",
+      "hydraTheta": "highest",
+      "hydraZ": "high"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/VDFN8.json",
+    "sourceFootprint": "VDFN8"
+  }
+}

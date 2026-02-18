@@ -1,0 +1,29 @@
+{
+  "name": "ST-HLGA_10_2.5X2.5MM_P0.6MM_LAYOUT_BORDER3X2Y",
+  "type": "PT_GENERIC",
+  "body": {
+    "length": 1.68,
+    "width": 1.68
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "GULLWING",
+        "numLeads": 10,
+        "distFromCenter": 0,
+        "ccHalf": 1.2,
+        "angleMilliDeg": 0,
+        "padLength": 0.49,
+        "padWidth": 0.46
+      }
+    ]
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Package_LGA.pretty/ST_HLGA-10_2.5x2.5mm_P0.6mm_LayoutBorder3x2y.kicad_mod",
+    "sourceFootprint": "ST_HLGA-10_2.5x2.5mm_P0.6mm_LayoutBorder3x2y"
+  }
+}

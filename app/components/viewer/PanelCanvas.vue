@@ -56,6 +56,44 @@
       >
         Delete
       </button>
+
+      <span class="mx-1 h-4 w-px bg-neutral-300 dark:bg-neutral-600" />
+      <span class="text-[10px] uppercase tracking-wide font-semibold text-neutral-500 dark:text-neutral-400 px-1">
+        Added Routing
+      </span>
+      <button
+        class="text-[11px] font-medium px-2 py-1 rounded border transition-colors"
+        :class="addedRoutingEditMode === 'add'
+          ? 'border-blue-500/70 text-blue-700 bg-blue-50/90 dark:border-blue-400/70 dark:text-blue-200 dark:bg-blue-500/15'
+          : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:border-neutral-300/80 dark:hover:border-neutral-600/70'"
+        title="Add milling path"
+        @mousedown.stop
+        @click.stop="addedRoutingEditMode = addedRoutingEditMode === 'add' ? 'off' : 'add'"
+      >
+        Add
+      </button>
+      <button
+        class="text-[11px] font-medium px-2 py-1 rounded border transition-colors"
+        :class="addedRoutingEditMode === 'move'
+          ? 'border-blue-500/70 text-blue-700 bg-blue-50/90 dark:border-blue-400/70 dark:text-blue-200 dark:bg-blue-500/15'
+          : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:border-neutral-300/80 dark:hover:border-neutral-600/70'"
+        title="Move milling path"
+        @mousedown.stop
+        @click.stop="addedRoutingEditMode = addedRoutingEditMode === 'move' ? 'off' : 'move'"
+      >
+        Move
+      </button>
+      <button
+        class="text-[11px] font-medium px-2 py-1 rounded border transition-colors"
+        :class="addedRoutingEditMode === 'delete'
+          ? 'border-red-500/70 text-red-700 bg-red-50/90 dark:border-red-400/70 dark:text-red-200 dark:bg-red-500/15'
+          : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:border-neutral-300/80 dark:hover:border-neutral-600/70'"
+        title="Delete milling path"
+        @mousedown.stop
+        @click.stop="addedRoutingEditMode = addedRoutingEditMode === 'delete' ? 'off' : 'delete'"
+      >
+        Delete
+      </button>
     </div>
   </div>
 </template>
@@ -72,9 +110,10 @@ import type { RealisticLayers } from '@lib/renderer/realistic-renderer'
 import { parseGerber } from '@lib/gerber'
 import { plotImageTree } from '@lib/gerber/plotter'
 import { mergeBounds, emptyBounds, isEmpty } from '@lib/gerber/bounding-box'
-import type { PanelConfig, DangerZoneConfig } from '~/utils/panel-types'
+import type { PanelConfig, DangerZoneConfig, AddedRoutingPath } from '~/utils/panel-types'
 import { evenTabPositions } from '~/utils/panel-types'
 import { computePanelLayout, type PanelLayout, type TabMarker } from '~/utils/panel-geometry'
+import { extractSmdPads, DANGER_INSET_MM, type SmdPadRect } from '~/utils/panel-vcut-pad-protection'
 import type { EditablePnPComponent } from '~/composables/usePickAndPlace'
 import type { PackageDefinition, FootprintShape } from '~/utils/package-types'
 import { computeFootprint, getConventionRotationTransform } from '~/utils/package-types'
@@ -138,12 +177,36 @@ interface TabChannel {
   gapDepth: number
 }
 
+interface RoutingSnapGuide {
+  id: string
+  orientation: 'vertical' | 'horizontal'
+  axisMm: number
+  rangeStartMm: number
+  rangeEndMm: number
+}
+
 type TabEditMode = 'move' | 'add' | 'delete'
+type AddedRoutingEditMode = 'off' | 'add' | 'move' | 'delete'
 
 const tabDrag = ref<TabDragState | null>(null)
 const hoveredTab = ref<TabMarker | null>(null)
 const tabEditMode = ref<TabEditMode>('move')
 const addPreview = ref<{ x: number; y: number; width: number; height: number } | null>(null)
+const addedRoutingEditMode = ref<AddedRoutingEditMode>('off')
+const addedRoutingStart = ref<{ xMm: number; yMm: number; guide: RoutingSnapGuide } | null>(null)
+const addedRoutingPreview = ref<{ x1: number; y1: number; x2: number; y2: number } | null>(null)
+const addedRoutingSnapHover = ref<{ xMm: number; yMm: number; guide: RoutingSnapGuide } | null>(null)
+const addedRoutingCursorMm = ref<{ xMm: number; yMm: number } | null>(null)
+const hoveredAddedRoutingId = ref<string | null>(null)
+const addedRoutingDrag = ref<{
+  routeId: string
+  guide: RoutingSnapGuide
+  orientation: 'vertical' | 'horizontal'
+  lengthMm: number
+  offsetMm: number
+  reverse: boolean
+  preview: { x1: number; y1: number; x2: number; y2: number }
+} | null>(null)
 
 function hasAnyRoutedSeparation(config: PanelConfig): boolean {
   if (config.separationType === 'routed') return true
@@ -158,6 +221,12 @@ const tabControlEnabled = computed(() => hasAnyRoutedSeparation(props.panelConfi
 
 const canvasCursor = computed(() => {
   if (props.measure?.active.value) return 'crosshair'
+  if (addedRoutingEditMode.value === 'add') return 'crosshair'
+  if (addedRoutingEditMode.value === 'move') {
+    if (addedRoutingDrag.value) return 'grabbing'
+    return hoveredAddedRoutingId.value ? 'grab' : 'default'
+  }
+  if (addedRoutingEditMode.value === 'delete') return hoveredAddedRoutingId.value ? 'not-allowed' : 'default'
   if (!tabControlEnabled.value) return ''
   if (tabEditMode.value === 'add') return 'copy'
   if (tabEditMode.value === 'delete') return hoveredTab.value ? 'not-allowed' : 'default'
@@ -333,6 +402,70 @@ function onMouseDown(e: MouseEvent) {
     }
     const pt = screenToMm(e.clientX, e.clientY)
     if (pt) {
+      if (layout.value) {
+        if (addedRoutingEditMode.value === 'delete') {
+          const rid = hitTestAddedRouting(pt.xMm, pt.yMm)
+          if (rid) {
+            removeAddedRouting(rid)
+            scheduleRedraw()
+            e.preventDefault()
+            return
+          }
+        } else if (addedRoutingEditMode.value === 'move') {
+          const rid = hitTestAddedRouting(pt.xMm, pt.yMm)
+          if (rid) {
+            const route = getAddedRoutingById(rid)
+            const guide = route ? nearestGuideForRoute(route, layout.value) : null
+            if (route && guide) {
+              const vertical = guide.orientation === 'vertical'
+              const len = vertical ? Math.abs(route.y2 - route.y1) : Math.abs(route.x2 - route.x1)
+              const minAlong = vertical ? Math.min(route.y1, route.y2) : Math.min(route.x1, route.x2)
+              const clickAlong = vertical ? pt.yMm : pt.xMm
+              const offsetMm = clickAlong - minAlong
+              addedRoutingDrag.value = {
+                routeId: rid,
+                guide,
+                orientation: guide.orientation,
+                lengthMm: len,
+                offsetMm,
+                reverse: vertical ? route.y2 < route.y1 : route.x2 < route.x1,
+                preview: { x1: route.x1, y1: route.y1, x2: route.x2, y2: route.y2 },
+              }
+              hoveredAddedRoutingId.value = rid
+              scheduleRedraw()
+              e.preventDefault()
+              return
+            }
+          }
+        } else if (addedRoutingEditMode.value === 'add') {
+          if (!addedRoutingStart.value) {
+            const snapped = snapToRoutingGuide(pt.xMm, pt.yMm, layout.value)
+            if (snapped) {
+              addedRoutingStart.value = snapped
+              addedRoutingPreview.value = { x1: snapped.xMm, y1: snapped.yMm, x2: snapped.xMm, y2: snapped.yMm }
+              addedRoutingSnapHover.value = snapped
+              scheduleRedraw()
+              e.preventDefault()
+              return
+            }
+          } else {
+            const snapped = snapToRoutingGuide(pt.xMm, pt.yMm, layout.value, addedRoutingStart.value.guide)
+            if (snapped) {
+              addRoutingPath(
+                { xMm: addedRoutingStart.value.xMm, yMm: addedRoutingStart.value.yMm },
+                { xMm: snapped.xMm, yMm: snapped.yMm },
+                addedRoutingStart.value.guide,
+              )
+              addedRoutingStart.value = null
+              addedRoutingPreview.value = null
+              addedRoutingSnapHover.value = snapped
+              scheduleRedraw()
+              e.preventDefault()
+              return
+            }
+          }
+        }
+      }
       const hit = hitTestTab(pt.xMm, pt.yMm)
       if (tabEditMode.value === 'move') {
         if (hit) {
@@ -380,9 +513,64 @@ function onMouseMove(e: MouseEvent) {
     }
     return
   }
+  if (addedRoutingDrag.value) {
+    const pt = screenToMm(e.clientX, e.clientY)
+    if (pt) {
+      const drag = addedRoutingDrag.value
+      const snapped = layout.value
+        ? snapToRoutingGuide(pt.xMm, pt.yMm, layout.value, drag.guide)
+        : null
+      if (snapped) {
+        const g = drag.guide
+        if (g.orientation === 'vertical') {
+          const maxStart = Math.max(g.rangeStartMm, g.rangeEndMm - drag.lengthMm)
+          const start = Math.max(g.rangeStartMm, Math.min(maxStart, snapped.yMm - drag.offsetMm))
+          const y1 = drag.reverse ? start + drag.lengthMm : start
+          const y2 = drag.reverse ? start : start + drag.lengthMm
+          drag.preview = { x1: g.axisMm, y1, x2: g.axisMm, y2 }
+        } else {
+          const maxStart = Math.max(g.rangeStartMm, g.rangeEndMm - drag.lengthMm)
+          const start = Math.max(g.rangeStartMm, Math.min(maxStart, snapped.xMm - drag.offsetMm))
+          const x1 = drag.reverse ? start + drag.lengthMm : start
+          const x2 = drag.reverse ? start : start + drag.lengthMm
+          drag.preview = { x1, y1: g.axisMm, x2, y2: g.axisMm }
+        }
+        addedRoutingDrag.value = { ...drag }
+      }
+      scheduleRedraw()
+    }
+    return
+  }
   // Hover detection for tab cursor
   const hpt = screenToMm(e.clientX, e.clientY)
   if (hpt) {
+    if (addedRoutingEditMode.value === 'add') {
+      addedRoutingCursorMm.value = { xMm: hpt.xMm, yMm: hpt.yMm }
+    } else {
+      addedRoutingCursorMm.value = null
+    }
+    if (layout.value && addedRoutingEditMode.value === 'add') {
+      const snapped = addedRoutingStart.value
+        ? snapToRoutingGuide(hpt.xMm, hpt.yMm, layout.value, addedRoutingStart.value.guide)
+        : snapToRoutingGuide(hpt.xMm, hpt.yMm, layout.value)
+      addedRoutingSnapHover.value = snapped
+      if (addedRoutingStart.value && snapped) {
+        addedRoutingPreview.value = {
+          x1: addedRoutingStart.value.xMm,
+          y1: addedRoutingStart.value.yMm,
+          x2: snapped.xMm,
+          y2: snapped.yMm,
+        }
+      } else {
+        addedRoutingPreview.value = null
+      }
+    } else {
+      addedRoutingSnapHover.value = null
+      addedRoutingPreview.value = null
+    }
+    hoveredAddedRoutingId.value = (addedRoutingEditMode.value === 'delete' || addedRoutingEditMode.value === 'move')
+      ? hitTestAddedRouting(hpt.xMm, hpt.yMm)
+      : null
     hoveredTab.value = hitTestTab(hpt.xMm, hpt.yMm)
     if (tabEditMode.value === 'add') {
       const ch = hitTestTabChannel(hpt.xMm, hpt.yMm)
@@ -395,8 +583,15 @@ function onMouseMove(e: MouseEvent) {
       addPreview.value = null
     }
   } else {
+    hoveredAddedRoutingId.value = null
     hoveredTab.value = null
     addPreview.value = null
+    addedRoutingPreview.value = null
+    addedRoutingSnapHover.value = null
+    addedRoutingCursorMm.value = null
+  }
+  if (addedRoutingEditMode.value === 'add' || addedRoutingEditMode.value === 'move' || addedRoutingEditMode.value === 'delete') {
+    scheduleRedraw()
   }
   if (canvasEl.value && props.measure?.active.value) {
     props.measure.handleMouseMove(e, canvasEl.value, props.interaction.transform.value)
@@ -408,6 +603,19 @@ function onMouseUp(_e: MouseEvent) {
     commitTabDrag()
     return
   }
+  if (addedRoutingDrag.value) {
+    const drag = addedRoutingDrag.value
+    addedRoutingDrag.value = null
+    updateAddedRouting({
+      id: drag.routeId,
+      x1: drag.preview.x1,
+      y1: drag.preview.y1,
+      x2: drag.preview.x2,
+      y2: drag.preview.y2,
+    })
+    scheduleRedraw()
+    return
+  }
   props.interaction.handleMouseUp()
 }
 function onMouseLeave(_e: MouseEvent) {
@@ -415,7 +623,24 @@ function onMouseLeave(_e: MouseEvent) {
     commitTabDrag()
     return
   }
+  if (addedRoutingDrag.value) {
+    const drag = addedRoutingDrag.value
+    addedRoutingDrag.value = null
+    updateAddedRouting({
+      id: drag.routeId,
+      x1: drag.preview.x1,
+      y1: drag.preview.y1,
+      x2: drag.preview.x2,
+      y2: drag.preview.y2,
+    })
+    scheduleRedraw()
+    return
+  }
   addPreview.value = null
+  hoveredAddedRoutingId.value = null
+  addedRoutingSnapHover.value = null
+  addedRoutingCursorMm.value = null
+  scheduleRedraw()
   props.interaction.handleMouseUp()
 }
 
@@ -429,7 +654,7 @@ function commitTabDrag() {
   const config = props.panelConfig
 
   // Get current positions for this edge
-  const positions = getTabPositionsForKey(config, tab.overrideKey, tab.col, tab.row, tab.edge)
+  const positions = getTabPositionsForKey(config, tab.overrideKey, tab.col, tab.row, tab.edge, tab.channelId)
 
   if (tab.posIndex >= 0 && tab.posIndex < positions.length) {
     positions[tab.posIndex] = currentPos
@@ -449,7 +674,7 @@ function commitTabDrag() {
 }
 
 function removeTab(tab: TabMarker) {
-  const positions = getTabPositionsForKey(props.panelConfig, tab.overrideKey, tab.col, tab.row, tab.edge)
+  const positions = getTabPositionsForKey(props.panelConfig, tab.overrideKey, tab.col, tab.row, tab.edge, tab.channelId)
   if (tab.posIndex < 0 || tab.posIndex >= positions.length) return
   positions.splice(tab.posIndex, 1)
   const newConfig: PanelConfig = {
@@ -476,6 +701,7 @@ function addTab(channel: TabChannel, xMm: number, yMm: number) {
     channel.col,
     channel.row,
     channel.edge,
+    channel.channelId,
   )
   current.push(pos)
   current.sort((a, b) => a - b)
@@ -503,8 +729,13 @@ function getTabPositionsForKey(
   col: number,
   row: number,
   edge: string,
+  channelId: string = 'main',
 ): number[] {
   if (overrideKey in config.tabs.edgeOverrides) return [...config.tabs.edgeOverrides[overrideKey]!]
+  const oppositeModeKey = overrideKey.startsWith('sync-')
+    ? `${col}-${row}-${edge}-${channelId}`
+    : `sync-${edge}-${channelId}`
+  if (oppositeModeKey in config.tabs.edgeOverrides) return [...config.tabs.edgeOverrides[oppositeModeKey]!]
   // Backwards compatibility for old projects that used keys without channel suffix.
   const legacyEdgeKey = `${col}-${row}-${edge}`
   if (legacyEdgeKey in config.tabs.edgeOverrides) return [...config.tabs.edgeOverrides[legacyEdgeKey]!]
@@ -854,6 +1085,251 @@ function hitTestTabChannel(xMm: number, yMm: number): TabChannel | null {
     }
   }
   return null
+}
+
+function buildRoutingSnapGuides(panelLayout: PanelLayout): RoutingSnapGuide[] {
+  const guides: RoutingSnapGuide[] = []
+  const cfg = props.panelConfig
+  const toolR = Math.max(0.1, cfg.routingToolDiameter / 2)
+  const frameW = cfg.frame.enabled ? cfg.frame.width : 0
+
+  const pushVertical = (id: string, x: number, y1: number, y2: number) => {
+    if (y2 - y1 < 0.5) return
+    guides.push({
+      id,
+      orientation: 'vertical',
+      axisMm: x,
+      rangeStartMm: y1,
+      rangeEndMm: y2,
+    })
+  }
+  const pushHorizontal = (id: string, y: number, x1: number, x2: number) => {
+    if (x2 - x1 < 0.5) return
+    guides.push({
+      id,
+      orientation: 'horizontal',
+      axisMm: y,
+      rangeStartMm: x1,
+      rangeEndMm: x2,
+    })
+  }
+
+  if (cfg.frame.enabled && frameW > toolR) {
+    const topY = toolR
+    const topInnerY = frameW - toolR
+    const botY = panelLayout.totalHeight - toolR
+    const botInnerY = panelLayout.totalHeight - frameW + toolR
+    const leftX = toolR
+    const leftInnerX = frameW - toolR
+    const rightX = panelLayout.totalWidth - toolR
+    const rightInnerX = panelLayout.totalWidth - frameW + toolR
+    pushHorizontal('frame-top-outer', topY, 0, panelLayout.totalWidth)
+    pushHorizontal('frame-top-inner', topInnerY, 0, panelLayout.totalWidth)
+    pushHorizontal('frame-bottom-outer', botY, 0, panelLayout.totalWidth)
+    pushHorizontal('frame-bottom-inner', botInnerY, 0, panelLayout.totalWidth)
+    pushVertical('frame-left-outer', leftX, 0, panelLayout.totalHeight)
+    pushVertical('frame-left-inner', leftInnerX, 0, panelLayout.totalHeight)
+    pushVertical('frame-right-outer', rightX, 0, panelLayout.totalHeight)
+    pushVertical('frame-right-inner', rightInnerX, 0, panelLayout.totalHeight)
+  }
+
+  for (const rail of panelLayout.supportRails) {
+    if (rail.direction === 'vertical') {
+      // Center line gives a forgiving snap target in wide support bars.
+      pushVertical(`support-v-${rail.gapIndex}-center`, rail.x + rail.width / 2, rail.y, rail.y + rail.height)
+      if (rail.width > 2 * toolR) {
+        pushVertical(`support-v-${rail.gapIndex}-left`, rail.x + toolR, rail.y, rail.y + rail.height)
+        pushVertical(`support-v-${rail.gapIndex}-right`, rail.x + rail.width - toolR, rail.y, rail.y + rail.height)
+      }
+    } else {
+      // Center line gives a forgiving snap target in wide support bars.
+      pushHorizontal(`support-h-${rail.gapIndex}-center`, rail.y + rail.height / 2, rail.x, rail.x + rail.width)
+      if (rail.height > 2 * toolR) {
+        pushHorizontal(`support-h-${rail.gapIndex}-top`, rail.y + toolR, rail.x, rail.x + rail.width)
+        pushHorizontal(`support-h-${rail.gapIndex}-bottom`, rail.y + rail.height - toolR, rail.x, rail.x + rail.width)
+      }
+    }
+  }
+
+  return guides
+}
+
+function snapToRoutingGuide(
+  xMm: number,
+  yMm: number,
+  panelLayout: PanelLayout,
+  preferredGuide?: RoutingSnapGuide,
+): { xMm: number; yMm: number; guide: RoutingSnapGuide } | null {
+  const guides = buildRoutingSnapGuides(panelLayout)
+  if (!guides.length) return null
+  const transform = props.interaction.transform.value
+  const units = detectUnits()
+  const toMm = units === 'in' ? 25.4 : 1
+  const pxPerMm = (1 / toMm) * transform.scale
+  const snapMm = 20 / Math.max(1e-6, pxPerMm)
+
+  let best: { guide: RoutingSnapGuide; dist: number } | null = null
+  const pool = preferredGuide
+    ? guides.filter(g => g.id === preferredGuide.id)
+    : guides
+  for (const g of pool) {
+    const axisDist = g.orientation === 'vertical'
+      ? Math.abs(xMm - g.axisMm)
+      : Math.abs(yMm - g.axisMm)
+    if (axisDist > snapMm) continue
+    const along = g.orientation === 'vertical' ? yMm : xMm
+    const clampedAlong = Math.max(g.rangeStartMm, Math.min(g.rangeEndMm, along))
+    const endDist = Math.abs(along - clampedAlong)
+    const dist = axisDist + endDist * 0.2
+    if (!best || dist < best.dist) best = { guide: g, dist }
+  }
+  if (!best) return null
+  const g = best.guide
+  if (g.orientation === 'vertical') {
+    const y = Math.max(g.rangeStartMm, Math.min(g.rangeEndMm, yMm))
+    return { xMm: g.axisMm, yMm: y, guide: g }
+  }
+  const x = Math.max(g.rangeStartMm, Math.min(g.rangeEndMm, xMm))
+  return { xMm: x, yMm: g.axisMm, guide: g }
+}
+
+function addRoutingPath(
+  start: { xMm: number; yMm: number },
+  end: { xMm: number; yMm: number },
+  guide: RoutingSnapGuide,
+) {
+  const length = Math.hypot(end.xMm - start.xMm, end.yMm - start.yMm)
+  if (length < 1) return
+
+  const panelLayout = layout.value
+  const newPaths: AddedRoutingPath[] = []
+  const ts = Date.now()
+  let idx = 0
+  const mkId = () => `route-${ts}-${idx++}-${Math.random().toString(36).slice(2, 6)}`
+
+  // Primary route exactly as the user drew it.
+  newPaths.push({ id: mkId(), x1: start.xMm, y1: start.yMm, x2: end.xMm, y2: end.yMm })
+
+  // Replicate to equivalent positions on other PCBs along the guide.
+  // Horizontal guide: segment varies in X -> replicate across columns.
+  // Vertical guide: segment varies in Y -> replicate across rows.
+  if (panelLayout) {
+    const pcbW = panelLayout.pcbLayoutWidth
+    const pcbH = panelLayout.pcbLayoutHeight
+    const colXs = [...new Set(panelLayout.pcbs.map(p => p.x))].sort((a, b) => a - b)
+    const rowYs = [...new Set(panelLayout.pcbs.map(p => p.y))].sort((a, b) => a - b)
+
+    if (guide.orientation === 'horizontal' && colXs.length > 1) {
+      // Find which column the segment midpoint falls in.
+      const midX = (start.xMm + end.xMm) / 2
+      const srcCol = colXs.findIndex(cx => midX >= cx && midX <= cx + pcbW)
+      if (srcCol >= 0) {
+        const relX1 = start.xMm - colXs[srcCol]
+        const relX2 = end.xMm - colXs[srcCol]
+        for (let c = 0; c < colXs.length; c++) {
+          if (c === srcCol) continue
+          newPaths.push({
+            id: mkId(),
+            x1: colXs[c] + relX1,
+            y1: start.yMm,
+            x2: colXs[c] + relX2,
+            y2: end.yMm,
+          })
+        }
+      }
+    } else if (guide.orientation === 'vertical' && rowYs.length > 1) {
+      // Find which row the segment midpoint falls in.
+      const midY = (start.yMm + end.yMm) / 2
+      const srcRow = rowYs.findIndex(ry => midY >= ry && midY <= ry + pcbH)
+      if (srcRow >= 0) {
+        const relY1 = start.yMm - rowYs[srcRow]
+        const relY2 = end.yMm - rowYs[srcRow]
+        for (let r = 0; r < rowYs.length; r++) {
+          if (r === srcRow) continue
+          newPaths.push({
+            id: mkId(),
+            x1: start.xMm,
+            y1: rowYs[r] + relY1,
+            x2: end.xMm,
+            y2: rowYs[r] + relY2,
+          })
+        }
+      }
+    }
+  }
+
+  const newConfig: PanelConfig = {
+    ...props.panelConfig,
+    addedRoutings: [...(props.panelConfig.addedRoutings ?? []), ...newPaths],
+  }
+  emit('update:panelConfig', newConfig)
+}
+
+function pointToSegmentDistance(x: number, y: number, x1: number, y1: number, x2: number, y2: number): number {
+  const dx = x2 - x1
+  const dy = y2 - y1
+  const len2 = dx * dx + dy * dy
+  if (len2 <= 1e-9) return Math.hypot(x - x1, y - y1)
+  const t = Math.max(0, Math.min(1, ((x - x1) * dx + (y - y1) * dy) / len2))
+  const px = x1 + t * dx
+  const py = y1 + t * dy
+  return Math.hypot(x - px, y - py)
+}
+
+function hitTestAddedRouting(xMm: number, yMm: number): string | null {
+  const routes = props.panelConfig.addedRoutings ?? []
+  if (!routes.length) return null
+  const transform = props.interaction.transform.value
+  const units = detectUnits()
+  const toMm = units === 'in' ? 25.4 : 1
+  const pxPerMm = (1 / toMm) * transform.scale
+  const hitMm = 8 / Math.max(1e-6, pxPerMm)
+  let bestId: string | null = null
+  let best = hitMm
+  for (const r of routes) {
+    const d = pointToSegmentDistance(xMm, yMm, r.x1, r.y1, r.x2, r.y2)
+    if (d <= best) {
+      best = d
+      bestId = r.id
+    }
+  }
+  return bestId
+}
+
+function removeAddedRouting(id: string) {
+  const next = (props.panelConfig.addedRoutings ?? []).filter(r => r.id !== id)
+  const newConfig: PanelConfig = {
+    ...props.panelConfig,
+    addedRoutings: next,
+  }
+  emit('update:panelConfig', newConfig)
+}
+
+function updateAddedRouting(path: AddedRoutingPath) {
+  const list = props.panelConfig.addedRoutings ?? []
+  const next = list.map(r => r.id === path.id ? path : r)
+  emit('update:panelConfig', {
+    ...props.panelConfig,
+    addedRoutings: next,
+  })
+}
+
+function getAddedRoutingById(id: string): AddedRoutingPath | null {
+  return (props.panelConfig.addedRoutings ?? []).find(r => r.id === id) ?? null
+}
+
+function nearestGuideForRoute(route: AddedRoutingPath, panelLayout: PanelLayout): RoutingSnapGuide | null {
+  const guides = buildRoutingSnapGuides(panelLayout)
+  if (!guides.length) return null
+  const isVertical = Math.abs(route.x2 - route.x1) <= Math.abs(route.y2 - route.y1)
+  const axis = isVertical ? route.x1 : route.y1
+  let best: { g: RoutingSnapGuide; d: number } | null = null
+  for (const g of guides) {
+    if ((g.orientation === 'vertical') !== isVertical) continue
+    const d = Math.abs(g.axisMm - axis)
+    if (!best || d < best.d) best = { g, d }
+  }
+  return best?.g ?? null
 }
 
 const SNAP_THRESHOLD_PX = 8
@@ -1525,6 +2001,7 @@ function drawPanelForeground(oc: OverlayContext, panelLayout: PanelLayout) {
   const dz = props.dangerZone
   if (dz?.enabled && dz.insetMm > 0 && panelLayout.pcbs.length > 0) {
     drawDangerZone(oc, panelLayout, dz.insetMm)
+    drawDangerZonePads(oc, panelLayout)
   }
 
   // Silkscreen-style labels (reference points + panel info)
@@ -1604,6 +2081,84 @@ function drawDangerZone(oc: OverlayContext, panelLayout: PanelLayout, insetMm: n
     ctx.drawImage(dangerTile, drawX, drawY)
     ctx.restore()
   }
+}
+
+let _dangerPadCache: { key: string; pads: SmdPadRect[] } | null = null
+
+/**
+ * Extract SMD pads with coordinates rebased relative to the board outline
+ * origin (bottom-left corner of the outline bounds becomes 0,0).
+ */
+function getDangerPads(): SmdPadRect[] {
+  const source = props.allLayers ?? props.layers
+  const copperTypes = new Set(['Top Copper', 'Bottom Copper'])
+  const copperLayers = source.filter(l => copperTypes.has(l.type))
+
+  const outlineBounds = getOutlineBoundsGerber()
+  const boundsKey = outlineBounds ? outlineBounds.join(',') : 'none'
+  const key = copperLayers.map(l => l.file.fileName).join('|') + '|' + boundsKey
+  if (_dangerPadCache?.key === key) return _dangerPadCache.pads
+
+  const units = detectUnits()
+  const toMm = units === 'in' ? 25.4 : 1
+  const originXMm = outlineBounds ? outlineBounds[0] * toMm : 0
+  const originYMm = outlineBounds ? outlineBounds[1] * toMm : 0
+
+  const allPads: SmdPadRect[] = []
+  for (const layer of copperLayers) {
+    const tree = getImageTree(layer)
+    if (!tree) continue
+    for (const raw of extractSmdPads(tree)) {
+      allPads.push({
+        xMm: raw.xMm - originXMm,
+        yMm: raw.yMm - originYMm,
+        wMm: raw.wMm,
+        hMm: raw.hMm,
+      })
+    }
+  }
+  _dangerPadCache = { key, pads: allPads }
+  return allPads
+}
+
+function drawDangerZonePads(oc: OverlayContext, panelLayout: PanelLayout) {
+  if (!props.boardSizeMm) return
+  const boardW = props.boardSizeMm.width
+  const boardH = props.boardSizeMm.height
+  const pads = getDangerPads()
+  if (!pads.length) return
+
+  const inset = DANGER_INSET_MM
+  const endangered: SmdPadRect[] = []
+  for (const pad of pads) {
+    const padRight = pad.xMm + pad.wMm
+    const padTop = pad.yMm + pad.hMm
+    if (pad.yMm < inset || padTop > boardH - inset || pad.xMm < inset || padRight > boardW - inset) {
+      endangered.push(pad)
+    }
+  }
+  if (!endangered.length) return
+
+  const { ctx } = oc
+  ctx.save()
+  ctx.fillStyle = 'rgba(239, 68, 68, 0.45)'
+  ctx.strokeStyle = 'rgba(239, 68, 68, 0.9)'
+  ctx.lineWidth = 1.5 * oc.dpr
+
+  for (const pcb of panelLayout.pcbs) {
+    for (const pad of endangered) {
+      const p1 = toScreen(oc, pcb.x + pad.xMm, pcb.y + pad.yMm)
+      const p2 = toScreen(oc, pcb.x + pad.xMm + pad.wMm, pcb.y + pad.yMm + pad.hMm)
+      const sx = Math.min(p1.sx, p2.sx)
+      const sy = Math.min(p1.sy, p2.sy)
+      const w = Math.abs(p2.sx - p1.sx)
+      const h = Math.abs(p2.sy - p1.sy)
+      if (w < 0.5 && h < 0.5) continue
+      ctx.fillRect(sx, sy, w, h)
+      ctx.strokeRect(sx, sy, w, h)
+    }
+  }
+  ctx.restore()
 }
 
 /**
@@ -2336,6 +2891,114 @@ function drawTabDragOverlay(oc: OverlayContext, panelLayout: PanelLayout) {
     ctx.strokeRect(tl.sx, tl.sy, br.sx - tl.sx, br.sy - tl.sy)
     ctx.restore()
   }
+
+  if (addedRoutingPreview.value) {
+    const rp = addedRoutingPreview.value
+    const p1 = toScreen(oc, rp.x1, rp.y1)
+    const p2 = toScreen(oc, rp.x2, rp.y2)
+    ctx.save()
+    ctx.strokeStyle = 'rgba(59, 130, 246, 0.95)'
+    ctx.lineWidth = Math.max(1.2 * oc.dpr, mmToPx(oc, props.panelConfig.routingToolDiameter))
+    ctx.setLineDash([6 * oc.dpr, 4 * oc.dpr])
+    ctx.beginPath()
+    ctx.moveTo(p1.sx, p1.sy)
+    ctx.lineTo(p2.sx, p2.sy)
+    ctx.stroke()
+    ctx.restore()
+  }
+
+  if (addedRoutingEditMode.value === 'add') {
+    const snapped = addedRoutingSnapHover.value
+    const cursor = addedRoutingCursorMm.value
+
+    if (snapped) {
+      const sp = snapped
+      const p = toScreen(oc, sp.xMm, sp.yMm)
+      const g = sp.guide
+      const r = 10 * oc.dpr
+
+      ctx.save()
+      // Guide line (full extent of the snapped edge)
+      ctx.strokeStyle = 'rgba(34, 197, 94, 0.55)'
+      ctx.lineWidth = 1.5 * oc.dpr
+      ctx.setLineDash([8 * oc.dpr, 5 * oc.dpr])
+      if (g.orientation === 'vertical') {
+        const a = toScreen(oc, g.axisMm, g.rangeStartMm)
+        const b = toScreen(oc, g.axisMm, g.rangeEndMm)
+        ctx.beginPath(); ctx.moveTo(a.sx, a.sy); ctx.lineTo(b.sx, b.sy); ctx.stroke()
+      } else {
+        const a = toScreen(oc, g.rangeStartMm, g.axisMm)
+        const b = toScreen(oc, g.rangeEndMm, g.axisMm)
+        ctx.beginPath(); ctx.moveTo(a.sx, a.sy); ctx.lineTo(b.sx, b.sy); ctx.stroke()
+      }
+
+      // Snap dot (filled green circle)
+      ctx.setLineDash([])
+      ctx.fillStyle = 'rgba(34, 197, 94, 0.85)'
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)'
+      ctx.lineWidth = 2 * oc.dpr
+      ctx.beginPath()
+      ctx.arc(p.sx, p.sy, 5 * oc.dpr, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.stroke()
+
+      // Crosshair arms extending well past the dot
+      ctx.strokeStyle = 'rgba(34, 197, 94, 0.9)'
+      ctx.lineWidth = 1.2 * oc.dpr
+      ctx.beginPath()
+      ctx.moveTo(p.sx - r, p.sy); ctx.lineTo(p.sx + r, p.sy)
+      ctx.moveTo(p.sx, p.sy - r); ctx.lineTo(p.sx, p.sy + r)
+      ctx.stroke()
+      ctx.restore()
+    } else if (cursor) {
+      // Not snapped - show a small red crosshair at mouse position
+      const p = toScreen(oc, cursor.xMm, cursor.yMm)
+      const r = 8 * oc.dpr
+      ctx.save()
+      ctx.strokeStyle = 'rgba(239, 68, 68, 0.6)'
+      ctx.lineWidth = 1 * oc.dpr
+      ctx.setLineDash([4 * oc.dpr, 3 * oc.dpr])
+      ctx.beginPath()
+      ctx.moveTo(p.sx - r, p.sy); ctx.lineTo(p.sx + r, p.sy)
+      ctx.moveTo(p.sx, p.sy - r); ctx.lineTo(p.sx, p.sy + r)
+      ctx.stroke()
+      ctx.restore()
+    }
+  }
+
+  if (addedRoutingDrag.value && addedRoutingEditMode.value === 'move') {
+    const rp = addedRoutingDrag.value.preview
+    const p1 = toScreen(oc, rp.x1, rp.y1)
+    const p2 = toScreen(oc, rp.x2, rp.y2)
+    ctx.save()
+    ctx.strokeStyle = 'rgba(59, 130, 246, 0.95)'
+    ctx.lineWidth = Math.max(1.4 * oc.dpr, mmToPx(oc, props.panelConfig.routingToolDiameter))
+    ctx.setLineDash([6 * oc.dpr, 4 * oc.dpr])
+    ctx.beginPath()
+    ctx.moveTo(p1.sx, p1.sy)
+    ctx.lineTo(p2.sx, p2.sy)
+    ctx.stroke()
+    ctx.restore()
+  }
+
+  if (hoveredAddedRoutingId.value) {
+    const route = (props.panelConfig.addedRoutings ?? []).find(r => r.id === hoveredAddedRoutingId.value)
+    if (route) {
+      const p1 = toScreen(oc, route.x1, route.y1)
+      const p2 = toScreen(oc, route.x2, route.y2)
+      ctx.save()
+      ctx.strokeStyle = addedRoutingEditMode.value === 'move'
+        ? 'rgba(59, 130, 246, 0.95)'
+        : 'rgba(239, 68, 68, 0.95)'
+      ctx.lineWidth = Math.max(2 * oc.dpr, mmToPx(oc, props.panelConfig.routingToolDiameter) + 1.5 * oc.dpr)
+      ctx.setLineDash([])
+      ctx.beginPath()
+      ctx.moveTo(p1.sx, p1.sy)
+      ctx.lineTo(p2.sx, p2.sy)
+      ctx.stroke()
+      ctx.restore()
+    }
+  }
 }
 
 function roundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
@@ -2363,7 +3026,7 @@ function scheduleRedraw() {
 }
 
 watch(
-  () => `${props.interaction.transform.value.offsetX}|${props.interaction.transform.value.offsetY}|${props.interaction.transform.value.scale}|${props.mirrored ? 1 : 0}|${appSettings.gridEnabled ? 1 : 0}|${appSettings.gridSpacingMm}|${bgColor.value}|${tabEditMode.value}`,
+  () => `${props.interaction.transform.value.offsetX}|${props.interaction.transform.value.offsetY}|${props.interaction.transform.value.scale}|${props.mirrored ? 1 : 0}|${appSettings.gridEnabled ? 1 : 0}|${appSettings.gridSpacingMm}|${bgColor.value}|${tabEditMode.value}|${addedRoutingEditMode.value}`,
   () => scheduleRedraw(),
 )
 
@@ -2380,6 +3043,14 @@ watch(
   () => {
     invalidatePanelRenderCaches()
     autoFitDone.value = false
+    scheduleRedraw()
+  },
+)
+
+watch(
+  () => JSON.stringify(props.panelConfig.addedRoutings ?? []),
+  () => {
+    invalidatePanelRenderCaches()
     scheduleRedraw()
   },
 )
@@ -2425,6 +3096,21 @@ watch(tabControlEnabled, (enabled) => {
   hoveredTab.value = null
   addPreview.value = null
   tabEditMode.value = 'move'
+})
+
+watch(addedRoutingEditMode, (mode) => {
+  if (mode !== 'add') {
+    addedRoutingStart.value = null
+    addedRoutingPreview.value = null
+    addedRoutingSnapHover.value = null
+    addedRoutingCursorMm.value = null
+  }
+  if (mode !== 'delete' && mode !== 'move') {
+    hoveredAddedRoutingId.value = null
+  }
+  if (mode !== 'move') {
+    addedRoutingDrag.value = null
+  }
 })
 
 function exportPng(

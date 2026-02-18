@@ -1,0 +1,419 @@
+{
+  "name": "POTENTIOMETER-BOURNS_PTA6043_SINGLE_SLIDE",
+  "aliases": [],
+  "bodyColor": "#333333",
+  "bodyStrokeColor": "#555555",
+  "pinColor": "#c0c0c0",
+  "pinStrokeColor": "#808080",
+  "shapes": [
+    {
+      "kind": "roundedRect",
+      "role": "body",
+      "x": 36.35,
+      "y": 1.75,
+      "width": 76.85,
+      "height": 11.9,
+      "cornerRadius": 0.952,
+      "color": "#1f2937",
+      "strokeColor": "#111827"
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 1.25,
+      "y": 1.75,
+      "radius": 1,
+      "color": "#374151",
+      "strokeColor": "#6b7280"
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 72.25,
+      "y": 1.75,
+      "radius": 1,
+      "color": "#374151",
+      "strokeColor": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 74.25,
+      "y1": 6.25,
+      "x2": -0.75,
+      "y2": 6.25,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 0.25,
+      "y1": -2.75,
+      "x2": 74.25,
+      "y2": -2.75,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 5.786,
+      "y1": 6.37,
+      "x2": 67.715,
+      "y2": 6.37,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 6.75,
+      "y1": 1.75,
+      "x2": 66.75,
+      "y2": 1.75,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 6.986,
+      "y1": -2.87,
+      "x2": 66.515,
+      "y2": -2.87,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 74.25,
+      "y1": -2.75,
+      "x2": 74.25,
+      "y2": 6.25,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.75,
+      "y1": 6.25,
+      "x2": -0.75,
+      "y2": -1.75,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 74.37,
+      "y1": 0.823,
+      "x2": 74.37,
+      "y2": 6.37,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.87,
+      "y1": -2.87,
+      "x2": 3.715,
+      "y2": -2.87,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 69.786,
+      "y1": -2.87,
+      "x2": 74.37,
+      "y2": -2.87,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.87,
+      "y1": 6.37,
+      "x2": 2.515,
+      "y2": 6.37,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 70.986,
+      "y1": 6.37,
+      "x2": 74.37,
+      "y2": 6.37,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 6.75,
+      "y1": 0.25,
+      "x2": 6.75,
+      "y2": 3.25,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 66.75,
+      "y1": 0.25,
+      "x2": 66.75,
+      "y2": 3.25,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 74.37,
+      "y1": -2.87,
+      "x2": 74.37,
+      "y2": -0.823,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.87,
+      "y1": 4.323,
+      "x2": -0.87,
+      "y2": 6.37,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.87,
+      "y1": -2.87,
+      "x2": -0.87,
+      "y2": -1.175,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.87,
+      "y1": 1.175,
+      "x2": -0.87,
+      "y2": 2.678,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -0.75,
+      "y1": -1.75,
+      "x2": 0.25,
+      "y2": -2.75,
+      "strokeWidth": 0.1,
+      "color": "#6b7280"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 7.5,
+      "y1": 1,
+      "x2": 6.75,
+      "y2": 1.75,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 6.75,
+      "y1": 1.75,
+      "x2": 7.5,
+      "y2": 2.5,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 66,
+      "y1": 1,
+      "x2": 66.75,
+      "y2": 1.75,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": 66.75,
+      "y1": 1.75,
+      "x2": 66,
+      "y2": 2.5,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.675,
+      "y1": -0.5,
+      "x2": -1.675,
+      "y2": 0.5,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.175,
+      "y1": 0,
+      "x2": -1.675,
+      "y2": -0.5,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "line",
+      "role": "body",
+      "x1": -1.675,
+      "y1": 0.5,
+      "x2": -1.175,
+      "y2": 0,
+      "strokeWidth": 0.12,
+      "color": "#9ca3af"
+    },
+    {
+      "kind": "rect",
+      "role": "pin1",
+      "x": 0,
+      "y": 0,
+      "width": 1.75,
+      "height": 1.75
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 0,
+      "radius": 0.6,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 0,
+      "y": 3.5,
+      "radius": 0.875
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 0,
+      "y": 3.5,
+      "radius": 0.6,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 73.5,
+      "y": 0,
+      "radius": 0.875
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 73.5,
+      "y": 0,
+      "radius": 0.6,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 5.35,
+      "y": -2.45,
+      "radius": 1.35
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 5.35,
+      "y": -2.45,
+      "radius": 0.85,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 68.15,
+      "y": -2.45,
+      "radius": 1.35
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 68.15,
+      "y": -2.45,
+      "radius": 0.85,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 4.15,
+      "y": 5.95,
+      "radius": 1.35
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 4.15,
+      "y": 5.95,
+      "radius": 0.85,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    },
+    {
+      "kind": "circle",
+      "role": "pin",
+      "x": 69.35,
+      "y": 5.95,
+      "radius": 1.35
+    },
+    {
+      "kind": "circle",
+      "role": "body",
+      "x": 69.35,
+      "y": 5.95,
+      "radius": 0.85,
+      "color": "#111827",
+      "strokeColor": "#1f2937"
+    }
+  ],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "kicad-footprints",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/cc-by-sa-4.0-kicad-exception/KiCad/kicad-footprints/Potentiometer_THT.pretty/Potentiometer_Bourns_PTA6043_Single_Slide.kicad_mod",
+    "sourceFootprint": "Potentiometer_Bourns_PTA6043_Single_Slide"
+  }
+}

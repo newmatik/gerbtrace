@@ -1,0 +1,23 @@
+{
+  "name": "UFQFN-32-1EP_5X5MM",
+  "type": "PT_FOUR_SYM",
+  "body": {
+    "length": 5,
+    "width": 5
+  },
+  "fourSymmetric": {
+    "numberOfLeads": 32,
+    "widthOverLeads": 5.6,
+    "leadPitch": 2,
+    "leadWidth": 0.325,
+    "leadLength": 0.8
+  },
+  "aliases": [],
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "digikey-kicad-atomic",
+    "sourceType": "KiCad",
+    "sourceFile": ".local/libraries/custom-terms/Digi-Key/digikey-kicad-library/src/Source_Footprints/UFQFN-32-1EP_5x5mm.kicad_mod",
+    "sourceFootprint": "UFQFN-32-1EP_5x5mm"
+  }
+}
