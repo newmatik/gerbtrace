@@ -427,6 +427,27 @@ export const PACKAGE_TYPES = [
   'PT_GENERIC',
 ] as const
 
+const LEGACY_TYPE_MAP: Record<string, PackageDefinition['type']> = {
+  Chip: 'PT_TWO_POLE',
+  ThreePole: 'PT_THREE_POLE',
+  TwoSymmetricLeadGroups: 'PT_TWO_SYM',
+  FourSymmetricLeadGroups: 'PT_FOUR_SYM',
+  TwoPlusTwo: 'PT_TWO_PLUS_TWO',
+  FourOnTwo: 'PT_FOUR_ON_TWO',
+  BGA: 'PT_BGA',
+  Outline: 'PT_OUTLINE',
+}
+
+/**
+ * Normalize a package definition that may use legacy type discriminators
+ * (e.g. 'Chip' instead of 'PT_TWO_POLE') from older stored records.
+ */
+export function normalizePackageType(pkg: Record<string, any>): Record<string, any> {
+  const mapped = LEGACY_TYPE_MAP[pkg.type]
+  if (mapped) return { ...pkg, type: mapped }
+  return pkg
+}
+
 /**
  * Authoritative human-readable labels for each TPSys package type.
  * Use this everywhere in the UI instead of ad-hoc label maps.

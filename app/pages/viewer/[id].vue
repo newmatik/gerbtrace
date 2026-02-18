@@ -1161,7 +1161,7 @@ const newImportFileNames = ref<string[]>([])
 const selectedPreset = computed(() =>
   getPresetForAppearance(pcbData.value?.surfaceFinish, pcbData.value?.solderMaskColor),
 )
-const isPanelizedMode = computed(() => pcbData.value?.panelizationMode === 'panelized')
+const isPanelizedMode = computed(() => pcbData.value?.panelizationMode !== 'single')
 const boardCanvasRef = ref<any>(null)
 const panelCanvasRef = ref<any>(null)
 
