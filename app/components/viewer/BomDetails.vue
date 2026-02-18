@@ -10,7 +10,7 @@
         <span class="flex-1 min-w-0 text-sm font-semibold text-neutral-900 dark:text-white truncate">
           {{ line.description || '(no description)' }}
         </span>
-        <UBadge v-if="isLineChanged" size="xs" variant="subtle" color="amber">Edited</UBadge>
+        <UBadge v-if="isLineChanged" size="xs" variant="subtle" color="warning">Edited</UBadge>
         <UBadge v-if="line.dnp" size="xs" variant="subtle" color="error">DNP</UBadge>
         <UButton size="xs" color="error" variant="ghost" icon="i-lucide-trash-2" title="Delete BOM line" :disabled="props.locked" @click="emit('removeLine', line.id)" />
       </div>
