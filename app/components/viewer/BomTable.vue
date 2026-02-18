@@ -74,8 +74,8 @@
           v-if="hasCredentials"
           class="text-[10px] px-1.5 py-0.5 rounded-full border border-neutral-200 dark:border-neutral-700 text-neutral-400 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-300 dark:hover:border-blue-600 transition-colors flex items-center gap-0.5"
           title="Fetch pricing for all manufacturer parts from Elexess"
-          :disabled="isFetchingPricing"
-          @click="emit('fetchAllPricing')"
+          :disabled="isFetchingPricing || props.locked"
+          @click="handleFetchAllPricing"
         >
           <UIcon :name="isFetchingPricing ? 'i-lucide-loader-2' : 'i-lucide-refresh-cw'" class="text-[10px]" :class="{ 'animate-spin': isFetchingPricing }" />
           <span>{{ isFetchingPricing ? `${queueDone}/${queueTotal}` : 'Fetch Prices' }}</span>
@@ -326,6 +326,11 @@ const emit = defineEmits<{
   'fetchSinglePricing': [partNumber: string]
   'selectLine': [id: string]
 }>()
+
+function handleFetchAllPricing() {
+  if (props.locked) return
+  emit('fetchAllPricing')
+}
 
 const searchQuery = computed({
   get: () => props.searchQuery,

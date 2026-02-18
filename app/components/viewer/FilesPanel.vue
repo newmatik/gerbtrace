@@ -258,10 +258,16 @@ const showIndicatorAt = computed<number | null>(() => {
 })
 
 function onPointerDownLayer(index: number, e: PointerEvent) {
-  if (locked.value) return
   if (e.button !== 0) return
   const target = e.target as HTMLElement | null
   if (target?.closest('button, select, input, textarea, [role="button"]')) return
+
+  if (locked.value) {
+    // Locked files tab still allows read-only layer selection.
+    const layer = props.layers[index]
+    if (layer) selectLayer(layer.file.fileName)
+    return
+  }
 
   dragFrom.value = index
   startY.value = e.clientY
