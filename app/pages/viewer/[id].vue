@@ -1,8 +1,10 @@
 <template>
   <div class="h-screen flex flex-col">
-    <AppHeader compact>
-      <div class="w-px h-5 bg-neutral-200 dark:bg-neutral-700/80" />
-
+    <AppHeader
+      compact
+      show-performance-monitor-item
+      @open-performance-monitor="showPerformanceMonitor = true"
+    >
       <!-- Project name -->
       <div class="group flex items-center shrink-0">
         <input
@@ -25,231 +27,17 @@
         </button>
       </div>
 
-      <div class="w-px h-5 bg-neutral-200 dark:bg-neutral-700/80" />
-
-      <!-- View mode: Layers / Realistic -->
-      <div class="flex items-center rounded-lg p-0.5 gap-0.5 bg-neutral-100/90 border border-neutral-200 dark:bg-neutral-900/70 dark:border-neutral-700">
-        <UButton
-          v-for="m in viewModeOptions"
-          :key="m.value"
-          size="xs"
-          color="neutral"
-          variant="ghost"
-          :class="[tbBtnBase, viewMode === m.value ? tbBtnActive : tbBtnIdle]"
-          @click="setViewMode(m.value)"
-        >
-          {{ m.label }}
-        </UButton>
-      </div>
-
-      <div class="w-px h-5 bg-neutral-200 dark:bg-neutral-700/80" />
-
-      <!-- Layer filter: All / Top / Bot + Mirror -->
-      <div class="flex items-center rounded-lg p-0.5 gap-0.5 bg-neutral-100/90 border border-neutral-200 dark:bg-neutral-900/70 dark:border-neutral-700">
-        <UButton
-          v-for="f in activeFilterOptions"
-          :key="f.value"
-          size="xs"
-          color="neutral"
-          variant="ghost"
-          :class="[tbBtnBase, activeFilter === f.value ? tbBtnActive : tbBtnIdle]"
-          @click="setFilter(f.value)"
-        >
-          {{ f.label }}
-        </UButton>
-        <UButton
-          v-if="activeFilter === 'bot'"
-          size="xs"
-          color="neutral"
-          variant="ghost"
-          icon="i-lucide-flip-horizontal-2"
-          :class="[tbBtnBase, mirrored ? tbBtnActive : tbBtnIdle]"
-          @click="mirrored = !mirrored"
-        >
-          <span>Mirror</span>
-        </UButton>
-      </div>
-
-      <div class="w-px h-5 bg-neutral-200 dark:bg-neutral-700/80" />
-
-      <!-- Interaction mode: Cursor / Measure / Info / Delete -->
-      <div class="flex items-center rounded-lg p-0.5 gap-0.5 bg-neutral-100/90 border border-neutral-200 dark:bg-neutral-900/70 dark:border-neutral-700">
-        <UButton
-          v-for="m in modeOptions"
-          :key="m.value"
-          size="xs"
-          color="neutral"
-          variant="ghost"
-          :icon="m.icon"
-          :class="[tbBtnBase, activeMode === m.value ? tbBtnActive : tbBtnIdle]"
-          :disabled="sidebarTab === 'panel' && (m.value === 'info' || m.value === 'delete')"
-          :title="m.title"
-          @click="setMode(m.value)"
-        >
-          <span>{{ m.label }}</span>
-        </UButton>
-      </div>
-
-      <!-- Crop toggle -->
-      <template v-if="hasOutline && viewMode === 'layers'">
-        <div class="w-px h-5 bg-neutral-200 dark:bg-neutral-700/80" />
-        <UButton
-          size="xs"
-          color="neutral"
-          variant="ghost"
-          icon="i-lucide-crop"
-          :class="[tbBtnBase, cropToOutline ? tbBtnActive : tbBtnIdle]"
-          @click="cropToOutline = !cropToOutline"
-        >
-          <span>Crop</span>
-        </UButton>
-      </template>
-
-      <!-- Board rotation -->
-      <template v-if="layers.length > 0">
-        <div class="w-px h-5 bg-neutral-200 dark:bg-neutral-700/80" />
-        <div class="flex items-center rounded-lg p-0.5 gap-0.5 bg-neutral-100/90 border border-neutral-200 dark:bg-neutral-900/70 dark:border-neutral-700">
-          <UButton
-            size="xs"
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-rotate-ccw"
-            :class="[tbBtnBase, tbBtnIdle]"
-            :disabled="sidebarTab === 'panel'"
-            title="Rotate 90° counter-clockwise"
-            @click="rotateCCW()"
-          />
-          <UPopover v-if="sidebarTab !== 'panel'" :content="{ align: 'center', sideOffset: 8 }">
-            <button
-              class="text-[10px] font-mono px-1.5 py-0.5 rounded min-w-[2.5rem] text-center transition-colors cursor-pointer"
-              :class="boardRotation !== 0
-                ? 'text-blue-600 dark:text-blue-400 font-semibold'
-                : 'text-neutral-500 dark:text-neutral-400'"
-              :title="'Board rotation: ' + boardRotation + '°'"
-            >
-              {{ boardRotation }}°
-            </button>
-            <template #content>
-              <div class="p-3 w-48" @click.stop>
-                <p class="text-[10px] font-medium text-neutral-400 uppercase tracking-wider mb-2">Board Rotation</p>
-                <div class="flex items-center gap-1.5 mb-3">
-                  <input
-                    :value="boardRotation"
-                    type="number"
-                    step="1"
-                    class="w-full text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded px-2 py-1 outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
-                    @change="(e: Event) => setBoardRotation(Number((e.target as HTMLInputElement).value))"
-                    @keydown.enter="(e: Event) => { setBoardRotation(Number((e.target as HTMLInputElement).value)); (e.target as HTMLInputElement).blur() }"
-                  />
-                  <span class="text-xs text-neutral-400 shrink-0">deg</span>
-                </div>
-                <div class="grid grid-cols-4 gap-1 mb-3">
-                  <button
-                    v-for="angle in [0, 90, 180, 270]"
-                    :key="angle"
-                    class="text-[10px] font-medium px-1.5 py-1 rounded border transition-colors text-center"
-                    :class="boardRotation === angle
-                      ? 'border-blue-500/70 text-blue-700 bg-blue-50/90 dark:border-blue-400/70 dark:text-blue-200 dark:bg-blue-500/15'
-                      : 'border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:border-neutral-400 dark:hover:border-neutral-500 hover:bg-neutral-50 dark:hover:bg-neutral-800'"
-                    @click="setBoardRotation(angle)"
-                  >
-                    {{ angle }}°
-                  </button>
-                </div>
-                <button
-                  v-if="boardRotation !== 0"
-                  class="w-full text-[10px] font-medium px-2 py-1 rounded border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:border-red-400 hover:text-red-600 dark:hover:border-red-500 dark:hover:text-red-400 transition-colors"
-                  @click="setBoardRotation(0)"
-                >
-                  Reset to 0°
-                </button>
-              </div>
-            </template>
-          </UPopover>
-          <button
-            v-else
-            disabled
-            class="text-[10px] font-mono px-1.5 py-0.5 rounded min-w-[2.5rem] text-center transition-colors cursor-not-allowed text-neutral-400 dark:text-neutral-500 opacity-70"
-            :title="'Board rotation: ' + boardRotation + '° (disabled in panel view)'"
-          >
-            {{ boardRotation }}°
-          </button>
-          <UButton
-            size="xs"
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-rotate-cw"
-            :class="[tbBtnBase, tbBtnIdle]"
-            :disabled="sidebarTab === 'panel'"
-            title="Rotate 90° clockwise"
-            @click="rotateCW()"
-          />
-        </div>
-      </template>
-
-      <!-- Downloads dropdown -->
-      <template v-if="downloadMenuItems.length > 0">
-        <div class="w-px h-5 bg-neutral-200 dark:bg-neutral-700/80" />
-        <UDropdownMenu :items="[downloadMenuItems]">
-          <UButton
-            size="xs"
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-download"
-            :class="[tbBtnBase, tbBtnIdle]"
-            title="Downloads"
-          />
-        </UDropdownMenu>
-      </template>
-
-      <!-- Team project: Approval badge + Revert button -->
-      <template v-if="isTeamProject">
-        <div class="w-px h-5 bg-neutral-200 dark:bg-neutral-700/80" />
-        <UBadge
-          v-if="isApproved"
-          color="success"
-          size="xs"
-          variant="subtle"
-          class="gap-1"
-        >
-          <UIcon name="i-lucide-lock" class="text-xs" />
-          Approved
-        </UBadge>
-        <UBadge
-          v-else
-          color="warning"
-          size="xs"
-          variant="subtle"
-        >
-          Draft
-        </UBadge>
-        <UButton
-          v-if="isApproved && isTeamAdmin"
-          size="xs"
-          color="neutral"
-          variant="ghost"
-          icon="i-lucide-lock-open"
-          title="Revert to Draft"
-          @click="handleRevertToDraft"
-        >
-          Revert to Draft
-        </UButton>
-        <UButton
-          v-if="!isApproved && isTeamAdmin"
-          size="xs"
-          color="neutral"
-          variant="ghost"
-          icon="i-lucide-check-circle"
-          title="Approve project"
-          @click="handleApproveProject"
-        >
-          Approve
-        </UButton>
-      </template>
+      <ViewerPagesTabs
+        v-model="sidebarTab"
+        :show-panel="effectiveShowPanel"
+        :show-pn-p="effectiveShowPnP"
+        :show-bom="effectiveShowBom"
+        :show-docs="effectiveShowDocs"
+        :locked-tabs="lockedTabsForNav"
+      />
 
       <!-- Team project: Presence avatars -->
       <template v-if="isTeamProject && presentUsers.length > 0">
-        <div class="w-px h-5 bg-neutral-200 dark:bg-neutral-700/80" />
         <div class="flex items-center -space-x-1">
           <div
             v-for="u in presentUsers.slice(0, 5)"
@@ -268,444 +56,656 @@
           </div>
         </div>
       </template>
+
+      <template #right>
+        <template v-if="downloadMenuItems.length > 0">
+          <UDropdownMenu :items="[downloadMenuItems]">
+            <UButton
+              size="xs"
+              color="neutral"
+              variant="ghost"
+              icon="i-lucide-download"
+              :class="[tbBtnBase, tbBtnIdle]"
+              title="Downloads"
+            />
+          </UDropdownMenu>
+        </template>
+
+        <template v-if="isTeamProject">
+          <UBadge
+            v-if="isApproved"
+            color="success"
+            size="xs"
+            variant="subtle"
+            class="gap-1"
+          >
+            <UIcon name="i-lucide-lock" class="text-xs" />
+            Approved
+          </UBadge>
+          <UBadge
+            v-else
+            color="warning"
+            size="xs"
+            variant="subtle"
+          >
+            Draft
+          </UBadge>
+          <UButton
+            v-if="isApproved && isTeamAdmin"
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-lock-open"
+            title="Revert to Draft"
+            @click="handleRevertToDraft"
+          >
+            Revert
+          </UButton>
+          <UButton
+            v-if="!isApproved && isTeamAdmin"
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-check-circle"
+            title="Approve project"
+            @click="handleApproveProject"
+          >
+            Approve
+          </UButton>
+        </template>
+      </template>
     </AppHeader>
 
-    <div class="flex-1 flex overflow-hidden">
-      <!-- Sidebar -->
-      <aside
-        class="border-r border-neutral-200 dark:border-neutral-800 flex flex-col overflow-hidden shrink-0"
-        :style="{ width: sidebarWidth + 'px' }"
-      >
-        <!-- Sidebar tabs: Files / PCB / Panel / SMD / THT / BOM / Pricing / Docs -->
-        <div
-          class="flex items-center gap-0.5 px-3 pt-3 pb-1 flex-wrap"
-        >
-          <button
-            class="text-[11px] font-medium px-2 py-0.5 rounded transition-colors"
-            :class="sidebarTab === 'files'
-              ? 'bg-neutral-200/80 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100'
-              : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'"
-            @click="sidebarTab = 'files'"
-          >
-            Files
-          </button>
-          <button
-            class="text-[11px] font-medium px-2 py-0.5 rounded transition-colors"
-            :class="sidebarTab === 'pcb'
-              ? 'bg-neutral-200/80 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100'
-              : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'"
-            @click="sidebarTab = 'pcb'"
-          >
-            PCB
-          </button>
-          <button
-            v-if="isPanelizedMode"
-            class="text-[11px] font-medium px-2 py-0.5 rounded transition-colors"
-            :class="sidebarTab === 'panel'
-              ? 'bg-neutral-200/80 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100'
-              : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'"
-            @click="sidebarTab = 'panel'"
-          >
-            Panel
-          </button>
-          <button
-            v-if="pnp.hasPnP.value"
-            class="text-[11px] font-medium px-2 py-0.5 rounded transition-colors"
-            :class="sidebarTab === 'smd'
-              ? 'bg-neutral-200/80 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100'
-              : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'"
-            @click="sidebarTab = 'smd'"
-          >
-            SMD
-          </button>
-          <button
-            v-if="pnp.hasPnP.value"
-            class="text-[11px] font-medium px-2 py-0.5 rounded transition-colors"
-            :class="sidebarTab === 'tht'
-              ? 'bg-neutral-200/80 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100'
-              : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'"
-            @click="sidebarTab = 'tht'"
-          >
-            THT
-          </button>
-          <button
-            v-if="bom.hasBom.value"
-            class="text-[11px] font-medium px-2 py-0.5 rounded transition-colors"
-            :class="sidebarTab === 'bom'
-              ? 'bg-neutral-200/80 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100'
-              : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'"
-            @click="sidebarTab = 'bom'"
-          >
-            BOM
-          </button>
-          <button
-            class="text-[11px] font-medium px-2 py-0.5 rounded transition-colors"
-            :class="sidebarTab === 'pricing'
-              ? 'bg-neutral-200/80 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100'
-              : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'"
-            @click="sidebarTab = 'pricing'"
-          >
-            Pricing
-          </button>
-          <button
-            v-if="hasDocuments"
-            class="text-[11px] font-medium px-2 py-0.5 rounded transition-colors"
-            :class="sidebarTab === 'docs'
-              ? 'bg-neutral-200/80 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100'
-              : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'"
-            @click="sidebarTab = 'docs'"
-          >
-            Docs
-          </button>
-        </div>
+    <ViewerControlsBar
+      v-if="showControlsBar"
+      v-model:view-mode="viewMode"
+      v-model:active-filter="activeFilter"
+      v-model:mirrored="mirrored"
+      v-model:active-mode="activeMode"
+      v-model:crop-to-outline="cropToOutline"
+      v-model:board-rotation="boardRotation"
+      v-model:panel-tab-edit-mode="panelTabEditMode"
+      v-model:panel-added-routing-edit-mode="panelAddedRoutingEditMode"
+      v-model:panel-show-components="panelShowComponents"
+      v-model:panel-show-danger-zones="panelShowDangerZones"
+      v-model:panel-danger-inset-mm="panelDangerInsetMm"
+      :page="sidebarTab"
+      :has-outline="hasOutline"
+      :layers-count="layers.length"
+      :active-filter-options="activeFilterOptions"
+      :panel-tab-control-enabled="panelTabControlEnabled"
+      :is-locked="isCurrentTabLocked"
+      :show-lock-control="isLockableTab(sidebarTab)"
+      :can-toggle-lock="canToggleCurrentTabLock"
+      :lock-tooltip="currentTabLockTitle"
+      :toggle-lock="toggleCurrentTabLock"
+      :set-view-mode="setViewMode"
+      :set-filter="setFilter"
+      :set-mode="setMode"
+      :rotate-c-w="rotateCW"
+      :rotate-c-c-w="rotateCCW"
+      :set-board-rotation="setBoardRotation"
+    />
 
-        <!-- Files view (Gerber layers + Documents) -->
-        <template v-if="sidebarTab === 'files'">
-          <div class="p-4 pt-2">
-            <ImportPanel
-              :packet="1"
-              @import="handleImportRequest"
-              @documents="handleDocumentsAdd"
-            />
-          </div>
-          <LayerPanel
+    <div class="flex-1 flex overflow-hidden">
+      <!-- Canvas pages: sidebar panels + canvas -->
+      <template v-if="isCanvasPage">
+        <aside
+          class="border-r border-neutral-200 dark:border-neutral-800 flex flex-col overflow-hidden shrink-0"
+          :style="{ width: sidebarWidth + 'px' }"
+        >
+          <ComponentPanel
+            v-if="sidebarTab === 'smd'"
+            :all-components="pnp.smdActiveComponents.value"
+            :filtered-components="pnp.smdFilteredComponents.value"
+            :selected-designator="pnp.selectedDesignator.value"
+            :search-query="pnp.searchQuery.value"
+            :active-filters="pnp.activeFilters.value"
+            :align-mode="pnp.alignMode.value"
+            :has-origin="pnp.hasOrigin.value"
+            :origin-x="pnp.originX.value"
+            :origin-y="pnp.originY.value"
+            :show-packages="showPackages"
+            :pnp-convention="pnp.convention.value"
+            :package-options="packageOptions"
+            :sort-state="pnpSortSmd"
+            :manual-order="pnpManualOrderSmd"
+            :groups="smdGroups"
+            :group-assignments="pnpGroupAssignments"
+            :bom-designators="bomDesignators"
+            :locked="!canEditTab('smd')"
+            @update:search-query="pnp.searchQuery.value = $event"
+            @update:show-packages="showPackages = $event"
+            @update:pnp-convention="updateConvention"
+            @update:rotation="handleComponentRotationUpdate($event)"
+            @reset:rotation="handleComponentResetRotation($event)"
+            @toggle:dnp="handleComponentToggleDnp($event)"
+            @toggle:filter="pnp.toggleFilter($event)"
+            @clear-filters="pnp.clearFilters()"
+            @update:package-mapping="handlePackageMapping($event)"
+            @update:polarized="handleComponentPolarizedUpdate($event)"
+            @update:sort-state="applySortState('smd', $event)"
+            @update:manual-order="handleManualOrderUpdate('smd', $event)"
+            @create:group="createGroup('smd')"
+            @update:group-meta="updateGroupMeta($event)"
+            @toggle:group-hidden="toggleGroupHidden($event)"
+            @toggle:group-collapsed="toggleGroupCollapsed($event)"
+            @delete:group="deleteGroup($event, 'smd')"
+            @reorder:groups="reorderGroups('smd', $event)"
+            @assign:group="assignComponentGroup($event, 'smd')"
+            @select="pnp.selectComponent($event)"
+            @start-set-origin="startSetOrigin"
+            @start-component-align="startComponentAlign"
+            @reset-origin="handleResetOrigin"
+            @edit="openComponentEdit($event)"
+            @add-component="startAddComponent('smd')"
+            @preview:package="previewPkgOverride = $event"
+          />
+
+          <ComponentPanel
+            v-else-if="sidebarTab === 'tht'"
+            :all-components="pnp.thtActiveComponents.value"
+            :filtered-components="pnp.thtFilteredComponents.value"
+            :selected-designator="pnp.selectedDesignator.value"
+            :search-query="pnp.searchQuery.value"
+            :active-filters="pnp.activeFilters.value"
+            :align-mode="pnp.alignMode.value"
+            :has-origin="pnp.hasOrigin.value"
+            :origin-x="pnp.originX.value"
+            :origin-y="pnp.originY.value"
+            :show-packages="showPackages"
+            :pnp-convention="pnp.convention.value"
+            :package-options="thtPackageOptions"
+            :sort-state="pnpSortTht"
+            :manual-order="pnpManualOrderTht"
+            :groups="thtGroups"
+            :group-assignments="pnpGroupAssignments"
+            :bom-designators="bomDesignators"
+            :locked="!canEditTab('tht')"
+            @update:search-query="pnp.searchQuery.value = $event"
+            @update:show-packages="showPackages = $event"
+            @update:pnp-convention="updateConvention"
+            @update:rotation="handleComponentRotationUpdate($event)"
+            @reset:rotation="handleComponentResetRotation($event)"
+            @toggle:dnp="handleComponentToggleDnp($event)"
+            @toggle:filter="pnp.toggleFilter($event)"
+            @clear-filters="pnp.clearFilters()"
+            @update:package-mapping="handlePackageMapping($event)"
+            @update:polarized="handleComponentPolarizedUpdate($event)"
+            @update:sort-state="applySortState('tht', $event)"
+            @update:manual-order="handleManualOrderUpdate('tht', $event)"
+            @create:group="createGroup('tht')"
+            @update:group-meta="updateGroupMeta($event)"
+            @toggle:group-hidden="toggleGroupHidden($event)"
+            @toggle:group-collapsed="toggleGroupCollapsed($event)"
+            @delete:group="deleteGroup($event, 'tht')"
+            @reorder:groups="reorderGroups('tht', $event)"
+            @assign:group="assignComponentGroup($event, 'tht')"
+            @select="pnp.selectComponent($event)"
+            @start-set-origin="startSetOrigin"
+            @start-component-align="startComponentAlign"
+            @reset-origin="handleResetOrigin"
+            @edit="openComponentEdit($event)"
+            @add-component="startAddComponent('tht')"
+            @preview:package="previewPkgOverride = $event"
+          />
+
+          <PcbPanel
+            v-else-if="sidebarTab === 'pcb'"
+            :pcb-data="pcbData"
+            :board-size-mm="boardSizeMm"
+            :detected-layer-count="detectedLayerCount"
             :layers="layers"
             :edited-layers="editedLayers"
-            :documents="documents"
-            :selected-document-id="selectedDocumentId"
+            :locked="!canEditTab('pcb')"
+            @update:pcb-data="handlePcbDataUpdate"
             @toggle-visibility="toggleLayerVisibility"
             @toggle-group-visibility="toggleGroupVisibility"
             @change-color="changeLayerColor"
             @change-type="changeLayerType"
-            @reorder="reorderLayers"
             @reset-layer="resetLayer"
             @rename-layer="renameLayer"
             @duplicate-layer="duplicateLayer"
             @remove-layer="removeLayer"
-            @select-document="handleDocumentSelect"
-            @remove-document="handleDocumentRemove"
-            @update-document-type="handleDocumentTypeUpdate"
           />
-        </template>
 
-        <!-- SMD Components view -->
-        <ComponentPanel
-          v-else-if="sidebarTab === 'smd'"
-          :all-components="pnp.smdActiveComponents.value"
-          :filtered-components="pnp.smdFilteredComponents.value"
-          :selected-designator="pnp.selectedDesignator.value"
-          :search-query="pnp.searchQuery.value"
-          :active-filters="pnp.activeFilters.value"
-          :align-mode="pnp.alignMode.value"
-          :has-origin="pnp.hasOrigin.value"
-          :origin-x="pnp.originX.value"
-          :origin-y="pnp.originY.value"
-          :show-packages="showPackages"
-          :pnp-convention="pnp.convention.value"
-          :package-options="packageOptions"
-          :sort-state="pnpSortSmd"
-          :manual-order="pnpManualOrderSmd"
-          :groups="smdGroups"
-          :group-assignments="pnpGroupAssignments"
-          :bom-designators="bomDesignators"
-          @update:search-query="pnp.searchQuery.value = $event"
-          @update:show-packages="showPackages = $event"
-          @update:pnp-convention="updateConvention"
-          @update:rotation="pnp.setRotationOverride($event.key, $event.rotation)"
-          @reset:rotation="pnp.resetRotationOverride($event.key)"
-          @toggle:dnp="pnp.toggleDnp($event)"
-          @toggle:filter="pnp.toggleFilter($event)"
-          @clear-filters="pnp.clearFilters()"
-          @update:package-mapping="handlePackageMapping($event)"
-          @update:polarized="pnp.setPolarizedOverride($event.key, $event.polarized)"
-          @update:sort-state="applySortState('smd', $event)"
-          @update:manual-order="pnpManualOrderSmd = $event"
-          @create:group="createGroup('smd')"
-          @update:group-meta="updateGroupMeta($event)"
-          @toggle:group-hidden="toggleGroupHidden($event)"
-          @toggle:group-collapsed="toggleGroupCollapsed($event)"
-          @delete:group="deleteGroup($event, 'smd')"
-          @reorder:groups="reorderGroups('smd', $event)"
-          @assign:group="assignComponentGroup($event, 'smd')"
-          @select="pnp.selectComponent($event)"
-          @start-set-origin="startSetOrigin"
-          @start-component-align="startComponentAlign"
-          @reset-origin="pnp.resetOrigin()"
-          @edit="openComponentEdit($event)"
-          @add-component="startAddComponent('smd')"
-          @preview:package="previewPkgOverride = $event"
-        />
-
-        <!-- THT Components view -->
-        <ComponentPanel
-          v-else-if="sidebarTab === 'tht'"
-          :all-components="pnp.thtActiveComponents.value"
-          :filtered-components="pnp.thtFilteredComponents.value"
-          :selected-designator="pnp.selectedDesignator.value"
-          :search-query="pnp.searchQuery.value"
-          :active-filters="pnp.activeFilters.value"
-          :align-mode="pnp.alignMode.value"
-          :has-origin="pnp.hasOrigin.value"
-          :origin-x="pnp.originX.value"
-          :origin-y="pnp.originY.value"
-          :show-packages="showPackages"
-          :pnp-convention="pnp.convention.value"
-          :package-options="thtPackageOptions"
-          :sort-state="pnpSortTht"
-          :manual-order="pnpManualOrderTht"
-          :groups="thtGroups"
-          :group-assignments="pnpGroupAssignments"
-          :bom-designators="bomDesignators"
-          @update:search-query="pnp.searchQuery.value = $event"
-          @update:show-packages="showPackages = $event"
-          @update:pnp-convention="updateConvention"
-          @update:rotation="pnp.setRotationOverride($event.key, $event.rotation)"
-          @reset:rotation="pnp.resetRotationOverride($event.key)"
-          @toggle:dnp="pnp.toggleDnp($event)"
-          @toggle:filter="pnp.toggleFilter($event)"
-          @clear-filters="pnp.clearFilters()"
-          @update:package-mapping="handlePackageMapping($event)"
-          @update:polarized="pnp.setPolarizedOverride($event.key, $event.polarized)"
-          @update:sort-state="applySortState('tht', $event)"
-          @update:manual-order="pnpManualOrderTht = $event"
-          @create:group="createGroup('tht')"
-          @update:group-meta="updateGroupMeta($event)"
-          @toggle:group-hidden="toggleGroupHidden($event)"
-          @toggle:group-collapsed="toggleGroupCollapsed($event)"
-          @delete:group="deleteGroup($event, 'tht')"
-          @reorder:groups="reorderGroups('tht', $event)"
-          @assign:group="assignComponentGroup($event, 'tht')"
-          @select="pnp.selectComponent($event)"
-          @start-set-origin="startSetOrigin"
-          @start-component-align="startComponentAlign"
-          @reset-origin="pnp.resetOrigin()"
-          @edit="openComponentEdit($event)"
-          @add-component="startAddComponent('tht')"
-          @preview:package="previewPkgOverride = $event"
-        />
-
-        <!-- BOM view -->
-        <BomPanel
-          v-else-if="sidebarTab === 'bom'"
-          :bom-lines="(bom.bomLines.value as BomLine[])"
-          :filtered-lines="(bom.filteredLines.value as BomLine[])"
-          :search-query="bom.searchQuery.value"
-          :pricing-cache="(bom.pricingCache.value as Record<string, any>)"
-          :has-credentials="elexess.hasCredentials.value"
-          :is-fetching-pricing="elexess.isFetching.value"
-          :pricing-queue="(elexess.pricingQueue.value as PricingQueueItem[])"
-          :board-quantity="bom.boardQuantity.value"
-          :team-currency="stableTeamCurrency"
-          :exchange-rate="elexess.exchangeRate.value"
-          :pnp-designators="pnpDesignators"
-          @update:search-query="bom.searchQuery.value = $event"
-          @update:board-quantity="bom.boardQuantity.value = $event"
-          @add-line="handleBomAddLine"
-          @update-line="(id, updates) => bom.updateLine(id, updates)"
-          @remove-line="bom.removeLine"
-          @add-manufacturer="(lineId, mfr) => bom.addManufacturer(lineId, mfr)"
-          @fetch-all-pricing="handleFetchAllPricing"
-          @fetch-single-pricing="handleFetchSinglePricing"
-        />
-
-        <!-- PCB parameters view -->
-        <PcbPanel
-          v-else-if="sidebarTab === 'pcb'"
-          :pcb-data="pcbData"
-          :board-size-mm="boardSizeMm"
-          :detected-layer-count="detectedLayerCount"
-          :layers="layers"
-          :edited-layers="editedLayers"
-          @update:pcb-data="handlePcbDataUpdate"
-          @toggle-visibility="toggleLayerVisibility"
-          @toggle-group-visibility="toggleGroupVisibility"
-          @change-color="changeLayerColor"
-          @change-type="changeLayerType"
-          @reset-layer="resetLayer"
-          @rename-layer="renameLayer"
-          @duplicate-layer="duplicateLayer"
-          @remove-layer="removeLayer"
-        />
-
-        <!-- Panel view -->
-        <PanelPanel
-          v-else-if="sidebarTab === 'panel' && isPanelizedMode"
-          :panel-data="panelData"
-          :board-size-mm="boardSizeMm"
-          :team-panel-limits="teamPanelLimits"
-          :thickness-mm="pcbData?.thicknessMm ?? 1.6"
-          :edge-constraints="panelEdgeConstraints"
-          @update:panel-data="handlePanelDataUpdate"
-          @update:danger-zone="(dz) => panelDangerZone = dz"
-        />
-
-        <!-- Pricing view -->
-        <PricingPanel
-          v-else-if="sidebarTab === 'pricing'"
-          :pcb-data="pcbData"
-        />
-
-        <!-- Docs view -->
-        <DocsPanel
-          v-else-if="sidebarTab === 'docs'"
-          :documents="documents"
-          :selected-id="selectedDocumentId"
-          @select="handleDocumentSelect"
-          @remove="handleDocumentRemove"
-          @update-type="handleDocumentTypeUpdate"
-        />
-      </aside>
-
-      <!-- Resize handle -->
-      <div
-        class="w-1 shrink-0 cursor-col-resize hover:bg-primary/30 active:bg-primary/50 transition-colors"
-        :class="{ 'bg-primary/50': sidebarDragging }"
-        @mousedown="onSidebarDragStart"
-      />
-
-      <!-- Main content area: Board canvas or Document viewer -->
-      <main
-        class="flex-1 min-w-0 relative outline-none"
-        :class="{ 'select-none': sidebarDragging }"
-        :style="{ backgroundColor: showDocumentViewer ? undefined : canvasAreaBg }"
-        @keydown="handleKeyDown"
-        @keyup="handleKeyUp"
-        tabindex="0"
-      >
-        <!-- Document PDF viewer (shown when a document is selected on the documents tab) -->
-        <div
-          v-if="showDocumentViewer"
-          class="absolute inset-0 flex flex-col bg-neutral-100 dark:bg-neutral-900"
-        >
-          <div class="flex items-center gap-2 px-4 py-2 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shrink-0">
-            <UIcon name="i-lucide-file-text" class="text-sm text-blue-500 shrink-0" />
-            <span class="text-xs font-medium text-neutral-700 dark:text-neutral-200 truncate">{{ selectedDocument?.name }}</span>
-            <UBadge size="xs" variant="subtle" color="neutral" class="shrink-0">{{ selectedDocument?.type }}</UBadge>
-            <div class="flex-1" />
-            <button
-              class="text-[11px] font-medium text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors flex items-center gap-1"
-              @click="selectedDocumentId = null"
-            >
-              <UIcon name="i-lucide-arrow-left" class="text-xs" />
-              Back to Board
-            </button>
-          </div>
-          <iframe
-            :src="selectedDocument?.blobUrl + '#toolbar=0'"
-            class="flex-1 w-full border-0"
-            title="Document viewer"
-          />
-        </div>
-
-        <!-- Board canvas (hidden when viewing a document) -->
-        <div v-show="!showDocumentViewer" class="absolute inset-0">
-          <!-- Panel canvas (shown when panel tab is active) -->
-          <PanelCanvas
-            v-if="sidebarTab === 'panel' && isPanelizedMode"
-            ref="panelCanvasRef"
-            :layers="renderLayers"
-            :all-layers="layers"
-            :interaction="canvasInteraction"
-            :mirrored="mirrored"
-            :active-filter="activeFilter"
-            :view-mode="viewMode"
-            :preset="viewMode === 'realistic' ? selectedPreset : undefined"
-            :project-name="project?.name || 'Untitled'"
-            :pcb-data="pcbData"
-            :panel-config="panelData"
+          <PanelPanel
+            v-else-if="sidebarTab === 'panel' && isPanelizedMode"
+            :panel-data="panelData"
             :board-size-mm="boardSizeMm"
-            :danger-zone="panelDangerZone"
-            :measure="measureTool"
-            :pnp-components="panelData.showComponents ? pnpComponentsWithPreview : []"
-            :match-package="pkgLib.matchPackage"
-            :match-tht-package="thtPkgLib.matchThtPackage"
-            :show-packages="showPackages"
-            :pnp-convention="pnp.convention.value"
-            @update:panel-config="handlePanelDataUpdate"
+            :team-panel-limits="teamPanelLimits"
+            :thickness-mm="pcbData?.thicknessMm ?? 1.6"
+            :edge-constraints="panelEdgeConstraints"
+            :locked="!canEditTab('panel')"
+            @update:panel-data="handlePanelDataUpdate"
           />
-          <!-- Board canvas (shown for all other tabs) -->
-          <BoardCanvas
-            v-else
-            ref="boardCanvasRef"
-            :layers="renderLayers"
-            :all-layers="layers"
-            :interaction="canvasInteraction"
-            :mirrored="mirrored"
-            :active-filter="activeFilter"
-            :crop-to-outline="cropToOutline"
-            :outline-layer="outlineLayer"
-            :measure="measureTool"
-            :info="infoTool"
-            :delete-tool="deleteTool"
-            :view-mode="viewMode"
-            :preset="viewMode === 'realistic' ? selectedPreset : undefined"
-            :pnp-components="sidebarTab === 'pcb' ? [] : pnpComponentsWithPreview"
-            :selected-pnp-designator="pnp.selectedDesignator.value"
-            :pnp-origin-x="pnp.originX.value"
-            :pnp-origin-y="pnp.originY.value"
-            :align-mode="pnp.alignMode.value"
-            :align-click-a="pnp.alignClickA.value"
-            :match-package="pkgLib.matchPackage"
-            :match-tht-package="thtPkgLib.matchThtPackage"
-            :package-library-version="packageLibraryVersion"
-            :show-packages="showPackages"
-            :pnp-convention="pnp.convention.value"
-            :board-rotation="boardRotation"
-            @pnp-click="pnp.selectComponent($event)"
-            @pnp-dblclick="handlePnPDblClick"
-            @align-click="handleAlignClick"
-          />
-          <MeasureOverlay
-            :measure="measureTool"
-            :transform="canvasInteraction.transform.value"
-          />
-          <InfoOverlay v-if="sidebarTab !== 'panel'" :info="infoTool" />
-          <DeleteOverlay
-            v-if="sidebarTab !== 'panel'"
-            :delete-tool="deleteTool"
-            @confirm-delete="handleConfirmDelete"
-          />
+        </aside>
 
-          <!-- Undo toast — shown briefly after a deletion -->
-          <Transition
-            enter-active-class="transition duration-200 ease-out"
-            enter-from-class="translate-y-2 opacity-0"
-            enter-to-class="translate-y-0 opacity-100"
-            leave-active-class="transition duration-150 ease-in"
-            leave-from-class="translate-y-0 opacity-100"
-            leave-to-class="translate-y-2 opacity-0"
-          >
-            <div
-              v-if="undoToastVisible"
-              class="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3.5 py-2 rounded-lg bg-neutral-800/90 dark:bg-neutral-700/95 backdrop-blur-sm shadow-lg text-white text-xs"
+        <div
+          class="w-1 shrink-0 cursor-col-resize hover:bg-primary/30 active:bg-primary/50 transition-colors"
+          :class="{ 'bg-primary/50': sidebarDragging }"
+          @mousedown="onSidebarDragStart"
+        />
+
+        <main
+          class="flex-1 min-w-0 relative outline-none"
+          :class="{ 'select-none': sidebarDragging }"
+          :style="{ backgroundColor: canvasAreaBg }"
+          @keydown="handleKeyDown"
+          @keyup="handleKeyUp"
+          tabindex="0"
+        >
+          <div class="absolute inset-0">
+            <PanelCanvas
+              v-if="sidebarTab === 'panel' && isPanelizedMode"
+              ref="panelCanvasRef"
+              v-model:tab-edit-mode="panelTabEditMode"
+              v-model:added-routing-edit-mode="panelAddedRoutingEditMode"
+              :layers="renderLayers"
+              :all-layers="layers"
+              :interaction="canvasInteraction"
+              :mirrored="mirrored"
+              :active-filter="activeFilter"
+              :view-mode="viewMode"
+              :preset="viewMode === 'realistic' ? selectedPreset : undefined"
+              :project-name="project?.name || 'Untitled'"
+              :pcb-data="pcbData"
+              :panel-config="panelData"
+              :board-size-mm="boardSizeMm"
+              :danger-zone="panelDangerZone"
+              :measure="measureTool"
+              :pnp-components="panelData.showComponents ? pnpComponentsWithPreview : []"
+              :match-package="pkgLib.matchPackage"
+              :match-tht-package="thtPkgLib.matchThtPackage"
+              :show-packages="showPackages"
+              :pnp-convention="pnp.convention.value"
+              @update:panel-config="handlePanelDataUpdate"
+            />
+            <BoardCanvas
+              v-else
+              ref="boardCanvasRef"
+              :layers="renderLayers"
+              :all-layers="layers"
+              :interaction="canvasInteraction"
+              :mirrored="mirrored"
+              :active-filter="activeFilter"
+              :crop-to-outline="cropToOutline"
+              :outline-layer="outlineLayer"
+              :measure="measureTool"
+              :info="infoTool"
+              :delete-tool="deleteTool"
+              :view-mode="viewMode"
+              :preset="viewMode === 'realistic' ? selectedPreset : undefined"
+              :pnp-components="sidebarTab === 'pcb' ? [] : pnpComponentsWithPreview"
+              :selected-pnp-designator="pnp.selectedDesignator.value"
+              :pnp-origin-x="pnp.originX.value"
+              :pnp-origin-y="pnp.originY.value"
+              :align-mode="pnp.alignMode.value"
+              :align-click-a="pnp.alignClickA.value"
+              :match-package="pkgLib.matchPackage"
+              :match-tht-package="thtPkgLib.matchThtPackage"
+              :package-library-version="packageLibraryVersion"
+              :show-packages="showPackages"
+              :pnp-convention="pnp.convention.value"
+              :board-rotation="boardRotation"
+              @pnp-click="pnp.selectComponent($event)"
+              @pnp-dblclick="handlePnPDblClick"
+              @align-click="handleAlignClick"
+            />
+            <MeasureOverlay :measure="measureTool" :transform="canvasInteraction.transform.value" />
+            <InfoOverlay v-if="sidebarTab !== 'panel'" :info="infoTool" />
+            <DeleteOverlay v-if="sidebarTab !== 'panel'" :delete-tool="deleteTool" @confirm-delete="handleConfirmDelete" />
+
+            <Transition
+              enter-active-class="transition duration-200 ease-out"
+              enter-from-class="translate-y-2 opacity-0"
+              enter-to-class="translate-y-0 opacity-100"
+              leave-active-class="transition duration-150 ease-in"
+              leave-from-class="translate-y-0 opacity-100"
+              leave-to-class="translate-y-2 opacity-0"
             >
-              <UIcon name="i-lucide-trash-2" class="text-red-400 text-sm shrink-0" />
-              <span>Deletion applied</span>
-              <button
-                class="ml-1 px-2 py-0.5 rounded font-medium bg-white/15 hover:bg-white/25 transition-colors"
-                @click="handleUndo"
+              <div
+                v-if="undoToastVisible"
+                class="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3.5 py-2 rounded-lg bg-neutral-800/90 dark:bg-neutral-700/95 backdrop-blur-sm shadow-lg text-white text-xs"
               >
-                Undo
-              </button>
-              <span class="text-[10px] text-neutral-400 ml-0.5">{{ isMac ? '⌘' : 'Ctrl+' }}Z</span>
-            </div>
-          </Transition>
+                <UIcon name="i-lucide-trash-2" class="text-red-400 text-sm shrink-0" />
+                <span>Deletion applied</span>
+                <button class="ml-1 px-2 py-0.5 rounded font-medium bg-white/15 hover:bg-white/25 transition-colors" @click="handleUndo">
+                  Undo
+                </button>
+                <span class="text-[10px] text-neutral-400 ml-0.5">{{ isMac ? '⌘' : 'Ctrl+' }}Z</span>
+              </div>
+            </Transition>
 
-          <CanvasControls
-            :interaction="canvasInteraction"
-            :view-mode="viewMode"
-            @open-settings="showSettings = true"
+            <CanvasControls :interaction="canvasInteraction" :view-mode="viewMode" @open-settings="showSettings = true" />
+            <BoardExtents :dimensions="sidebarTab === 'panel' ? panelDimensionsMm : (boardSizeMm ?? null)" />
+          </div>
+        </main>
+      </template>
+
+      <!-- Files: full width, list + preview (no canvas) -->
+      <template v-else-if="sidebarTab === 'files'">
+        <aside
+          class="shrink-0 border-r border-neutral-200 dark:border-neutral-800 flex flex-col overflow-hidden"
+          :style="{ width: sidebarFiles.sidebarWidth.value + 'px' }"
+        >
+          <div class="p-4 pb-2 border-b border-neutral-200 dark:border-neutral-800">
+            <ImportPanel
+              v-if="canEditTab('files')"
+              :packet="1"
+              @import="handleImportRequest"
+              @documents="handleDocumentsAdd"
+            />
+            <div v-else class="text-[11px] text-neutral-400">
+              Files are locked. Import is disabled.
+            </div>
+          </div>
+          <FilesPanel
+            v-model:selected-layer-file-name="filesSelectedLayerFileName"
+            v-model:selected-doc-id="filesSelectedDocId"
+            :layers="layers"
+            :documents="documents"
+            :locked="!canEditTab('files')"
+            @change-layer-type="changeLayerType"
+            @remove-layer="removeLayer"
+            @rename-layer="renameLayer"
+            @duplicate-layer="duplicateLayer"
+            @reorder="reorderLayers"
+            @download-layer="downloadLayer"
+            @update-document-type="handleDocumentTypeUpdate"
+            @remove-document="handleDocumentRemove"
+            @download-document="downloadDocument"
           />
-          <BoardExtents :dimensions="sidebarTab === 'panel' ? panelDimensionsMm : (boardSizeMm ?? null)" />
+        </aside>
+
+        <div
+          class="w-1 shrink-0 cursor-col-resize hover:bg-primary/30 active:bg-primary/50 transition-colors"
+          :class="{ 'bg-primary/50': sidebarFiles.dragging.value }"
+          @mousedown="sidebarFiles.onDragStart($event)"
+        />
+
+        <main
+          class="flex-1 min-w-0 overflow-hidden bg-neutral-50 dark:bg-neutral-950"
+          :class="{ 'select-none': sidebarFiles.dragging.value }"
+        >
+          <div class="h-full flex flex-col">
+            <div class="px-4 py-2 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 flex items-center gap-2">
+              <template v-if="filesSelectedLayer">
+                <UIcon name="i-lucide-file" class="text-sm text-blue-500 shrink-0" />
+                <span class="text-xs font-medium text-neutral-700 dark:text-neutral-200 truncate">{{ filesSelectedLayer.file.fileName }}</span>
+                <UBadge size="xs" variant="subtle" color="neutral" class="shrink-0">{{ filesSelectedLayer.type }}</UBadge>
+                <div class="flex-1" />
+                <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-download" @click="downloadSelectedLayer">
+                  Download
+                </UButton>
+              </template>
+              <template v-else-if="filesSelectedDoc">
+                <UIcon name="i-lucide-file-text" class="text-sm text-blue-500 shrink-0" />
+                <span class="text-xs font-medium text-neutral-700 dark:text-neutral-200 truncate">{{ filesSelectedDoc.name }}</span>
+                <UBadge size="xs" variant="subtle" color="neutral" class="shrink-0">{{ filesSelectedDoc.type }}</UBadge>
+                <div class="flex-1" />
+                <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-download" @click="downloadDocument(filesSelectedDoc.id)">
+                  Download
+                </UButton>
+              </template>
+              <template v-else>
+                <span class="text-xs text-neutral-400">Select a file to preview</span>
+              </template>
+              <div class="flex-1" />
+              <UPopover
+                v-if="isLockableTab(sidebarTab)"
+                v-model:open="filesLockPopoverOpen"
+                :content="{ side: 'bottom', align: 'end', sideOffset: 6 }"
+              >
+                <div
+                  @mouseenter="filesLockPopoverOpen = true"
+                  @mouseleave="filesLockPopoverOpen = false"
+                  @focusin="filesLockPopoverOpen = true"
+                  @focusout="filesLockPopoverOpen = false"
+                >
+                  <UButton
+                    size="xs"
+                    :color="isCurrentTabLocked ? 'warning' : 'neutral'"
+                    :variant="isCurrentTabLocked ? 'soft' : 'outline'"
+                    :icon="isCurrentTabLocked ? 'i-lucide-lock' : 'i-lucide-lock-open'"
+                    :disabled="!canToggleCurrentTabLock"
+                    @click="toggleCurrentTabLock"
+                  >
+                    {{ isCurrentTabLocked ? 'Locked' : 'Unlocked' }}
+                  </UButton>
+                </div>
+                <template #content>
+                  <div class="px-2 py-1 text-[11px] text-neutral-600 dark:text-neutral-300 max-w-[20rem]">
+                    {{ currentTabLockTitle }}
+                  </div>
+                </template>
+              </UPopover>
+            </div>
+
+            <div class="flex-1 min-h-0 overflow-hidden">
+              <div v-if="filesSelectedLayer" class="h-full overflow-auto p-4">
+                <pre class="text-[11px] leading-relaxed font-mono whitespace-pre-wrap break-words text-neutral-700 dark:text-neutral-200">{{ filesSelectedLayer.file.content }}</pre>
+              </div>
+              <div v-else-if="filesSelectedDoc" class="h-full">
+                <iframe
+                  :src="filesSelectedDoc.blobUrl + '#toolbar=0'"
+                  class="w-full h-full border-0"
+                  title="Document preview"
+                />
+              </div>
+              <div v-else class="h-full flex items-center justify-center text-sm text-neutral-400">
+                No preview
+              </div>
+            </div>
+          </div>
+        </main>
+      </template>
+
+      <!-- BOM: 50/50 split (table + details), resizable -->
+      <template v-else-if="sidebarTab === 'bom'">
+        <div class="flex-1 min-w-0 flex flex-col overflow-hidden">
+          <div class="px-3 py-1.5 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 flex items-center gap-3">
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] text-neutral-400">Pricing qty</span>
+              <USelect
+                :model-value="bom.boardQuantity.value"
+                size="xs"
+                class="w-28"
+                :items="pricingQtySelectItems"
+                value-key="value"
+                label-key="label"
+                :disabled="!canEditTab('bom')"
+                @update:model-value="handleBomBoardQuantityUpdate(($event as number))"
+              />
+            </div>
+            <div class="min-w-[320px] max-w-[520px] flex-1">
+              <PricingQuantityTags
+                :model-value="pricingQuantities"
+                :locked="!canEditTab('bom')"
+                @update:model-value="handlePricingQuantitiesFromBom($event)"
+              />
+            </div>
+            <div class="flex-1" />
+            <UPopover
+              v-model:open="bomLockPopoverOpen"
+              :content="{ side: 'bottom', align: 'end', sideOffset: 6 }"
+            >
+              <div
+                @mouseenter="bomLockPopoverOpen = true"
+                @mouseleave="bomLockPopoverOpen = false"
+                @focusin="bomLockPopoverOpen = true"
+                @focusout="bomLockPopoverOpen = false"
+              >
+                <UButton
+                  size="xs"
+                  :color="isCurrentTabLocked ? 'warning' : 'neutral'"
+                  :variant="isCurrentTabLocked ? 'soft' : 'outline'"
+                  :icon="isCurrentTabLocked ? 'i-lucide-lock' : 'i-lucide-lock-open'"
+                  :disabled="!canToggleCurrentTabLock"
+                  @click="toggleCurrentTabLock"
+                >
+                  {{ isCurrentTabLocked ? 'Locked' : 'Unlocked' }}
+                </UButton>
+              </div>
+              <template #content>
+                <div class="px-2 py-1 text-[11px] text-neutral-600 dark:text-neutral-300 max-w-[20rem]">
+                  {{ currentTabLockTitle }}
+                </div>
+              </template>
+            </UPopover>
+          </div>
+          <div ref="bomSplitEl" class="flex-1 min-h-0 min-w-0 flex overflow-hidden" :class="{ 'select-none': bomDragging }">
+          <section class="shrink-0 min-h-0 min-w-[360px] overflow-hidden" :style="{ width: `${bomLeftPct}%` }">
+            <BomTable
+              :bom-lines="(bom.bomLines.value as BomLine[])"
+              :customer-bom-lines="(bom.customerBomLines.value as BomLine[])"
+              :filtered-lines="(bom.filteredLines.value as BomLine[])"
+              :search-query="bom.searchQuery.value"
+              :pricing-cache="(bom.pricingCache.value as any)"
+              :has-credentials="elexess.hasCredentials.value"
+              :is-fetching-pricing="elexess.isFetching.value"
+              :pricing-queue="(elexess.pricingQueue.value as PricingQueueItem[])"
+              :board-quantity="bom.boardQuantity.value"
+              :team-currency="stableTeamCurrency"
+              :exchange-rate="elexess.exchangeRate.value"
+              :pnp-designators="pnpDesignators"
+              :selected-line-id="selectedBomLineId"
+              :locked="!canEditTab('bom')"
+              @select-line="selectedBomLineId = $event"
+              @update:search-query="bom.searchQuery.value = $event"
+              @add-line="handleBomAddLine"
+              @update-line="handleBomUpdateLine"
+              @remove-line="handleBomRemoveLine"
+              @add-manufacturer="handleBomAddManufacturer"
+              @fetch-all-pricing="handleFetchAllPricing"
+              @fetch-single-pricing="handleFetchSinglePricing"
+            />
+          </section>
+
+          <div
+            class="w-1 shrink-0 cursor-col-resize hover:bg-primary/30 active:bg-primary/50 transition-colors"
+            :class="{ 'bg-primary/50': bomDragging }"
+            @mousedown="onBomDragStart"
+          />
+
+          <section class="flex-1 min-h-0 min-w-0 overflow-hidden">
+            <BomDetails
+              :line="selectedBomLine"
+              :customer-bom-lines="(bom.customerBomLines.value as BomLine[])"
+              :pricing-cache="(bom.pricingCache.value as any)"
+              :has-credentials="elexess.hasCredentials.value"
+              :is-fetching-pricing="elexess.isFetching.value"
+              :pricing-queue="(elexess.pricingQueue.value as PricingQueueItem[])"
+              :board-quantity="bom.boardQuantity.value"
+              :team-currency="stableTeamCurrency"
+              :exchange-rate="elexess.exchangeRate.value"
+              :pnp-designators="pnpDesignators"
+              :locked="!canEditTab('bom')"
+              @update-line="handleBomUpdateLine"
+              @remove-line="handleBomRemoveLine"
+              @remove-manufacturer="handleBomRemoveManufacturer"
+              @add-manufacturer="handleBomAddManufacturer"
+              @fetch-all-pricing="handleFetchAllPricing"
+              @fetch-single-pricing="handleFetchSinglePricing"
+            />
+          </section>
+          </div>
         </div>
-      </main>
+      </template>
+
+      <!-- Pricing: full width (no canvas) -->
+      <template v-else-if="sidebarTab === 'pricing'">
+        <div class="flex-1 min-w-0 flex flex-col overflow-hidden bg-neutral-50 dark:bg-neutral-950">
+          <div class="px-3 py-1.5 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 flex items-center gap-3">
+            <div class="min-w-[320px] max-w-[520px] flex-1">
+              <PricingQuantityTags
+                :model-value="pricingQuantities"
+                :locked="!canEditTab('bom')"
+                @update:model-value="handlePricingQuantitiesFromPricing($event)"
+              />
+            </div>
+            <div class="flex-1" />
+            <UPopover
+              v-model:open="bomLockPopoverOpen"
+              :content="{ side: 'bottom', align: 'end', sideOffset: 6 }"
+            >
+              <div
+                @mouseenter="bomLockPopoverOpen = true"
+                @mouseleave="bomLockPopoverOpen = false"
+                @focusin="bomLockPopoverOpen = true"
+                @focusout="bomLockPopoverOpen = false"
+              >
+                <UButton
+                  size="xs"
+                  :color="isCurrentTabLocked ? 'warning' : 'neutral'"
+                  :variant="isCurrentTabLocked ? 'soft' : 'outline'"
+                  :icon="isCurrentTabLocked ? 'i-lucide-lock' : 'i-lucide-lock-open'"
+                  :disabled="!canToggleCurrentTabLock"
+                  @click="toggleCurrentTabLock"
+                >
+                  {{ isCurrentTabLocked ? 'Locked' : 'Unlocked' }}
+                </UButton>
+              </div>
+              <template #content>
+                <div class="px-2 py-1 text-[11px] text-neutral-600 dark:text-neutral-300 max-w-[20rem]">
+                  {{ currentTabLockTitle }}
+                </div>
+              </template>
+            </UPopover>
+          </div>
+          <main class="flex-1 min-w-0 overflow-hidden">
+            <PricingPanel
+              :pcb-data="pcbData"
+              :bom-lines="(bom.bomLines.value as BomLine[])"
+              :pricing-cache="(bom.pricingCache.value as any)"
+              :exchange-rate="elexess.exchangeRate.value"
+              :pricing-quantities="pricingQuantities"
+              :selected-quantity="pcbData?.selectedPricingQuantity ?? null"
+              @update:selected-quantity="handlePricingSelectedQuantityUpdate"
+            />
+          </main>
+        </div>
+      </template>
+
+      <!-- Docs: full width list + preview (no canvas) -->
+      <template v-else-if="sidebarTab === 'docs'">
+        <aside
+          class="shrink-0 border-r border-neutral-200 dark:border-neutral-800 overflow-hidden"
+          :style="{ width: sidebarDocs.sidebarWidth.value + 'px' }"
+        >
+          <DocsPanel
+            :documents="documents"
+            :selected-id="selectedDocumentId"
+            @select="handleDocumentSelect"
+          />
+        </aside>
+
+        <div
+          class="w-1 shrink-0 cursor-col-resize hover:bg-primary/30 active:bg-primary/50 transition-colors"
+          :class="{ 'bg-primary/50': sidebarDocs.dragging.value }"
+          @mousedown="sidebarDocs.onDragStart($event)"
+        />
+
+        <main
+          class="flex-1 min-w-0 overflow-hidden bg-neutral-50 dark:bg-neutral-950"
+          :class="{ 'select-none': sidebarDocs.dragging.value }"
+        >
+          <div v-if="selectedDocument" class="h-full">
+            <iframe
+              :src="selectedDocument.blobUrl + '#toolbar=0'"
+              class="w-full h-full border-0"
+              title="Document viewer"
+            />
+          </div>
+          <div v-else class="h-full flex items-center justify-center text-sm text-neutral-400">
+            Select a document to preview
+          </div>
+        </main>
+      </template>
     </div>
 
     <!-- Settings modal -->
-    <AppSettingsModal
-      v-model:open="showSettings"
-      @open-performance="showPerformanceMonitor = true"
-    />
+    <AppSettingsModal v-model:open="showSettings" />
     <PerformanceMonitorModal
       v-model:open="showPerformanceMonitor"
       :snapshot="performanceSnapshot"
@@ -740,16 +740,17 @@
       :groups="editingComponent?.componentType === 'tht' ? thtGroups : smdGroups"
       :current-group-id="editingComponent ? (pnpGroupAssignments[editingComponent.key] ?? null) : null"
       :bom-designators="bomDesignators"
-      @update:rotation="pnp.setRotationOverride($event.key, $event.rotation)"
-      @reset:rotation="pnp.resetRotationOverride($event.key)"
-      @toggle:dnp="pnp.toggleDnp($event)"
-      @update:polarized="pnp.setPolarizedOverride($event.key, $event.polarized)"
+      :locked="!isTabEditAllowed"
+      @update:rotation="handleComponentRotationUpdate($event)"
+      @reset:rotation="handleComponentResetRotation($event)"
+      @toggle:dnp="handleComponentToggleDnp($event)"
+      @update:polarized="handleComponentPolarizedUpdate($event)"
       @update:package-mapping="handlePackageMapping($event)"
-      @update:note="pnp.setComponentNote($event.key, $event.note)"
-      @update:fields="pnp.setFieldOverride($event.key, $event)"
-      @update:manual-component="pnp.updateManualComponent($event.id, $event)"
-      @delete:manual-component="pnp.removeManualComponent($event)"
-      @delete:component="pnp.deleteComponent($event)"
+      @update:note="handleComponentNoteUpdate($event)"
+      @update:fields="handleComponentFieldsUpdate($event)"
+      @update:manual-component="handleManualComponentUpdate($event)"
+      @delete:manual-component="handleDeleteManualComponent($event)"
+      @delete:component="handleDeleteComponent($event)"
       @assign:group="assignEditingComponentGroup($event)"
       @preview:package="previewPkgOverride = $event"
     />
@@ -831,6 +832,8 @@ function waitForTeamId(): Promise<string> {
 }
 const { presentUsers } = isTeamProject ? usePresence(teamProjectIdRef) : { presentUsers: ref([]) }
 const projectSync = isTeamProject ? useProjectSync(teamProjectIdRef) : null
+const { user } = useAuth()
+const { profile } = useCurrentUser()
 
 /** Whether this is an approved (frozen) team project */
 const isApproved = computed(() => {
@@ -845,6 +848,22 @@ const canEdit = computed(() => {
   // Viewers can't edit, editors and admins can
   return currentTeamRole.value === 'editor' || currentTeamRole.value === 'admin'
 })
+
+type LockableTab = 'files' | 'pcb' | 'panel' | 'smd' | 'tht' | 'bom'
+type PageLockState = {
+  locked: boolean
+  locked_at: string | null
+  locked_by: string | null
+  locked_by_name: string | null
+}
+type PageLocksRecord = Partial<Record<LockableTab, PageLockState>>
+
+const LOCKABLE_TABS: LockableTab[] = ['files', 'pcb', 'panel', 'smd', 'tht', 'bom']
+const pageLocksOverride = ref<PageLocksRecord | null>(null)
+
+function isLockableTab(tab: string): tab is LockableTab {
+  return LOCKABLE_TABS.includes(tab as LockableTab)
+}
 const canvasInteraction = useCanvasInteraction()
 const measureTool = useMeasureTool()
 const infoTool = useInfoTool()
@@ -859,7 +878,29 @@ const canvasAreaBg = computed(() =>
     ? (isBgLight.value ? '#e8e8ec' : '#1a1a1e')
     : backgroundColor.value,
 )
-const { sidebarWidth, dragging: sidebarDragging, onDragStart: onSidebarDragStart } = useSidebarWidth()
+// Per-page-type sidebar widths (each persisted independently)
+const sidebarFiles = useSidebarWidth('files')
+const sidebarPcb = useSidebarWidth('pcb')
+const sidebarPanel = useSidebarWidth('panel')
+const sidebarSmd = useSidebarWidth('smd')
+const sidebarTht = useSidebarWidth('tht')
+const sidebarDocs = useSidebarWidth('docs')
+const bomSplit = useBomSplitWidth()
+
+const sidebarMap: Record<string, ReturnType<typeof useSidebarWidth>> = {
+  files: sidebarFiles,
+  pcb: sidebarPcb,
+  panel: sidebarPanel,
+  smd: sidebarSmd,
+  tht: sidebarTht,
+  docs: sidebarDocs,
+}
+const activeSidebar = computed(() => sidebarMap[sidebarTab.value] ?? sidebarPcb)
+const sidebarWidth = computed(() => activeSidebar.value.sidebarWidth.value)
+const sidebarDragging = computed(() => activeSidebar.value.dragging.value)
+function onSidebarDragStart(e: MouseEvent) {
+  activeSidebar.value.onDragStart(e)
+}
 
 // ── Sidebar tab (Files / PCB / Panel / SMD / THT / BOM / Pricing / Docs) ──
 type SidebarTab = 'files' | 'pcb' | 'panel' | 'smd' | 'tht' | 'bom' | 'pricing' | 'docs'
@@ -870,6 +911,67 @@ const initialTabRaw = (route.query.tab as string) || 'files'
 // Back-compat: old URLs used `tab=layers` for the Files tab.
 const initialTab = initialTabRaw === 'layers' ? 'files' : initialTabRaw
 const sidebarTab = ref<SidebarTab>(VALID_TABS.includes(initialTab as SidebarTab) ? initialTab as SidebarTab : 'files')
+const project = ref<any>(null)
+
+const projectPageLocks = computed<PageLocksRecord>(() => {
+  const optimistic = pageLocksOverride.value
+  if (optimistic && typeof optimistic === 'object') return optimistic
+  const live = projectSync?.project.value?.page_locks as PageLocksRecord | null | undefined
+  if (live && typeof live === 'object') return live
+  const cached = (project.value?.pageLocks ?? null) as PageLocksRecord | null
+  return cached && typeof cached === 'object' ? cached : {}
+})
+
+const currentTabLock = computed<PageLockState | null>(() => {
+  if (!isLockableTab(sidebarTab.value)) return null
+  const entry = projectPageLocks.value[sidebarTab.value]
+  return entry && typeof entry === 'object' ? entry : null
+})
+
+const isCurrentTabLocked = computed(() =>
+  !!(isLockableTab(sidebarTab.value) && currentTabLock.value?.locked),
+)
+
+const canToggleCurrentTabLock = computed(() =>
+  isTeamProject && isLockableTab(sidebarTab.value) && canEdit.value,
+)
+
+const isTabEditAllowed = computed(() =>
+  canEdit.value && !isCurrentTabLocked.value,
+)
+
+function isTabLocked(tab: LockableTab): boolean {
+  return !!projectPageLocks.value[tab]?.locked
+}
+
+function canEditTab(tab: LockableTab): boolean {
+  return canEdit.value && !isTabLocked(tab)
+}
+
+function ensureTabEditable(tab: LockableTab): boolean {
+  if (canEditTab(tab)) return true
+  return false
+}
+
+function formatLockTitle(lock: PageLockState | null): string {
+  if (!lock?.locked) return 'Unlocked'
+  const who = lock.locked_by_name || 'Unknown user'
+  const when = lock.locked_at
+    ? new Date(lock.locked_at).toLocaleString()
+    : 'unknown time'
+  return `Locked by ${who} at ${when}`
+}
+
+const currentTabLockTitle = computed(() => formatLockTitle(currentTabLock.value))
+const lockedTabsForNav = computed(() =>
+  LOCKABLE_TABS.filter(tab => isTabLocked(tab)),
+)
+
+watch(() => projectSync?.project.value?.page_locks, (next) => {
+  if (!next || typeof next !== 'object') return
+  pageLocksOverride.value = null
+  if (project.value) project.value.pageLocks = next
+}, { deep: true })
 
 onMounted(() => {
   const raw = new URLSearchParams(window.location.search).get('tab') || 'files'
@@ -891,16 +993,52 @@ watch(sidebarTab, (tab) => {
   router.replace({ query })
 })
 
+const isCanvasPage = computed(() => {
+  return sidebarTab.value === 'pcb' || sidebarTab.value === 'panel' || sidebarTab.value === 'smd' || sidebarTab.value === 'tht'
+})
+
+const showControlsBar = isCanvasPage
+
+// ── Panel-only edit modes (moved into Controls bar) ──
+type PanelTabEditMode = 'off' | 'move' | 'add' | 'delete'
+type PanelAddedRoutingEditMode = 'off' | 'add' | 'move' | 'delete'
+
+const panelTabEditMode = ref<PanelTabEditMode>('off')
+const panelAddedRoutingEditMode = ref<PanelAddedRoutingEditMode>('off')
+
+function panelHasAnyRoutedSeparation(cfg: PanelConfig): boolean {
+  if (cfg.separationType === 'routed') return true
+  if (cfg.separationType === 'scored') return false
+  return cfg.edges.top.type === 'routed'
+    || cfg.edges.bottom.type === 'routed'
+    || cfg.edges.left.type === 'routed'
+    || cfg.edges.right.type === 'routed'
+}
+
+const panelTabControlEnabled = computed(() => {
+  return panelHasAnyRoutedSeparation(panelData.value)
+})
+
+watch(sidebarTab, (tab) => {
+  if (tab !== 'panel') {
+    panelTabEditMode.value = 'off'
+    panelAddedRoutingEditMode.value = 'off'
+  }
+})
+
+watch(isCurrentTabLocked, (locked) => {
+  if (!locked) return
+  panelTabEditMode.value = 'off'
+  panelAddedRoutingEditMode.value = 'off'
+  if (activeMode.value === 'delete') setMode('cursor')
+})
+
 // Toolbar button styling (outline + blue active border)
 const tbBtnBase =
   '!rounded-md !px-2.5 !py-1 !text-xs !font-medium !border !shadow-none !transition-colors'
 const tbBtnIdle =
   '!border-transparent hover:!border-neutral-300/80 hover:!bg-neutral-200/70 ' +
   'dark:!text-neutral-200 dark:hover:!bg-neutral-800/70 dark:hover:!border-neutral-600/70'
-const tbBtnActive =
-  '!border-blue-500/70 !text-blue-700 !bg-blue-50/90 ' +
-  'dark:!border-blue-400/70 dark:!text-blue-200 dark:!bg-blue-500/15'
-
 // ── Persisted per-project preferences ──
 
 const prefs = useViewerPreferences(isTeamProject && teamProjectId ? teamProjectId : projectId)
@@ -910,6 +1048,7 @@ const cropToOutline = prefs.cropToOutline
 const hasStoredCropToOutline = prefs.hasStoredCropToOutline
 const mirrored = prefs.mirrored
 const boardRotation = prefs.boardRotation
+const cachedTabVisibility = prefs.tabVisibility
 
 // ── Interaction mode management ──
 
@@ -1004,6 +1143,7 @@ function handleKeyDown(e: KeyboardEvent) {
 }
 
 function handlePackageMapping(payload: { cadPackage: string; packageName: string | null; componentKey?: string; isManual?: boolean }) {
+  if (isCurrentTabLocked.value) return
   if (payload.isManual && payload.componentKey) {
     // For manual components: update the package field directly on the ManualPnPComponent
     const manualId = payload.componentKey.replace(/^manual\|/, '')
@@ -1022,6 +1162,7 @@ function openComponentEdit(component: import('~/composables/usePickAndPlace').Ed
 }
 
 function startAddComponent(componentType: import('~/composables/usePickAndPlace').ComponentType = 'smd') {
+  if (!ensureTabEditable(componentType)) return
   // Generate a unique ID and an auto-incremented designator
   const id = `mc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
   const existingDesignators = new Set(pnp.allComponents.value.map(c => c.designator))
@@ -1057,6 +1198,7 @@ function handlePnPDblClick(designator: string) {
 }
 
 function startSetOrigin() {
+  if (!ensureTabEditable(sidebarTab.value === 'tht' ? 'tht' : 'smd')) return
   // Switch to cursor mode to allow canvas clicking
   if (activeMode.value !== 'cursor') {
     setMode('cursor')
@@ -1065,12 +1207,64 @@ function startSetOrigin() {
 }
 
 function startComponentAlign() {
+  if (!ensureTabEditable(sidebarTab.value === 'tht' ? 'tht' : 'smd')) return
   if (!pnp.selectedComponent.value) return
   // Switch to cursor mode to allow canvas clicking
   if (activeMode.value !== 'cursor') {
     setMode('cursor')
   }
   pnp.startComponentAlign(pnp.selectedComponent.value)
+}
+
+function handleComponentRotationUpdate(payload: { key: string; rotation: number }) {
+  if (!ensureTabEditable(sidebarTab.value === 'tht' ? 'tht' : 'smd')) return
+  pnp.setRotationOverride(payload.key, payload.rotation)
+}
+
+function handleComponentResetRotation(payload: { key: string } | string) {
+  if (!ensureTabEditable(sidebarTab.value === 'tht' ? 'tht' : 'smd')) return
+  const key = typeof payload === 'string' ? payload : payload.key
+  pnp.resetRotationOverride(key)
+}
+
+function handleComponentToggleDnp(key: string) {
+  if (!ensureTabEditable(sidebarTab.value === 'tht' ? 'tht' : 'smd')) return
+  pnp.toggleDnp(key)
+}
+
+function handleResetOrigin() {
+  if (!ensureTabEditable(sidebarTab.value === 'tht' ? 'tht' : 'smd')) return
+  pnp.resetOrigin()
+}
+
+function handleComponentPolarizedUpdate(payload: { key: string; polarized: boolean }) {
+  if (!ensureTabEditable(sidebarTab.value === 'tht' ? 'tht' : 'smd')) return
+  pnp.setPolarizedOverride(payload.key, payload.polarized)
+}
+
+function handleComponentNoteUpdate(payload: { key: string; note: string }) {
+  if (!ensureTabEditable(sidebarTab.value === 'tht' ? 'tht' : 'smd')) return
+  pnp.setComponentNote(payload.key, payload.note)
+}
+
+function handleComponentFieldsUpdate(payload: { key: string; designator?: string; value?: string; x?: number; y?: number }) {
+  if (!ensureTabEditable(sidebarTab.value === 'tht' ? 'tht' : 'smd')) return
+  pnp.setFieldOverride(payload.key, payload)
+}
+
+function handleManualComponentUpdate(payload: { id: string; [key: string]: any }) {
+  if (!ensureTabEditable(sidebarTab.value === 'tht' ? 'tht' : 'smd')) return
+  pnp.updateManualComponent(payload.id, payload)
+}
+
+function handleDeleteManualComponent(id: string) {
+  if (!ensureTabEditable(sidebarTab.value === 'tht' ? 'tht' : 'smd')) return
+  pnp.removeManualComponent(id)
+}
+
+function handleDeleteComponent(key: string) {
+  if (!ensureTabEditable(sidebarTab.value === 'tht' ? 'tht' : 'smd')) return
+  pnp.deleteComponent(key)
 }
 
 function handleAlignClick(x: number, y: number) {
@@ -1103,7 +1297,6 @@ function handleKeyUp(e: KeyboardEvent) {
   measureTool.handleKeyUp(e)
 }
 
-const project = ref<any>(null)
 const layers = ref<LayerInfo[]>([])
 
 // ── PCB parameters for pricing ──
@@ -1117,7 +1310,28 @@ const pcbData = ref<{
   thicknessMm?: PcbThicknessMm
   solderMaskColor?: SolderMaskColor
   panelizationMode?: 'single' | 'panelized'
+  pricingQuantities?: number[]
+  selectedPricingQuantity?: number
 } | null>(null)
+
+const DEFAULT_PRICING_QUANTITIES = [10, 50, 100, 500, 1000]
+
+function sanitizePricingQuantities(values: number[] | null | undefined): number[] {
+  const source = Array.isArray(values) && values.length > 0 ? values : DEFAULT_PRICING_QUANTITIES
+  return Array.from(
+    new Set(
+      source
+        .map(v => Number(v))
+        .filter(v => Number.isFinite(v) && v >= 1)
+        .map(v => Math.round(v)),
+    ),
+  ).sort((a, b) => a - b)
+}
+
+const pricingQuantities = computed(() => sanitizePricingQuantities(pcbData.value?.pricingQuantities))
+const pricingQtySelectItems = computed(() =>
+  pricingQuantities.value.map(v => ({ label: `${v.toLocaleString('en-US')} pcs`, value: v })),
+)
 
 const teamPanelLimits = computed(() => ({
   preferredWidthMm: currentTeam.value?.preferred_panel_width_mm ?? null,
@@ -1127,7 +1341,28 @@ const teamPanelLimits = computed(() => ({
 }))
 
 function handlePcbDataUpdate(data: typeof pcbData.value) {
+  if (!ensureTabEditable('pcb')) return
   pcbData.value = data
+}
+
+function handlePricingQuantitiesUpdate(next: number[]) {
+  const quantities = sanitizePricingQuantities(next)
+  pcbData.value = {
+    ...(pcbData.value ?? {}),
+    pricingQuantities: quantities,
+  }
+  if (!quantities.includes(bom.boardQuantity.value)) {
+    bom.boardQuantity.value = quantities[0]
+  }
+}
+
+function handlePricingSelectedQuantityUpdate(next: number) {
+  const qty = Number(next)
+  if (!Number.isFinite(qty) || qty < 1) return
+  pcbData.value = {
+    ...(pcbData.value ?? {}),
+    selectedPricingQuantity: Math.round(qty),
+  }
 }
 
 // ── Panel configuration ──
@@ -1139,6 +1374,31 @@ const panelData = ref<PanelConfig>(DEFAULT_PANEL_CONFIG())
 const panelDangerZone = ref<DangerZoneConfig>({ enabled: false, insetMm: 2 })
 const hasLoadedProjectData = ref(false)
 
+const panelShowComponents = computed<boolean>({
+  get: () => panelData.value.showComponents !== false,
+  set: (v) => {
+    // Viewing overlay toggle should remain usable even when Panel is locked.
+    panelData.value = normalizePanelConfig({ ...(panelData.value as any), showComponents: v } as PanelConfig)
+  },
+})
+
+const panelShowDangerZones = computed<boolean>({
+  get: () => panelDangerZone.value.enabled,
+  set: (v) => {
+    panelDangerZone.value = { ...panelDangerZone.value, enabled: v }
+  },
+})
+
+const panelDangerInsetMm = computed<number>({
+  get: () => panelDangerZone.value.insetMm,
+  set: (v) => {
+    const n = Number(v)
+    if (!Number.isFinite(n)) return
+    const clamped = Math.max(0.5, Math.min(20, Math.round(n * 10) / 10))
+    panelDangerZone.value = { ...panelDangerZone.value, insetMm: clamped }
+  },
+})
+
 function normalizePanelConfig(data: unknown): PanelConfig {
   // Strip Vue proxies/functions and keep a plain, migrated JSON shape.
   const plain = JSON.parse(JSON.stringify(data ?? {})) as Record<string, any>
@@ -1146,6 +1406,7 @@ function normalizePanelConfig(data: unknown): PanelConfig {
 }
 
 function handlePanelDataUpdate(data: PanelConfig) {
+  if (!ensureTabEditable('panel')) return
   panelData.value = normalizePanelConfig(data)
 }
 
@@ -1192,8 +1453,13 @@ const showPerformanceMonitor = ref(false)
 const showPnPExport = ref(false)
 const showImageExport = ref(false)
 const imageExportTarget = ref<'board' | 'panel'>('board')
+const filesLockPopoverOpen = ref(false)
+const bomLockPopoverOpen = ref(false)
 const showComponentEdit = ref(false)
 watch(showComponentEdit, (open) => { if (!open) previewPkgOverride.value = null })
+watch(isCurrentTabLocked, (locked) => {
+  if (locked) showComponentEdit.value = false
+})
 const editingComponent = ref<import('~/composables/usePickAndPlace').EditablePnPComponent | null>(null)
 const performanceSnapshot = ref<{
   fpsApprox?: number
@@ -1430,21 +1696,25 @@ const detectedLayerCount = computed<number | null>(() => {
 
 const downloadMenuItems = computed(() => {
   const items: { label: string; icon: string; onSelect: () => void }[] = []
-  if (viewMode.value === 'realistic') {
+  if (layers.value.length > 0) {
     items.push({
       label: 'Export Image',
       icon: 'i-lucide-image',
       onSelect: () => {
+        // Ensure the board canvas is mounted for export flows.
+        if (!isCanvasPage.value) sidebarTab.value = 'pcb'
         imageExportTarget.value = 'board'
         showImageExport.value = true
       },
     })
   }
-  if (isPanelizedMode.value && sidebarTab.value === 'panel' && layers.value.length > 0) {
+  if (isPanelizedMode.value && layers.value.length > 0) {
     items.push({
       label: 'Export Panel Image',
       icon: 'i-lucide-grid-2x2',
       onSelect: () => {
+        // Panel export requires the panel canvas, even if user is on a non-canvas page.
+        sidebarTab.value = 'panel'
         imageExportTarget.value = 'panel'
         showImageExport.value = true
       },
@@ -1575,11 +1845,13 @@ function isValidSortState(value: unknown): value is PnPSortState {
 }
 
 function applySortState(type: 'smd' | 'tht', value: PnPSortState) {
+  if (!ensureTabEditable(type)) return
   if (type === 'smd') pnpSortSmd.value = value
   else pnpSortTht.value = value
 }
 
 function createGroup(type: 'smd' | 'tht') {
+  if (!ensureTabEditable(type)) return
   pendingGroupType.value = type
   const baseName = type === 'smd' ? 'SMD Group' : 'THT Group'
   const existing = pnpComponentGroups.value
@@ -1592,6 +1864,7 @@ function createGroup(type: 'smd' | 'tht') {
 }
 
 function handleCreateGroup(payload: { name: string; comment: string }) {
+  if (!ensureTabEditable(pendingGroupType.value)) return
   const id = `grp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
   pnpComponentGroups.value = [...pnpComponentGroups.value, {
     id,
@@ -1604,18 +1877,23 @@ function handleCreateGroup(payload: { name: string; comment: string }) {
 }
 
 function toggleGroupHidden(groupId: string) {
+  const target = pnpComponentGroups.value.find(g => g.id === groupId)
+  if (target && !ensureTabEditable(target.componentType)) return
   pnpComponentGroups.value = pnpComponentGroups.value.map(g =>
     g.id === groupId ? { ...g, hidden: !g.hidden } : g,
   )
 }
 
 function toggleGroupCollapsed(groupId: string) {
+  const target = pnpComponentGroups.value.find(g => g.id === groupId)
+  if (target && !ensureTabEditable(target.componentType)) return
   pnpComponentGroups.value = pnpComponentGroups.value.map(g =>
     g.id === groupId ? { ...g, collapsed: !g.collapsed } : g,
   )
 }
 
 function deleteGroup(groupId: string, type: 'smd' | 'tht') {
+  if (!ensureTabEditable(type)) return
   const target = pnpComponentGroups.value.find(g => g.id === groupId)
   if (!target || target.componentType !== type) return
 
@@ -1632,6 +1910,7 @@ function deleteGroup(groupId: string, type: 'smd' | 'tht') {
 }
 
 function reorderGroups(type: 'smd' | 'tht', orderedIds: string[]) {
+  if (!ensureTabEditable(type)) return
   const typeGroups = pnpComponentGroups.value.filter(g => g.componentType === type)
   if (typeGroups.length <= 1) return
 
@@ -1651,6 +1930,7 @@ function reorderGroups(type: 'smd' | 'tht', orderedIds: string[]) {
 }
 
 function assignComponentGroup(payload: { componentKey: string; groupId: string | null }, type: 'smd' | 'tht') {
+  if (!ensureTabEditable(type)) return
   const next = { ...pnpGroupAssignments.value }
   if (!payload.groupId) {
     delete next[payload.componentKey]
@@ -1664,6 +1944,8 @@ function assignComponentGroup(payload: { componentKey: string; groupId: string |
 }
 
 function updateGroupMeta(payload: { groupId: string; name: string; comment: string }) {
+  const target = pnpComponentGroups.value.find(g => g.id === payload.groupId)
+  if (target && !ensureTabEditable(target.componentType)) return
   pnpComponentGroups.value = pnpComponentGroups.value.map(g =>
     g.id === payload.groupId
       ? { ...g, name: payload.name.trim(), comment: payload.comment.trim() }
@@ -1719,7 +2001,24 @@ const documents = ref<ProjectDocument[]>([])
 const selectedDocumentId = ref<string | null>(null)
 const hasDocuments = computed(() => documents.value.length > 0)
 const selectedDocument = computed(() => documents.value.find(d => d.id === selectedDocumentId.value) ?? null)
-const showDocumentViewer = computed(() => selectedDocument.value !== null)
+
+// Files page selection (raw file/doc preview)
+const filesSelectedLayerFileName = ref<string | null>(null)
+const filesSelectedDocId = ref<string | null>(null)
+const filesSelectedLayer = computed(() => layers.value.find(l => l.file.fileName === filesSelectedLayerFileName.value) ?? null)
+const filesSelectedDoc = computed(() => documents.value.find(d => d.id === filesSelectedDocId.value) ?? null)
+
+watch(sidebarTab, (tab) => {
+  if (tab !== 'files') return
+  if (filesSelectedLayerFileName.value || filesSelectedDocId.value) return
+  if (layers.value.length > 0) {
+    filesSelectedLayerFileName.value = layers.value[0].file.fileName
+    filesSelectedDocId.value = null
+  } else if (documents.value.length > 0) {
+    filesSelectedDocId.value = documents.value[0].id
+    filesSelectedLayerFileName.value = null
+  }
+}, { immediate: true })
 
 /** Try to guess document type from filename. */
 function guessDocumentType(fileName: string): DocumentType {
@@ -1732,6 +2031,7 @@ function guessDocumentType(fileName: string): DocumentType {
 }
 
 async function handleDocumentsAdd(files: File[]) {
+  if (!ensureTabEditable('files')) return
   let firstNewId: string | null = null
   for (const file of files) {
     const id = `doc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
@@ -1753,14 +2053,17 @@ async function handleDocumentsAdd(files: File[]) {
     documents.value.push(entry)
     if (!firstNewId) firstNewId = id
   }
-  // Switch to Docs tab and select the first new document
+  // Switch to Files and preview the first new document
   if (firstNewId) {
     selectedDocumentId.value = firstNewId
-    sidebarTab.value = 'docs'
+    filesSelectedDocId.value = firstNewId
+    filesSelectedLayerFileName.value = null
+    sidebarTab.value = 'files'
   }
 }
 
 async function handleDocumentRemove(id: string) {
+  if (!ensureTabEditable('files')) return
   const idx = documents.value.findIndex(d => d.id === id)
   if (idx < 0) return
   const doc = documents.value[idx]
@@ -1769,6 +2072,9 @@ async function handleDocumentRemove(id: string) {
   documents.value.splice(idx, 1)
   if (selectedDocumentId.value === id) {
     selectedDocumentId.value = documents.value.length > 0 ? documents.value[0].id : null
+  }
+  if (filesSelectedDocId.value === id) {
+    filesSelectedDocId.value = documents.value.length > 0 ? documents.value[0].id : null
   }
   // Switch away from docs tab when all documents are removed
   if (documents.value.length === 0 && sidebarTab.value === 'docs') {
@@ -1786,7 +2092,43 @@ function handleDocumentSelect(id: string) {
   selectedDocumentId.value = id
 }
 
+function moveDocument(fromIndex: number, toIndex: number) {
+  const arr = [...documents.value]
+  const [moved] = arr.splice(fromIndex, 1)
+  if (!moved) return
+  arr.splice(toIndex, 0, moved)
+  documents.value = arr
+}
+
+function downloadDocument(id: string) {
+  const doc = documents.value.find(d => d.id === id)
+  if (!doc) return
+  const a = document.createElement('a')
+  a.href = doc.blobUrl
+  a.download = doc.name
+  a.click()
+}
+
+function downloadLayer(index: number) {
+  const layer = layers.value[index]
+  if (!layer) return
+  const blob = new Blob([layer.file.content], { type: 'text/plain;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = layer.file.fileName
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+function downloadSelectedLayer() {
+  if (!filesSelectedLayer.value) return
+  const idx = layers.value.findIndex(l => l.file.fileName === filesSelectedLayer.value!.file.fileName)
+  if (idx >= 0) downloadLayer(idx)
+}
+
 function handleDocumentTypeUpdate(id: string, type: DocumentType) {
+  if (!ensureTabEditable('files')) return
   const doc = documents.value.find(d => d.id === id)
   if (!doc) return
   doc.type = type
@@ -1808,6 +2150,39 @@ onUnmounted(() => {
 // ── BOM ──
 const bom = useBom(layers)
 const elexess = useElexessApi()
+
+watch(pricingQuantities, (list) => {
+  if (!list.includes(bom.boardQuantity.value)) {
+    bom.boardQuantity.value = list[0]
+  }
+}, { immediate: true })
+
+const bomSplitEl = ref<HTMLElement | null>(null)
+const bomLeftPct = bomSplit.pct
+const bomDragging = bomSplit.dragging
+
+const selectedBomLineId = ref<string | null>(null)
+const selectedBomLine = computed(() => {
+  const id = selectedBomLineId.value
+  if (!id) return null
+  return (bom.bomLines.value as BomLine[]).find(l => l.id === id) ?? null
+})
+
+watch([sidebarTab, () => (bom.filteredLines.value as BomLine[])], ([tab, filtered]) => {
+  if (tab !== 'bom') return
+  if (filtered.length === 0) {
+    selectedBomLineId.value = null
+    return
+  }
+  if (!selectedBomLineId.value || !filtered.some(l => l.id === selectedBomLineId.value)) {
+    selectedBomLineId.value = filtered[0].id
+  }
+}, { immediate: true })
+
+function onBomDragStart(e: MouseEvent) {
+  if (!bomSplitEl.value) return
+  bomSplit.onDragStart(e, bomSplitEl.value)
+}
 
 // ── BOM ↔ PnP cross-reference designator sets ──
 
@@ -1858,6 +2233,30 @@ watch(bom.hasBom, (has) => {
     sidebarTab.value = 'bom'
   }
 })
+
+// Tab visibility: use cached values until data loads, then switch to live values.
+// This prevents tabs from "popping in" on every page load.
+const effectiveShowPanel = computed(() =>
+  hasLoadedProjectData.value ? isPanelizedMode.value : (cachedTabVisibility.value.panel || isPanelizedMode.value),
+)
+const effectiveShowPnP = computed(() =>
+  hasLoadedProjectData.value ? pnp.hasPnP.value : (cachedTabVisibility.value.pnp || pnp.hasPnP.value),
+)
+const effectiveShowBom = computed(() =>
+  hasLoadedProjectData.value ? bom.hasBom.value : (cachedTabVisibility.value.bom || bom.hasBom.value),
+)
+const effectiveShowDocs = computed(() =>
+  hasLoadedProjectData.value ? hasDocuments.value : (cachedTabVisibility.value.docs || hasDocuments.value),
+)
+
+watch(
+  [isPanelizedMode, () => pnp.hasPnP.value, () => bom.hasBom.value, hasDocuments],
+  ([panel, pnpVal, bomVal, docs]) => {
+    if (!hasLoadedProjectData.value) return
+    cachedTabVisibility.value = { panel, pnp: pnpVal, bom: bomVal, docs }
+  },
+  { immediate: true },
+)
 
 // Show field mapping modal when needed
 watch(bom.needsFieldMapping, (needs) => {
@@ -2158,11 +2557,52 @@ async function handleFetchSinglePricing(partNumber: string) {
 }
 
 function handleBomAddLine(line?: Partial<BomLine>) {
+  if (!ensureTabEditable('bom')) return
   if (line?.id) {
     bom.updateLine(line.id, line)
   } else {
     bom.addLine(line)
   }
+}
+
+function handleBomUpdateLine(id: string, updates: Partial<BomLine>) {
+  if (!ensureTabEditable('bom')) return
+  bom.updateLine(id, updates)
+}
+
+function handleBomRemoveLine(id: string) {
+  if (!ensureTabEditable('bom')) return
+  bom.removeLine(id)
+}
+
+function handleBomAddManufacturer(lineId: string, mfr: { manufacturer: string; manufacturerPart: string }) {
+  if (!ensureTabEditable('bom')) return
+  bom.addManufacturer(lineId, mfr)
+}
+
+function handleBomRemoveManufacturer(lineId: string, idx: number) {
+  if (!ensureTabEditable('bom')) return
+  bom.removeManufacturer(lineId, idx)
+}
+
+function handleBomBoardQuantityUpdate(qty: number) {
+  if (!ensureTabEditable('bom')) return
+  bom.boardQuantity.value = qty
+}
+
+function handlePricingQuantitiesFromBom(next: number[]) {
+  if (!ensureTabEditable('bom')) return
+  handlePricingQuantitiesUpdate(next)
+}
+
+function handlePricingQuantitiesFromPricing(next: number[]) {
+  handlePricingQuantitiesUpdate(next)
+}
+
+function handleManualOrderUpdate(type: 'smd' | 'tht', value: string[]) {
+  if (!ensureTabEditable(type)) return
+  if (type === 'smd') pnpManualOrderSmd.value = value
+  else pnpManualOrderTht.value = value
 }
 
 function handleBomFieldMappingConfirm(mapping: BomColumnMapping) {
@@ -2177,6 +2617,7 @@ function handleBomFieldMappingCancel() {
 
 // Update PnP convention and persist
 function updateConvention(convention: PnPConvention) {
+  if (!ensureTabEditable(sidebarTab.value === 'tht' ? 'tht' : 'smd')) return
   pnp.convention.value = convention
   if (isTeamProject) {
     persistToProject({ pnpConvention: convention })
@@ -2241,6 +2682,41 @@ function cancelEdit() {
 // ── Team project actions (approve / revert) ──
 const { getProject: getTeamProject, approveProject: doApprove, revertToDraft: doRevert, updateProject: updateTeamProject, getProjectFiles: getTeamFiles, downloadFile: downloadTeamFile, uploadFile: uploadTeamFile, deleteFile: deleteTeamFile, getProjectDocuments: getTeamDocuments, uploadDocument: uploadTeamDocument, downloadDocument: downloadTeamDocument, updateDocumentType: updateTeamDocumentType, deleteDocument: deleteTeamDocument } = useTeamProjects()
 
+async function toggleCurrentTabLock() {
+  if (!teamProjectId || !isLockableTab(sidebarTab.value) || !canToggleCurrentTabLock.value) return
+
+  const tab = sidebarTab.value
+  const before = { ...projectPageLocks.value }
+  const current = projectPageLocks.value[tab]
+  const nextLocked = !current?.locked
+  const next: PageLocksRecord = { ...projectPageLocks.value }
+  const who = profile.value?.name?.trim()
+    || profile.value?.email?.trim()
+    || user.value?.email
+    || 'Unknown user'
+
+  next[tab] = {
+    locked: nextLocked,
+    locked_at: nextLocked ? new Date().toISOString() : null,
+    locked_by: nextLocked ? (user.value?.id ?? null) : null,
+    locked_by_name: nextLocked ? who : null,
+  }
+
+  // Optimistic local update so lock state changes immediately.
+  pageLocksOverride.value = next
+  if (project.value) project.value.pageLocks = next
+
+  const { error } = await updateTeamProject(teamProjectId, { page_locks: next })
+  if (error) {
+    console.warn('Failed to update page lock:', error)
+    pageLocksOverride.value = before
+    if (project.value) project.value.pageLocks = before
+    return
+  }
+  // Ensure same-session state refreshes even without realtime delivery.
+  await projectSync?.fetchProject()
+}
+
 async function handleApproveProject() {
   if (!teamProjectId) return
   const { error } = await doApprove(teamProjectId)
@@ -2304,14 +2780,17 @@ function normalizeAngle(deg: number): number {
 }
 
 function rotateCW(step = 90) {
+  if (isCurrentTabLocked.value) return
   setBoardRotation(boardRotation.value + step)
 }
 
 function rotateCCW(step = 90) {
+  if (isCurrentTabLocked.value) return
   setBoardRotation(boardRotation.value - step)
 }
 
 function setBoardRotation(deg: number) {
+  if (isCurrentTabLocked.value) return
   if (!isFinite(deg)) return
   boardRotation.value = normalizeAngle(Math.round(deg * 100) / 100)
 }
@@ -2354,6 +2833,7 @@ onMounted(async () => {
         bomBoardQuantity: tp.bom_board_quantity,
         pcbData: tp.pcb_data,
         panelData: tp.panel_data,
+        pageLocks: tp.page_locks,
       }
     }
   } else {
@@ -2541,6 +3021,7 @@ onMounted(async () => {
  * directly or shows the overwrite confirmation modal.
  */
 function handleImportRequest(newFiles: GerberFile[], sourceName: string, isZip: boolean) {
+  if (!ensureTabEditable('files')) return
   const existingNames = new Set(layers.value.map(l => l.file.fileName))
   const conflicts = newFiles.filter(f => existingNames.has(f.fileName))
   const freshFiles = newFiles.filter(f => !existingNames.has(f.fileName))
@@ -2558,6 +3039,7 @@ function handleImportRequest(newFiles: GerberFile[], sourceName: string, isZip: 
 }
 
 async function handleOverwriteConfirm(selectedOverwrites: string[]) {
+  if (!ensureTabEditable('files')) return
   showOverwriteModal.value = false
   if (!pendingImport.value) return
 
@@ -2683,6 +3165,8 @@ function changeLayerColor(index: number, color: string) {
 }
 
 async function changeLayerType(index: number, type: string) {
+  if (sidebarTab.value === 'files' && !ensureTabEditable('files')) return
+  if (sidebarTab.value === 'pcb' && !ensureTabEditable('pcb')) return
   const layer = layers.value[index]
   if (!layer) return
   layer.type = type
@@ -2698,6 +3182,7 @@ async function changeLayerType(index: number, type: string) {
 }
 
 function reorderLayers(fromIndex: number, toIndex: number) {
+  if (!ensureTabEditable('files')) return
   const arr = [...layers.value]
   const [moved] = arr.splice(fromIndex, 1)
   if (!moved) return
@@ -2708,6 +3193,8 @@ function reorderLayers(fromIndex: number, toIndex: number) {
 // ── Reset layer to original content ──
 
 async function resetLayer(index: number) {
+  if (sidebarTab.value === 'files' && !ensureTabEditable('files')) return
+  if (sidebarTab.value === 'pcb' && !ensureTabEditable('pcb')) return
   const layer = layers.value[index]
   if (!layer) return
   const orig = originalContent.get(layer.file.fileName)
@@ -2735,6 +3222,8 @@ async function resetLayer(index: number) {
 // ── Rename layer ──
 
 async function renameLayer(index: number, newName: string) {
+  if (sidebarTab.value === 'files' && !ensureTabEditable('files')) return
+  if (sidebarTab.value === 'pcb' && !ensureTabEditable('pcb')) return
   const layer = layers.value[index]
   if (!layer) return
   const oldName = layer.file.fileName
@@ -2782,6 +3271,8 @@ async function renameLayer(index: number, newName: string) {
 // ── Duplicate layer ──
 
 async function duplicateLayer(index: number) {
+  if (sidebarTab.value === 'files' && !ensureTabEditable('files')) return
+  if (sidebarTab.value === 'pcb' && !ensureTabEditable('pcb')) return
   const layer = layers.value[index]
   if (!layer) return
 
@@ -2831,6 +3322,8 @@ async function duplicateLayer(index: number) {
 // ── Remove layer ──
 
 async function removeLayer(index: number) {
+  if (sidebarTab.value === 'files' && !ensureTabEditable('files')) return
+  if (sidebarTab.value === 'pcb' && !ensureTabEditable('pcb')) return
   const layer = layers.value[index]
   if (!layer) return
 
@@ -2860,6 +3353,7 @@ async function removeLayer(index: number) {
 // ── Delete handler ──
 
 async function handleConfirmDelete() {
+  if (isCurrentTabLocked.value) return
   if (!deleteTool.pendingDeletion.value) return
 
   const canvas = boardCanvasRef.value

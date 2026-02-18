@@ -11,89 +11,6 @@
       @mouseleave="onMouseLeave"
       @contextmenu.prevent
     />
-
-    <!-- Canvas tab-edit controls -->
-    <div
-      class="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 p-1.5 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-100/90 dark:bg-neutral-900/85 backdrop-blur-sm"
-    >
-      <span class="text-[10px] uppercase tracking-wide font-semibold text-neutral-500 dark:text-neutral-400 px-1">
-        Tab Control
-      </span>
-      <button
-        :disabled="!tabControlEnabled"
-        class="text-[11px] font-medium px-2 py-1 rounded border transition-colors disabled:cursor-not-allowed"
-        :class="tabEditMode === 'move'
-          ? 'border-blue-500/70 text-blue-700 bg-blue-50/90 dark:border-blue-400/70 dark:text-blue-200 dark:bg-blue-500/15'
-          : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:border-neutral-300/80 dark:hover:border-neutral-600/70 disabled:hover:border-transparent disabled:text-neutral-400 dark:disabled:text-neutral-500'"
-        title="Move tabs"
-        @mousedown.stop
-        @click.stop="activateTabMode('move')"
-      >
-        Move
-      </button>
-      <button
-        :disabled="!tabControlEnabled"
-        class="text-[11px] font-medium px-2 py-1 rounded border transition-colors disabled:cursor-not-allowed"
-        :class="tabEditMode === 'add'
-          ? 'border-blue-500/70 text-blue-700 bg-blue-50/90 dark:border-blue-400/70 dark:text-blue-200 dark:bg-blue-500/15'
-          : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:border-neutral-300/80 dark:hover:border-neutral-600/70 disabled:hover:border-transparent disabled:text-neutral-400 dark:disabled:text-neutral-500'"
-        title="Add tabs"
-        @mousedown.stop
-        @click.stop="activateTabMode('add')"
-      >
-        Add
-      </button>
-      <button
-        :disabled="!tabControlEnabled"
-        class="text-[11px] font-medium px-2 py-1 rounded border transition-colors disabled:cursor-not-allowed"
-        :class="tabEditMode === 'delete'
-          ? 'border-red-500/70 text-red-700 bg-red-50/90 dark:border-red-400/70 dark:text-red-200 dark:bg-red-500/15'
-          : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:border-neutral-300/80 dark:hover:border-neutral-600/70 disabled:hover:border-transparent disabled:text-neutral-400 dark:disabled:text-neutral-500'"
-        title="Delete tabs"
-        @mousedown.stop
-        @click.stop="activateTabMode('delete')"
-      >
-        Delete
-      </button>
-
-      <span class="mx-1 h-4 w-px bg-neutral-300 dark:bg-neutral-600" />
-      <span class="text-[10px] uppercase tracking-wide font-semibold text-neutral-500 dark:text-neutral-400 px-1">
-        Added Routing
-      </span>
-      <button
-        class="text-[11px] font-medium px-2 py-1 rounded border transition-colors"
-        :class="addedRoutingEditMode === 'move'
-          ? 'border-blue-500/70 text-blue-700 bg-blue-50/90 dark:border-blue-400/70 dark:text-blue-200 dark:bg-blue-500/15'
-          : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:border-neutral-300/80 dark:hover:border-neutral-600/70'"
-        title="Move milling path"
-        @mousedown.stop
-        @click.stop="activateRoutingMode('move')"
-      >
-        Move
-      </button>
-      <button
-        class="text-[11px] font-medium px-2 py-1 rounded border transition-colors"
-        :class="addedRoutingEditMode === 'add'
-          ? 'border-blue-500/70 text-blue-700 bg-blue-50/90 dark:border-blue-400/70 dark:text-blue-200 dark:bg-blue-500/15'
-          : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:border-neutral-300/80 dark:hover:border-neutral-600/70'"
-        title="Add milling path"
-        @mousedown.stop
-        @click.stop="activateRoutingMode('add')"
-      >
-        Add
-      </button>
-      <button
-        class="text-[11px] font-medium px-2 py-1 rounded border transition-colors"
-        :class="addedRoutingEditMode === 'delete'
-          ? 'border-red-500/70 text-red-700 bg-red-50/90 dark:border-red-400/70 dark:text-red-200 dark:bg-red-500/15'
-          : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:border-neutral-300/80 dark:hover:border-neutral-600/70'"
-        title="Delete milling path"
-        @mousedown.stop
-        @click.stop="activateRoutingMode('delete')"
-      >
-        Delete
-      </button>
-    </div>
   </div>
 </template>
 
@@ -188,9 +105,9 @@ type AddedRoutingEditMode = 'off' | 'add' | 'move' | 'delete'
 
 const tabDrag = ref<TabDragState | null>(null)
 const hoveredTab = ref<TabMarker | null>(null)
-const tabEditMode = ref<TabEditMode>('off')
+const tabEditMode = defineModel<TabEditMode>('tabEditMode', { default: 'off' })
 const addPreview = ref<{ x: number; y: number; width: number; height: number } | null>(null)
-const addedRoutingEditMode = ref<AddedRoutingEditMode>('off')
+const addedRoutingEditMode = defineModel<AddedRoutingEditMode>('addedRoutingEditMode', { default: 'off' })
 
 function activateTabMode(mode: 'move' | 'add' | 'delete') {
   if (!tabControlEnabled.value) return
@@ -202,6 +119,18 @@ function activateRoutingMode(mode: 'move' | 'add' | 'delete') {
   addedRoutingEditMode.value = addedRoutingEditMode.value === mode ? 'off' : mode
   if (addedRoutingEditMode.value !== 'off') tabEditMode.value = 'off'
 }
+
+watch(tabEditMode, (mode) => {
+  if (mode !== 'off' && addedRoutingEditMode.value !== 'off') {
+    addedRoutingEditMode.value = 'off'
+  }
+})
+
+watch(addedRoutingEditMode, (mode) => {
+  if (mode !== 'off' && tabEditMode.value !== 'off') {
+    tabEditMode.value = 'off'
+  }
+})
 
 function deactivateAllControls() {
   tabEditMode.value = 'off'

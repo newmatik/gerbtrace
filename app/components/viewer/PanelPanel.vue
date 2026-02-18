@@ -1,66 +1,41 @@
 <template>
   <div class="flex-1 min-h-0 flex flex-col overflow-x-hidden overflow-y-auto p-2 gap-2">
-    <div class="grid grid-cols-2 gap-2">
-      <UButton
-        size="xs"
-        variant="soft"
-        :color="local.showComponents ? 'primary' : 'neutral'"
-        icon="i-lucide-cpu"
-        class="justify-center"
-        @click="update('showComponents', !local.showComponents)"
+    <nav
+      class="min-w-0 flex items-center"
+      aria-label="Panel settings sections"
+    >
+      <div
+        role="tablist"
+        class="viewer-tabs-scroller flex items-center min-w-0 overflow-x-auto overflow-y-hidden [-webkit-overflow-scrolling:touch] gap-0.5"
       >
-        Components
-      </UButton>
-      <div class="flex items-center gap-2">
-        <UButton
-          size="xs"
-          variant="soft"
-          :color="dangerZoneLocal.enabled ? 'warning' : 'neutral'"
-          icon="i-lucide-triangle-alert"
-          class="flex-1 justify-center"
-          @click="dangerZoneLocal = { ...dangerZoneLocal, enabled: !dangerZoneLocal.enabled }"
+        <button
+          v-for="t in panelTabItems"
+          :key="t.value"
+          type="button"
+          role="tab"
+          :aria-selected="activePanelSubtab === t.value"
+          :tabindex="activePanelSubtab === t.value ? 0 : -1"
+          class="flex items-center gap-1.5 h-7 px-2.5 text-xs select-none whitespace-nowrap rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          :class="activePanelSubtab === t.value
+            ? 'bg-neutral-200/80 text-neutral-950 font-semibold dark:bg-neutral-700/60 dark:text-neutral-50'
+            : 'text-neutral-500 font-medium hover:text-neutral-800 hover:bg-neutral-200/40 dark:text-neutral-400 dark:hover:text-neutral-200 dark:hover:bg-neutral-700/30'"
+          @click="activePanelSubtab = t.value"
         >
-          Danger
-        </UButton>
-        <UInput
-          v-if="dangerZoneLocal.enabled"
-          :model-value="dangerZoneLocal.insetMm"
-          type="number"
-          size="xs"
-          class="w-20"
-          :min="0.5"
-          :max="20"
-          :step="0.5"
-          placeholder="Inset mm"
-          @update:model-value="dangerZoneLocal = { ...dangerZoneLocal, insetMm: clampFloat(String($event), 0.5, 20) }"
-        />
+          <UIcon
+            :name="t.icon"
+            class="text-sm shrink-0"
+            :class="activePanelSubtab === t.value ? 'opacity-100' : 'opacity-50'"
+          />
+          <span class="leading-none">{{ t.label }}</span>
+        </button>
       </div>
-    </div>
+    </nav>
 
     <div
-      v-if="boardSizeMm && (local.countX > 1 || local.countY > 1 || local.frame.enabled)"
-      class="text-[10px] px-2 py-1 rounded border tabular-nums"
-      :class="panelExceedsLimits
-        ? 'text-orange-500 dark:text-orange-400 border-orange-400/40 bg-orange-500/10'
-        : 'text-neutral-400 border-neutral-200 dark:border-neutral-800'"
+      v-if="activePanelSubtab === 'layout'"
+      class="pt-1 space-y-2"
+      :class="{ 'pointer-events-none opacity-80': locked }"
     >
-      Panel: {{ panelWidth.toFixed(2) }} x {{ panelHeight.toFixed(2) }} mm
-      <span v-if="panelExceedsLimits">
-        (max {{ effectiveMaxPanelWidth }} x {{ effectiveMaxPanelHeight }})
-      </span>
-    </div>
-
-    <UTabs
-      v-model="activePanelSubtab"
-      :items="panelTabItems"
-      :unmount-on-hide="false"
-      size="sm"
-      variant="link"
-      color="neutral"
-      class="w-full"
-    >
-      <template #layout>
-        <div class="pt-1 space-y-2">
           <div v-if="boardSizeMm" class="rounded border border-neutral-200 dark:border-neutral-800 p-2 space-y-2">
             <div class="flex items-center justify-between">
               <div class="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">Suggestions</div>
@@ -252,11 +227,13 @@
               </template>
             </div>
           </div>
-        </div>
-      </template>
+    </div>
 
-      <template #tabs>
-        <div class="pt-1 space-y-2">
+    <div
+      v-else
+      class="pt-1 space-y-2"
+      :class="{ 'pointer-events-none opacity-80': locked }"
+    >
           <div class="rounded border border-neutral-200 dark:border-neutral-800 p-2 space-y-2">
             <div class="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">Separation</div>
             <div class="grid grid-cols-3 gap-1">
@@ -402,17 +379,13 @@
               Move/Add/Delete tab placement directly on the canvas.
             </p>
           </template>
-        </div>
-      </template>
-
-    </UTabs>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { TabsItem } from '@nuxt/ui'
-import type { PanelConfig, FiducialPosition, DangerZoneConfig, TabPerforationMode, ToolingHolePosition } from '~/utils/panel-types'
-import { DEFAULT_PANEL_CONFIG, PANEL_MAX_WIDTH, PANEL_MAX_HEIGHT } from '~/utils/panel-types'
+import type { PanelConfig, FiducialPosition, TabPerforationMode, ToolingHolePosition } from '~/utils/panel-types'
+import { DEFAULT_PANEL_CONFIG } from '~/utils/panel-types'
 import { computePanelLayout } from '~/utils/panel-geometry'
 import { generatePanelSuggestions, type PanelSuggestion, type PanelSuggestionLimits, type PanelSuggestionEdgeConstraints } from '~/utils/panel-suggestions'
 
@@ -422,21 +395,16 @@ const props = defineProps<{
   teamPanelLimits?: PanelSuggestionLimits | null
   thicknessMm?: number | null
   edgeConstraints?: PanelSuggestionEdgeConstraints | null
+  locked?: boolean
 }>()
+
+const locked = computed(() => !!props.locked)
 
 const emit = defineEmits<{
   'update:panelData': [data: PanelConfig]
-  'update:dangerZone': [data: DangerZoneConfig]
 }>()
 
 const local = computed(() => props.panelData ?? DEFAULT_PANEL_CONFIG())
-
-// Danger zone is local-only (not persisted)
-const dangerZoneLocal = ref<DangerZoneConfig>({ enabled: false, insetMm: 2 })
-
-watch(dangerZoneLocal, (dz) => {
-  emit('update:dangerZone', dz)
-}, { deep: true, immediate: true })
 
 const separationTypes = [
   { label: 'Routed', value: 'routed' as const },
@@ -444,9 +412,15 @@ const separationTypes = [
   { label: 'Mixed', value: 'mixed' as const },
 ]
 
-const panelTabItems: TabsItem[] = [
-  { label: 'General Info', icon: 'i-lucide-layout-grid', slot: 'layout', value: 'layout' },
-  { label: 'Panel Connections', icon: 'i-lucide-link', slot: 'tabs', value: 'tabs' },
+interface PanelTabItem {
+  label: string
+  value: PanelSubtab
+  icon: string
+}
+
+const panelTabItems: PanelTabItem[] = [
+  { label: 'General Info', icon: 'i-lucide-layout-grid', value: 'layout' },
+  { label: 'Panel Connections', icon: 'i-lucide-link', value: 'tabs' },
 ]
 
 const edgeNames = ['top', 'bottom', 'left', 'right'] as const
@@ -528,18 +502,6 @@ const panelLayout = computed(() => {
 
 const panelWidth = computed(() => panelLayout.value?.totalWidth ?? 0)
 const panelHeight = computed(() => panelLayout.value?.totalHeight ?? 0)
-const effectiveMaxPanelWidth = computed(() => props.teamPanelLimits?.maxWidthMm ?? PANEL_MAX_WIDTH)
-const effectiveMaxPanelHeight = computed(() => props.teamPanelLimits?.maxHeightMm ?? PANEL_MAX_HEIGHT)
-
-const panelExceedsLimits = computed(() => {
-  const w = panelWidth.value
-  const h = panelHeight.value
-  if (w <= 0 || h <= 0) return false
-  // Check both orientations
-  const fitsNormal = w <= effectiveMaxPanelWidth.value && h <= effectiveMaxPanelHeight.value
-  const fitsRotated = h <= effectiveMaxPanelWidth.value && w <= effectiveMaxPanelHeight.value
-  return !fitsNormal && !fitsRotated
-})
 
 const panelSuggestions = ref<PanelSuggestion[]>([])
 const showSuggestions = ref(true)
@@ -1024,3 +986,13 @@ function clampFloat(val: string, min: number, max: number): number {
   return Math.max(min, Math.min(max, n))
 }
 </script>
+
+<style scoped>
+.viewer-tabs-scroller::-webkit-scrollbar {
+  display: none;
+}
+
+.viewer-tabs-scroller {
+  scrollbar-width: none;
+}
+</style>
