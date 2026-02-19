@@ -270,7 +270,7 @@ async function getAccessToken() {
     client_secret: clientSecret,
   })
 
-  const response = await fetch(`${ASANA_BASE_URL}/oauth_token`, {
+  const response = await fetch(`${ASANA_BASE_URL}/-/oauth_token`, {
     method: 'POST',
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
     body,
@@ -390,7 +390,7 @@ function toCompactTask(task, projectGid) {
         if (!acc[fieldName].includes(value)) acc[fieldName].push(value)
         return acc
       }, {})
-    : []
+    : {}
 
   const tags = Array.isArray(task?.tags)
     ? task.tags
