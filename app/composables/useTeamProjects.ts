@@ -375,6 +375,14 @@ export function useTeamProjects() {
 
     if (error) {
       console.error('[useTeamProjects] File record upsert failed:', fileName, error.message)
+      // Rollback: delete the uploaded file from storage
+      const { error: rollbackError } = await supabase.storage
+        .from('gerber-files')
+        .remove([storagePath])
+      if (rollbackError) {
+        console.error('[useTeamProjects] Failed to rollback storage file after DB error:', storagePath, rollbackError.message)
+      }
+      return { file: null, error }
     } else if (data) {
       const key = getProjectPacketKey(projectId, packet)
       projectFilesByPacketCache.delete(key)
@@ -407,23 +415,34 @@ export function useTeamProjects() {
     const maybeProjectId = storagePath.split('/')[1]
     const maybePacket = Number(storagePath.split('/')[2])
 
-    // Delete from storage
-    await supabase.storage.from('gerber-files').remove([storagePath])
-
-    // Delete record
+    // Delete record first
     const { error } = await supabase
       .from('project_files')
       .delete()
       .eq('id', fileId)
 
-    if (!error) {
+    if (error) {
+      console.error('[useTeamProjects] File record deletion failed:', fileId, error.message)
+      return { error }
+    }
+
+    // Only delete from storage if DB deletion succeeded
+    const { error: storageError } = await supabase.storage
+      .from('gerber-files')
+      .remove([storagePath])
+
+    if (storageError) {
+      console.error('[useTeamProjects] Storage deletion failed:', storagePath, storageError.message)
+      // Note: DB record is already deleted, storage file remains
+      // This is less critical than leaving orphaned DB records
+    } else {
       fileTextCache.delete(storagePath)
       if (maybeProjectId && Number.isFinite(maybePacket)) {
         projectFilesByPacketCache.delete(getProjectPacketKey(maybeProjectId, maybePacket))
       }
     }
 
-    return { error }
+    return { error: storageError }
   }
 
   // ── Document operations ────────────────────────────────────────────────
@@ -480,6 +499,14 @@ export function useTeamProjects() {
 
     if (error) {
       console.error('[useTeamProjects] Document record upsert failed:', fileName, error.message)
+      // Rollback: delete the uploaded document from storage
+      const { error: rollbackError } = await supabase.storage
+        .from('gerber-files')
+        .remove([storagePath])
+      if (rollbackError) {
+        console.error('[useTeamProjects] Failed to rollback storage document after DB error:', storagePath, rollbackError.message)
+      }
+      return { doc: null, error }
     } else {
       projectDocumentsCache.delete(projectId)
       documentBlobCache.set(storagePath, data)
@@ -518,19 +545,33 @@ export function useTeamProjects() {
   /** Delete a document */
   async function deleteDocument(docId: string, storagePath: string) {
     const maybeProjectId = storagePath.split('/')[1]
-    await supabase.storage.from('gerber-files').remove([storagePath])
 
+    // Delete record first
     const { error } = await supabase
       .from('project_documents')
       .delete()
       .eq('id', docId)
 
-    if (!error) {
+    if (error) {
+      console.error('[useTeamProjects] Document record deletion failed:', docId, error.message)
+      return { error }
+    }
+
+    // Only delete from storage if DB deletion succeeded
+    const { error: storageError } = await supabase.storage
+      .from('gerber-files')
+      .remove([storagePath])
+
+    if (storageError) {
+      console.error('[useTeamProjects] Storage deletion failed:', storagePath, storageError.message)
+      // Note: DB record is already deleted, storage file remains
+      // This is less critical than leaving orphaned DB records
+    } else {
       documentBlobCache.delete(storagePath)
       if (maybeProjectId) projectDocumentsCache.delete(maybeProjectId)
     }
 
-    return { error }
+    return { error: storageError }
   }
 
   // ── Preview image operations ─────────────────────────────────────────

@@ -119,7 +119,8 @@ serve(async (req: Request) => {
       password: new_password,
     })
     if (updateError) {
-      return new Response(JSON.stringify({ error: updateError.message }), {
+      console.error('[admin-password-reset] Failed to update user password:', updateError)
+      return new Response(JSON.stringify({ error: 'Failed to update password' }), {
         status: 400,
         headers: corsHeaders,
       })
