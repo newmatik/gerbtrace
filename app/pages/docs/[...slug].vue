@@ -31,6 +31,16 @@ useSeoMeta({
 })
 
 const headline = computed(() => findPageHeadline(navigation?.value, page.value?.path))
+
+const safePage = computed(() => {
+  const value = page.value as any
+  if (!value) return value
+  if (!value.body || typeof value.body !== 'object') return value
+  if (!value.body.tags || typeof value.body.tags !== 'object') {
+    value.body.tags = {}
+  }
+  return value
+})
 </script>
 
 <template>
@@ -43,9 +53,9 @@ const headline = computed(() => findPageHeadline(navigation?.value, page.value?.
 
     <UPageBody>
       <ContentRenderer
-        v-if="page"
+        v-if="safePage"
         class="docs-page-content"
-        :value="page"
+        :value="safePage"
       />
 
       <USeparator v-if="surround?.length" />

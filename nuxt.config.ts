@@ -17,6 +17,10 @@ export default defineNuxtConfig({
 
   modules: ['@nuxt/ui', '@nuxt/content', '@sentry/nuxt/module'],
 
+  experimental: {
+    emitRouteChunkError: 'automatic-immediate',
+  },
+
   content: {
     build: {
       markdown: {
