@@ -63,6 +63,9 @@ export function useAuth() {
       session.value = data.session
       user.value = data.session?.user ?? null
       loading.value = false
+    }).catch((error) => {
+      console.error('[useAuth] Failed to get session:', error)
+      loading.value = false
     })
 
     supabase.auth.onAuthStateChange((_event, newSession) => {

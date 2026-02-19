@@ -276,7 +276,13 @@ export function useTeamMembers() {
         fetchMembers()
       })
 
-    await channel.subscribe()
+    await channel.subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        console.log('[useTeamMembers] Real-time subscription established')
+      } else if (status === 'CHANNEL_ERROR') {
+        console.error('[useTeamMembers] Real-time subscription failed')
+      }
+    })
 
     onCleanup(() => {
       supabase.removeChannel(channel)

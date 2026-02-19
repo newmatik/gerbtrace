@@ -136,7 +136,13 @@ export function useTeamThtPackages() {
         }
       })
 
-    await channel.subscribe()
+    await channel.subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        console.log('[useTeamThtPackages] Real-time subscription established')
+      } else if (status === 'CHANNEL_ERROR') {
+        console.error('[useTeamThtPackages] Real-time subscription failed')
+      }
+    })
 
     onCleanup(() => {
       supabase.removeChannel(channel)

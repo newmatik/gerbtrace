@@ -32,11 +32,16 @@ export function useSupabase(): SupabaseClient {
 
   if (!url || !key) {
     console.warn('[Supabase] Missing SUPABASE_URL or SUPABASE_ANON_KEY — collaborative features disabled')
-    // Create a dummy client pointing to production Supabase to prevent crashes.
-    // All requests will fail gracefully.
+    // Create a dummy client that throws clear errors instead of failing silently
     _available = false
-    _client = createClient('https://gqrnlnlfidighosujpdb.supabase.co', 'dummy-key-not-configured', {
-      auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
+    _client = new Proxy({} as SupabaseClient, {
+      get(target, prop) {
+        return new Proxy(() => {}, {
+          apply() {
+            throw new Error('[Supabase] Supabase is not configured. Check your SUPABASE_URL and SUPABASE_ANON_KEY environment variables.')
+          }
+        })
+      }
     })
     return _client
   }
