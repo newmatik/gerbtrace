@@ -10,24 +10,14 @@
           Paste Application
         </div>
 
-        <div class="space-y-1">
-          <button
-            v-for="opt in modeOptions"
-            :key="opt.value"
-            type="button"
-            class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-left text-xs transition-colors"
-            :class="localSettings.mode === opt.value
-              ? 'bg-primary/10 text-primary ring-1 ring-primary/30'
-              : 'text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'"
-            @click="updateMode(opt.value)"
-          >
-            <UIcon :name="opt.icon" class="text-base shrink-0" />
-            <div class="min-w-0">
-              <div class="font-medium leading-tight">{{ opt.label }}</div>
-              <div class="text-[10px] text-neutral-400 leading-tight mt-0.5">{{ opt.description }}</div>
-            </div>
-          </button>
-        </div>
+        <URadioGroup
+          :model-value="localSettings.mode"
+          :items="modeRadioItems"
+          value-key="value"
+          label-key="label"
+          size="sm"
+          @update:model-value="(value) => updateMode(value as PasteMode)"
+        />
       </div>
 
       <!-- Section: Jetprint Parameters (visible only in jetprint mode) -->
@@ -51,14 +41,14 @@
                 <label class="text-[10px] text-neutral-400">Dot Diameter</label>
                 <span class="text-[10px] text-neutral-500 tabular-nums">{{ localSettings.dotDiameter.toFixed(2) }} mm</span>
               </div>
-              <input
-                :value="localSettings.dotDiameter"
-                type="range"
+              <UInput
+                :model-value="localSettings.dotDiameter"
+                type="number"
+                size="xs"
                 :min="DOT_DIAMETER_MIN"
                 :max="DOT_DIAMETER_MAX"
                 step="0.01"
-                class="w-full accent-primary h-1"
-                @input="updateDotDiameter(parseFloat(($event.target as HTMLInputElement).value))"
+                @update:model-value="(value) => updateDotDiameter(Number(value))"
               />
               <div class="flex justify-between text-[9px] text-neutral-400">
                 <span>{{ DOT_DIAMETER_MIN }} mm</span>
@@ -72,14 +62,14 @@
                 <label class="text-[10px] text-neutral-400">Dot Spacing</label>
                 <span class="text-[10px] text-neutral-500 tabular-nums">{{ localSettings.dotSpacing.toFixed(2) }} mm</span>
               </div>
-              <input
-                :value="localSettings.dotSpacing"
-                type="range"
+              <UInput
+                :model-value="localSettings.dotSpacing"
+                type="number"
+                size="xs"
                 :min="DOT_SPACING_MIN"
                 :max="DOT_SPACING_MAX"
                 step="0.01"
-                class="w-full accent-primary h-1"
-                @input="updateDotSpacing(parseFloat(($event.target as HTMLInputElement).value))"
+                @update:model-value="(value) => updateDotSpacing(Number(value))"
               />
               <div class="flex justify-between text-[9px] text-neutral-400">
                 <span>{{ DOT_SPACING_MIN }} mm</span>
@@ -90,21 +80,15 @@
             <!-- Dot Pattern -->
             <div class="space-y-1.5">
               <label class="text-[10px] text-neutral-400">Dot Pattern</label>
-              <div class="grid grid-cols-2 gap-1.5">
-                <button
-                  v-for="opt in patternOptions"
-                  :key="opt.value"
-                  type="button"
-                  class="flex items-center justify-center gap-1.5 px-2 py-1.5 rounded text-[11px] font-medium transition-colors"
-                  :class="localSettings.pattern === opt.value
-                    ? 'bg-primary/10 text-primary ring-1 ring-primary/30'
-                    : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700'"
-                  @click="updatePattern(opt.value)"
-                >
-                  <UIcon :name="opt.icon" class="text-sm" />
-                  {{ opt.label }}
-                </button>
-              </div>
+              <URadioGroup
+                :model-value="localSettings.pattern"
+                :items="patternRadioItems"
+                value-key="value"
+                label-key="label"
+                size="sm"
+                orientation="horizontal"
+                @update:model-value="(value) => updatePattern(value as DotPattern)"
+              />
             </div>
 
             <!-- Dynamic Dot Control -->
@@ -170,6 +154,9 @@ const patternOptions: { value: DotPattern; label: string; icon: string }[] = [
   { value: 'grid', label: 'Grid', icon: 'i-lucide-grid-3x3' },
   { value: 'hex', label: 'Hex', icon: 'i-lucide-hexagon' },
 ]
+
+const modeRadioItems = modeOptions.map(opt => ({ value: opt.value, label: opt.label, description: opt.description }))
+const patternRadioItems = patternOptions.map(opt => ({ value: opt.value, label: opt.label }))
 
 function updateMode(mode: PasteMode) {
   emit('update:pasteSettings', { ...localSettings.value, mode })

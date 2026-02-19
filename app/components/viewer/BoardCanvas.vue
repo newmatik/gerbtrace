@@ -233,6 +233,7 @@ function componentSignature(components: EditablePnPComponent[] | undefined): str
     comp.side,
     comp.componentType,
     comp.polarized ? 1 : 0,
+    comp.dnp ? 1 : 0,
   ].join(':')).join('|')
 }
 
@@ -1718,7 +1719,7 @@ watch(
 )
 
 watch(
-  () => `${componentSignature(props.pnpComponents)}|${props.selectedPnpDesignator ?? ''}|${props.showPackages ? 1 : 0}|${props.pnpConvention ?? 'iec61188'}|${props.packageLibraryVersion ?? 0}|${props.pnpOriginX ?? ''}|${props.pnpOriginY ?? ''}`,
+  () => `${componentSignature(props.pnpComponents)}|${props.selectedPnpDesignator ?? ''}|${props.showPackages ? 1 : 0}|${props.pnpConvention ?? 'iec61188'}|${props.packageLibraryVersion ?? 0}|${props.pnpOriginX ?? ''}|${props.pnpOriginY ?? ''}|${props.showDnpHighlight !== false ? 1 : 0}`,
   () => scheduleRedraw(),
 )
 

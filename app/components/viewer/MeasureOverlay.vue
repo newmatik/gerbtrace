@@ -142,16 +142,25 @@ const props = defineProps<{
 const copied = ref(false)
 let copyTimeout: ReturnType<typeof setTimeout> | null = null
 
+onUnmounted(() => {
+  if (copyTimeout) clearTimeout(copyTimeout)
+  copyTimeout = null
+})
+
 function copyDistance() {
   const dist = formattedDistance.value
   if (!dist) return
   const offset = formattedOffset.value
   const text = offset ? `${dist}\n${offset}` : dist
-  navigator.clipboard.writeText(text).then(() => {
-    copied.value = true
-    if (copyTimeout) clearTimeout(copyTimeout)
-    copyTimeout = setTimeout(() => { copied.value = false }, 1500)
-  })
+  navigator.clipboard.writeText(text)
+    .then(() => {
+      copied.value = true
+      if (copyTimeout) clearTimeout(copyTimeout)
+      copyTimeout = setTimeout(() => { copied.value = false }, 1500)
+    })
+    .catch(() => {
+      copied.value = false
+    })
 }
 
 function toScreen(gx: number, gy: number) {

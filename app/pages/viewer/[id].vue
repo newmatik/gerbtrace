@@ -1700,21 +1700,27 @@ function isStringArray(value: unknown): value is string[] {
 }
 
 function sortBySavedOrder<T>(items: T[], getKey: (item: T) => string, savedOrder: string[], fallbackSort: (items: T[]) => T[]): T[] {
-  const keyToItem = new Map<string, T>()
-  for (const item of items) keyToItem.set(getKey(item), item)
-
-  const ordered: T[] = []
-  const used = new Set<string>()
-  for (const key of savedOrder) {
-    const item = keyToItem.get(key)
-    if (!item || used.has(key)) continue
-    ordered.push(item)
-    used.add(key)
+  const rank = new Map<string, number>()
+  for (let i = 0; i < savedOrder.length; i++) {
+    const key = savedOrder[i]
+    if (!rank.has(key)) rank.set(key, i)
   }
 
-  const remaining = items.filter((item) => !used.has(getKey(item)))
-  if (remaining.length === 0) return ordered
-  return [...ordered, ...fallbackSort(remaining)]
+  const inOrder: Array<{ item: T; rank: number; index: number }> = []
+  const remaining: T[] = []
+
+  items.forEach((item, index) => {
+    const itemRank = rank.get(getKey(item))
+    if (itemRank == null) {
+      remaining.push(item)
+      return
+    }
+    inOrder.push({ item, rank: itemRank, index })
+  })
+
+  inOrder.sort((a, b) => a.rank - b.rank || a.index - b.index)
+  if (remaining.length === 0) return inOrder.map(entry => entry.item)
+  return [...inOrder.map(entry => entry.item), ...fallbackSort(remaining)]
 }
 
 function applyLayerOrder(nextLayers: LayerInfo[]): LayerInfo[] {
@@ -3126,6 +3132,7 @@ watch(documentOrder, (order) => {
 
 // BOM pricing fetch handlers
 async function handleFetchAllPricing() {
+  if (!ensureTabEditable('bom')) return
   const updatedCache = await elexess.fetchAllPricing(
     bom.bomLines.value as BomLine[],
     bom.pricingCache.value as Record<string, any>,
@@ -3134,6 +3141,7 @@ async function handleFetchAllPricing() {
 }
 
 async function handleFetchSinglePricing(partNumber: string) {
+  if (!ensureTabEditable('bom')) return
   const entry = await elexess.fetchSinglePricing(partNumber)
   if (entry) {
     bom.updateSinglePricing(partNumber, entry.data)

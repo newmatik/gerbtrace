@@ -4,6 +4,10 @@ import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
+if (typeof globalThis.fetch !== 'function') {
+  throw new Error('This script requires Node.js 18+ (or a fetch polyfill) because global fetch is not available.')
+}
+
 const ASANA_BASE_URL = 'https://app.asana.com/api/1.0'
 const DEFAULT_PROJECT_GID = '1213295870034201'
 const DEFAULT_CONCURRENCY = 5
@@ -86,6 +90,7 @@ const COMPACT_TASK_OPT_FIELDS = [
   'completed',
   'tags.name',
   'memberships.section.name',
+  'memberships.project.gid',
   'custom_fields.name',
   'custom_fields.display_value',
 ].join(',')
@@ -370,7 +375,12 @@ async function mapWithConcurrency(items, limit, worker) {
   return results
 }
 
-function toCompactTask(task) {
+function getMembershipForProject(task, projectGid) {
+  if (!Array.isArray(task?.memberships)) return null
+  return task.memberships.find((membership) => membership?.project?.gid === projectGid) ?? null
+}
+
+function toCompactTask(task, projectGid) {
   const customFields = Array.isArray(task?.custom_fields)
     ? task.custom_fields.reduce((acc, field) => {
         const fieldName = field?.name
@@ -388,13 +398,7 @@ function toCompactTask(task) {
         .filter((tagName) => typeof tagName === 'string' && tagName.length > 0)
     : []
 
-  const section = Array.isArray(task?.memberships)
-    ? (
-        task.memberships
-          .map((membership) => membership?.section?.name)
-          .find((name) => typeof name === 'string' && name.length > 0) || null
-      )
-    : null
+  const section = getMembershipForProject(task, projectGid)?.section?.name ?? null
 
   const normalizedFields = Object.entries(customFields).reduce((acc, [fieldName, values]) => {
     if (!Array.isArray(values) || values.length === 0) return acc
@@ -420,18 +424,13 @@ function toCompactComment(comment) {
   return author ? `${author}: ${text}` : text
 }
 
-function getPrimarySectionName(task) {
-  if (!Array.isArray(task?.memberships)) return null
-  return (
-    task.memberships
-      .map((membership) => membership?.section?.name)
-      .find((name) => typeof name === 'string' && name.length > 0) || null
-  )
+function getPrimarySectionName(task, projectGid) {
+  return getMembershipForProject(task, projectGid)?.section?.name ?? null
 }
 
-function shouldExcludeTask(task) {
+function shouldExcludeTask(task, projectGid) {
   if (task?.completed) return true
-  const sectionName = getPrimarySectionName(task)
+  const sectionName = getPrimarySectionName(task, projectGid)
   if (!sectionName) return false
   return EXCLUDED_SECTION_NAMES.has(sectionName.trim().toLowerCase())
 }
@@ -454,14 +453,14 @@ function stripEmpty(value) {
   return value
 }
 
-async function getTaskWithComments(taskStub, accessToken, includeStories, full) {
+async function getTaskWithComments(taskStub, accessToken, includeStories, full, projectGid) {
   const taskGid = taskStub.gid
   const taskFields = full ? FULL_TASK_OPT_FIELDS : COMPACT_TASK_OPT_FIELDS
   const commentFields = full ? FULL_COMMENT_OPT_FIELDS : COMPACT_COMMENT_OPT_FIELDS
   const taskDetailPayload = await asanaGet(`/tasks/${taskGid}?opt_fields=${encodeURIComponent(taskFields)}`, accessToken)
   const rawTask = taskDetailPayload?.data || taskStub
-  if (shouldExcludeTask(rawTask)) return null
-  const task = full ? rawTask : toCompactTask(rawTask)
+  if (shouldExcludeTask(rawTask, projectGid)) return null
+  const task = full ? rawTask : toCompactTask(rawTask, projectGid)
 
   if (!includeStories) {
     return { ...task, comments: [] }
@@ -480,7 +479,7 @@ async function getTaskWithComments(taskStub, accessToken, includeStories, full) 
 
 async function writeOutput(outputPath, payload) {
   const finalPath = outputPath || getDefaultOutputPath()
-  const parentDir = finalPath.includes('/') ? finalPath.slice(0, finalPath.lastIndexOf('/')) : ''
+  const parentDir = path.dirname(finalPath)
   if (parentDir) {
     await fs.mkdir(parentDir, { recursive: true })
   }
@@ -536,7 +535,7 @@ async function runExport(argv) {
   )
 
   const tasks = await mapWithConcurrency(taskStubs, args.concurrency, (taskStub) =>
-    getTaskWithComments(taskStub, accessToken, args.includeStories, args.full),
+    getTaskWithComments(taskStub, accessToken, args.includeStories, args.full, args.projectGid),
   )
   const filteredTasks = tasks.filter(Boolean)
   await writeOutput(args.output, { tasks: filteredTasks })
