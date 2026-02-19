@@ -12,7 +12,7 @@ Production Supabase runs on **Supabase Cloud**, NOT on a self-hosted droplet.
 
 - **Project ID:** `gqrnlnlfidighosujpdb`
 - **Region:** `eu-central-1`
-- **Public endpoint:** `api.gerbtrace.com` (nginx reverse proxy to Supabase Cloud)
+- **Public endpoint:** `https://gqrnlnlfidighosujpdb.supabase.co` (direct Supabase Cloud URL)
 
 ## Applying migrations
 
@@ -51,4 +51,4 @@ execute_sql(
 - **NEVER use SSH to the old droplet for database operations** — the droplet database is no longer production.
 - Supabase Cloud auto-reloads the PostgREST schema cache after `apply_migration`.
 - Follow the idempotency rules in `supabase-migration-safety.mdc`.
-- The old droplet nginx at `api.gerbtrace.com` reverse-proxies to Supabase Cloud.
+- The old droplet and nginx proxy are retired; use the Supabase Cloud URL directly.

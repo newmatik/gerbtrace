@@ -195,9 +195,9 @@ export function useTeamProjects() {
   }
 
   /** Get a single project by ID */
-  async function getProject(projectId: string): Promise<TeamProject | null> {
+  async function getProject(projectId: string, options?: { force?: boolean }): Promise<TeamProject | null> {
     const cached = projectByIdCache.get(projectId)
-    if (cached) return cached
+    if (!options?.force && cached) return cached
 
     const { data, error } = await supabase
       .from('projects')
@@ -249,7 +249,7 @@ export function useTeamProjects() {
       .update(updates)
       .eq('id', projectId)
       .select()
-      .maybeSingle()
+      .single()
 
     if (!error && data) {
       projectByIdCache.set(projectId, data as unknown as TeamProject)

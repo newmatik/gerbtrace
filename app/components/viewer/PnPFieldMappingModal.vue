@@ -20,7 +20,7 @@
               <span v-if="field.required" class="text-red-400">*</span>
             </label>
             <USelect
-              :model-value="mapping[field.key] != null ? String(mapping[field.key]) : ''"
+              :model-value="mapping[field.key] != null ? String(mapping[field.key]) : UNMAPPED_VALUE"
               :items="headerOptions"
               value-key="value"
               label-key="label"
@@ -89,6 +89,7 @@ const mappableFields: { key: keyof PnPColumnMapping; label: string; required: bo
 ]
 
 const mapping = reactive<PnPColumnMapping>({})
+const UNMAPPED_VALUE = '__not_mapped__'
 
 watch(
   () => props.initialMapping,
@@ -99,7 +100,7 @@ watch(
 )
 
 const headerOptions = computed(() => [
-  { value: '', label: '-- Not mapped --' },
+  { value: UNMAPPED_VALUE, label: '-- Not mapped --' },
   ...props.headers.map((header, idx) => ({
     value: String(idx),
     label: header || `Column ${idx + 1}`,
@@ -110,7 +111,7 @@ const previewRows = computed(() => props.rows.slice(0, 3))
 
 function onFieldChange(key: keyof PnPColumnMapping, value: unknown) {
   const raw = String(value ?? '')
-  mapping[key] = raw === '' ? undefined : Number(raw)
+  mapping[key] = raw === UNMAPPED_VALUE ? undefined : Number(raw)
 }
 
 const isValid = computed(() => {
