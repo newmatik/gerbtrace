@@ -472,9 +472,23 @@
             <div v-else class="text-[11px] text-neutral-400">
               Files are locked. Import is disabled.
             </div>
+            <div
+              v-if="importLayerWarnings.length > 0"
+              class="mt-2 rounded-md border border-amber-300/70 dark:border-amber-500/40 bg-amber-50/70 dark:bg-amber-500/10 p-2"
+            >
+              <div class="text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
+                Import checks
+              </div>
+              <ul class="mt-1 space-y-0.5 text-[11px] text-amber-800 dark:text-amber-200">
+                <li v-for="warning in importLayerWarnings" :key="warning">
+                  - {{ warning }}
+                </li>
+              </ul>
+            </div>
           </div>
           <FilesPanel
             v-model:selected-layer-file-name="filesSelectedLayerFileName"
+            v-model:selected-layer-index="filesSelectedLayerIndex"
             v-model:selected-doc-id="filesSelectedDocId"
             :layers="layers"
             :documents="documents"
@@ -507,6 +521,20 @@
                 <UIcon name="i-lucide-file" class="text-sm text-blue-500 shrink-0" />
                 <span class="text-xs font-medium text-neutral-700 dark:text-neutral-200 truncate">{{ filesSelectedLayer.file.fileName }}</span>
                 <UBadge size="xs" variant="subtle" color="neutral" class="shrink-0">{{ filesSelectedLayer.type }}</UBadge>
+                <template v-if="isSelectedLayerImportConfigurable">
+                  <div class="flex items-center gap-1.5 ml-1">
+                    <USelect
+                      v-if="isSelectedLayerPnp"
+                      :model-value="selectedLayerPnpUnit"
+                      :items="pnpUnitItems"
+                      value-key="value"
+                      label-key="label"
+                      size="xs"
+                      class="w-28"
+                      @update:model-value="updateSelectedLayerPnpUnit($event)"
+                    />
+                  </div>
+                </template>
                 <div class="flex-1" />
                 <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-download" @click="downloadSelectedLayer">
                   Download
@@ -556,11 +584,31 @@
             </div>
 
             <div class="flex-1 min-h-0 overflow-hidden">
-              <div v-if="filesSelectedLayer" class="h-full overflow-auto p-4">
-                <pre class="text-[11px] leading-relaxed font-mono whitespace-pre-wrap break-words text-neutral-700 dark:text-neutral-200">{{ filesSelectedLayer.file.content }}</pre>
+              <div v-if="filesSelectedLayer" class="h-full">
+                <FileTablePreview
+                  v-if="isTabularPreviewFileName(filesSelectedLayer.file.fileName)"
+                  :key="`layer-${filesSelectedLayer.file.fileName}`"
+                  :file-name="filesSelectedLayer.file.fileName"
+                  :text-content="filesSelectedLayer.file.content"
+                  :skip-rows="selectedLayerSkipRows"
+                  :mapping="selectedLayerMappingByField"
+                  :mapping-fields="selectedLayerMappingFields"
+                  @update:skip-rows="updateSelectedLayerSkipRows"
+                  @update:mapping="updateSelectedLayerMappingByField"
+                />
+                <div v-else class="h-full overflow-auto p-4">
+                  <pre class="text-[11px] leading-relaxed font-mono whitespace-pre-wrap break-words text-neutral-700 dark:text-neutral-200">{{ filesSelectedLayer.file.content }}</pre>
+                </div>
               </div>
               <div v-else-if="filesSelectedDoc" class="h-full">
+                <FileTablePreview
+                  v-if="isTabularPreviewFileName(filesSelectedDoc.name)"
+                  :key="`doc-${filesSelectedDoc.id}`"
+                  :file-name="filesSelectedDoc.name"
+                  :blob-url="filesSelectedDoc.blobUrl"
+                />
                 <iframe
+                  v-else
                   :src="filesSelectedDoc.blobUrl + '#toolbar=0'"
                   class="w-full h-full border-0"
                   title="Document preview"
@@ -738,7 +786,7 @@
             </UPopover>
           </div>
           <main class="flex-1 min-w-0 overflow-hidden">
-            <PricingPanel
+            <LazyPricingPanel
               :pcb-data="pcbData"
               :bom-lines="(bom.bomLines.value as BomLine[])"
               :pricing-cache="(bom.pricingCache.value as any)"
@@ -797,7 +845,7 @@
     />
 
     <!-- PnP export modal -->
-    <PnPExportModal
+    <LazyPnPExportModal
       v-model:open="showPnPExport"
       :default-convention="pnp.convention.value"
       :components="pnp.allComponents.value"
@@ -808,7 +856,7 @@
     />
 
     <!-- Image export modal -->
-    <ImageExportModal
+    <LazyImageExportModal
       v-model:open="showImageExport"
       :has-pn-p="pnp.hasPnP.value"
       :board-size-mm="imageExportTarget === 'panel' ? (panelDimensionsMm ?? undefined) : boardSizeMm"
@@ -817,7 +865,7 @@
     />
 
     <!-- Component edit modal -->
-    <ComponentEditModal
+    <LazyComponentEditModal
       v-model:open="showComponentEdit"
       :component="editingComponent"
       :package-options="editingComponent?.componentType === 'tht' ? thtPackageOptions : packageOptions"
@@ -837,15 +885,6 @@
       @delete:component="handleDeleteComponent($event)"
       @assign:group="assignEditingComponentGroup($event)"
       @preview:package="previewPkgOverride = $event"
-    />
-
-    <!-- BOM field mapping modal -->
-    <BomFieldMappingModal
-      v-model:open="showBomFieldMapping"
-      :headers="[...(bom.pendingParseResult.value?.headers ?? [])]"
-      :rows="(bom.pendingParseResult.value?.rows ?? []).map(r => [...r])"
-      @confirm="handleBomFieldMappingConfirm"
-      @cancel="handleBomFieldMappingCancel"
     />
 
     <!-- Overwrite confirmation modal -->
@@ -869,8 +908,6 @@
 <script setup lang="ts">
 import type { GerberFile, LayerInfo, LayerFilter } from '~/utils/gerber-helpers'
 import type { SourceRange, ImageTree, BoundingBox } from '@lib/gerber/types'
-import { parseGerber } from '@lib/gerber'
-import { plotImageTree } from '@lib/gerber/plotter'
 import { mergeBounds, emptyBounds, isEmpty } from '@lib/gerber/bounding-box'
 import { sortLayersByPcbOrder, isTopLayer, isBottomLayer, isSharedLayer, getColorForType, isPnPLayer } from '~/utils/gerber-helpers'
 import type { BomLine, BomColumnMapping } from '~/utils/bom-types'
@@ -882,17 +919,16 @@ import type { PcbThicknessMm } from '~/utils/pcb-pricing'
 import type { PnPConvention } from '~/utils/pnp-conventions'
 import type { PnPExportFormat, PnPExportSideMode } from '~/utils/pnp-export'
 import { generatePnPExport, getPnPExportExtension, getPnPExportMimeType } from '~/utils/pnp-export'
-import { exportRealisticSvg } from '../../../lib/renderer/svg-exporter'
-import * as SvgExporter from '../../../lib/renderer/svg-exporter'
 import { removeSourceRanges } from '@lib/gerber/editor'
-import JSZip from 'jszip'
+import { parseBomFile } from '~/utils/bom-parser'
+import { parsePnPPreview, type PnPColumnMapping, type PnPCoordUnit } from '~/utils/pnp-parser'
 
 const route = useRoute()
 const rawId = route.params.id as string
 const isTeamProject = rawId.startsWith('team-')
 const projectId = isTeamProject ? 0 : Number(rawId) // local projects use numeric IDs
 const teamProjectId = isTeamProject ? rawId.replace('team-', '') : null
-const { getProject, getFiles, addFiles, upsertFiles, clearFiles, renameFile, removeFile, getOriginalFiles, storeOriginalFiles, renameOriginalFile, removeOriginalFile, renameProject, updateFileLayerType, updateFileContent, updateProjectOrigin, updateProjectConvention, updateProjectRotationOverrides, updateProjectDnp, updateProjectCadPackageMap, updateProjectPolarizedOverrides, updateProjectComponentNotes, updateProjectFieldOverrides, updateProjectManualComponents, updateProjectDeletedComponents, updateProjectSortSmd, updateProjectSortTht, updateProjectManualOrderSmd, updateProjectManualOrderTht, updateProjectComponentGroups, updateProjectGroupAssignments, updateBomLines, updateBomPricingCache, updateBomBoardQuantity, updatePcbData, updatePanelData, updatePasteSettings: updateLocalPasteSettings, updateLayerOrder: updateLocalLayerOrder, updateDocumentOrder: updateLocalDocumentOrder, getDocuments, addDocument, removeDocument: removeDocumentFromDb, updateDocumentType: updateDocumentTypeInDb } = useProject()
+const { getProject, getFiles, addFiles, upsertFiles, clearFiles, renameFile, removeFile, getOriginalFiles, storeOriginalFiles, renameOriginalFile, removeOriginalFile, renameProject, updateFileLayerType, updateFileContent, updateProjectOrigin, updateProjectConvention, updateProjectRotationOverrides, updateProjectDnp, updateProjectCadPackageMap, updateProjectPolarizedOverrides, updateProjectComponentNotes, updateProjectFieldOverrides, updateProjectManualComponents, updateProjectDeletedComponents, updateProjectSortSmd, updateProjectSortTht, updateProjectManualOrderSmd, updateProjectManualOrderTht, updateProjectComponentGroups, updateProjectGroupAssignments, updateBomLines, updateBomPricingCache, updateBomBoardQuantity, updatePcbData, updatePanelData, updatePasteSettings: updateLocalPasteSettings, updateLayerOrder: updateLocalLayerOrder, updateDocumentOrder: updateLocalDocumentOrder, updateBomFileImportOptions: updateLocalBomFileImportOptions, updatePnpFileImportOptions: updateLocalPnpFileImportOptions, getDocuments, addDocument, removeDocument: removeDocumentFromDb, updateDocumentType: updateDocumentTypeInDb } = useProject()
 
 // ── Team project support ──
 const teamProjectIdRef = ref(teamProjectId)
@@ -1076,6 +1112,16 @@ watch(() => projectSync?.project.value?.document_order, (next) => {
   documentOrder.value = [...next]
   documents.value = applyDocumentOrder(documents.value)
   syncDocumentOrderFromDocuments()
+}, { deep: true })
+
+watch(() => projectSync?.project.value?.bom_file_import_options, (next) => {
+  if (!next || typeof next !== 'object') return
+  bom.setFileImportOptionsMap(next)
+}, { deep: true })
+
+watch(() => projectSync?.project.value?.pnp_file_import_options, (next) => {
+  if (!next || typeof next !== 'object') return
+  pnp.setFileImportOptionsMap(next)
 }, { deep: true })
 
 onMounted(() => {
@@ -1945,6 +1991,7 @@ const editingComponent = ref<import('~/composables/usePickAndPlace').EditablePnP
 const performanceSnapshot = ref<{
   fpsApprox?: number
   frameMs?: number
+  importToVisibleMs?: number
   longTaskCount30s?: number
   memorySupported?: boolean
   heapUsedBytes?: number
@@ -1965,8 +2012,28 @@ let perfFrameReq = 0
 let perfRefreshTimer: ReturnType<typeof setInterval> | null = null
 let perfLastRafTs = 0
 let perfFrameMs = 0
+const importPerfStartMs = ref<number | null>(null)
+const importToVisibleMs = ref(0)
 const longTaskTimestamps: number[] = []
 let longTaskObserver: PerformanceObserver | null = null
+
+function markImportVisible() {
+  if (importPerfStartMs.value == null) return
+  importToVisibleMs.value = performance.now() - importPerfStartMs.value
+  importPerfStartMs.value = null
+}
+
+watch(
+  () => layers.value.map(layer => `${layer.file.fileName}:${layer.file.content.length}:${layer.type}`).join('|'),
+  () => {
+    importPerfStartMs.value = performance.now()
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        markImportVisible()
+      })
+    })
+  },
+)
 
 function estimateProjectBytes(): number {
   const encoder = new TextEncoder()
@@ -2052,6 +2119,7 @@ async function refreshPerformanceSnapshot() {
   performanceSnapshot.value = {
     fpsApprox: perfFrameMs > 0 ? 1000 / perfFrameMs : 0,
     frameMs: perfFrameMs,
+    importToVisibleMs: importToVisibleMs.value,
     longTaskCount30s: longTaskTimestamps.length,
     memorySupported: !!mem,
     heapUsedBytes: mem?.usedJSHeapSize ?? 0,
@@ -2112,7 +2180,7 @@ watch(_liveBoardSizeMm, (dims) => {
 
 // Gerber-based fallback: compute board dimensions directly from layer data.
 // Needed when BoardCanvas has never mounted (e.g. page opened on panel tab).
-const _gerberImageTreeCache = new Map<string, ImageTree>()
+const gerberTreeCache = useGerberImageTreeCache()
 const _gerberBoardSizeMm = computed<{ width: number; height: number } | undefined>(() => {
   const ls = layers.value
   if (ls.length === 0) return undefined
@@ -2152,21 +2220,48 @@ const _gerberBoardSizeMm = computed<{ width: number; height: number } | undefine
 
 
 function _parseLayerTree(layer: LayerInfo): ImageTree | null {
-  const key = layer.file.fileName
-  if (_gerberImageTreeCache.has(key)) return _gerberImageTreeCache.get(key)!
-  try {
-    const ast = parseGerber(layer.file.content)
-    const tree = plotImageTree(ast)
-    _gerberImageTreeCache.set(key, tree)
-    return tree
-  } catch {
-    return null
-  }
+  return gerberTreeCache.getOrParseSync(layer)
 }
 
 const boardSizeMm = computed<{ width: number; height: number } | undefined>(() => {
   return _liveBoardSizeMm.value ?? _cachedBoardSizeMm.value ?? _gerberBoardSizeMm.value
 })
+
+let gerberPrewarmTimer: ReturnType<typeof setTimeout> | null = null
+watch(
+  () => layers.value
+    .filter(layer => !isPnPLayer(layer.type))
+    .map((layer) => {
+      const content = layer.file.content
+      return `${layer.file.fileName}:${content.length}:${content.slice(0, 32)}:${content.slice(-32)}`
+    })
+    .join('|'),
+  () => {
+    if (gerberPrewarmTimer) clearTimeout(gerberPrewarmTimer)
+    gerberPrewarmTimer = setTimeout(() => {
+      const targetLayers = layers.value.filter(layer => !isPnPLayer(layer.type))
+      gerberTreeCache.prewarmLayers(targetLayers).catch(() => {})
+    }, 40)
+  },
+  { immediate: true },
+)
+
+function roundBoardMm(value: number): number {
+  return Math.round(value * 100) / 100
+}
+
+watch(boardSizeMm, (dims) => {
+  if (!dims) return
+  const current = pcbData.value ?? {}
+  const nextSizeX = current.sizeX ?? roundBoardMm(dims.width)
+  const nextSizeY = current.sizeY ?? roundBoardMm(dims.height)
+  if (current.sizeX === nextSizeX && current.sizeY === nextSizeY) return
+  pcbData.value = {
+    ...current,
+    sizeX: nextSizeX,
+    sizeY: nextSizeY,
+  }
+}, { immediate: true })
 
 /** Count copper layers from loaded Gerber files to suggest PCB layer count */
 const detectedLayerCount = computed<number | null>(() => {
@@ -2212,6 +2307,36 @@ const downloadMenuItems = computed(() => {
 
 const outlineLayer = computed(() => layers.value.find(l => l.type === 'Outline') || undefined)
 const hasOutline = computed(() => layers.value.some(l => l.type === 'Outline'))
+const importLayerWarnings = computed<string[]>(() => {
+  if (layers.value.length === 0) return []
+
+  const types = layers.value.map(l => l.type)
+  const hasTopCopper = types.includes('Top Copper')
+  const hasBottomCopper = types.includes('Bottom Copper')
+  const innerLayerCount = types.filter(t => t === 'Inner Layer').length
+  const hasAnyCopper = hasTopCopper || hasBottomCopper || innerLayerCount > 0
+  const hasDrill = types.includes('Drill')
+  const hasOutlineLike = types.includes('Outline') || types.includes('Keep-Out')
+  const configuredLayerCount = Number(pcbData.value?.layerCount ?? 0)
+
+  const warnings: string[] = []
+  if (!hasAnyCopper) {
+    warnings.push('No copper layers detected. Check file types for Top/Bottom/Inner copper.')
+  }
+  if (!hasDrill) {
+    warnings.push('No drill layer detected. Through-hole and via data may be incomplete.')
+  }
+  if (!hasOutlineLike) {
+    warnings.push('No outline layer detected. Board dimensions/cropping may be inaccurate.')
+  }
+  if (hasTopCopper !== hasBottomCopper) {
+    warnings.push('Only one outer copper side is detected (Top or Bottom).')
+  }
+  if (configuredLayerCount > 2 && innerLayerCount === 0) {
+    warnings.push(`Layer count is set to ${configuredLayerCount} but no inner copper layers were detected.`)
+  }
+  return warnings
+})
 
 // ── Pick & Place ──
 const pnp = usePickAndPlace(layers)
@@ -2536,18 +2661,152 @@ const selectedDocument = computed(() => documents.value.find(d => d.id === selec
 
 // Files page selection (raw file/doc preview)
 const filesSelectedLayerFileName = ref<string | null>(null)
+const filesSelectedLayerIndex = ref<number | null>(null)
 const filesSelectedDocId = ref<string | null>(null)
-const filesSelectedLayer = computed(() => layers.value.find(l => l.file.fileName === filesSelectedLayerFileName.value) ?? null)
+const filesSelectedLayer = computed(() => {
+  const selectedIndex = filesSelectedLayerIndex.value
+  if (typeof selectedIndex === 'number' && selectedIndex >= 0 && selectedIndex < layers.value.length) {
+    const byIndex = layers.value[selectedIndex] ?? null
+    if (!filesSelectedLayerFileName.value || byIndex?.file.fileName === filesSelectedLayerFileName.value) {
+      return byIndex
+    }
+  }
+  return layers.value.find(l => l.file.fileName === filesSelectedLayerFileName.value) ?? null
+})
 const filesSelectedDoc = computed(() => documents.value.find(d => d.id === filesSelectedDocId.value) ?? null)
+const isSelectedLayerBom = computed(() => !!filesSelectedLayer.value && filesSelectedLayer.value.type === 'BOM')
+const isSelectedLayerPnp = computed(() => !!filesSelectedLayer.value && isPnPLayer(filesSelectedLayer.value.type))
+const isSelectedLayerImportConfigurable = computed(() => isSelectedLayerBom.value || isSelectedLayerPnp.value)
+const bomMappingFields: { key: keyof BomColumnMapping; label: string }[] = [
+  { key: 'references', label: 'References' },
+  { key: 'quantity', label: 'Quantity' },
+  { key: 'description', label: 'Description' },
+  { key: 'type', label: 'Type' },
+  { key: 'customerProvided', label: 'Customer Provided' },
+  { key: 'customerItemNo', label: 'Customer Item No' },
+  { key: 'package', label: 'Package' },
+  { key: 'comment', label: 'Comment' },
+  { key: 'manufacturer', label: 'Manufacturer' },
+  { key: 'manufacturerPart', label: 'Manufacturer Part' },
+]
+const pnpMappingFields: { key: keyof PnPColumnMapping; label: string }[] = [
+  { key: 'designator', label: 'Designator' },
+  { key: 'x', label: 'X' },
+  { key: 'y', label: 'Y' },
+  { key: 'rotation', label: 'Rotation' },
+  { key: 'value', label: 'Value' },
+  { key: 'package', label: 'Package' },
+  { key: 'side', label: 'Side' },
+]
+const pnpUnitItems = [
+  { label: 'Unit: Auto', value: 'auto' as const },
+  { label: 'Unit: mm', value: 'mm' as const },
+  { label: 'Unit: mils', value: 'mils' as const },
+  { label: 'Unit: inches', value: 'inches' as const },
+]
+const selectedLayerSkipRows = computed(() => {
+  const layer = filesSelectedLayer.value
+  if (!layer) return 0
+  if (isSelectedLayerBom.value) return bom.fileImportOptions.value[layer.file.fileName]?.skipRows ?? 0
+  if (isSelectedLayerPnp.value) return pnp.fileImportOptions.value[layer.file.fileName]?.skipRows ?? 0
+  return 0
+})
+const selectedLayerPnpUnit = computed<'auto' | PnPCoordUnit>(() => {
+  const layer = filesSelectedLayer.value
+  if (!layer || !isSelectedLayerPnp.value) return 'auto'
+  return pnp.fileImportOptions.value[layer.file.fileName]?.unitOverride ?? 'auto'
+})
+const selectedLayerBomMapping = computed<BomColumnMapping>(() => {
+  const layer = filesSelectedLayer.value
+  if (!layer || !isSelectedLayerBom.value) return {}
+  const fileName = layer.file.fileName
+  const opts = bom.fileImportOptions.value[fileName]
+  if (opts?.mapping) return opts.mapping
+  const auto = parseBomFile(fileName, layer.file.content, { skipRows: opts?.skipRows }).mapping
+  return auto ?? {}
+})
+const selectedLayerPnpMapping = computed<PnPColumnMapping>(() => {
+  const layer = filesSelectedLayer.value
+  if (!layer || !isSelectedLayerPnp.value) return {}
+  const fileName = layer.file.fileName
+  const opts = pnp.fileImportOptions.value[fileName]
+  if (opts?.mapping) return opts.mapping
+  const auto = parsePnPPreview(layer.file.content, {
+    skipRows: opts?.skipRows,
+    unitOverride: resolveSelectedPnpUnitOverride(fileName),
+  }, fileName).mapping
+  return auto ?? {}
+})
+const selectedLayerMappingFields = computed<Array<{ key: string; label: string }>>(() => {
+  if (isSelectedLayerBom.value) return bomMappingFields.map(f => ({ key: f.key, label: f.label }))
+  if (isSelectedLayerPnp.value) return pnpMappingFields.map(f => ({ key: f.key, label: f.label }))
+  return []
+})
+const selectedLayerMappingByField = computed<Record<string, number | undefined>>(() => {
+  if (isSelectedLayerBom.value) return { ...selectedLayerBomMapping.value }
+  if (isSelectedLayerPnp.value) return { ...selectedLayerPnpMapping.value }
+  return {}
+})
+
+function isTabularPreviewFileName(fileName: string): boolean {
+  return /\.(csv|tsv|txt|xlsx|xls)$/i.test(fileName)
+}
+
+function updateSelectedLayerPnpUnit(value: unknown) {
+  const layer = filesSelectedLayer.value
+  if (!layer || !isSelectedLayerPnp.value) return
+  const raw = String(value ?? 'auto')
+  const unitOverride: 'auto' | PnPCoordUnit =
+    raw === 'mm' || raw === 'mils' || raw === 'inches' ? raw : 'auto'
+  const prev = pnp.fileImportOptions.value[layer.file.fileName] ?? {}
+  pnp.setFileImportOptions(layer.file.fileName, { ...prev, unitOverride })
+}
+
+function updateSelectedLayerSkipRows(value: number) {
+  const layer = filesSelectedLayer.value
+  if (!layer) return
+  const skipRows = Math.max(0, Number(value) || 0)
+  if (isSelectedLayerBom.value) {
+    const prev = bom.fileImportOptions.value[layer.file.fileName] ?? {}
+    bom.setFileImportOptions(layer.file.fileName, { ...prev, skipRows })
+    return
+  }
+  if (isSelectedLayerPnp.value) {
+    const prev = pnp.fileImportOptions.value[layer.file.fileName] ?? {}
+    pnp.setFileImportOptions(layer.file.fileName, { ...prev, skipRows })
+  }
+}
+
+function updateSelectedLayerMappingByField(next: Record<string, number | undefined>) {
+  const layer = filesSelectedLayer.value
+  if (!layer) return
+  if (isSelectedLayerBom.value) {
+    const prev = bom.fileImportOptions.value[layer.file.fileName] ?? {}
+    bom.setFileImportOptions(layer.file.fileName, { ...prev, mapping: next as BomColumnMapping })
+    return
+  }
+  if (isSelectedLayerPnp.value) {
+    const prev = pnp.fileImportOptions.value[layer.file.fileName] ?? {}
+    pnp.setFileImportOptions(layer.file.fileName, { ...prev, mapping: next as PnPColumnMapping })
+  }
+}
+
+function resolveSelectedPnpUnitOverride(layerFileName: string): PnPCoordUnit | undefined {
+  const fileOverride = pnp.fileImportOptions.value[layerFileName]?.unitOverride
+  if (fileOverride && fileOverride !== 'auto') return fileOverride
+  return pnp.coordUnitOverride.value === 'auto' ? undefined : pnp.coordUnitOverride.value
+}
 
 watch(sidebarTab, (tab) => {
   if (tab !== 'files') return
   if (filesSelectedLayerFileName.value || filesSelectedDocId.value) return
   if (layers.value.length > 0) {
+    filesSelectedLayerIndex.value = 0
     filesSelectedLayerFileName.value = layers.value[0].file.fileName
     filesSelectedDocId.value = null
   } else if (documents.value.length > 0) {
     filesSelectedDocId.value = documents.value[0].id
+    filesSelectedLayerIndex.value = null
     filesSelectedLayerFileName.value = null
   }
 }, { immediate: true })
@@ -2591,6 +2850,7 @@ async function handleDocumentsAdd(files: File[]) {
   if (firstNewId) {
     selectedDocumentId.value = firstNewId
     filesSelectedDocId.value = firstNewId
+    filesSelectedLayerIndex.value = null
     filesSelectedLayerFileName.value = null
     sidebarTab.value = 'files'
   }
@@ -2609,6 +2869,7 @@ async function handleDocumentRemove(id: string) {
   }
   if (filesSelectedDocId.value === id) {
     filesSelectedDocId.value = documents.value.length > 0 ? documents.value[0].id : null
+    filesSelectedLayerIndex.value = null
   }
   // Switch away from docs tab when all documents are removed
   if (documents.value.length === 0 && sidebarTab.value === 'docs') {
@@ -2648,7 +2909,23 @@ function downloadDocument(id: string) {
 function downloadLayer(index: number) {
   const layer = layers.value[index]
   if (!layer) return
-  const blob = new Blob([layer.file.content], { type: 'text/plain;charset=utf-8' })
+  const lowerName = layer.file.fileName.toLowerCase()
+  let blob: Blob
+
+  if ((lowerName.endsWith('.xlsx') || lowerName.endsWith('.xls')) && /^data:.*;base64,/i.test(layer.file.content)) {
+    const match = layer.file.content.match(/^data:(.*);base64,(.+)$/i)
+    if (match?.[2]) {
+      const binary = atob(match[2])
+      const bytes = new Uint8Array(binary.length)
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+      blob = new Blob([bytes], { type: match[1] || 'application/octet-stream' })
+    } else {
+      blob = new Blob([layer.file.content], { type: 'text/plain;charset=utf-8' })
+    }
+  } else {
+    blob = new Blob([layer.file.content], { type: 'text/plain;charset=utf-8' })
+  }
+
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
@@ -2679,6 +2956,7 @@ function handleDocumentTypeUpdate(id: string, type: DocumentType) {
 onUnmounted(() => {
   for (const doc of documents.value) URL.revokeObjectURL(doc.blobUrl)
   if (perfRefreshTimer) clearInterval(perfRefreshTimer)
+  if (gerberPrewarmTimer) clearTimeout(gerberPrewarmTimer)
   stopPerfFrameLoop()
   stopLongTaskObserver()
 })
@@ -2763,7 +3041,6 @@ const bomDesignators = computed(() => {
   return s
 })
 
-const showBomFieldMapping = ref(false)
 
 // Auto-switch to SMD tab when PnP layers appear for the first time
 // (skip if the URL already specified a tab)
@@ -2821,7 +3098,9 @@ watch(
 
 // Show field mapping modal when needed
 watch(bom.needsFieldMapping, (needs) => {
-  if (needs) showBomFieldMapping.value = true
+  // Mapping is now adjusted inline in the Files tab table mapping popover.
+  // Keep this watcher to acknowledge unresolved mappings without forcing a modal.
+  void needs
 })
 
 // Keep group assignments clean when components/groups change.
@@ -3082,6 +3361,26 @@ watch(() => bom.boardQuantity.value, (qty) => {
   }
 })
 
+watch(bom.fileImportOptionsRecord, (options) => {
+  if (!hasLoadedProjectData.value) return
+  const snapshot = { ...options }
+  if (isTeamProject) {
+    persistToProject({ bomFileImportOptions: snapshot })
+  } else {
+    updateLocalBomFileImportOptions(projectId, snapshot)
+  }
+}, { deep: true })
+
+watch(pnp.fileImportOptionsRecord, (options) => {
+  if (!hasLoadedProjectData.value) return
+  const snapshot = { ...options }
+  if (isTeamProject) {
+    persistToProject({ pnpFileImportOptions: snapshot })
+  } else {
+    updateLocalPnpFileImportOptions(projectId, snapshot)
+  }
+}, { deep: true })
+
 watch(pcbData, (data) => {
   if (!hasLoadedProjectData.value) return
   if (isTeamProject) {
@@ -3195,16 +3494,6 @@ function handleManualOrderUpdate(type: 'smd' | 'tht', value: string[]) {
   if (!ensureTabEditable(type)) return
   if (type === 'smd') pnpManualOrderSmd.value = value
   else pnpManualOrderTht.value = value
-}
-
-function handleBomFieldMappingConfirm(mapping: BomColumnMapping) {
-  bom.applyFieldMapping(mapping)
-  showBomFieldMapping.value = false
-}
-
-function handleBomFieldMappingCancel() {
-  bom.cancelFieldMapping()
-  showBomFieldMapping.value = false
 }
 
 // Update PnP convention and persist
@@ -3429,6 +3718,8 @@ onMounted(async () => {
         pasteSettings: tp.paste_settings,
         layerOrder: tp.layer_order,
         documentOrder: tp.document_order,
+        bomFileImportOptions: tp.bom_file_import_options,
+        pnpFileImportOptions: tp.pnp_file_import_options,
       }
     }
   } else {
@@ -3580,6 +3871,8 @@ onMounted(async () => {
   }
   bom.setPricingCache(restoredCache)
   bom.setBoardQuantity(project.value?.bomBoardQuantity)
+  bom.setFileImportOptionsMap(project.value?.bomFileImportOptions)
+  pnp.setFileImportOptionsMap(project.value?.pnpFileImportOptions)
 
   // Restore persisted PCB data
   pcbData.value = project.value?.pcbData ?? null
@@ -4082,8 +4375,26 @@ async function handleUndo() {
 
 // ── Download Gerber handler ──
 
+let jsZipCtorPromise: Promise<any> | null = null
+function loadJsZipCtor(): Promise<any> {
+  if (!jsZipCtorPromise) {
+    jsZipCtorPromise = import('jszip').then(mod => (mod as any).default ?? mod)
+  }
+  return jsZipCtorPromise
+}
+
+type SvgExporterModule = typeof import('../../../lib/renderer/svg-exporter')
+let svgExporterPromise: Promise<SvgExporterModule> | null = null
+function loadSvgExporter(): Promise<SvgExporterModule> {
+  if (!svgExporterPromise) {
+    svgExporterPromise = import('../../../lib/renderer/svg-exporter')
+  }
+  return svgExporterPromise
+}
+
 async function handleDownloadGerber() {
-  const zip = new JSZip()
+  const JSZipCtor = await loadJsZipCtor()
+  const zip = new JSZipCtor()
   for (const layer of layers.value) {
     // Skip PnP layers from Gerber download
     if (isPnPLayer(layer.type)) continue
@@ -4104,13 +4415,13 @@ async function handleExportPng() {
   triggerDownload(blob, `${project.value?.name || 'pcb'}-${mirrored.value ? 'bottom' : 'top'}.png`)
 }
 
-function handleExportSvg() {
+async function handleExportSvg() {
   const canvas = boardCanvasRef.value
   if (!canvas) return
   const side = mirrored.value ? 'bottom' : 'top'
   const realisticLayers = canvas.getRealisticLayersForExport(side)
-
-  const svgString = exportRealisticSvg(realisticLayers, selectedPreset.value, side)
+  const svgExporter = await loadSvgExporter()
+  const svgString = svgExporter.exportRealisticSvg(realisticLayers, selectedPreset.value, side)
   const blob = new Blob([svgString], { type: 'image/svg+xml' })
   triggerDownload(blob, `${project.value?.name || 'pcb'}-${side}.svg`)
 }
@@ -4126,8 +4437,9 @@ async function handleExportImage(options: { format: 'png' | 'svg'; componentsMod
 async function handleExportBoardImage(options: { format: 'png' | 'svg'; componentsMode: 'none' | 'smd' | 'tht' | 'all' | 'both'; sideMode: 'top' | 'bottom' | 'both'; dpi: number }) {
   const canvas = boardCanvasRef.value
   if (!canvas) return
+  const svgExporter = await loadSvgExporter()
   // Ensure SVG exporter uses fresh footprint shapes (not stale cached data)
-  ;(SvgExporter as any).clearFootprintCaches?.()
+  ;(svgExporter as any).clearFootprintCaches?.()
 
   const projectName = project.value?.name || 'pcb'
   const sides: Array<'top' | 'bottom'> = options.sideMode === 'both' ? ['top', 'bottom'] : [options.sideMode]
@@ -4167,12 +4479,12 @@ async function handleExportBoardImage(options: { format: 'png' | 'svg'; componen
     // SVG
     const realisticLayers = canvas.getRealisticLayersForExport(side)
     if (!withComponents) {
-      const svgString = exportRealisticSvg(realisticLayers, selectedPreset.value, side)
+      const svgString = svgExporter.exportRealisticSvg(realisticLayers, selectedPreset.value, side)
       return new Blob([svgString], { type: 'image/svg+xml' })
     }
 
     const comps = buildComponentsForSide(side)
-    const svgString = (SvgExporter as any).exportRealisticSvgWithComponents(realisticLayers, selectedPreset.value, side, {
+    const svgString = (svgExporter as any).exportRealisticSvgWithComponents(realisticLayers, selectedPreset.value, side, {
       components: comps,
       pnpOriginX: pnp.originX.value,
       pnpOriginY: pnp.originY.value,
@@ -4199,7 +4511,8 @@ async function handleExportBoardImage(options: { format: 'png' | 'svg'; componen
     return
   }
 
-  const zip = new JSZip()
+  const JSZipCtor = await loadJsZipCtor()
+  const zip = new JSZipCtor()
   for (const side of sides) {
     for (const withComponents of variants) {
       const blob = await renderOne(side, withComponents)
@@ -4287,7 +4600,8 @@ async function handleExportPanelImage(options: { format: 'png' | 'svg'; componen
     return
   }
 
-  const zip = new JSZip()
+  const JSZipCtor = await loadJsZipCtor()
+  const zip = new JSZipCtor()
   for (const side of sides) {
     for (const withComponents of variants) {
       const blob = await renderOne(side, withComponents)
@@ -4364,7 +4678,8 @@ async function handleExportPnP(options: { convention: PnPConvention; format: PnP
     const blob = new Blob([content], { type: mimeType })
     triggerDownload(blob, files[0]!.filename)
   } else {
-    const zip = new JSZip()
+    const JSZipCtor = await loadJsZipCtor()
+    const zip = new JSZipCtor()
     for (const f of files) {
       zip.file(f.filename, buildExport(f.components))
     }

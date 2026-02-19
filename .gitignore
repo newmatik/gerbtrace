@@ -5,6 +5,9 @@
 .nitro
 .cache
 
+# Backups
+backups/
+
 # Node dependencies
 node_modules
 

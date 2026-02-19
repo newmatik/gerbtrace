@@ -11,12 +11,17 @@ import { parseBomFile, buildBomLines } from '~/utils/bom-parser'
 import type { BomParseResult } from '~/utils/bom-parser'
 import type { BomLine, BomManufacturer, BomColumnMapping, BomPricingCache, BomLineType } from '~/utils/bom-types'
 
+interface BomFileImportOptions {
+  skipRows?: number
+  mapping?: BomColumnMapping
+}
+
 export function useBom(layers: Ref<LayerInfo[]>) {
   // ── Core state ──
   /** The current (editable) BOM lines (may be persisted / modified). */
-  const bomLines = ref<BomLine[]>([])
+  const bomLines = shallowRef<BomLine[]>([])
   /** Parsed BOM lines from customer-provided BOM files (baseline for diff-highlighting). */
-  const customerBomLines = ref<BomLine[]>([])
+  const customerBomLines = shallowRef<BomLine[]>([])
   const pricingCache = ref<BomPricingCache>({})
   const boardQuantity = ref(1)
 
@@ -24,6 +29,7 @@ export function useBom(layers: Ref<LayerInfo[]>) {
   const needsFieldMapping = ref(false)
   const pendingParseResult = ref<BomParseResult | null>(null)
   const hasPersistedBomLines = ref(false)
+  const fileImportOptions = ref<Record<string, BomFileImportOptions>>({})
 
   // ── Derived state ──
   const hasBom = computed(() => {
@@ -37,10 +43,21 @@ export function useBom(layers: Ref<LayerInfo[]>) {
 
   // ── Search / filter ──
   const searchQuery = ref('')
+  const debouncedSearchQuery = ref('')
+  let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null
+  watch(searchQuery, (query) => {
+    if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
+    searchDebounceTimer = setTimeout(() => {
+      debouncedSearchQuery.value = query
+    }, 120)
+  }, { immediate: true })
+  onScopeDispose(() => {
+    if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
+  })
 
   const filteredLines = computed(() => {
-    if (!searchQuery.value.trim()) return bomLines.value
-    const q = searchQuery.value.toLowerCase()
+    if (!debouncedSearchQuery.value.trim()) return bomLines.value
+    const q = debouncedSearchQuery.value.toLowerCase()
     return bomLines.value.filter(line =>
       line.description.toLowerCase().includes(q)
       || line.references.toLowerCase().includes(q)
@@ -55,17 +72,20 @@ export function useBom(layers: Ref<LayerInfo[]>) {
   })
 
   // ── Watch layers for BOM files and auto-parse ──
-  const parsedCustomerFileNames = new Set<string>()
+  function parseAllBomLayers() {
+    customerBomLines.value = []
+    needsFieldMapping.value = false
+    pendingParseResult.value = null
+    if (!hasPersistedBomLines.value) {
+      bomLines.value = []
+    }
 
-  watch(bomLayers, (current) => {
-    for (const layer of current) {
-      if (parsedCustomerFileNames.has(layer.file.fileName)) continue
-      parsedCustomerFileNames.add(layer.file.fileName)
-
-      const result = parseBomFile(layer.file.fileName, layer.file.content)
+    for (const layer of bomLayers.value) {
+      const opts = fileImportOptions.value[layer.file.fileName]
+      const result = parseBomFile(layer.file.fileName, layer.file.content, opts)
 
       if (result.lines) {
-        // Auto-mapping succeeded — merge into baseline, and into editable BOM only if not restored from persistence yet.
+        // Auto/Manual mapping succeeded — merge into baseline, and into editable BOM only if not restored from persistence yet.
         mergeParsedCustomerLines(result.lines)
         if (!hasPersistedBomLines.value) {
           mergeParsedLines(result.lines)
@@ -76,22 +96,38 @@ export function useBom(layers: Ref<LayerInfo[]>) {
         needsFieldMapping.value = true
       }
     }
+  }
+
+  const bomLayerSignature = computed(() =>
+    bomLayers.value
+      .map(layer => `${layer.file.fileName}:${layer.file.content.length}:${layer.type}`)
+      .join('|'),
+  )
+  const bomImportOptionSignature = computed(() =>
+    JSON.stringify(fileImportOptions.value),
+  )
+  watch([bomLayerSignature, bomImportOptionSignature], () => {
+    parseAllBomLayers()
   }, { immediate: true })
 
   function mergeParsedCustomerLines(newLines: BomLine[]) {
     const existingKeys = new Set(customerBomLines.value.map(l => l.references))
+    const merged = [...customerBomLines.value]
     for (const line of newLines) {
       if (line.references && existingKeys.has(line.references)) continue
-      customerBomLines.value.push(line)
+      merged.push(line)
     }
+    customerBomLines.value = merged
   }
 
   function mergeParsedLines(newLines: BomLine[]) {
     const existingRefs = new Set(bomLines.value.map(l => l.references))
+    const merged = [...bomLines.value]
     for (const line of newLines) {
       if (line.references && existingRefs.has(line.references)) continue
-      bomLines.value.push(line)
+      merged.push(line)
     }
+    bomLines.value = merged
   }
 
   // ── Field mapping resolution ──
@@ -104,6 +140,17 @@ export function useBom(layers: Ref<LayerInfo[]>) {
     }
     pendingParseResult.value = null
     needsFieldMapping.value = false
+  }
+
+  function setFileImportOptions(fileName: string, options: BomFileImportOptions) {
+    fileImportOptions.value = {
+      ...fileImportOptions.value,
+      [fileName]: { ...options },
+    }
+  }
+
+  function setFileImportOptionsMap(optionsMap: Record<string, BomFileImportOptions> | null | undefined) {
+    fileImportOptions.value = optionsMap ? { ...optionsMap } : {}
   }
 
   function cancelFieldMapping() {
@@ -179,6 +226,7 @@ export function useBom(layers: Ref<LayerInfo[]>) {
   const bomLinesRecord = computed<BomLine[]>(() => bomLines.value.map(l => ({ ...l })))
   const customerBomLinesRecord = computed<BomLine[]>(() => customerBomLines.value.map(l => ({ ...l })))
   const pricingCacheRecord = computed<BomPricingCache>(() => ({ ...pricingCache.value }))
+  const fileImportOptionsRecord = computed<Record<string, BomFileImportOptions>>(() => ({ ...fileImportOptions.value }))
 
   // ── Restore from persisted data ──
 
@@ -211,11 +259,15 @@ export function useBom(layers: Ref<LayerInfo[]>) {
     bomLines.value = []
     customerBomLines.value = []
     pricingCache.value = {}
-    parsedCustomerFileNames.clear()
+    fileImportOptions.value = {}
     needsFieldMapping.value = false
     pendingParseResult.value = null
     searchQuery.value = ''
     hasPersistedBomLines.value = false
+    if (searchDebounceTimer) {
+      clearTimeout(searchDebounceTimer)
+      searchDebounceTimer = null
+    }
   }
 
   return {
@@ -233,6 +285,9 @@ export function useBom(layers: Ref<LayerInfo[]>) {
     pendingParseResult: readonly(pendingParseResult),
     applyFieldMapping,
     cancelFieldMapping,
+    setFileImportOptions,
+    setFileImportOptionsMap,
+    fileImportOptions: readonly(fileImportOptions),
 
     // CRUD
     addLine,
@@ -249,6 +304,7 @@ export function useBom(layers: Ref<LayerInfo[]>) {
     bomLinesRecord,
     customerBomLinesRecord,
     pricingCacheRecord,
+    fileImportOptionsRecord,
     setBomLines,
     setPricingCache,
     setBoardQuantity,

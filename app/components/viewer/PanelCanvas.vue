@@ -25,8 +25,6 @@ import { renderRealisticView } from '@lib/renderer/realistic-renderer'
 import type { RealisticLayers } from '@lib/renderer/realistic-renderer'
 import { generateJetprintDots } from '@lib/renderer/jetprint-dots'
 import type { PasteSettings } from '~/composables/usePasteSettings'
-import { parseGerber } from '@lib/gerber'
-import { plotImageTree } from '@lib/gerber/plotter'
 import { mergeBounds, emptyBounds, isEmpty } from '@lib/gerber/bounding-box'
 import type { PanelConfig, DangerZoneConfig, AddedRoutingPath } from '~/utils/panel-types'
 import { evenTabPositions } from '~/utils/panel-types'
@@ -36,6 +34,7 @@ import type { PackageDefinition, FootprintShape } from '~/utils/package-types'
 import { computeFootprint, getConventionRotationTransform } from '~/utils/package-types'
 import { computeThtFootprint, type THTPackageDefinition, type ColoredFootprintShape } from '~/utils/tht-package-types'
 import type { PnPConvention } from '~/utils/pnp-conventions'
+import { useGerberImageTreeCache } from '~/composables/useGerberImageTreeCache'
 
 export type ViewMode = 'layers' | 'realistic'
 
@@ -206,8 +205,7 @@ function acquireCanvas(w: number, h: number): HTMLCanvasElement {
 }
 function releaseCanvas(c: HTMLCanvasElement) { _canvasPool.push(c) }
 
-// Gerber parsing cache
-const imageTreeCache = new Map<string, ImageTree>()
+const gerberTreeCache = useGerberImageTreeCache()
 const PERF_ENABLED = import.meta.dev
   && typeof window !== 'undefined'
   && !!(window as any).__GERBTRACE_PERF__
@@ -303,19 +301,23 @@ function panelGeometrySignature(): string {
   })
 }
 
+function addedRoutingSignature(paths: AddedRoutingPath[] | undefined): string {
+  if (!paths || paths.length === 0) return ''
+  return paths.map(path => [
+    path.id,
+    path.x1,
+    path.y1,
+    path.x2,
+    path.y2,
+  ].join(':')).join('|')
+}
+
 function getImageTree(layer: LayerInfo): ImageTree | null {
   if (isPnPLayer(layer.type)) return null
-  const key = layer.file.fileName
-  if (imageTreeCache.has(key)) return imageTreeCache.get(key)!
-  try {
-    const ast = parseGerber(layer.file.content)
-    const tree = plotImageTree(ast)
-    imageTreeCache.set(key, tree)
-    return tree
-  } catch (e) {
-    console.warn(`Failed to parse ${layer.file.fileName}:`, e)
-    return null
-  }
+  const tree = gerberTreeCache.getOrParseSync(layer)
+  if (tree) return tree
+  console.warn(`Failed to parse ${layer.file.fileName}`)
+  return null
 }
 
 function detectUnits(): 'mm' | 'in' {
@@ -3006,12 +3008,34 @@ function scheduleRedraw() {
 }
 
 watch(
-  () => `${props.interaction.transform.value.offsetX}|${props.interaction.transform.value.offsetY}|${props.interaction.transform.value.scale}|${props.mirrored ? 1 : 0}|${appSettings.gridEnabled ? 1 : 0}|${appSettings.gridSpacingMm}|${bgColor.value}|${tabEditMode.value}|${addedRoutingEditMode.value}`,
+  () => [
+    props.interaction.transform.value.offsetX,
+    props.interaction.transform.value.offsetY,
+    props.interaction.transform.value.scale,
+    props.mirrored,
+    appSettings.gridEnabled,
+    appSettings.gridSpacingMm,
+    bgColor.value,
+    tabEditMode.value,
+    addedRoutingEditMode.value,
+  ],
   () => scheduleRedraw(),
 )
 
 watch(
-  () => `${props.viewMode ?? 'layers'}|${props.preset?.name ?? ''}|${props.activeFilter ?? 'all'}|${layerSignature(props.layers)}|${allLayerSignature(props.allLayers)}|${props.pasteSettings?.mode ?? 'stencil'}|${props.pasteSettings?.dotDiameter ?? 0}|${props.pasteSettings?.dotSpacing ?? 0}|${props.pasteSettings?.pattern ?? 'hex'}|${props.pasteSettings?.highlightDots ? 1 : 0}|${props.pasteSettings?.dynamicDots ? 1 : 0}`,
+  () => [
+    props.viewMode ?? 'layers',
+    props.preset?.name ?? '',
+    props.activeFilter ?? 'all',
+    layerSignature(props.layers),
+    allLayerSignature(props.allLayers),
+    props.pasteSettings?.mode ?? 'stencil',
+    props.pasteSettings?.dotDiameter ?? 0,
+    props.pasteSettings?.dotSpacing ?? 0,
+    props.pasteSettings?.pattern ?? 'hex',
+    props.pasteSettings?.highlightDots,
+    props.pasteSettings?.dynamicDots,
+  ],
   () => {
     invalidatePanelRenderCaches()
     scheduleRedraw()
@@ -3028,7 +3052,7 @@ watch(
 )
 
 watch(
-  () => JSON.stringify(props.panelConfig.addedRoutings ?? []),
+  () => addedRoutingSignature(props.panelConfig.addedRoutings),
   () => {
     invalidatePanelRenderCaches()
     scheduleRedraw()
@@ -3036,7 +3060,11 @@ watch(
 )
 
 watch(
-  () => `${componentSignature(props.pnpComponents)}|${props.showPackages ? 1 : 0}|${props.pnpConvention ?? 'iec61188'}`,
+  () => [
+    componentSignature(props.pnpComponents),
+    props.showPackages,
+    props.pnpConvention ?? 'iec61188',
+  ],
   () => {
     componentTileCache = cleanupTileCache(componentTileCache)
     scheduleRedraw()
@@ -3044,7 +3072,7 @@ watch(
 )
 
 watch(
-  () => `${props.dangerZone?.enabled ? 1 : 0}|${props.dangerZone?.insetMm ?? 0}`,
+  () => [props.dangerZone?.enabled, props.dangerZone?.insetMm ?? 0],
   () => scheduleRedraw(),
 )
 
@@ -3283,7 +3311,7 @@ function getPerformanceStats() {
       ? { width: _dzCache.canvas.width, height: _dzCache.canvas.height, estimatedBytes: dangerBytes }
       : null,
     canvasPoolSize: _canvasPool.length,
-    parsedLayerCacheSize: imageTreeCache.size,
+    parsedLayerCacheSize: gerberTreeCache.getCacheSize(),
     footprintCacheSize: footprintCache.size,
     thtFootprintCacheSize: thtFootprintCache.size,
   }

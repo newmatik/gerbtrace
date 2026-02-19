@@ -359,9 +359,9 @@ export function computePanelLayout(
   for (let i = 0; i < countX - 1; i++) {
     const gapStart = colX[i] + pcbW
     const gapWidth = colGaps[i]
-    // Keep frame continuity when top/bottom are not routed.
-    const y1Full = isEdgeRouted('top') ? 0 : frameTop
-    const y2Full = isEdgeRouted('bottom') ? totalHeight : totalHeight - frameBottom
+    // Keep frame continuity on top/bottom rails.
+    const y1Full = frameTop
+    const y2Full = totalHeight - frameBottom
 
     if (!hasVerticalRouted) {
       if (xSupportGaps.includes(i) && gapWidth > 0) {
@@ -394,9 +394,9 @@ export function computePanelLayout(
   for (let i = 0; i < countY - 1; i++) {
     const gapStart = rowY[i] + pcbH
     const gapHeight = rowGaps[i]
-    // Keep frame continuity when left/right are not routed.
-    const x1Full = isEdgeRouted('left') ? 0 : frameLeft
-    const x2Full = isEdgeRouted('right') ? totalWidth : totalWidth - frameRight
+    // Keep frame continuity on left/right rails.
+    const x1Full = frameLeft
+    const x2Full = totalWidth - frameRight
 
     if (!hasHorizontalRouted) {
       if (ySupportGaps.includes(i) && gapHeight > 0) {
@@ -665,6 +665,11 @@ export function computePanelLayout(
         case 'top-left':
           if (!hasFrameTop || !hasFrameLeft) continue
           fx = insetLeft
+          fy = insetTop
+          break
+        case 'top-right':
+          if (!hasFrameTop || !hasFrameRight) continue
+          fx = totalWidth - insetRight
           fy = insetTop
           break
         case 'bottom-left':

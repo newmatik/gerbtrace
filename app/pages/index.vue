@@ -241,6 +241,13 @@
     <footer class="py-4 px-4 flex items-center justify-center gap-3 text-[11px] text-neutral-400 dark:text-neutral-500">
       <span class="font-mono">v{{ appVersion }}</span>
       <span class="opacity-30">|</span>
+      <NuxtLink
+        to="/docs"
+        class="hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+      >
+        Docs
+      </NuxtLink>
+      <span class="opacity-30">|</span>
       <button class="hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors" @click="aboutOpen = true">
         About
       </button>

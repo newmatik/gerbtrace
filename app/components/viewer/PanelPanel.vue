@@ -418,6 +418,7 @@ function isPanelEdgeRouted(config: PanelConfig, edge: PanelEdge): boolean {
 
 const fiducialPositionOptions = [
   { label: 'Top-left', value: 'top-left' as FiducialPosition },
+  { label: 'Top-right', value: 'top-right' as FiducialPosition },
   { label: 'Bot-left', value: 'bottom-left' as FiducialPosition },
   { label: 'Bot-right', value: 'bottom-right' as FiducialPosition },
 ]

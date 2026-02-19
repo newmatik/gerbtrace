@@ -211,37 +211,85 @@ export interface BomParseResult {
   mapping: BomColumnMapping | null
   /** If mapping was found, the assembled BOM lines */
   lines: BomLine[] | null
+  /** Delimiter used for CSV-like files */
+  delimiter?: Delimiter
+  /** Detected header row index within the scanned data (after skipRows) */
+  headerRowIndex?: number
+}
+
+export interface BomParseOptions {
+  skipRows?: number
+  mapping?: BomColumnMapping
+}
+
+function countMappedColumns(mapping: BomColumnMapping | null): number {
+  if (!mapping) return 0
+  let count = 0
+  for (const val of Object.values(mapping)) {
+    if (val !== undefined) count++
+  }
+  return count
 }
 
 /**
  * Parse a CSV/TSV string into headers + rows.
  */
-export function parseBomCsv(content: string): BomParseResult {
+export function parseBomCsv(content: string, options?: BomParseOptions): BomParseResult {
   const delimiter = detectDelimiter(content)
   const rawLines = content.split(/\r?\n/).filter(l => l.trim() !== '')
   if (rawLines.length === 0) return { headers: [], rows: [], mapping: null, lines: null }
 
-  const headers = splitLine(rawLines[0]!, delimiter)
-  const rows = rawLines.slice(1).map(l => splitLine(l, delimiter))
+  const skipRows = Math.max(0, options?.skipRows ?? 0)
+  const linesToScan = rawLines.slice(skipRows)
+  if (linesToScan.length === 0) return { headers: [], rows: [], mapping: null, lines: null, delimiter, headerRowIndex: 0 }
 
-  const mapping = autoMapBomColumns(headers)
+  if (options?.mapping) {
+    const headers = splitLine(linesToScan[0]!, delimiter)
+    const rows = linesToScan.slice(1).map(l => splitLine(l, delimiter))
+    const lines = buildBomLines(rows, options.mapping)
+    return { headers, rows, mapping: options.mapping, lines, delimiter, headerRowIndex: 0 }
+  }
+
+  let bestHeaderIndex = 0
+  let bestMapping: BomColumnMapping | null = null
+  let bestScore = -1
+  const scanLimit = Math.min(linesToScan.length, 30)
+
+  for (let i = 0; i < scanLimit; i++) {
+    const candidateHeaders = splitLine(linesToScan[i]!, delimiter)
+    const candidateMapping = autoMapBomColumns(candidateHeaders)
+    const score = countMappedColumns(candidateMapping)
+    if (score > bestScore) {
+      bestScore = score
+      bestHeaderIndex = i
+      bestMapping = candidateMapping
+    }
+  }
+
+  const headers = splitLine(linesToScan[bestHeaderIndex]!, delimiter)
+  const rows = linesToScan.slice(bestHeaderIndex + 1).map(l => splitLine(l, delimiter))
+  const mapping = bestMapping
   const lines = mapping ? buildBomLines(rows, mapping) : null
 
-  return { headers, rows, mapping, lines }
+  return { headers, rows, mapping, lines, delimiter, headerRowIndex: bestHeaderIndex }
 }
 
 /**
  * Parse an Excel file (ArrayBuffer) into headers + rows.
  * Uses the first sheet.
  */
-export function parseBomExcel(buffer: ArrayBuffer): BomParseResult {
-  let wb
+export function parseBomExcel(buffer: ArrayBuffer, options?: BomParseOptions): BomParseResult {
+  let wb: XLSX.WorkBook
   try {
     wb = XLSX.read(buffer, { type: 'array' })
   } catch (e) {
     console.warn('[BOM] Failed to parse Excel file:', e)
     return { headers: [], rows: [], mapping: null, lines: null }
   }
+  return parseBomWorkbook(wb, options)
+}
+
+function parseBomWorkbook(wb: XLSX.WorkBook, options?: BomParseOptions): BomParseResult {
   const sheetName = wb.SheetNames[0]
   if (!sheetName) return { headers: [], rows: [], mapping: null, lines: null }
 
@@ -250,13 +298,52 @@ export function parseBomExcel(buffer: ArrayBuffer): BomParseResult {
 
   if (data.length === 0) return { headers: [], rows: [], mapping: null, lines: null }
 
-  const headers = data[0]!.map(String)
-  const rows = data.slice(1).map(row => row.map(String))
+  const skipRows = Math.max(0, options?.skipRows ?? 0)
+  const rowsToScan = data.slice(skipRows).map(row => row.map(String))
+  if (rowsToScan.length === 0) return { headers: [], rows: [], mapping: null, lines: null, headerRowIndex: 0 }
 
-  const mapping = autoMapBomColumns(headers)
+  if (options?.mapping) {
+    const headers = rowsToScan[0] ?? []
+    const rows = rowsToScan.slice(1)
+    const lines = buildBomLines(rows, options.mapping)
+    return { headers, rows, mapping: options.mapping, lines, headerRowIndex: 0 }
+  }
+
+  let bestHeaderIndex = 0
+  let bestMapping: BomColumnMapping | null = null
+  let bestScore = -1
+  const scanLimit = Math.min(rowsToScan.length, 30)
+
+  for (let i = 0; i < scanLimit; i++) {
+    const candidateHeaders = rowsToScan[i] ?? []
+    const candidateMapping = autoMapBomColumns(candidateHeaders)
+    const score = countMappedColumns(candidateMapping)
+    if (score > bestScore) {
+      bestScore = score
+      bestHeaderIndex = i
+      bestMapping = candidateMapping
+    }
+  }
+
+  const headers = rowsToScan[bestHeaderIndex] ?? []
+  const rows = rowsToScan.slice(bestHeaderIndex + 1)
+  const mapping = bestMapping
   const lines = mapping ? buildBomLines(rows, mapping) : null
 
-  return { headers, rows, mapping, lines }
+  return { headers, rows, mapping, lines, headerRowIndex: bestHeaderIndex }
+}
+
+function dataUrlToArrayBuffer(dataUrl: string): ArrayBuffer | null {
+  const match = dataUrl.match(/^data:.*;base64,(.+)$/i)
+  if (!match?.[1]) return null
+  try {
+    const binary = atob(match[1])
+    const bytes = new Uint8Array(binary.length)
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+    return bytes.buffer
+  } catch {
+    return null
+  }
 }
 
 /**
@@ -264,12 +351,22 @@ export function parseBomExcel(buffer: ArrayBuffer): BomParseResult {
  * For CSV/TSV/TXT, pass the string content.
  * For Excel, pass the ArrayBuffer.
  */
-export function parseBomFile(fileName: string, content: string | ArrayBuffer): BomParseResult {
+export function parseBomFile(fileName: string, content: string | ArrayBuffer, options?: BomParseOptions): BomParseResult {
   const lower = fileName.toLowerCase()
   if (lower.endsWith('.xlsx') || lower.endsWith('.xls')) {
-    const buffer = content instanceof ArrayBuffer ? content : new TextEncoder().encode(content).buffer
-    return parseBomExcel(buffer as ArrayBuffer)
+    if (content instanceof ArrayBuffer) return parseBomExcel(content, options)
+    if (/^data:.*;base64,/i.test(content)) {
+      const buffer = dataUrlToArrayBuffer(content)
+      if (buffer) return parseBomExcel(buffer, options)
+    }
+    try {
+      const wb = XLSX.read(content, { type: 'binary' })
+      return parseBomWorkbook(wb, options)
+    } catch {
+      const buffer = new TextEncoder().encode(content).buffer
+      return parseBomExcel(buffer as ArrayBuffer, options)
+    }
   }
   const text = typeof content === 'string' ? content : new TextDecoder().decode(content)
-  return parseBomCsv(text)
+  return parseBomCsv(text, options)
 }

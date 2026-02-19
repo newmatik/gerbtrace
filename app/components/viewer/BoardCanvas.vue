@@ -26,8 +26,6 @@ import { renderRealisticView } from '@lib/renderer/realistic-renderer'
 import type { RealisticLayers } from '@lib/renderer/realistic-renderer'
 import { generateJetprintDots } from '@lib/renderer/jetprint-dots'
 import type { PasteSettings } from '~/composables/usePasteSettings'
-import { parseGerber } from '@lib/gerber'
-import { plotImageTree } from '@lib/gerber/plotter'
 import { mergeBounds, emptyBounds, isEmpty } from '@lib/gerber/bounding-box'
 import type { EditablePnPComponent } from '~/composables/usePickAndPlace'
 import type { AlignMode, AlignPoint } from '~/composables/usePickAndPlace'
@@ -35,6 +33,7 @@ import type { PackageDefinition, FootprintShape } from '~/utils/package-types'
 import type { PnPConvention } from '~/utils/pnp-conventions'
 import { computeFootprint, getConventionRotationTransform } from '~/utils/package-types'
 import { computeThtFootprint, type THTPackageDefinition, type ColoredFootprintShape } from '~/utils/tht-package-types'
+import { useGerberImageTreeCache } from '~/composables/useGerberImageTreeCache'
 
 export type ViewMode = 'layers' | 'realistic'
 
@@ -247,6 +246,62 @@ function isCircleVisible(
   return !(x + radius < 0 || x - radius > width || y + radius < 0 || y - radius > height)
 }
 
+interface ProjectedPnPComponent {
+  comp: EditablePnPComponent
+  screenX: number
+  screenY: number
+  rotatedX: number
+  rotatedY: number
+}
+
+let projectedPnpCache: { key: string; items: ProjectedPnPComponent[] } | null = null
+
+function getProjectedPnPComponents(
+  components: EditablePnPComponent[],
+  cssWidth: number,
+  cssHeight: number,
+  transform: { offsetX: number; offsetY: number; scale: number },
+  mirrored: boolean,
+): ProjectedPnPComponent[] {
+  const units = detectUnits()
+  const { ox, oy } = getEffectiveOrigin()
+  const key = [
+    componentSignature(components),
+    cssWidth,
+    cssHeight,
+    transform.offsetX,
+    transform.offsetY,
+    transform.scale,
+    mirrored ? 1 : 0,
+    units,
+    ox,
+    oy,
+    props.boardRotation ?? 0,
+  ].join('|')
+
+  if (projectedPnpCache?.key === key) return projectedPnpCache.items
+
+  const items: ProjectedPnPComponent[] = []
+  for (const comp of components) {
+    const gx = pnpToGerber(comp.x, ox, units)
+    const gy = pnpToGerber(comp.y, oy, units)
+    let screenX = transform.offsetX + gx * transform.scale
+    const screenY = transform.offsetY - gy * transform.scale
+    if (mirrored) screenX = cssWidth - screenX
+    const rotated = rotateScreenPoint(screenX, screenY, cssWidth, cssHeight)
+    items.push({
+      comp,
+      screenX,
+      screenY,
+      rotatedX: rotated.x,
+      rotatedY: rotated.y,
+    })
+  }
+
+  projectedPnpCache = { key, items }
+  return items
+}
+
 // ── Reusable offscreen-canvas pool ──
 const _canvasPool: HTMLCanvasElement[] = []
 
@@ -270,25 +325,15 @@ function releaseCanvas(c: HTMLCanvasElement) {
   _canvasPool.push(c)
 }
 
-// Cache parsed image trees
-const imageTreeCache = new Map<string, ImageTree>()
+const gerberTreeCache = useGerberImageTreeCache()
 
 function getImageTree(layer: LayerInfo): ImageTree | null {
   // PnP layers are not Gerber — skip parsing
   if (isPnPLayer(layer.type)) return null
-
-  const key = layer.file.fileName
-  if (imageTreeCache.has(key)) return imageTreeCache.get(key)!
-
-  try {
-    const ast = parseGerber(layer.file.content)
-    const tree = plotImageTree(ast)
-    imageTreeCache.set(key, tree)
-    return tree
-  } catch (e) {
-    console.warn(`Failed to parse ${layer.file.fileName}:`, e)
-    return null
-  }
+  const tree = gerberTreeCache.getOrParseSync(layer)
+  if (tree) return tree
+  console.warn(`Failed to parse ${layer.file.fileName}`)
+  return null
 }
 
 // ── Mouse event routing ──
@@ -346,11 +391,12 @@ function onMouseDown(e: MouseEvent) {
       const rawClickX = e.clientX - rect.left
       const rawClickY = e.clientY - rect.top
       const { x: clickX, y: clickY } = unrotateScreenPoint(rawClickX, rawClickY)
-      const { cssWidth } = getCssDimensions()
+      const { cssWidth, cssHeight } = getCssDimensions()
       const hit = hitTestPnP(
         clickX,
         clickY,
         cssWidth,
+        cssHeight,
         props.interaction.transform.value,
         !!props.mirrored,
       )
@@ -370,8 +416,8 @@ function onDblClick(e: MouseEvent) {
   const rawClickX = e.clientX - rect.left
   const rawClickY = e.clientY - rect.top
   const { x: clickX, y: clickY } = unrotateScreenPoint(rawClickX, rawClickY)
-  const { cssWidth } = getCssDimensions()
-  const hit = hitTestPnP(clickX, clickY, cssWidth, props.interaction.transform.value, !!props.mirrored)
+  const { cssWidth, cssHeight } = getCssDimensions()
+  const hit = hitTestPnP(clickX, clickY, cssWidth, cssHeight, props.interaction.transform.value, !!props.mirrored)
   if (hit) emit('pnpDblclick', hit)
 }
 
@@ -639,25 +685,14 @@ function drawPnPMarkers(
 ) {
   const components = options?.components ?? props.pnpComponents
   if (!components || components.length === 0) return
-
-  const units = detectUnits()
-  const { ox, oy } = getEffectiveOrigin()
+  const projected = getProjectedPnPComponents(components, cssWidth, cssHeight, transform, mirrored)
 
   ctx.save()
   if (dpr !== 1) ctx.scale(dpr, dpr)
 
-  for (const comp of components) {
-    const gx = pnpToGerber(comp.x, ox, units)
-    const gy = pnpToGerber(comp.y, oy, units)
-
-    let screenX = transform.offsetX + gx * transform.scale
-    const screenY = transform.offsetY - gy * transform.scale
-
-    if (mirrored) {
-      screenX = cssWidth - screenX
-    }
-    const rotatedDot = rotateScreenPoint(screenX, screenY, cssWidth, cssHeight)
-    if (!isCircleVisible(rotatedDot.x, rotatedDot.y, PNP_DOT_RADIUS + 6, cssWidth, cssHeight)) continue
+  for (const item of projected) {
+    const comp = item.comp
+    if (!isCircleVisible(item.rotatedX, item.rotatedY, PNP_DOT_RADIUS + 6, cssWidth, cssHeight)) continue
 
     const isSelected = (options?.selectedDesignator ?? props.selectedPnpDesignator) === comp.designator
 
@@ -683,14 +718,14 @@ function drawPnPMarkers(
     const isDnpHighlighted = comp.dnp && props.showDnpHighlight !== false
     const dotRadius = isDnpHighlighted ? PNP_DNP_DOT_RADIUS : PNP_DOT_RADIUS
     ctx.beginPath()
-    ctx.arc(screenX, screenY, dotRadius, 0, Math.PI * 2)
+    ctx.arc(item.screenX, item.screenY, dotRadius, 0, Math.PI * 2)
     ctx.fillStyle = isDnpHighlighted ? PNP_DNP_DOT_COLOR : PNP_DOT_COLOR
     ctx.fill()
 
     // Draw highlight ring for selected component
     if (isSelected) {
       ctx.beginPath()
-      ctx.arc(screenX, screenY, PNP_DOT_RADIUS + 3, 0, Math.PI * 2)
+      ctx.arc(item.screenX, item.screenY, PNP_DOT_RADIUS + 3, 0, Math.PI * 2)
       ctx.strokeStyle = PNP_HIGHLIGHT_COLOR
       ctx.lineWidth = 2
       ctx.stroke()
@@ -698,7 +733,7 @@ function drawPnPMarkers(
       // Draw designator label
       ctx.font = '11px system-ui, sans-serif'
       ctx.fillStyle = PNP_HIGHLIGHT_COLOR
-      ctx.fillText(comp.designator, screenX + PNP_DOT_RADIUS + 5, screenY + 4)
+      ctx.fillText(comp.designator, item.screenX + PNP_DOT_RADIUS + 5, item.screenY + 4)
     }
   }
 
@@ -782,16 +817,19 @@ function drawPackageFootprints(
   if (!props.matchPackage && !props.matchThtPackage) return
 
   const units = detectUnits()
-  const { ox, oy } = getEffectiveOrigin()
 
   // Scale factor: mm -> screen pixels
   const mmToGerber = units === 'in' ? 1 / 25.4 : 1
   const mmToScreen = mmToGerber * transform.scale
+  const projected = getProjectedPnPComponents(components, cssWidth, cssHeight, transform, mirrored)
+  const simplifyFootprints = mmToScreen < 0.65
 
   ctx.save()
   if (dpr !== 1) ctx.scale(dpr, dpr)
 
-  for (const comp of components) {
+  for (const item of projected) {
+    const comp = item.comp
+    if (!isCircleVisible(item.rotatedX, item.rotatedY, 22, cssWidth, cssHeight)) continue
     const pkgName = comp.matchedPackage || comp.package
     const isTht = comp.componentType === 'tht'
 
@@ -818,36 +856,38 @@ function drawPackageFootprints(
       continue
     }
 
-    const gx = pnpToGerber(comp.x, ox, units)
-    const gy = pnpToGerber(comp.y, oy, units)
-
-    let centerSx = transform.offsetX + gx * transform.scale
-    const centerSy = transform.offsetY - gy * transform.scale
-    if (mirrored) centerSx = cssWidth - centerSx
-
     // Mirror flips the rotation direction
     const effectiveRot = mirrored ? -rotRad : rotRad
 
     const isSelected = (options?.selectedDesignator ?? props.selectedPnpDesignator) === comp.designator
     const extentPx = Math.max(6, computePkgExtent(shapes) * mmToScreen + 12)
-    const rotatedCenter = rotateScreenPoint(centerSx, centerSy, cssWidth, cssHeight)
-    if (!isCircleVisible(rotatedCenter.x, rotatedCenter.y, extentPx, cssWidth, cssHeight)) continue
+    if (!isCircleVisible(item.rotatedX, item.rotatedY, extentPx, cssWidth, cssHeight)) continue
 
     ctx.save()
-    ctx.translate(centerSx, centerSy)
+    ctx.translate(item.screenX, item.screenY)
     ctx.rotate(effectiveRot)
 
-    // Draw each shape
-    for (const shape of shapes) {
-      drawFootprintShape(ctx, shape, mmToScreen, mirrored, isSelected, comp.polarized, comp.dnp && props.showDnpHighlight !== false)
-    }
-    if (!isTht && comp.polarized && props.matchPackage) {
-      const pkg = props.matchPackage(pkgName)
-      if (pkg && isLedPackage(pkg, comp.package)) {
-        drawLedPolarityLabels(ctx, shapes, mmToScreen, mirrored)
+    if (simplifyFootprints && !isSelected) {
+      const simpleSize = Math.max(3, extentPx * 0.55)
+      ctx.fillStyle = comp.dnp && props.showDnpHighlight !== false ? PKG_BODY_FILL_DNP : PKG_BODY_FILL
+      ctx.strokeStyle = comp.dnp && props.showDnpHighlight !== false ? PKG_BODY_STROKE_DNP : PKG_BODY_STROKE
+      ctx.lineWidth = 1
+      ctx.beginPath()
+      roundRect(ctx, -simpleSize, -simpleSize, simpleSize * 2, simpleSize * 2, Math.max(1.2, simpleSize * 0.3))
+      ctx.fill()
+      ctx.stroke()
+    } else {
+      // Draw each shape
+      for (const shape of shapes) {
+        drawFootprintShape(ctx, shape, mmToScreen, mirrored, isSelected, comp.polarized, comp.dnp && props.showDnpHighlight !== false)
+      }
+      if (!isTht && comp.polarized && props.matchPackage) {
+        const pkg = props.matchPackage(pkgName)
+        if (pkg && isLedPackage(pkg, comp.package)) {
+          drawLedPolarityLabels(ctx, shapes, mmToScreen, mirrored)
+        }
       }
     }
-
     ctx.restore()
   }
 
@@ -1075,6 +1115,7 @@ function hitTestPnP(
   screenClickX: number,
   screenClickY: number,
   cssWidth: number,
+  cssHeight: number,
   transform: { offsetX: number; offsetY: number; scale: number },
   mirrored: boolean,
 ): string | null {
@@ -1082,10 +1123,10 @@ function hitTestPnP(
   if (!components || components.length === 0) return null
 
   const units = detectUnits()
-  const { ox, oy } = getEffectiveOrigin()
   const includeFootprints = !!props.showPackages && !!props.matchPackage
   const mmToGerber = units === 'in' ? 1 / 25.4 : 1
   const mmToScreen = mmToGerber * transform.scale
+  const projected = getProjectedPnPComponents(components, cssWidth, cssHeight, transform, mirrored)
   let closest: { designator: string; dist: number } | null = null
 
   const rotate = (x: number, y: number, rad: number) => {
@@ -1094,19 +1135,10 @@ function hitTestPnP(
     return { x: x * c - y * s, y: x * s + y * c }
   }
 
-  for (const comp of components) {
-    const gx = pnpToGerber(comp.x, ox, units)
-    const gy = pnpToGerber(comp.y, oy, units)
-
-    let screenX = transform.offsetX + gx * transform.scale
-    const screenY = transform.offsetY - gy * transform.scale
-
-    if (mirrored) {
-      screenX = cssWidth - screenX
-    }
-
-    const dx = screenClickX - screenX
-    const dy = screenClickY - screenY
+  for (const item of projected) {
+    const comp = item.comp
+    const dx = screenClickX - item.screenX
+    const dy = screenClickY - item.screenY
     const dist = Math.hypot(dx, dy)
 
     // If a footprint is rendered, allow clicking anywhere on it.
@@ -1706,12 +1738,34 @@ watch(
 )
 
 watch(
-  () => `${props.interaction.transform.value.offsetX}|${props.interaction.transform.value.offsetY}|${props.interaction.transform.value.scale}|${props.mirrored ? 1 : 0}|${appSettings.gridEnabled ? 1 : 0}|${appSettings.gridSpacingMm}|${bgColor.value}`,
+  () => [
+    props.interaction.transform.value.offsetX,
+    props.interaction.transform.value.offsetY,
+    props.interaction.transform.value.scale,
+    props.mirrored,
+    appSettings.gridEnabled,
+    appSettings.gridSpacingMm,
+    bgColor.value,
+  ],
   () => scheduleRedraw(),
 )
 
 watch(
-  () => `${props.viewMode ?? 'layers'}|${props.preset?.name ?? ''}|${props.cropToOutline ? 1 : 0}|${props.outlineLayer?.file.fileName ?? ''}|${props.activeFilter ?? 'all'}|${layerSignature(props.layers)}|${allLayerSignature(props.allLayers)}|${props.pasteSettings?.mode ?? 'stencil'}|${props.pasteSettings?.dotDiameter ?? 0}|${props.pasteSettings?.dotSpacing ?? 0}|${props.pasteSettings?.pattern ?? 'hex'}|${props.pasteSettings?.highlightDots ? 1 : 0}|${props.pasteSettings?.dynamicDots ? 1 : 0}`,
+  () => [
+    props.viewMode ?? 'layers',
+    props.preset?.name ?? '',
+    props.cropToOutline,
+    props.outlineLayer?.file.fileName ?? '',
+    props.activeFilter ?? 'all',
+    layerSignature(props.layers),
+    allLayerSignature(props.allLayers),
+    props.pasteSettings?.mode ?? 'stencil',
+    props.pasteSettings?.dotDiameter ?? 0,
+    props.pasteSettings?.dotSpacing ?? 0,
+    props.pasteSettings?.pattern ?? 'hex',
+    props.pasteSettings?.highlightDots,
+    props.pasteSettings?.dynamicDots,
+  ],
   () => {
     invalidateSceneCache()
     scheduleRedraw()
@@ -1719,17 +1773,35 @@ watch(
 )
 
 watch(
-  () => `${componentSignature(props.pnpComponents)}|${props.selectedPnpDesignator ?? ''}|${props.showPackages ? 1 : 0}|${props.pnpConvention ?? 'iec61188'}|${props.packageLibraryVersion ?? 0}|${props.pnpOriginX ?? ''}|${props.pnpOriginY ?? ''}|${props.showDnpHighlight !== false ? 1 : 0}`,
+  () => [
+    componentSignature(props.pnpComponents),
+    props.selectedPnpDesignator ?? '',
+    props.showPackages,
+    props.pnpConvention ?? 'iec61188',
+    props.packageLibraryVersion ?? 0,
+    props.pnpOriginX ?? null,
+    props.pnpOriginY ?? null,
+    props.showDnpHighlight !== false,
+  ],
+  () => {
+    projectedPnpCache = null
+    scheduleRedraw()
+  },
+)
+
+watch(
+  () => [
+    props.alignMode ?? 'idle',
+    props.alignClickA?.x ?? null,
+    props.alignClickA?.y ?? null,
+    originCursorGerber.value?.x ?? null,
+    originCursorGerber.value?.y ?? null,
+  ],
   () => scheduleRedraw(),
 )
 
 watch(
-  () => `${props.alignMode ?? 'idle'}|${props.alignClickA?.x ?? ''}|${props.alignClickA?.y ?? ''}|${originCursorGerber.value?.x ?? ''}|${originCursorGerber.value?.y ?? ''}`,
-  () => scheduleRedraw(),
-)
-
-watch(
-  () => `${props.deleteTool?.pendingDeletion.value ?? ''}`,
+  () => props.deleteTool?.pendingDeletion.value ?? '',
   () => scheduleRedraw(),
 )
 
@@ -2149,7 +2221,7 @@ function getRealisticLayersForExport(side: 'top' | 'bottom'): RealisticLayers {
 
 /** Invalidate the cached ImageTree for a specific file so it gets re-parsed on next render. */
 function invalidateCache(fileName: string) {
-  imageTreeCache.delete(fileName)
+  gerberTreeCache.clearByFileName(fileName)
   invalidateSceneCache()
 }
 
@@ -2183,7 +2255,7 @@ function getPerformanceStats() {
     canvasPoolSize: _canvasPool.length,
     footprintCacheSize: footprintCache.size,
     thtFootprintCacheSize: thtFootprintCache.size,
-    parsedLayerCacheSize: imageTreeCache.size,
+    parsedLayerCacheSize: gerberTreeCache.getCacheSize(),
   }
 }
 

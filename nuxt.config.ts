@@ -15,7 +15,7 @@ export default defineNuxtConfig({
     },
   },
 
-  modules: ['@nuxt/ui', '@sentry/nuxt/module'],
+  modules: ['@nuxt/ui', '@nuxt/content', '@sentry/nuxt/module'],
 
   sentry: {
     org: 'newmatik',
@@ -27,6 +27,21 @@ export default defineNuxtConfig({
   },
 
   sourcemap: { client: 'hidden', server: false },
+
+  vite: {
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules/jszip')) return 'vendor-jszip'
+            if (id.includes('/lib/gerber/')) return 'gerber-core'
+            if (id.includes('/lib/renderer/')) return 'render-core'
+            if (id.includes('node_modules/xlsx')) return 'vendor-xlsx'
+          },
+        },
+      },
+    },
+  },
 
   icon: {
     clientBundle: {

@@ -2,6 +2,8 @@ import Dexie from 'dexie'
 import { toRaw } from 'vue'
 import type { GerberFile } from '~/utils/gerber-helpers'
 import type { PnPConvention } from '~/utils/pnp-conventions'
+import type { PnPColumnMapping, PnPCoordUnit } from '~/utils/pnp-parser'
+import type { BomColumnMapping } from '~/utils/bom-parser'
 import type { BomLine, BomPricingCache } from '~/utils/bom-types'
 import type { SurfaceFinish, CopperWeight } from '~/utils/pcb-pricing'
 import type { DocumentType } from '~/utils/document-types'
@@ -91,6 +93,10 @@ interface ProjectRecord {
   layerOrder?: string[] | null
   /** Persisted document ordering by file name */
   documentOrder?: string[] | null
+  /** Per-file BOM import options (header skip + mapping) */
+  bomFileImportOptions?: Record<string, { skipRows?: number; mapping?: BomColumnMapping }> | null
+  /** Per-file PnP import options (header skip + mapping + unit override) */
+  pnpFileImportOptions?: Record<string, { skipRows?: number; mapping?: PnPColumnMapping; unitOverride?: 'auto' | PnPCoordUnit }> | null
 }
 
 interface FileRecord {
@@ -244,6 +250,13 @@ class GerbtraceDB extends Dexie {
     })
     // v21: add persisted layer/document ordering
     this.version(21).stores({
+      projects: '++id, name, mode, createdAt, updatedAt',
+      files: '++id, projectId, packet, fileName',
+      fileOriginals: '++id, projectId, packet, fileName',
+      documents: '++id, projectId, fileName',
+    })
+    // v22: add per-file BOM/PnP import options to projects
+    this.version(22).stores({
       projects: '++id, name, mode, createdAt, updatedAt',
       files: '++id, projectId, packet, fileName',
       fileOriginals: '++id, projectId, packet, fileName',
@@ -458,6 +471,20 @@ export function useProject() {
     await db.projects.update(id, { documentOrder: deepToRaw(documentOrder), updatedAt: new Date() })
   }
 
+  async function updateBomFileImportOptions(
+    id: number,
+    options: Record<string, { skipRows?: number; mapping?: BomColumnMapping }>,
+  ) {
+    await db.projects.update(id, { bomFileImportOptions: deepToRaw(options), updatedAt: new Date() })
+  }
+
+  async function updatePnpFileImportOptions(
+    id: number,
+    options: Record<string, { skipRows?: number; mapping?: PnPColumnMapping; unitOverride?: 'auto' | PnPCoordUnit }>,
+  ) {
+    await db.projects.update(id, { pnpFileImportOptions: deepToRaw(options), updatedAt: new Date() })
+  }
+
   // ── File originals (for edit detection and reset) ──
 
   async function getOriginalFiles(projectId: number, packet: number): Promise<Map<string, string>> {
@@ -607,6 +634,8 @@ export function useProject() {
     updatePasteSettings,
     updateLayerOrder,
     updateDocumentOrder,
+    updateBomFileImportOptions,
+    updatePnpFileImportOptions,
     getDocuments,
     addDocument,
     removeDocument,

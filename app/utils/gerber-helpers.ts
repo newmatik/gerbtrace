@@ -338,7 +338,7 @@ export function isGerberFile(fileName: string): boolean {
 
 // ── Pick & Place file detection ──
 
-const PNP_EXTENSIONS = new Set(['.txt', '.csv', '.xy', '.pos'])
+const PNP_EXTENSIONS = new Set(['.txt', '.csv', '.tsv', '.xy', '.pos', '.xlsx', '.xls'])
 const PNP_NAME_PATTERNS = /(?:pnp|pick[_\-\s]?(?:and[_\-\s]?)?place|pos(?:ition)?|centroid|cpl)/i
 
 /**

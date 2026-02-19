@@ -8,6 +8,8 @@
 import type { BomLine, BomPricingCache } from '~/utils/bom-types'
 import type { PanelConfig } from '~/utils/panel-types'
 import type { PasteSettings } from '~/composables/usePasteSettings'
+import type { BomColumnMapping } from '~/utils/bom-parser'
+import type { PnPColumnMapping, PnPCoordUnit } from '~/utils/pnp-parser'
 
 export type LockableViewerTab = 'files' | 'pcb' | 'panel' | 'smd' | 'tht' | 'bom'
 
@@ -65,6 +67,8 @@ export interface TeamProject {
   paste_settings: PasteSettings | null
   layer_order: string[] | null
   document_order: string[] | null
+  bom_file_import_options: Record<string, { skipRows?: number; mapping?: BomColumnMapping }> | null
+  pnp_file_import_options: Record<string, { skipRows?: number; mapping?: PnPColumnMapping; unitOverride?: 'auto' | PnPCoordUnit }> | null
   created_at: string
   updated_at: string
 }

@@ -6,7 +6,7 @@ export interface PanelEdge {
   type: 'routed' | 'scored'
 }
 
-export type FiducialPosition = 'top-left' | 'bottom-left' | 'bottom-right'
+export type FiducialPosition = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
 
 export interface PanelFiducial {
   enabled: boolean

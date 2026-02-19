@@ -199,6 +199,17 @@
     <div v-if="!hasCredentials && bomLines.length > 0" class="mx-3 mb-2 px-2 py-1.5 text-[10px] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded border border-amber-200 dark:border-amber-800">
       Elexess API not configured. Set credentials in Team Settings to fetch pricing.
     </div>
+    <div
+      v-if="mismatchSummary"
+      class="mx-3 mb-2 px-2 py-1.5 text-[10px] text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 rounded border border-amber-200 dark:border-amber-800 flex items-center gap-1.5"
+    >
+      <UIcon name="i-lucide-triangle-alert" class="shrink-0" />
+      <span>
+        {{ mismatchSummary.linesWithMissing }} BOM line{{ mismatchSummary.linesWithMissing === 1 ? '' : 's' }}
+        contain designators missing in PnP
+        ({{ mismatchSummary.uniqueMissingRefs }} unique refs).
+      </span>
+    </div>
 
     <!-- BOM table -->
     <div class="flex-1 overflow-y-auto px-3 pb-3">
@@ -534,6 +545,26 @@ function getMissingInPnP(line: BomLine): string[] {
   if (line.dnp || props.pnpDesignators.size === 0) return []
   return parseRefs(line.references).filter(r => !props.pnpDesignators.has(r))
 }
+
+const mismatchSummary = computed<{
+  linesWithMissing: number
+  uniqueMissingRefs: number
+} | null>(() => {
+  if (props.pnpDesignators.size === 0) return null
+  let linesWithMissing = 0
+  const missingRefs = new Set<string>()
+  for (const line of props.bomLines) {
+    const missing = getMissingInPnP(line)
+    if (missing.length === 0) continue
+    linesWithMissing++
+    for (const ref of missing) missingRefs.add(ref)
+  }
+  if (linesWithMissing === 0) return null
+  return {
+    linesWithMissing,
+    uniqueMissingRefs: missingRefs.size,
+  }
+})
 
 // ── Elexess pricing extraction ──
 // Elexess response: { results: [{ supplier, country, current_stock, moq, current_leadtime, pricebreaks: [{ quantity, price, currency }] }] }
