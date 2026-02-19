@@ -60,7 +60,7 @@
           </div>
 
           <div class="flex items-center gap-3 w-full sm:w-auto">
-            <UButton to="/docs" icon="i-lucide-circle-help" color="neutral" variant="solid">
+            <UButton to="/docs" icon="i-lucide-circle-help" color="neutral" variant="outline">
               Docs / Help
             </UButton>
           </div>

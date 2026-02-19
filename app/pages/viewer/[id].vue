@@ -4074,6 +4074,28 @@ onMounted(async () => {
 
   hasLoadedProjectData.value = true
 
+  // Hydrate PCB display defaults into the data model so that values shown in the
+  // UI (via ?? fallbacks in PcbPanel) are always backed by persisted data.
+  // Only runs once per project — subsequent opens already have the fields.
+  if (pcbData.value && typeof pcbData.value === 'object') {
+    const PCB_DEFAULTS: Record<string, string | number> = {
+      material: 'FR4',
+      thicknessMm: 1.6,
+      solderMaskColor: 'green',
+      panelizationMode: 'single',
+    }
+    let needsHydration = false
+    for (const key of Object.keys(PCB_DEFAULTS)) {
+      if ((pcbData.value as Record<string, unknown>)[key] === undefined) {
+        needsHydration = true
+        break
+      }
+    }
+    if (needsHydration) {
+      pcbData.value = { ...PCB_DEFAULTS, ...pcbData.value }
+    }
+  }
+
   // Restore persisted documents (PDFs)
   if (isTeamProject && teamProjectId) {
     const teamDocs = await getTeamDocuments(teamProjectId)

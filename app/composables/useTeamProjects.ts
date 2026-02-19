@@ -54,10 +54,12 @@ export interface TeamProject {
     sizeX?: number
     sizeY?: number
     layerCount?: number
+    material?: string
     surfaceFinish?: string
     copperWeight?: string
     innerCopperWeight?: string
     thicknessMm?: number
+    solderMaskColor?: string
     panelizationMode?: 'single' | 'panelized'
     pricingQuantities?: number[]
     selectedPricingQuantity?: number
