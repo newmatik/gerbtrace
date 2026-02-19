@@ -1400,6 +1400,7 @@ function toPcbDataSnapshot(data: unknown): PcbDataSnapshot | null {
   const raw = toRaw(data) as Record<string, unknown>
   const numberOrUndefined = (value: unknown) => {
     if (value == null) return undefined
+    if (typeof value === 'string' && value.trim() === '') return undefined
     const n = Number(value)
     return Number.isFinite(n) ? n : undefined
   }
