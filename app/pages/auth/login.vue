@@ -125,7 +125,7 @@
                   autofocus
                   size="lg"
                   class="w-full"
-                  @keydown.enter.prevent="mode === 'password' ? handleSubmit() : undefined"
+                  @keydown.enter.prevent="handleSubmit"
                 />
               </UFormField>
 

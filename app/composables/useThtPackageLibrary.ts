@@ -103,8 +103,8 @@ export function useThtPackageLibrary() {
     }
 
     const next = { ...builtInByLibrary.value }
+    const tree = await safeFetchJson<any>('/packages/tht-libraries/_tree.json')
     for (const id of misses) {
-      const tree = await safeFetchJson<any>('/packages/tht-libraries/_tree.json')
       if (!tree) {
         next[id] = []
         continue
