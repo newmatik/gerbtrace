@@ -165,6 +165,7 @@
 
 <script setup lang="ts">
 import * as Sentry from '@sentry/nuxt'
+import { isTauri as coreIsTauri } from '@tauri-apps/api/core'
 
 interface Attachment {
   name: string
@@ -254,21 +255,31 @@ async function submit() {
       ? profile.value?.name ?? undefined
       : undefined
 
-    await Sentry.captureFeedback(
-      {
-        message: desc,
-        ...(userName && { name: userName }),
-        ...(userEmail && { email: userEmail }),
-      },
-      {
-        includeReplay: true,
-        attachments: attachments.value.map(att => ({
-          filename: att.name,
-          data: att.data,
-          contentType: att.type || 'application/octet-stream',
-        })),
-      },
-    )
+    const isTauriRuntime = import.meta.client && coreIsTauri()
+    const payload = {
+      message: desc,
+      ...(userName && { name: userName }),
+      ...(userEmail && { email: userEmail }),
+    }
+    const fullOptions = {
+      includeReplay: !isTauriRuntime,
+      attachments: attachments.value.map(att => ({
+        filename: att.name,
+        data: att.data,
+        contentType: att.type || 'application/octet-stream',
+      })),
+    }
+
+    try {
+      await Sentry.captureFeedback(payload, fullOptions)
+    } catch (firstErr) {
+      // Desktop WebView + SDK combinations can fail for replay/attachment upload;
+      // retry with a minimal payload so reports still go through.
+      await Sentry.captureFeedback(payload)
+      if (attachments.value.length > 0 || fullOptions.includeReplay) {
+        console.warn('[BugReport] Fallback sent without replay/attachments:', firstErr)
+      }
+    }
 
     sent.value = true
   } catch (err) {

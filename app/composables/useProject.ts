@@ -25,6 +25,16 @@ function deepToRaw<T>(val: T): T {
   return raw
 }
 
+function toIndexedDbSafe<T>(val: T): T {
+  const raw = deepToRaw(val)
+  try {
+    return structuredClone(raw)
+  } catch {
+    // Final safety net: strip unsupported values rather than failing writes.
+    return JSON.parse(JSON.stringify(raw)) as T
+  }
+}
+
 interface ProjectRecord {
   id?: number
   name: string
@@ -396,71 +406,71 @@ export function useProject() {
   }
 
   async function updateProjectRotationOverrides(id: number, overrides: Record<string, number>) {
-    await db.projects.update(id, { pnpRotationOverrides: deepToRaw(overrides), updatedAt: new Date() })
+    await db.projects.update(id, { pnpRotationOverrides: toIndexedDbSafe(overrides), updatedAt: new Date() })
   }
 
   async function updateProjectDnp(id: number, dnpKeys: string[]) {
-    await db.projects.update(id, { pnpDnpComponents: deepToRaw(dnpKeys), updatedAt: new Date() })
+    await db.projects.update(id, { pnpDnpComponents: toIndexedDbSafe(dnpKeys), updatedAt: new Date() })
   }
 
   async function updateProjectCadPackageMap(id: number, map: Record<string, string>) {
-    await db.projects.update(id, { pnpCadPackageMap: deepToRaw(map), updatedAt: new Date() })
+    await db.projects.update(id, { pnpCadPackageMap: toIndexedDbSafe(map), updatedAt: new Date() })
   }
 
   async function updateProjectPolarizedOverrides(id: number, overrides: Record<string, boolean>) {
-    await db.projects.update(id, { pnpPolarizedOverrides: deepToRaw(overrides), updatedAt: new Date() })
+    await db.projects.update(id, { pnpPolarizedOverrides: toIndexedDbSafe(overrides), updatedAt: new Date() })
   }
 
   async function updateProjectComponentNotes(id: number, notes: Record<string, string>) {
-    await db.projects.update(id, { pnpComponentNotes: deepToRaw(notes), updatedAt: new Date() })
+    await db.projects.update(id, { pnpComponentNotes: toIndexedDbSafe(notes), updatedAt: new Date() })
   }
 
   async function updateProjectFieldOverrides(id: number, overrides: Record<string, { designator?: string; value?: string; x?: number; y?: number }>) {
-    await db.projects.update(id, { pnpFieldOverrides: deepToRaw(overrides), updatedAt: new Date() })
+    await db.projects.update(id, { pnpFieldOverrides: toIndexedDbSafe(overrides), updatedAt: new Date() })
   }
 
   async function updateProjectManualComponents(id: number, components: { id: string; designator: string; value: string; package: string; x: number; y: number; rotation: number; side: 'top' | 'bottom'; componentType?: 'smd' | 'tht' }[]) {
-    await db.projects.update(id, { pnpManualComponents: deepToRaw(components), updatedAt: new Date() })
+    await db.projects.update(id, { pnpManualComponents: toIndexedDbSafe(components), updatedAt: new Date() })
   }
 
   async function updateProjectDeletedComponents(id: number, keys: string[]) {
-    await db.projects.update(id, { pnpDeletedComponents: deepToRaw(keys), updatedAt: new Date() })
+    await db.projects.update(id, { pnpDeletedComponents: toIndexedDbSafe(keys), updatedAt: new Date() })
   }
 
   async function updateProjectSortSmd(id: number, sortState: { key: 'ref' | 'x' | 'y' | 'rot' | 'pol' | 'value' | 'cadPackage' | 'package' | null; asc: boolean }) {
-    await db.projects.update(id, { pnpSortSmd: deepToRaw(sortState), updatedAt: new Date() })
+    await db.projects.update(id, { pnpSortSmd: toIndexedDbSafe(sortState), updatedAt: new Date() })
   }
 
   async function updateProjectSortTht(id: number, sortState: { key: 'ref' | 'x' | 'y' | 'rot' | 'pol' | 'value' | 'cadPackage' | 'package' | null; asc: boolean }) {
-    await db.projects.update(id, { pnpSortTht: deepToRaw(sortState), updatedAt: new Date() })
+    await db.projects.update(id, { pnpSortTht: toIndexedDbSafe(sortState), updatedAt: new Date() })
   }
 
   async function updateProjectManualOrderSmd(id: number, keys: string[]) {
-    await db.projects.update(id, { pnpManualOrderSmd: deepToRaw(keys), updatedAt: new Date() })
+    await db.projects.update(id, { pnpManualOrderSmd: toIndexedDbSafe(keys), updatedAt: new Date() })
   }
 
   async function updateProjectManualOrderTht(id: number, keys: string[]) {
-    await db.projects.update(id, { pnpManualOrderTht: deepToRaw(keys), updatedAt: new Date() })
+    await db.projects.update(id, { pnpManualOrderTht: toIndexedDbSafe(keys), updatedAt: new Date() })
   }
 
   async function updateProjectComponentGroups(id: number, groups: { id: string; componentType: 'smd' | 'tht'; name: string; comment: string; hidden: boolean; collapsed: boolean }[]) {
-    await db.projects.update(id, { pnpComponentGroups: deepToRaw(groups), updatedAt: new Date() })
+    await db.projects.update(id, { pnpComponentGroups: toIndexedDbSafe(groups), updatedAt: new Date() })
   }
 
   async function updateProjectGroupAssignments(id: number, assignments: Record<string, string>) {
-    await db.projects.update(id, { pnpGroupAssignments: deepToRaw(assignments), updatedAt: new Date() })
+    await db.projects.update(id, { pnpGroupAssignments: toIndexedDbSafe(assignments), updatedAt: new Date() })
   }
 
   async function updatePnpAssemblyTypes(id: number, types: Record<string, string>) {
-    await db.projects.update(id, { pnpAssemblyTypes: deepToRaw(types), updatedAt: new Date() })
+    await db.projects.update(id, { pnpAssemblyTypes: toIndexedDbSafe(types), updatedAt: new Date() })
   }
 
   async function updateBomLines(id: number, lines: BomLine[]) {
-    await db.projects.update(id, { bomLines: deepToRaw(lines), updatedAt: new Date() })
+    await db.projects.update(id, { bomLines: toIndexedDbSafe(lines), updatedAt: new Date() })
   }
 
   async function updateBomPricingCache(id: number, cache: BomPricingCache) {
-    await db.projects.update(id, { bomPricingCache: deepToRaw(cache), updatedAt: new Date() })
+    await db.projects.update(id, { bomPricingCache: toIndexedDbSafe(cache), updatedAt: new Date() })
   }
 
   async function updateBomBoardQuantity(id: number, qty: number) {
@@ -468,37 +478,37 @@ export function useProject() {
   }
 
   async function updatePcbData(id: number, pcbData: ProjectRecord['pcbData']) {
-    await db.projects.update(id, { pcbData: deepToRaw(pcbData), updatedAt: new Date() })
+    await db.projects.update(id, { pcbData: toIndexedDbSafe(pcbData), updatedAt: new Date() })
   }
 
   async function updatePanelData(id: number, panelData: ProjectRecord['panelData']) {
-    await db.projects.update(id, { panelData: deepToRaw(panelData), updatedAt: new Date() })
+    await db.projects.update(id, { panelData: toIndexedDbSafe(panelData), updatedAt: new Date() })
   }
 
   async function updatePasteSettings(id: number, pasteSettings: ProjectRecord['pasteSettings']) {
-    await db.projects.update(id, { pasteSettings: deepToRaw(pasteSettings), updatedAt: new Date() })
+    await db.projects.update(id, { pasteSettings: toIndexedDbSafe(pasteSettings), updatedAt: new Date() })
   }
 
   async function updateLayerOrder(id: number, layerOrder: string[]) {
-    await db.projects.update(id, { layerOrder: deepToRaw(layerOrder), updatedAt: new Date() })
+    await db.projects.update(id, { layerOrder: toIndexedDbSafe(layerOrder), updatedAt: new Date() })
   }
 
   async function updateDocumentOrder(id: number, documentOrder: string[]) {
-    await db.projects.update(id, { documentOrder: deepToRaw(documentOrder), updatedAt: new Date() })
+    await db.projects.update(id, { documentOrder: toIndexedDbSafe(documentOrder), updatedAt: new Date() })
   }
 
   async function updateBomFileImportOptions(
     id: number,
     options: Record<string, { skipRows?: number; mapping?: BomColumnMapping }>,
   ) {
-    await db.projects.update(id, { bomFileImportOptions: deepToRaw(options), updatedAt: new Date() })
+    await db.projects.update(id, { bomFileImportOptions: toIndexedDbSafe(options), updatedAt: new Date() })
   }
 
   async function updatePnpFileImportOptions(
     id: number,
     options: Record<string, { skipRows?: number; mapping?: PnPColumnMapping; unitOverride?: 'auto' | PnPCoordUnit }>,
   ) {
-    await db.projects.update(id, { pnpFileImportOptions: deepToRaw(options), updatedAt: new Date() })
+    await db.projects.update(id, { pnpFileImportOptions: toIndexedDbSafe(options), updatedAt: new Date() })
   }
 
   async function updateProjectPreview(id: number, blob: Blob | null) {

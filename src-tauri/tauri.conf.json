@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Gerbtrace",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "identifier": "com.newmatik.gerbtrace",
   "build": {
     "frontendDist": "../.output/public",
@@ -21,7 +21,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; connect-src 'self' https://*.gerbtrace.com https://api.github.com wss://*.gerbtrace.com https://*.ingest.sentry.io; img-src 'self' data: blob: https://*.gerbtrace.com https://avatars.githubusercontent.com; font-src 'self' data:"
+      "csp": "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; connect-src 'self' https://*.gerbtrace.com wss://*.gerbtrace.com https://*.supabase.co wss://*.supabase.co https://api.github.com https://*.ingest.sentry.io https://*.sentry.io https://sentry.io; img-src 'self' data: blob: https://*.gerbtrace.com https://*.supabase.co https://avatars.githubusercontent.com; font-src 'self' data:"
     }
   },
   "plugins": {

@@ -138,6 +138,7 @@
       v-model:pnp-show-minimap="pnpShowMinimap"
       v-model:measure-constraint-mode="measureTool.constraintMode.value"
       :page="sidebarTab"
+      :users-in-tab="isTeamProject && isCanvasPage ? presentUsersInTab(sidebarTab) : []"
       :has-outline="hasOutline"
       :layers-count="layers.length"
       :active-filter-options="activeFilterOptions"
@@ -662,6 +663,23 @@
             >
               {{ bomCpCopied ? 'Copied' : 'Copy CP List' }}
             </UButton>
+            <template v-if="isTeamProject && presentUsersInTab('bom').length > 0">
+              <div class="flex items-center -space-x-1" :title="presentUsersInTab('bom').map(u => u.name).join(', ')">
+                <div
+                  v-for="u in presentUsersInTab('bom').slice(0, 4)"
+                  :key="u.userId"
+                  class="size-5 rounded-full border-2 border-white dark:border-neutral-900 flex items-center justify-center text-[8px] font-bold bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-300"
+                >
+                  {{ u.name.split(' ').map((p: string) => p[0]).join('').toUpperCase().slice(0, 2) }}
+                </div>
+                <div
+                  v-if="presentUsersInTab('bom').length > 4"
+                  class="size-5 rounded-full border-2 border-white dark:border-neutral-900 bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center text-[8px] font-medium text-neutral-500 dark:text-neutral-400"
+                >
+                  +{{ presentUsersInTab('bom').length - 4 }}
+                </div>
+              </div>
+            </template>
             <UPopover
               v-model:open="bomLockPopoverOpen"
               :content="{ side: 'bottom', align: 'end', sideOffset: 6 }"
@@ -777,6 +795,23 @@
               />
             </div>
             <div class="flex-1" />
+            <template v-if="isTeamProject && presentUsersInTab('pricing').length > 0">
+              <div class="flex items-center -space-x-1" :title="presentUsersInTab('pricing').map(u => u.name).join(', ')">
+                <div
+                  v-for="u in presentUsersInTab('pricing').slice(0, 4)"
+                  :key="u.userId"
+                  class="size-5 rounded-full border-2 border-white dark:border-neutral-900 flex items-center justify-center text-[8px] font-bold bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-300"
+                >
+                  {{ u.name.split(' ').map((p: string) => p[0]).join('').toUpperCase().slice(0, 2) }}
+                </div>
+                <div
+                  v-if="presentUsersInTab('pricing').length > 4"
+                  class="size-5 rounded-full border-2 border-white dark:border-neutral-900 bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center text-[8px] font-medium text-neutral-500 dark:text-neutral-400"
+                >
+                  +{{ presentUsersInTab('pricing').length - 4 }}
+                </div>
+              </div>
+            </template>
             <UPopover
               v-model:open="bomLockPopoverOpen"
               :content="{ side: 'bottom', align: 'end', sideOffset: 6 }"
@@ -971,7 +1006,8 @@ function waitForTeamId(): Promise<string> {
     })
   })
 }
-const { presentUsers } = isTeamProject ? usePresence(teamProjectIdRef) : { presentUsers: ref([]) }
+const presence = isTeamProject ? usePresence(teamProjectIdRef) : { presentUsers: ref([]), presentUsersInTab: () => [], updatePresence: async () => {}, updateMode: async () => {} }
+const { presentUsers, presentUsersInTab, updatePresence } = presence
 const projectSync = isTeamProject ? useProjectSync(teamProjectIdRef) : null
 const { user } = useAuth()
 const { profile } = useCurrentUser()
@@ -1188,14 +1224,43 @@ watch(() => projectSync?.project.value?.document_order, (next) => {
   syncDocumentOrderFromDocuments()
 }, { deep: true })
 
-watch(() => projectSync?.project.value?.bom_file_import_options, (next) => {
-  if (!next || typeof next !== 'object') return
-  bom.setFileImportOptionsMap(next)
+watch(() => projectSync?.project.value?.pnp_file_import_options, (next) => {
+  const remoteSnapshot = toPnpImportOptionsSnapshot(next)
+  if (pendingLocalPnpFileImportOptions && !arePnpImportOptionsEqual(remoteSnapshot, pendingLocalPnpFileImportOptions)) {
+    // Ignore stale realtime rows while a local write is still in flight.
+    return
+  }
+  if (pendingLocalPnpFileImportOptions && arePnpImportOptionsEqual(remoteSnapshot, pendingLocalPnpFileImportOptions)) {
+    pendingLocalPnpFileImportOptions = null
+  }
+  if (arePnpImportOptionsEqual(remoteSnapshot, toPnpImportOptionsSnapshot(pnp.fileImportOptions.value))) return
+  pnp.setFileImportOptionsMap(remoteSnapshot)
 }, { deep: true })
 
-watch(() => projectSync?.project.value?.pnp_file_import_options, (next) => {
-  if (!next || typeof next !== 'object') return
-  pnp.setFileImportOptionsMap(next)
+watch(() => projectSync?.project.value?.bom_file_import_options, (next) => {
+  const remoteSnapshot = toBomImportOptionsSnapshot(next)
+  if (pendingLocalBomFileImportOptions && !areBomImportOptionsEqual(remoteSnapshot, pendingLocalBomFileImportOptions)) {
+    // Ignore stale realtime rows while a local write is still in flight.
+    return
+  }
+  if (pendingLocalBomFileImportOptions && areBomImportOptionsEqual(remoteSnapshot, pendingLocalBomFileImportOptions)) {
+    pendingLocalBomFileImportOptions = null
+  }
+  if (areBomImportOptionsEqual(remoteSnapshot, toBomImportOptionsSnapshot(bom.fileImportOptions.value))) return
+  bom.setFileImportOptionsMap(remoteSnapshot)
+}, { deep: true })
+
+watch(() => projectSync?.project.value?.pcb_data, (next) => {
+  const remoteSnapshot = toPcbDataSnapshot(next)
+  if (pendingLocalPcbData && !arePcbDataEqual(remoteSnapshot, pendingLocalPcbData)) {
+    // Ignore stale realtime rows while a local write is still in flight.
+    return
+  }
+  if (pendingLocalPcbData && arePcbDataEqual(remoteSnapshot, pendingLocalPcbData)) {
+    pendingLocalPcbData = null
+  }
+  if (arePcbDataEqual(remoteSnapshot, toPcbDataSnapshot(pcbData.value))) return
+  pcbData.value = remoteSnapshot
 }, { deep: true })
 
 onMounted(() => {
@@ -1217,6 +1282,12 @@ watch(sidebarTab, (tab) => {
   } else query.tab = tab
   router.replace({ query })
 })
+
+// Presence: update viewing vs editing mode and current tab when switching
+watch(sidebarTab, (tab) => {
+  const editableTabs = ['bom', 'smd', 'tht', 'paste', 'panel']
+  updatePresence(editableTabs.includes(tab) ? 'editing' : 'viewing', tab)
+}, { immediate: true })
 
 const isCanvasPage = computed(() => {
   return sidebarTab.value === 'pcb' || sidebarTab.value === 'panel' || sidebarTab.value === 'paste' || sidebarTab.value === 'smd' || sidebarTab.value === 'tht'
@@ -1307,6 +1378,143 @@ function arePasteSettingsEqual(
     && a.dynamicDots === b.dynamicDots
     && a.highlightDots === b.highlightDots
   )
+}
+
+type PcbDataSnapshot = {
+  sizeX?: number
+  sizeY?: number
+  layerCount?: number
+  material?: 'FR4' | 'IMS-AL' | 'Flex' | 'Rigid-Flex'
+  surfaceFinish?: 'ENIG' | 'HAL' | 'OSP'
+  copperWeight?: '1oz' | '2oz'
+  innerCopperWeight?: '0.5oz' | '1oz' | '2oz'
+  thicknessMm?: PcbThicknessMm
+  solderMaskColor?: SolderMaskColor
+  panelizationMode?: 'single' | 'panelized'
+  pricingQuantities?: number[]
+  selectedPricingQuantity?: number
+}
+
+function toPcbDataSnapshot(data: unknown): PcbDataSnapshot | null {
+  if (!data || typeof data !== 'object') return null
+  const raw = toRaw(data) as Record<string, unknown>
+  const numberOrUndefined = (value: unknown) => {
+    if (value == null) return undefined
+    if (typeof value === 'string' && value.trim() === '') return undefined
+    const n = Number(value)
+    return Number.isFinite(n) ? n : undefined
+  }
+  const out: PcbDataSnapshot = {
+    sizeX: numberOrUndefined(raw.sizeX),
+    sizeY: numberOrUndefined(raw.sizeY),
+    layerCount: numberOrUndefined(raw.layerCount),
+    material: raw.material === 'FR4' || raw.material === 'IMS-AL' || raw.material === 'Flex' || raw.material === 'Rigid-Flex'
+      ? raw.material
+      : undefined,
+    surfaceFinish: raw.surfaceFinish === 'ENIG' || raw.surfaceFinish === 'HAL' || raw.surfaceFinish === 'OSP'
+      ? raw.surfaceFinish
+      : undefined,
+    copperWeight: raw.copperWeight === '1oz' || raw.copperWeight === '2oz'
+      ? raw.copperWeight
+      : undefined,
+    innerCopperWeight: raw.innerCopperWeight === '0.5oz' || raw.innerCopperWeight === '1oz' || raw.innerCopperWeight === '2oz'
+      ? raw.innerCopperWeight
+      : undefined,
+    thicknessMm: raw.thicknessMm === 0.6
+      || raw.thicknessMm === 0.8
+      || raw.thicknessMm === 1.0
+      || raw.thicknessMm === 1.2
+      || raw.thicknessMm === 1.6
+      || raw.thicknessMm === 2.0
+      ? raw.thicknessMm
+      : undefined,
+    solderMaskColor: raw.solderMaskColor === 'green'
+      || raw.solderMaskColor === 'black'
+      || raw.solderMaskColor === 'blue'
+      || raw.solderMaskColor === 'red'
+      || raw.solderMaskColor === 'white'
+      || raw.solderMaskColor === 'purple'
+      || raw.solderMaskColor === 'brown'
+      ? raw.solderMaskColor
+      : undefined,
+    panelizationMode: raw.panelizationMode === 'panelized' ? 'panelized' : (raw.panelizationMode === 'single' ? 'single' : undefined),
+    pricingQuantities: Array.isArray(raw.pricingQuantities)
+      ? raw.pricingQuantities
+        .map(v => Number(v))
+        .filter(v => Number.isFinite(v))
+      : undefined,
+    selectedPricingQuantity: numberOrUndefined(raw.selectedPricingQuantity),
+  }
+  return out
+}
+
+function arePcbDataEqual(a: PcbDataSnapshot | null, b: PcbDataSnapshot | null): boolean {
+  return JSON.stringify(a ?? null) === JSON.stringify(b ?? null)
+}
+
+type BomImportOptionsSnapshot = Record<string, { skipRows?: number; mapping?: BomColumnMapping }>
+type PnpImportOptionsSnapshot = Record<string, { skipRows?: number; mapping?: PnPColumnMapping; unitOverride?: 'auto' | PnPCoordUnit }>
+
+function toBomImportOptionsSnapshot(input: unknown): BomImportOptionsSnapshot {
+  if (!input || typeof input !== 'object') return {}
+  const out: BomImportOptionsSnapshot = {}
+  for (const [fileName, opts] of Object.entries(toRaw(input) as Record<string, unknown>)) {
+    if (!opts || typeof opts !== 'object') continue
+    const rawOpts = toRaw(opts) as Record<string, unknown>
+    const skipRows = Number(rawOpts.skipRows)
+    const mappingRaw = rawOpts.mapping
+    let mapping: BomColumnMapping | undefined
+    if (mappingRaw && typeof mappingRaw === 'object') {
+      const mapOut: Record<string, number> = {}
+      for (const [k, v] of Object.entries(toRaw(mappingRaw) as Record<string, unknown>)) {
+        const n = Number(v)
+        if (Number.isFinite(n)) mapOut[k] = n
+      }
+      mapping = mapOut as BomColumnMapping
+    }
+    out[fileName] = {
+      skipRows: Number.isFinite(skipRows) ? Math.max(0, Math.floor(skipRows)) : undefined,
+      mapping,
+    }
+  }
+  return out
+}
+
+function toPnpImportOptionsSnapshot(input: unknown): PnpImportOptionsSnapshot {
+  if (!input || typeof input !== 'object') return {}
+  const out: PnpImportOptionsSnapshot = {}
+  for (const [fileName, opts] of Object.entries(toRaw(input) as Record<string, unknown>)) {
+    if (!opts || typeof opts !== 'object') continue
+    const rawOpts = toRaw(opts) as Record<string, unknown>
+    const skipRows = Number(rawOpts.skipRows)
+    const mappingRaw = rawOpts.mapping
+    let mapping: PnPColumnMapping | undefined
+    if (mappingRaw && typeof mappingRaw === 'object') {
+      const mapOut: Record<string, number> = {}
+      for (const [k, v] of Object.entries(toRaw(mappingRaw) as Record<string, unknown>)) {
+        const n = Number(v)
+        if (Number.isFinite(n)) mapOut[k] = n
+      }
+      mapping = mapOut as PnPColumnMapping
+    }
+    const unitOverride = rawOpts.unitOverride === 'auto' || rawOpts.unitOverride === 'mm' || rawOpts.unitOverride === 'mils' || rawOpts.unitOverride === 'inches'
+      ? rawOpts.unitOverride
+      : undefined
+    out[fileName] = {
+      skipRows: Number.isFinite(skipRows) ? Math.max(0, Math.floor(skipRows)) : undefined,
+      mapping,
+      unitOverride,
+    }
+  }
+  return out
+}
+
+function areBomImportOptionsEqual(a: BomImportOptionsSnapshot, b: BomImportOptionsSnapshot): boolean {
+  return JSON.stringify(a) === JSON.stringify(b)
+}
+
+function arePnpImportOptionsEqual(a: PnpImportOptionsSnapshot, b: PnpImportOptionsSnapshot): boolean {
+  return JSON.stringify(a) === JSON.stringify(b)
 }
 
 // ── Interaction mode management ──
@@ -3296,9 +3504,11 @@ watch(activeFilter, (filter) => {
 
 let teamPersistQueue: Promise<void> = Promise.resolve()
 let pendingTeamUpdates: Record<string, any> = {}
-let disableTeamFileImportOptionPersistence = false
 let pendingLocalPageLocks: PageLocksRecord | null = null
 let pendingLocalPasteSettings: ReturnType<typeof toPasteSettingsSnapshot> | null = null
+let pendingLocalPcbData: PcbDataSnapshot | null = null
+let pendingLocalBomFileImportOptions: BomImportOptionsSnapshot | null = null
+let pendingLocalPnpFileImportOptions: PnpImportOptionsSnapshot | null = null
 
 function persistToProject(updates: Record<string, any>): Promise<void> {
   if (!isTeamProject || !teamProjectId) return Promise.resolve()
@@ -3310,36 +3520,51 @@ function persistToProject(updates: Record<string, any>): Promise<void> {
   teamPersistQueue = teamPersistQueue.then(async () => {
     const mapped: Record<string, any> = {}
     for (const [k, v] of Object.entries(updates)) {
-      if (
-        disableTeamFileImportOptionPersistence
-        && (k === 'bomFileImportOptions' || k === 'pnpFileImportOptions')
-      ) {
-        continue
-      }
-      mapped[k.replace(/[A-Z]/g, m => '_' + m.toLowerCase())] = v
+      // Strip Vue reactivity to ensure clean JSON serialization for Supabase
+      const rawValue = (v != null && typeof v === 'object') ? toRaw(v) : v
+      const raw = (rawValue != null && typeof rawValue === 'object')
+        ? JSON.parse(JSON.stringify(rawValue))
+        : rawValue
+      mapped[k.replace(/[A-Z]/g, m => '_' + m.toLowerCase())] = raw
     }
     if (Object.keys(mapped).length === 0) return
-    const { error } = await updateTeamProject(teamProjectId, mapped)
+    if (import.meta.dev && 'pcb_data' in mapped) {
+      console.debug('[viewer] Persist pcb_data payload', mapped.pcb_data)
+    }
+    const { data, error } = await updateTeamProject(teamProjectId, mapped)
     if (error) {
       const message = String(error.message ?? '')
-      const missingImportOptionColumns = (
-        message.includes("Could not find the 'bom_file_import_options' column")
-        || message.includes("Could not find the 'pnp_file_import_options' column")
-      )
-      if (missingImportOptionColumns) {
-        disableTeamFileImportOptionPersistence = true
-        const retryPayload: Record<string, any> = { ...mapped }
-        delete retryPayload.bom_file_import_options
-        delete retryPayload.pnp_file_import_options
-        if (Object.keys(retryPayload).length > 0) {
-          const retry = await updateTeamProject(teamProjectId, retryPayload)
-          if (retry.error) {
-            console.warn('[viewer] Failed to persist team project updates after retry:', retry.error.message ?? retry.error)
+      const missingColumn = message.includes('Could not find the')
+        && message.includes('column')
+      if (missingColumn) {
+        const missingColumnName = message.match(/Could not find the '([^']+)' column/i)?.[1]
+        if (missingColumnName && missingColumnName in mapped) {
+          // Retry without only the missing field so unrelated updates still persist.
+          const retryPayload: Record<string, any> = { ...mapped }
+          delete retryPayload[missingColumnName]
+          if (Object.keys(retryPayload).length > 0) {
+            const retry = await updateTeamProject(teamProjectId, retryPayload)
+            if (retry.error) {
+              console.warn('[viewer] Failed retry after dropping missing column:', retry.error.message ?? retry.error)
+            }
           }
+          return
         }
+        // Skip persists for columns that don't exist in the schema yet
+        console.warn('[viewer] Skipping persist for missing column:', message)
         return
       }
       console.warn('[viewer] Failed to persist team project updates:', error.message ?? error)
+      if (import.meta.dev && 'pcb_data' in mapped) {
+        console.debug('[viewer] pcb_data persist error payload', mapped.pcb_data)
+      }
+    } else if (!data) {
+      console.warn('[viewer] Persist returned no data (possible RLS issue):', Object.keys(mapped))
+      if (import.meta.dev && 'pcb_data' in mapped) {
+        console.debug('[viewer] pcb_data persist returned no data', mapped.pcb_data)
+      }
+    } else if (import.meta.dev && 'pcb_data' in mapped) {
+      console.debug('[viewer] pcb_data persist success')
     }
   }).catch((err) => {
     console.warn('[viewer] Persist queue failed:', err)
@@ -3541,9 +3766,14 @@ watch(() => bom.boardQuantity.value, (qty) => {
 
 watch(bom.fileImportOptionsRecord, (options) => {
   if (!hasLoadedProjectData.value) return
-  const snapshot = { ...options }
+  const snapshot = toBomImportOptionsSnapshot(options)
   if (isTeamProject) {
-    persistToProject({ bomFileImportOptions: snapshot })
+    pendingLocalBomFileImportOptions = snapshot
+    void persistToProject({ bomFileImportOptions: snapshot }).finally(() => {
+      if (pendingLocalBomFileImportOptions && areBomImportOptionsEqual(pendingLocalBomFileImportOptions, snapshot)) {
+        pendingLocalBomFileImportOptions = null
+      }
+    })
   } else {
     updateLocalBomFileImportOptions(projectId, snapshot)
   }
@@ -3551,9 +3781,14 @@ watch(bom.fileImportOptionsRecord, (options) => {
 
 watch(pnp.fileImportOptionsRecord, (options) => {
   if (!hasLoadedProjectData.value) return
-  const snapshot = { ...options }
+  const snapshot = toPnpImportOptionsSnapshot(options)
   if (isTeamProject) {
-    persistToProject({ pnpFileImportOptions: snapshot })
+    pendingLocalPnpFileImportOptions = snapshot
+    void persistToProject({ pnpFileImportOptions: snapshot }).finally(() => {
+      if (pendingLocalPnpFileImportOptions && arePnpImportOptionsEqual(pendingLocalPnpFileImportOptions, snapshot)) {
+        pendingLocalPnpFileImportOptions = null
+      }
+    })
   } else {
     updateLocalPnpFileImportOptions(projectId, snapshot)
   }
@@ -3561,10 +3796,19 @@ watch(pnp.fileImportOptionsRecord, (options) => {
 
 watch(pcbData, (data) => {
   if (!hasLoadedProjectData.value) return
+  const snapshot = toPcbDataSnapshot(data)
   if (isTeamProject) {
-    persistToProject({ pcbData: data })
+    pendingLocalPcbData = snapshot
+    if (import.meta.dev) {
+      console.debug('[viewer] queue pcbData persist', snapshot)
+    }
+    void persistToProject({ pcbData: snapshot }).finally(() => {
+      if (pendingLocalPcbData && arePcbDataEqual(pendingLocalPcbData, snapshot)) {
+        pendingLocalPcbData = null
+      }
+    })
   } else {
-    updatePcbData(projectId, data)
+    updatePcbData(projectId, snapshot)
   }
 }, { deep: true })
 
@@ -3621,6 +3865,9 @@ async function handleFetchAllPricing() {
     bom.pricingCache.value as Record<string, any>,
   )
   bom.updatePricingCache(updatedCache)
+  if (isTeamProject) {
+    await persistToProject({ bomPricingCache: updatedCache })
+  }
 }
 
 async function handleFetchSinglePricing(partNumber: string) {
@@ -3628,6 +3875,9 @@ async function handleFetchSinglePricing(partNumber: string) {
   const entry = await elexess.fetchSinglePricing(partNumber)
   if (entry) {
     bom.updateSinglePricing(partNumber, entry.data)
+    if (isTeamProject) {
+      await persistToProject({ bomPricingCache: bom.pricingCache.value as Record<string, any> })
+    }
   }
 }
 
@@ -3867,7 +4117,8 @@ function applyDefaultCropToOutline() {
 
 onMounted(async () => {
   if (isTeamProject && teamProjectId) {
-    const tp = await getTeamProject(teamProjectId)
+    // Always refresh from DB to avoid stale in-memory cache after collaborative writes.
+    const tp = await getTeamProject(teamProjectId, { force: true })
     if (tp) {
       // Map team project shape to the local project shape used by the template
       project.value = {
