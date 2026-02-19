@@ -1,38 +1,6 @@
 <template>
   <div class="flex-1 min-h-0 flex flex-col overflow-x-hidden overflow-y-auto p-2 gap-2">
-    <nav
-      class="min-w-0 flex items-center"
-      aria-label="Panel settings sections"
-    >
-      <div
-        role="tablist"
-        class="viewer-tabs-scroller flex items-center min-w-0 overflow-x-auto overflow-y-hidden [-webkit-overflow-scrolling:touch] gap-0.5"
-      >
-        <button
-          v-for="t in panelTabItems"
-          :key="t.value"
-          type="button"
-          role="tab"
-          :aria-selected="activePanelSubtab === t.value"
-          :tabindex="activePanelSubtab === t.value ? 0 : -1"
-          class="flex items-center gap-1.5 h-7 px-2.5 text-xs select-none whitespace-nowrap rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-          :class="activePanelSubtab === t.value
-            ? 'bg-neutral-200/80 text-neutral-950 font-semibold dark:bg-neutral-700/60 dark:text-neutral-50'
-            : 'text-neutral-500 font-medium hover:text-neutral-800 hover:bg-neutral-200/40 dark:text-neutral-400 dark:hover:text-neutral-200 dark:hover:bg-neutral-700/30'"
-          @click="activePanelSubtab = t.value"
-        >
-          <UIcon
-            :name="t.icon"
-            class="text-sm shrink-0"
-            :class="activePanelSubtab === t.value ? 'opacity-100' : 'opacity-50'"
-          />
-          <span class="leading-none">{{ t.label }}</span>
-        </button>
-      </div>
-    </nav>
-
     <div
-      v-if="activePanelSubtab === 'layout'"
       class="pt-1 space-y-2"
       :class="{ 'pointer-events-none opacity-80': locked }"
     >
@@ -227,13 +195,9 @@
               </template>
             </div>
           </div>
-    </div>
-
-    <div
-      v-else
-      class="pt-1 space-y-2"
-      :class="{ 'pointer-events-none opacity-80': locked }"
-    >
+      <div class="rounded border border-neutral-200 dark:border-neutral-800 p-2">
+        <div class="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">Panel Connections</div>
+      </div>
           <div class="rounded border border-neutral-200 dark:border-neutral-800 p-2 space-y-2">
             <div class="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">Separation</div>
             <div class="grid grid-cols-3 gap-1">
@@ -412,31 +376,15 @@ const separationTypes = [
   { label: 'Mixed', value: 'mixed' as const },
 ]
 
-interface PanelTabItem {
-  label: string
-  value: PanelSubtab
-  icon: string
-}
-
-const panelTabItems: PanelTabItem[] = [
-  { label: 'General Info', icon: 'i-lucide-layout-grid', value: 'layout' },
-  { label: 'Panel Connections', icon: 'i-lucide-link', value: 'tabs' },
-]
-
 const edgeNames = ['top', 'bottom', 'left', 'right'] as const
 type PanelEdge = typeof edgeNames[number]
 type TabSideCountField = 'defaultCountTop' | 'defaultCountBottom' | 'defaultCountLeft' | 'defaultCountRight'
-type PanelSubtab = 'layout' | 'tabs'
 const tabCountFieldToEdge: Record<TabSideCountField, PanelEdge> = {
   defaultCountTop: 'top',
   defaultCountBottom: 'bottom',
   defaultCountLeft: 'left',
   defaultCountRight: 'right',
 }
-const route = useRoute()
-const activePanelSubtab = ref<PanelSubtab>('layout')
-const panelSubtabStorageKey = computed(() => `gerbtrace:panel-subtab:${String(route.params.id ?? 'default')}`)
-
 const tabEdgeControlFields = computed((): Array<{ edge: PanelEdge, label: string, field: TabSideCountField }> => {
   const edgeToField: Record<PanelEdge, TabSideCountField> = {
     top: 'defaultCountTop',
@@ -451,19 +399,6 @@ const tabEdgeControlFields = computed((): Array<{ edge: PanelEdge, label: string
       label: edge.charAt(0).toUpperCase() + edge.slice(1),
       field: edgeToField[edge],
     }))
-})
-
-onMounted(() => {
-  if (typeof window === 'undefined') return
-  const saved = window.localStorage.getItem(panelSubtabStorageKey.value)
-  if (saved === 'layout' || saved === 'tabs') {
-    activePanelSubtab.value = saved
-  }
-})
-
-watch(activePanelSubtab, (tab) => {
-  if (typeof window === 'undefined') return
-  window.localStorage.setItem(panelSubtabStorageKey.value, tab)
 })
 
 function hasAnyRoutedSeparation(config: PanelConfig): boolean {
@@ -483,6 +418,7 @@ function isPanelEdgeRouted(config: PanelConfig, edge: PanelEdge): boolean {
 
 const fiducialPositionOptions = [
   { label: 'Top-left', value: 'top-left' as FiducialPosition },
+  { label: 'Top-right', value: 'top-right' as FiducialPosition },
   { label: 'Bot-left', value: 'bottom-left' as FiducialPosition },
   { label: 'Bot-right', value: 'bottom-right' as FiducialPosition },
 ]
@@ -671,6 +607,18 @@ const editorFrameBottom = computed(() => cfg.value.frame.enabled ? (cfg.value.fr
 const editorFrameLeft = computed(() => cfg.value.frame.enabled ? (cfg.value.frame.widthLeft ?? 0) * es.value : 0)
 const editorFrameRight = computed(() => cfg.value.frame.enabled ? (cfg.value.frame.widthRight ?? 0) * es.value : 0)
 const editorToolD = computed(() => hasAnyRoutedSeparation(cfg.value) ? cfg.value.routingToolDiameter * es.value : 0)
+const editorFrameGapTop = computed(() =>
+  editorFrameTop.value > 0 && isPanelEdgeRouted(cfg.value, 'top') ? editorToolD.value : 0,
+)
+const editorFrameGapBottom = computed(() =>
+  editorFrameBottom.value > 0 && isPanelEdgeRouted(cfg.value, 'bottom') ? editorToolD.value : 0,
+)
+const editorFrameGapLeft = computed(() =>
+  editorFrameLeft.value > 0 && isPanelEdgeRouted(cfg.value, 'left') ? editorToolD.value : 0,
+)
+const editorFrameGapRight = computed(() =>
+  editorFrameRight.value > 0 && isPanelEdgeRouted(cfg.value, 'right') ? editorToolD.value : 0,
+)
 const editorPcbW = computed(() => (props.boardSizeMm?.width ?? 30) * es.value)
 const editorPcbH = computed(() => (props.boardSizeMm?.height ?? 20) * es.value)
 const editorCornerR = computed(() => (cfg.value.frame.cornerRadius ?? 3) * es.value)
@@ -692,15 +640,13 @@ function editorRowGap(i: number): number {
   return c.routingToolDiameter * es.value
 }
 
-const editorFrameRoutingGap = computed(() => hasAnyRoutedSeparation(cfg.value) ? editorToolD.value : 0)
-
 const editorInnerW = computed(() => {
-  let w = editorFrameRoutingGap.value * 2 + cfg.value.countX * editorPcbW.value
+  let w = editorFrameGapLeft.value + editorFrameGapRight.value + cfg.value.countX * editorPcbW.value
   for (let i = 0; i < cfg.value.countX - 1; i++) w += editorColGap(i)
   return w
 })
 const editorInnerH = computed(() => {
-  let h = editorFrameRoutingGap.value * 2 + cfg.value.countY * editorPcbH.value
+  let h = editorFrameGapTop.value + editorFrameGapBottom.value + cfg.value.countY * editorPcbH.value
   for (let i = 0; i < cfg.value.countY - 1; i++) h += editorRowGap(i)
   return h
 })
@@ -708,12 +654,12 @@ const editorTotalW = computed(() => editorInnerW.value + editorFrameLeft.value +
 const editorTotalH = computed(() => editorInnerH.value + editorFrameTop.value + editorFrameBottom.value)
 
 function editorColX(col: number): number {
-  let x = editorFrameLeft.value + editorFrameRoutingGap.value
+  let x = editorFrameLeft.value + editorFrameGapLeft.value
   for (let c = 0; c < col; c++) x += editorPcbW.value + editorColGap(c)
   return x
 }
 function editorRowY(row: number): number {
-  let y = editorFrameTop.value + editorFrameRoutingGap.value
+  let y = editorFrameTop.value + editorFrameGapTop.value
   for (let r = 0; r < row; r++) y += editorPcbH.value + editorRowGap(r)
   return y
 }
@@ -815,32 +761,32 @@ const editorChannels = computed<EditorChannel[]>(() => {
         })
       }
       // Frame edges
-      if (c.frame.enabled && editorFrameRoutingGap.value > 0) {
-        if (col === 0 && isPanelEdgeRouted(c, 'left')) {
+      if (c.frame.enabled) {
+        if (col === 0 && editorFrameGapLeft.value > 0 && isPanelEdgeRouted(c, 'left')) {
           channels.push({
             key: `${col}-${row}-left`, col, row, edge: 'left',
-            x: editorFrameLeft.value, y: editorRowY(row), w: editorFrameRoutingGap.value, h: editorPcbH.value,
+            x: editorFrameLeft.value, y: editorRowY(row), w: editorFrameGapLeft.value, h: editorPcbH.value,
             edgeLength: editorPcbH.value, edgeStart: editorRowY(row), isVertical: true,
           })
         }
-        if (row === 0 && isPanelEdgeRouted(c, 'top')) {
+        if (row === 0 && editorFrameGapTop.value > 0 && isPanelEdgeRouted(c, 'top')) {
           channels.push({
             key: `${col}-${row}-top`, col, row, edge: 'top',
-            x: editorColX(col), y: editorFrameTop.value, w: editorPcbW.value, h: editorFrameRoutingGap.value,
+            x: editorColX(col), y: editorFrameTop.value, w: editorPcbW.value, h: editorFrameGapTop.value,
             edgeLength: editorPcbW.value, edgeStart: editorColX(col), isVertical: false,
           })
         }
-        if (col === c.countX - 1 && isPanelEdgeRouted(c, 'right')) {
+        if (col === c.countX - 1 && editorFrameGapRight.value > 0 && isPanelEdgeRouted(c, 'right')) {
           channels.push({
             key: `${col}-${row}-right`, col, row, edge: 'right',
-            x: editorColX(col) + editorPcbW.value, y: editorRowY(row), w: editorFrameRoutingGap.value, h: editorPcbH.value,
+            x: editorColX(col) + editorPcbW.value, y: editorRowY(row), w: editorFrameGapRight.value, h: editorPcbH.value,
             edgeLength: editorPcbH.value, edgeStart: editorRowY(row), isVertical: true,
           })
         }
-        if (row === c.countY - 1 && isPanelEdgeRouted(c, 'bottom')) {
+        if (row === c.countY - 1 && editorFrameGapBottom.value > 0 && isPanelEdgeRouted(c, 'bottom')) {
           channels.push({
             key: `${col}-${row}-bottom`, col, row, edge: 'bottom',
-            x: editorColX(col), y: editorRowY(row) + editorPcbH.value, w: editorPcbW.value, h: editorFrameRoutingGap.value,
+            x: editorColX(col), y: editorRowY(row) + editorPcbH.value, w: editorPcbW.value, h: editorFrameGapBottom.value,
             edgeLength: editorPcbW.value, edgeStart: editorColX(col), isVertical: false,
           })
         }

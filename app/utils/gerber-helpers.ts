@@ -247,10 +247,12 @@ const LAYER_SORT_ORDER: Record<string, number> = {
   'Top Solder Mask': 5,
   'Top Copper': 6,
   'Inner Layer': 7,
-  'Bottom Copper': 8,
-  'Bottom Solder Mask': 9,
-  'Bottom Paste': 10,
-  'Bottom Silkscreen': 11,
+  // Bottom stack default (first-to-last in Layers view):
+  // Silkscreen -> Paste -> Solder Mask -> Copper.
+  'Bottom Silkscreen': 8,
+  'Bottom Paste': 9,
+  'Bottom Solder Mask': 10,
+  'Bottom Copper': 11,
   'PnP Bottom': 12,
   'PnP Bottom (THT)': 12.1,
   'Outline': 13,
@@ -336,7 +338,7 @@ export function isGerberFile(fileName: string): boolean {
 
 // ── Pick & Place file detection ──
 
-const PNP_EXTENSIONS = new Set(['.txt', '.csv', '.xy', '.pos'])
+const PNP_EXTENSIONS = new Set(['.txt', '.csv', '.tsv', '.xy', '.pos', '.xlsx', '.xls'])
 const PNP_NAME_PATTERNS = /(?:pnp|pick[_\-\s]?(?:and[_\-\s]?)?place|pos(?:ition)?|centroid|cpl)/i
 
 /**

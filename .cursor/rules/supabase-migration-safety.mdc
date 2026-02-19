@@ -1,37 +1,13 @@
 ---
-description: Supabase migration authoring rules for the self-hosted production droplet
+description: Supabase migration authoring rules for Supabase Cloud
 globs: supabase/migrations/**/*.sql
 alwaysApply: false
 ---
 
-# Supabase Migration Safety (Production Droplet)
+# Supabase Migration Safety (Supabase Cloud)
 
-The production Supabase runs on a self-hosted Docker droplet. Migrations are applied
-by `.github/workflows/deploy-supabase.yml` using `psql -U supabase_admin`. These rules
-prevent the recurring deploy failures we have hit in every release since v1.0.6.
-
-## Object ownership
-
-- All tables, functions, and triggers in `public` are owned by **`supabase_admin`**.
-- The deploy workflow already runs migrations as `supabase_admin`.
-- If a migration needs to modify an object potentially owned by a different role,
-  use a `DO` block that looks up the owner and calls `SET LOCAL ROLE`:
-
-```sql
-do $$
-declare v_owner name;
-begin
-  select r.rolname into v_owner
-    from pg_proc p join pg_roles r on p.proowner = r.oid
-   where p.proname = 'my_function' and p.pronamespace = 'public'::regnamespace;
-  if v_owner is not null and v_owner <> current_user then
-    execute format('SET LOCAL ROLE %I', v_owner);
-  end if;
-end;
-$$;
--- now CREATE OR REPLACE / ALTER ...
-reset role;
-```
+Production Supabase runs on **Supabase Cloud** (project `gqrnlnlfidighosujpdb`).
+Migrations are applied using the Supabase MCP `apply_migration` tool.
 
 ## Every statement must be idempotent
 
@@ -44,23 +20,21 @@ Migrations can be retried after partial failures. Every statement must tolerate 
 - `ALTER TABLE ADD CONSTRAINT` -> check `pg_constraint` first in a `DO` block
 - `DELETE` dedup -> use `row_number()` with a stable tiebreaker (`ctid`) so re-runs are no-ops
 
-## Test against realistic ownership
+## Schema cache
 
-Local Supabase (`supabase start`) runs everything as `postgres` superuser, hiding
-ownership problems. Before merging a migration:
+Supabase Cloud auto-reloads the PostgREST schema cache after migrations applied via the `apply_migration` MCP tool. No manual reload is needed.
 
-1. Mentally verify every `ALTER TABLE`, `CREATE OR REPLACE FUNCTION`, and `DROP`
-   will succeed when run as `supabase_admin` against objects it owns.
-2. Check the error filter in `deploy-supabase.yml` — only "already exists"-family
-   errors are tolerated; anything else aborts the deploy.
+## Verifying changes
 
-## Migration is NOT recorded on failure
+After applying a migration, verify the schema change:
 
-The deploy script only inserts into `schema_migrations` **after** the migration
-succeeds. A failed migration will be retried on the next deploy, which is why
-idempotency is critical.
+```
+execute_sql(
+  project_id: "gqrnlnlfidighosujpdb",
+  query: "SELECT column_name, data_type FROM information_schema.columns WHERE table_schema='public' AND table_name='<table>';"
+)
+```
 
-## Do not use SET ROLE from postgres
+## Do NOT use SSH to the droplet
 
-`postgres` is **not** a superuser on the production droplet and cannot
-`SET ROLE supabase_admin`. Never write migrations that depend on this.
+The old self-hosted droplet is **not** the production database. All database operations must target Supabase Cloud via MCP tools.

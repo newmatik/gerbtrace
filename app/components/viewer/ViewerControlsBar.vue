@@ -41,7 +41,7 @@
       </UButton>
     </div>
 
-    <!-- Interaction mode: Cursor / Measure / Info / Delete + Panel toggles -->
+    <!-- Interaction mode: Cursor / Measure / Info / Delete -->
     <div class="flex items-center rounded-lg p-0.5 gap-0.5 bg-neutral-100/90 border border-neutral-200 dark:bg-neutral-900/70 dark:border-neutral-700 shrink-0">
       <UButton
         v-for="m in visibleModeOptions"
@@ -58,18 +58,24 @@
         <span>{{ m.label }}</span>
       </UButton>
 
-      <template v-if="page === 'panel'">
+      <!-- Measure constraint modes (visible when Measure mode is active) -->
+      <template v-if="activeMode === 'measure'">
+        <div class="w-px h-4 bg-neutral-300 dark:bg-neutral-600 mx-0.5" />
         <UButton
+          v-for="m in measureConstraintModes"
+          :key="m.value"
           size="xs"
           color="neutral"
           variant="ghost"
-          icon="i-lucide-cpu"
-          :class="[tbBtnBase, panelShowComponents ? tbBtnActive : tbBtnIdle]"
-          title="Toggle component overlay"
-          @click="panelShowComponents = !panelShowComponents"
+          :class="[tbBtnBase, measureConstraintMode === m.value ? tbBtnMeasureActive : tbBtnIdle]"
+          :title="m.title"
+          @click="measureConstraintMode = m.value"
         >
-          Components
+          {{ m.label }}
         </UButton>
+      </template>
+
+      <template v-if="page === 'panel'">
         <UButton
           size="xs"
           color="neutral"
@@ -95,6 +101,33 @@
         </div>
       </template>
     </div>
+
+    <template v-if="page === 'panel'">
+      <div class="flex items-center rounded-lg p-0.5 gap-0.5 bg-neutral-100/90 border border-neutral-200 dark:bg-neutral-900/70 dark:border-neutral-700 shrink-0">
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-microchip"
+          :class="[tbBtnBase, panelShowSmdComponents ? tbBtnActive : tbBtnIdle]"
+          title="Toggle SMD component overlay"
+          @click="panelShowSmdComponents = !panelShowSmdComponents"
+        >
+          SMD
+        </UButton>
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-pin"
+          :class="[tbBtnBase, panelShowThtComponents ? tbBtnActive : tbBtnIdle]"
+          title="Toggle THT component overlay"
+          @click="panelShowThtComponents = !panelShowThtComponents"
+        >
+          THT
+        </UButton>
+      </div>
+    </template>
 
     <!-- Panel-only: Tab Control + Added Routing -->
     <template v-if="page === 'panel'">
@@ -262,6 +295,67 @@
       </div>
     </template>
 
+    <!-- PnP canvas controls (SMD/THT tabs) -->
+    <template v-if="page === 'smd' || page === 'tht'">
+      <div class="flex items-center rounded-lg p-0.5 gap-0.5 bg-neutral-100/90 border border-neutral-200 dark:bg-neutral-900/70 dark:border-neutral-700 shrink-0">
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-microchip"
+          :class="[tbBtnBase, pnpShowSmd ? tbBtnActive : tbBtnIdle]"
+          title="Show SMD components on canvas"
+          @click="pnpShowSmd = !pnpShowSmd"
+        >
+          SMD
+        </UButton>
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-pin"
+          :class="[tbBtnBase, pnpShowTht ? tbBtnActive : tbBtnIdle]"
+          title="Show THT components on canvas"
+          @click="pnpShowTht = !pnpShowTht"
+        >
+          THT
+        </UButton>
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          :class="[tbBtnBase, pnpShowDnpHighlight ? tbBtnActive : tbBtnIdle]"
+          title="Show DNP components highlighted in blue on canvas"
+          @click="pnpShowDnpHighlight = !pnpShowDnpHighlight"
+        >
+          <span class="text-[14px] leading-none -mt-px" aria-hidden="true">•</span>
+          DNP Blue
+        </UButton>
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-crosshair"
+          :class="[tbBtnBase, pnpAutoFocusOnSelect ? tbBtnActive : tbBtnIdle]"
+          title="Automatically center and zoom when selecting components"
+          @click="pnpAutoFocusOnSelect = !pnpAutoFocusOnSelect"
+        >
+          Auto Focus
+        </UButton>
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-map"
+          :class="[tbBtnBase, pnpShowMinimap ? tbBtnActive : tbBtnIdle]"
+          title="Show minimap with current viewport"
+          @click="pnpShowMinimap = !pnpShowMinimap"
+        >
+          Minimap
+        </UButton>
+      </div>
+    </template>
+
     <div v-if="showLockControl" class="ml-auto shrink-0">
       <UPopover v-model:open="lockPopoverOpen" :content="{ side: 'bottom', align: 'end', sideOffset: 6 }">
         <div
@@ -292,7 +386,7 @@
 </template>
 
 <script setup lang="ts">
-type ViewerPage = 'files' | 'pcb' | 'panel' | 'smd' | 'tht' | 'bom' | 'pricing' | 'docs'
+type ViewerPage = 'files' | 'pcb' | 'panel' | 'paste' | 'smd' | 'tht' | 'bom' | 'pricing' | 'docs' | 'summary'
 type ViewMode = 'layers' | 'realistic'
 type LayerFilter = 'all' | 'top' | 'bot'
 type InteractionMode = 'cursor' | 'measure' | 'info' | 'delete'
@@ -327,9 +421,17 @@ const boardRotation = defineModel<number>('boardRotation', { required: true })
 
 const panelTabEditMode = defineModel<PanelTabEditMode>('panelTabEditMode', { default: 'off' })
 const panelAddedRoutingEditMode = defineModel<PanelAddedRoutingEditMode>('panelAddedRoutingEditMode', { default: 'off' })
-const panelShowComponents = defineModel<boolean>('panelShowComponents', { default: true })
+const panelShowSmdComponents = defineModel<boolean>('panelShowSmdComponents', { default: true })
+const panelShowThtComponents = defineModel<boolean>('panelShowThtComponents', { default: true })
 const panelShowDangerZones = defineModel<boolean>('panelShowDangerZones', { default: false })
 const panelDangerInsetMm = defineModel<number>('panelDangerInsetMm', { default: 2 })
+
+const pnpShowDnpHighlight = defineModel<boolean>('pnpShowDnpHighlight', { default: true })
+const pnpShowSmd = defineModel<boolean>('pnpShowSmd', { default: true })
+const pnpShowTht = defineModel<boolean>('pnpShowTht', { default: false })
+const pnpAutoFocusOnSelect = defineModel<boolean>('pnpAutoFocusOnSelect', { default: true })
+const pnpShowMinimap = defineModel<boolean>('pnpShowMinimap', { default: false })
+const measureConstraintMode = defineModel<'free' | 'horizontal' | 'vertical'>('measureConstraintMode', { default: 'free' })
 
 const panelTabControlEnabled = computed(() => props.panelTabControlEnabled ?? true)
 const isLocked = computed(() => !!props.isLocked)
@@ -378,5 +480,14 @@ const tbBtnIdle =
 const tbBtnActive =
   '!border-blue-500/70 !text-blue-700 !bg-blue-50/90 ' +
   'dark:!border-blue-400/70 dark:!text-blue-200 dark:!bg-blue-500/15'
+const tbBtnMeasureActive =
+  '!border-yellow-500/70 !text-yellow-700 !bg-yellow-50/90 ' +
+  'dark:!border-yellow-400/70 dark:!text-yellow-200 dark:!bg-yellow-500/15'
+
+const measureConstraintModes = [
+  { value: 'free' as const, label: 'Free', title: 'Free measurement (hold Shift for auto axis lock)' },
+  { value: 'horizontal' as const, label: 'H', title: 'Constrain to horizontal axis' },
+  { value: 'vertical' as const, label: 'V', title: 'Constrain to vertical axis' },
+]
 </script>
 

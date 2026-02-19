@@ -34,7 +34,7 @@ function shouldSkipZipEntry(fileName: string): boolean {
  * or 'PnP Top' / 'PnP Bottom' for single-side files.
  */
 function detectPnPLayerType(fileName: string, content: string): string {
-  const components = parsePnPFile(content, 'top')
+  const components = parsePnPFile(content, 'top', undefined, fileName)
   const hasTop = components.some(c => c.side === 'top')
   const hasBot = components.some(c => c.side === 'bottom')
 
@@ -60,6 +60,32 @@ function deriveSourceName(file: File): string {
 
 function isPdfFile(fileName: string): boolean {
   return fileName.toLowerCase().endsWith('.pdf')
+}
+
+function isExcelBom(fileName: string): boolean {
+  const lower = fileName.toLowerCase()
+  return lower.endsWith('.xlsx') || lower.endsWith('.xls')
+}
+
+function isExcelTabular(fileName: string): boolean {
+  return isExcelBom(fileName)
+}
+
+function excelMimeType(fileName: string): string {
+  return fileName.toLowerCase().endsWith('.xls')
+    ? 'application/vnd.ms-excel'
+    : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+}
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer)
+  let binary = ''
+  const chunkSize = 0x8000
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize)
+    binary += String.fromCharCode(...chunk)
+  }
+  return btoa(binary)
 }
 
 async function handleFiles(rawFiles: File[]) {
@@ -94,13 +120,23 @@ async function handleFiles(rawFiles: File[]) {
         }
 
         if (isImportableFile(fileName)) {
-          const content = await entry.async('text')
           if (isBomFile(fileName)) {
-            importedFiles.push({ fileName, content, layerType: 'BOM' })
+            if (isExcelBom(fileName)) {
+              const base64 = await entry.async('base64')
+              const mime = excelMimeType(fileName)
+              importedFiles.push({ fileName, content: `data:${mime};base64,${base64}`, layerType: 'BOM' })
+            } else {
+              const content = await entry.async('text')
+              importedFiles.push({ fileName, content, layerType: 'BOM' })
+            }
           } else if (isPnPFile(fileName)) {
+            const content = isExcelTabular(fileName)
+              ? `data:${excelMimeType(fileName)};base64,${await entry.async('base64')}`
+              : await entry.async('text')
             const layerType = detectPnPLayerType(fileName, content)
             importedFiles.push({ fileName, content, layerType })
           } else {
+            const content = await entry.async('text')
             const layerType = detectLayerType(fileName)
             importedFiles.push({ fileName, content, layerType })
           }
@@ -116,13 +152,23 @@ async function handleFiles(rawFiles: File[]) {
       }
     } else if (isImportableFile(file.name)) {
       if (!sourceName) sourceName = deriveSourceName(file)
-      const content = await file.text()
       if (isBomFile(file.name)) {
-        importedFiles.push({ fileName: file.name, content, layerType: 'BOM' })
+        if (isExcelBom(file.name)) {
+          const base64 = arrayBufferToBase64(await file.arrayBuffer())
+          const mime = excelMimeType(file.name)
+          importedFiles.push({ fileName: file.name, content: `data:${mime};base64,${base64}`, layerType: 'BOM' })
+        } else {
+          const content = await file.text()
+          importedFiles.push({ fileName: file.name, content, layerType: 'BOM' })
+        }
       } else if (isPnPFile(file.name)) {
+        const content = isExcelTabular(file.name)
+          ? `data:${excelMimeType(file.name)};base64,${arrayBufferToBase64(await file.arrayBuffer())}`
+          : await file.text()
         const layerType = detectPnPLayerType(file.name, content)
         importedFiles.push({ fileName: file.name, content, layerType })
       } else {
+        const content = await file.text()
         importedFiles.push({ fileName: file.name, content })
       }
     }

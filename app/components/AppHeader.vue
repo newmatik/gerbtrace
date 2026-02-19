@@ -133,6 +133,7 @@ const settingsMenuItems = computed(() => {
           onSelect: () => emit('openPerformanceMonitor'),
         }]
       : []),
+    { label: 'Docs / Help', icon: 'i-lucide-book-open-text', onSelect: () => router.push('/docs') },
     { label: 'Report a Bug', icon: 'i-lucide-bug', onSelect: () => { bugReportOpen.value = true } },
     {
       label: isDark.value ? 'Light Mode' : 'Dark Mode',
@@ -163,8 +164,9 @@ const userMenuItems = computed(() => [
       label: 'Sign Out',
       icon: 'i-lucide-log-out',
       onSelect: async () => {
-        await signOut()
-        router.replace('/')
+        await signOut({ force: true })
+        await router.replace('/auth/login')
+        if (import.meta.client) window.location.reload()
       },
     },
   ],

@@ -4,6 +4,9 @@
  * Follows the same pattern as useSidebarWidth (load on init, auto-save on change).
  */
 
+import type { PasteSettings, PasteMode, DotPattern } from './usePasteSettings'
+import { PASTE_DEFAULTS } from './usePasteSettings'
+
 const STORAGE_PREFIX = 'gerbtrace:viewer:'
 
 interface TabVisibility {
@@ -22,6 +25,8 @@ interface ViewerPrefs {
   presetId: string
   boardRotation: number
   tabVisibility: TabVisibility
+  pasteSettings: PasteSettings
+  pnpUnitOverride: 'auto' | 'mm' | 'mils' | 'inches'
 }
 
 const TAB_VIS_DEFAULTS: TabVisibility = {
@@ -40,6 +45,24 @@ const DEFAULTS: ViewerPrefs = {
   presetId: 'green-enig',
   boardRotation: 0,
   tabVisibility: { ...TAB_VIS_DEFAULTS },
+  pasteSettings: { ...PASTE_DEFAULTS },
+  pnpUnitOverride: 'auto',
+}
+
+const VALID_PASTE_MODES: PasteMode[] = ['stencil', 'jetprint']
+const VALID_DOT_PATTERNS: DotPattern[] = ['grid', 'hex']
+
+function loadPasteSettings(raw: unknown): PasteSettings {
+  if (!raw || typeof raw !== 'object') return { ...PASTE_DEFAULTS }
+  const p = raw as Record<string, unknown>
+  return {
+    mode: VALID_PASTE_MODES.includes(p.mode as PasteMode) ? p.mode as PasteMode : PASTE_DEFAULTS.mode,
+    dotDiameter: typeof p.dotDiameter === 'number' && isFinite(p.dotDiameter) ? p.dotDiameter : PASTE_DEFAULTS.dotDiameter,
+    dotSpacing: typeof p.dotSpacing === 'number' && isFinite(p.dotSpacing) ? p.dotSpacing : PASTE_DEFAULTS.dotSpacing,
+    pattern: VALID_DOT_PATTERNS.includes(p.pattern as DotPattern) ? p.pattern as DotPattern : PASTE_DEFAULTS.pattern,
+    highlightDots: typeof p.highlightDots === 'boolean' ? p.highlightDots : PASTE_DEFAULTS.highlightDots,
+    dynamicDots: typeof p.dynamicDots === 'boolean' ? p.dynamicDots : PASTE_DEFAULTS.dynamicDots,
+  }
 }
 
 export function useViewerPreferences(projectId: number | string) {
@@ -71,6 +94,10 @@ export function useViewerPreferences(projectId: number | string) {
                 docs: !!p.tabVisibility.docs,
               }
             : { ...TAB_VIS_DEFAULTS },
+          pasteSettings: loadPasteSettings(p.pasteSettings),
+          pnpUnitOverride: ['auto', 'mm', 'mils', 'inches'].includes(p.pnpUnitOverride)
+            ? p.pnpUnitOverride
+            : DEFAULTS.pnpUnitOverride,
           },
           hasStoredCropToOutline,
         }
@@ -95,10 +122,12 @@ export function useViewerPreferences(projectId: number | string) {
   const boardRotation = ref(stored.prefs.boardRotation)
   const tabVisibility = ref<TabVisibility>({ ...stored.prefs.tabVisibility })
   const hasStoredCropToOutline = ref(stored.hasStoredCropToOutline)
+  const pasteSettings = ref<PasteSettings>({ ...stored.prefs.pasteSettings })
+  const pnpUnitOverride = ref<ViewerPrefs['pnpUnitOverride']>(stored.prefs.pnpUnitOverride)
 
   // Auto-save whenever any preference changes
   watch(
-    [viewMode, activeFilter, activeMode, cropToOutline, mirrored, presetId, boardRotation, tabVisibility],
+    [viewMode, activeFilter, activeMode, cropToOutline, mirrored, presetId, boardRotation, tabVisibility, pasteSettings, pnpUnitOverride],
     () => {
       save({
         viewMode: viewMode.value,
@@ -109,6 +138,8 @@ export function useViewerPreferences(projectId: number | string) {
         presetId: presetId.value,
         boardRotation: boardRotation.value,
         tabVisibility: { ...tabVisibility.value },
+        pasteSettings: { ...pasteSettings.value },
+        pnpUnitOverride: pnpUnitOverride.value,
       })
     },
     { deep: true },
@@ -124,5 +155,7 @@ export function useViewerPreferences(projectId: number | string) {
     presetId,
     boardRotation,
     tabVisibility,
+    pasteSettings,
+    pnpUnitOverride,
   }
 }

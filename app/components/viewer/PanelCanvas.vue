@@ -23,8 +23,8 @@ import type { ImageTree, BoundingBox } from '@lib/gerber/types'
 import { renderToCanvas, renderOutlineMask, renderOuterBoundaryOnly, computeAutoFitTransform } from '@lib/renderer/canvas-renderer'
 import { renderRealisticView } from '@lib/renderer/realistic-renderer'
 import type { RealisticLayers } from '@lib/renderer/realistic-renderer'
-import { parseGerber } from '@lib/gerber'
-import { plotImageTree } from '@lib/gerber/plotter'
+import { generateJetprintDots } from '@lib/renderer/jetprint-dots'
+import type { PasteSettings } from '~/composables/usePasteSettings'
 import { mergeBounds, emptyBounds, isEmpty } from '@lib/gerber/bounding-box'
 import type { PanelConfig, DangerZoneConfig, AddedRoutingPath } from '~/utils/panel-types'
 import { evenTabPositions } from '~/utils/panel-types'
@@ -34,8 +34,10 @@ import type { PackageDefinition, FootprintShape } from '~/utils/package-types'
 import { computeFootprint, getConventionRotationTransform } from '~/utils/package-types'
 import { computeThtFootprint, type THTPackageDefinition, type ColoredFootprintShape } from '~/utils/tht-package-types'
 import type { PnPConvention } from '~/utils/pnp-conventions'
+import { useGerberImageTreeCache } from '~/composables/useGerberImageTreeCache'
 
 export type ViewMode = 'layers' | 'realistic'
+type RealisticSide = 'top' | 'bottom' | 'all'
 
 const props = defineProps<{
   layers: LayerInfo[]
@@ -56,6 +58,7 @@ const props = defineProps<{
   matchThtPackage?: (name: string) => THTPackageDefinition | undefined
   showPackages?: boolean
   pnpConvention?: PnPConvention
+  pasteSettings?: PasteSettings
 }>()
 
 const emit = defineEmits<{
@@ -203,8 +206,7 @@ function acquireCanvas(w: number, h: number): HTMLCanvasElement {
 }
 function releaseCanvas(c: HTMLCanvasElement) { _canvasPool.push(c) }
 
-// Gerber parsing cache
-const imageTreeCache = new Map<string, ImageTree>()
+const gerberTreeCache = useGerberImageTreeCache()
 const PERF_ENABLED = import.meta.dev
   && typeof window !== 'undefined'
   && !!(window as any).__GERBTRACE_PERF__
@@ -270,6 +272,13 @@ function componentSignature(components: EditablePnPComponent[] | undefined): str
   ].join(':')).join('|')
 }
 
+function panelComponentsEnabled(): boolean {
+  const legacy = props.panelConfig.showComponents === true
+  const showSmd = props.panelConfig.showSmdComponents ?? legacy
+  const showTht = props.panelConfig.showThtComponents ?? legacy
+  return !!(showSmd || showTht)
+}
+
 function panelGeometrySignature(): string {
   const cfg = props.panelConfig
   const supports = cfg.supports ?? { enabled: true, xGaps: [], yGaps: [], widthColumns: 0, widthRows: 0 }
@@ -287,23 +296,29 @@ function panelGeometrySignature(): string {
     fiducials: cfg.fiducials,
     toolingHoles: cfg.toolingHoles,
     tabs: cfg.tabs,
+    showSmdComponents: cfg.showSmdComponents,
+    showThtComponents: cfg.showThtComponents,
     showComponents: cfg.showComponents,
   })
 }
 
+function addedRoutingSignature(paths: AddedRoutingPath[] | undefined): string {
+  if (!paths || paths.length === 0) return ''
+  return paths.map(path => [
+    path.id,
+    path.x1,
+    path.y1,
+    path.x2,
+    path.y2,
+  ].join(':')).join('|')
+}
+
 function getImageTree(layer: LayerInfo): ImageTree | null {
   if (isPnPLayer(layer.type)) return null
-  const key = layer.file.fileName
-  if (imageTreeCache.has(key)) return imageTreeCache.get(key)!
-  try {
-    const ast = parseGerber(layer.file.content)
-    const tree = plotImageTree(ast)
-    imageTreeCache.set(key, tree)
-    return tree
-  } catch (e) {
-    console.warn(`Failed to parse ${layer.file.fileName}:`, e)
-    return null
-  }
+  const tree = gerberTreeCache.getOrParseSync(layer)
+  if (tree) return tree
+  console.warn(`Failed to parse ${layer.file.fileName}`)
+  return null
 }
 
 function detectUnits(): 'mm' | 'in' {
@@ -723,13 +738,35 @@ function sizeCanvas(): number {
   return dpr
 }
 
-function gatherRealisticLayers(side: 'top' | 'bottom'): RealisticLayers {
+function mergeImageTrees(trees: ImageTree[]): ImageTree | undefined {
+  if (!trees.length) return undefined
+  const units = trees[0]!.units
+  let bounds: BoundingBox = emptyBounds()
+  const children = trees
+    .filter(tree => tree.units === units)
+    .flatMap((tree) => {
+      bounds = mergeBounds(bounds, tree.bounds as BoundingBox)
+      return tree.children
+    })
+  if (!children.length) return undefined
+  return {
+    units,
+    bounds: isEmpty(bounds) ? ([0, 0, 0, 0] as BoundingBox) : bounds,
+    children,
+  }
+}
+
+function gatherRealisticLayers(side: RealisticSide): RealisticLayers {
   const source = props.allLayers ?? props.layers
   const result: RealisticLayers = {}
-  const copperType = side === 'top' ? 'Top Copper' : 'Bottom Copper'
-  const maskType = side === 'top' ? 'Top Solder Mask' : 'Bottom Solder Mask'
-  const silkType = side === 'top' ? 'Top Silkscreen' : 'Bottom Silkscreen'
-  const pasteType = side === 'top' ? 'Top Paste' : 'Bottom Paste'
+  const copperTypes = side === 'all' ? ['Top Copper', 'Bottom Copper'] : [side === 'top' ? 'Top Copper' : 'Bottom Copper']
+  const maskTypes = side === 'all' ? ['Top Solder Mask', 'Bottom Solder Mask'] : [side === 'top' ? 'Top Solder Mask' : 'Bottom Solder Mask']
+  const silkTypes = side === 'all' ? ['Top Silkscreen', 'Bottom Silkscreen'] : [side === 'top' ? 'Top Silkscreen' : 'Bottom Silkscreen']
+  const pasteTypes = side === 'all' ? ['Top Paste', 'Bottom Paste'] : [side === 'top' ? 'Top Paste' : 'Bottom Paste']
+  const copperTrees: ImageTree[] = []
+  const maskTrees: ImageTree[] = []
+  const silkTrees: ImageTree[] = []
+  const pasteTrees: ImageTree[] = []
   const drillTrees: ImageTree[] = []
   let outlineTree: ImageTree | undefined
   let detectedUnitsLocal: 'mm' | 'in' | undefined
@@ -738,14 +775,25 @@ function gatherRealisticLayers(side: 'top' | 'bottom'): RealisticLayers {
   for (const layer of source) {
     const tree = getImageTree(layer)
     if (!tree || tree.children.length === 0) continue
-    if (layer.type === copperType) { result.copper = tree; usedTrees.push(tree) }
-    else if (layer.type === maskType) { result.solderMask = tree; usedTrees.push(tree) }
-    else if (layer.type === silkType) { result.silkscreen = tree; usedTrees.push(tree) }
-    else if (layer.type === pasteType) { result.paste = tree; usedTrees.push(tree) }
+    if (copperTypes.includes(layer.type)) { copperTrees.push(tree); usedTrees.push(tree) }
+    else if (maskTypes.includes(layer.type)) { maskTrees.push(tree); usedTrees.push(tree) }
+    else if (silkTypes.includes(layer.type)) { silkTrees.push(tree); usedTrees.push(tree) }
+    else if (pasteTypes.includes(layer.type)) { pasteTrees.push(tree); usedTrees.push(tree) }
     else if (layer.type === 'Drill') drillTrees.push(tree)
     else if (layer.type === 'Outline') outlineTree = tree
     else if (layer.type === 'Keep-Out' && !outlineTree) outlineTree = tree
     if (!detectedUnitsLocal) detectedUnitsLocal = tree.units
+  }
+
+  result.copper = mergeImageTrees(copperTrees)
+  result.solderMask = mergeImageTrees(maskTrees)
+  result.silkscreen = mergeImageTrees(silkTrees)
+  const mergedPaste = mergeImageTrees(pasteTrees)
+  if (mergedPaste) {
+    const ps = props.pasteSettings
+    result.paste = ps && ps.mode === 'jetprint'
+      ? generateJetprintDots(mergedPaste, { dotDiameter: ps.dotDiameter, dotSpacing: ps.dotSpacing, pattern: ps.pattern, dynamicDots: ps.dynamicDots })
+      : mergedPaste
   }
 
   if (drillTrees.length > 0) {
@@ -2283,7 +2331,7 @@ function drawComponentsOnContext(
   const components = options?.components ?? props.pnpComponents
   if (!components || components.length === 0) return
   const includePackages = options?.includePackages ?? !!props.showPackages
-  if (!includePackages && !props.panelConfig.showComponents) return
+  if (!includePackages && !panelComponentsEnabled()) return
 
   const units = detectUnits()
   const { ox, oy } = getEffectivePnpOrigin(outlineBounds)
@@ -2421,7 +2469,7 @@ function drawPanelComponents(
     enabled?: boolean
   },
 ) {
-  const enabled = options?.enabled ?? props.panelConfig.showComponents
+  const enabled = options?.enabled ?? panelComponentsEnabled()
   if (!enabled) return
   const components = options?.components ?? props.pnpComponents
   if (!components || components.length === 0) return
@@ -2664,7 +2712,7 @@ function draw() {
         offsetY: outlineBounds[3] * transform.scale,
         scale: transform.scale,
       }
-      const side = props.activeFilter === 'bot' ? 'bottom' : 'top'
+      const side: RealisticSide = props.activeFilter === 'bot' ? 'bottom' : props.activeFilter === 'all' ? 'all' : 'top'
       const tileKey = [
         pcbPixW,
         pcbPixH,
@@ -2688,13 +2736,39 @@ function draw() {
       } else {
         tileCanvas = acquireCanvas(pcbPixW, pcbPixH)
         if (isRealistic) {
-          const realisticLayers = gatherRealisticLayers(side)
-          renderRealisticView(realisticLayers, tileCanvas, {
-            preset: props.preset!,
-            transform: tileTransform,
-            dpr,
-            side,
-          })
+          const ps = props.pasteSettings
+          if (side === 'all') {
+            renderRealisticView(gatherRealisticLayers('top'), tileCanvas, {
+              preset: props.preset!,
+              transform: tileTransform,
+              dpr,
+              side: 'top',
+              pasteColor: ps?.mode === 'jetprint' && ps.highlightDots ? '#00FF66' : undefined,
+            })
+            const bottomCanvas = acquireCanvas(pcbPixW, pcbPixH)
+            renderRealisticView(gatherRealisticLayers('bottom'), bottomCanvas, {
+              preset: props.preset!,
+              transform: tileTransform,
+              dpr,
+              side: 'bottom',
+              pasteColor: ps?.mode === 'jetprint' && ps.highlightDots ? '#00FF66' : undefined,
+            })
+            const tileCtx = tileCanvas.getContext('2d')!
+            tileCtx.save()
+            tileCtx.globalAlpha = 0.45
+            tileCtx.filter = 'grayscale(1)'
+            tileCtx.drawImage(bottomCanvas, 0, 0)
+            tileCtx.restore()
+            releaseCanvas(bottomCanvas)
+          } else {
+            renderRealisticView(gatherRealisticLayers(side), tileCanvas, {
+              preset: props.preset!,
+              transform: tileTransform,
+              dpr,
+              side,
+              pasteColor: ps?.mode === 'jetprint' && ps.highlightDots ? '#00FF66' : undefined,
+            })
+          }
         } else {
           const tileCtx = tileCanvas.getContext('2d')!
           for (const layer of props.layers) {
@@ -2986,12 +3060,34 @@ function scheduleRedraw() {
 }
 
 watch(
-  () => `${props.interaction.transform.value.offsetX}|${props.interaction.transform.value.offsetY}|${props.interaction.transform.value.scale}|${props.mirrored ? 1 : 0}|${appSettings.gridEnabled ? 1 : 0}|${appSettings.gridSpacingMm}|${bgColor.value}|${tabEditMode.value}|${addedRoutingEditMode.value}`,
+  () => [
+    props.interaction.transform.value.offsetX,
+    props.interaction.transform.value.offsetY,
+    props.interaction.transform.value.scale,
+    props.mirrored,
+    appSettings.gridEnabled,
+    appSettings.gridSpacingMm,
+    bgColor.value,
+    tabEditMode.value,
+    addedRoutingEditMode.value,
+  ],
   () => scheduleRedraw(),
 )
 
 watch(
-  () => `${props.viewMode ?? 'layers'}|${props.preset?.name ?? ''}|${props.activeFilter ?? 'all'}|${layerSignature(props.layers)}|${allLayerSignature(props.allLayers)}`,
+  () => [
+    props.viewMode ?? 'layers',
+    props.preset?.name ?? '',
+    props.activeFilter ?? 'all',
+    layerSignature(props.layers),
+    allLayerSignature(props.allLayers),
+    props.pasteSettings?.mode ?? 'stencil',
+    props.pasteSettings?.dotDiameter ?? 0,
+    props.pasteSettings?.dotSpacing ?? 0,
+    props.pasteSettings?.pattern ?? 'hex',
+    props.pasteSettings?.highlightDots,
+    props.pasteSettings?.dynamicDots,
+  ],
   () => {
     invalidatePanelRenderCaches()
     scheduleRedraw()
@@ -3008,7 +3104,7 @@ watch(
 )
 
 watch(
-  () => JSON.stringify(props.panelConfig.addedRoutings ?? []),
+  () => addedRoutingSignature(props.panelConfig.addedRoutings),
   () => {
     invalidatePanelRenderCaches()
     scheduleRedraw()
@@ -3016,7 +3112,11 @@ watch(
 )
 
 watch(
-  () => `${componentSignature(props.pnpComponents)}|${props.showPackages ? 1 : 0}|${props.pnpConvention ?? 'iec61188'}`,
+  () => [
+    componentSignature(props.pnpComponents),
+    props.showPackages,
+    props.pnpConvention ?? 'iec61188',
+  ],
   () => {
     componentTileCache = cleanupTileCache(componentTileCache)
     scheduleRedraw()
@@ -3024,7 +3124,7 @@ watch(
 )
 
 watch(
-  () => `${props.dangerZone?.enabled ? 1 : 0}|${props.dangerZone?.insetMm ?? 0}`,
+  () => [props.dangerZone?.enabled, props.dangerZone?.insetMm ?? 0],
   () => scheduleRedraw(),
 )
 
@@ -3086,13 +3186,13 @@ watch(addedRoutingEditMode, (mode) => {
 function exportPng(
   dpi: number = 600,
   options?: {
-    side?: 'top' | 'bottom'
+    side?: 'top' | 'bottom' | 'all'
     includeComponents?: boolean
     components?: EditablePnPComponent[]
     includePackages?: boolean
   },
 ): Promise<Blob | null> {
-  const exportSide = options?.side ?? (props.activeFilter === 'bot' ? 'bottom' : 'top')
+  const exportSide: RealisticSide = options?.side ?? (props.activeFilter === 'bot' ? 'bottom' : props.activeFilter === 'all' ? 'all' : 'top')
   const includeComponents = options?.includeComponents ?? true
   return new Promise((resolve) => {
     const panelLayout = layout.value
@@ -3131,7 +3231,7 @@ function exportPng(
       isRealistic,
       exportTransparent: true,
       mirrored: shouldMirror,
-      side: exportSide,
+      side: exportSide === 'all' ? 'top' : exportSide,
     }
 
     if (shouldMirror) {
@@ -3153,12 +3253,35 @@ function exportPng(
     let tileCanvas: HTMLCanvasElement
     if (isRealistic) {
       tileCanvas = acquireCanvas(tileW, tileH)
-      renderRealisticView(gatherRealisticLayers(exportSide), tileCanvas, {
-        preset: props.preset!,
-        transform: tileTransform,
-        dpr: 1,
-        side: exportSide,
-      })
+      if (exportSide === 'all') {
+        renderRealisticView(gatherRealisticLayers('top'), tileCanvas, {
+          preset: props.preset!,
+          transform: tileTransform,
+          dpr: 1,
+          side: 'top',
+        })
+        const bottomCanvas = acquireCanvas(tileW, tileH)
+        renderRealisticView(gatherRealisticLayers('bottom'), bottomCanvas, {
+          preset: props.preset!,
+          transform: tileTransform,
+          dpr: 1,
+          side: 'bottom',
+        })
+        const tileCtx = tileCanvas.getContext('2d')!
+        tileCtx.save()
+        tileCtx.globalAlpha = 0.45
+        tileCtx.filter = 'grayscale(1)'
+        tileCtx.drawImage(bottomCanvas, 0, 0)
+        tileCtx.restore()
+        releaseCanvas(bottomCanvas)
+      } else {
+        renderRealisticView(gatherRealisticLayers(exportSide), tileCanvas, {
+          preset: props.preset!,
+          transform: tileTransform,
+          dpr: 1,
+          side: exportSide,
+        })
+      }
     } else {
       tileCanvas = acquireCanvas(tileW, tileH)
       const tileCtx = tileCanvas.getContext('2d')!
@@ -3225,7 +3348,7 @@ function exportPng(
 }
 
 function exportPngForSide(
-  side: 'top' | 'bottom',
+  side: 'top' | 'bottom' | 'all',
   options?: {
     dpi?: number
     includeComponents?: boolean
@@ -3263,7 +3386,7 @@ function getPerformanceStats() {
       ? { width: _dzCache.canvas.width, height: _dzCache.canvas.height, estimatedBytes: dangerBytes }
       : null,
     canvasPoolSize: _canvasPool.length,
-    parsedLayerCacheSize: imageTreeCache.size,
+    parsedLayerCacheSize: gerberTreeCache.getCacheSize(),
     footprintCacheSize: footprintCache.size,
     thtFootprintCacheSize: thtFootprintCache.size,
   }

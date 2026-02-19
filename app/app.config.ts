@@ -5,4 +5,10 @@ export default defineAppConfig({
       neutral: 'zinc',
     },
   },
+  toc: {
+    title: 'Table of Contents',
+    bottom: {
+      edit: 'https://github.com/newmatik/gerbtrace/edit/main/content',
+    },
+  },
 })

@@ -346,6 +346,7 @@ import type { PackageListItem } from '~/components/packages/PackageList.vue'
 import type { THTPackageDefinition } from '~/utils/tht-package-types'
 import { serializeToPck } from '~/utils/pck-serializer'
 import { createEmptyThtPackage } from '~/utils/tht-package-types'
+import { saveBlobFile } from '~/utils/file-download'
 
 const {
   packages: builtinPackages,
@@ -476,31 +477,21 @@ async function duplicateBuiltin() {
 }
 
 // Export — uses the live edit state for custom packages
-function exportJson() {
+async function exportJson() {
   const pkg = currentPkg.value
   if (!pkg) return
   const json = JSON.stringify(pkg, null, 2)
   const blob = new Blob([json], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `${pkg.name.replace(/[^a-zA-Z0-9-_]/g, '_')}.json`
-  a.click()
-  URL.revokeObjectURL(url)
+  await saveBlobFile(blob, `${pkg.name.replace(/[^a-zA-Z0-9-_]/g, '_')}.json`)
 }
 
 // Export .pck
-function exportPck() {
+async function exportPck() {
   const pkg = currentPkg.value
   if (!pkg) return
   const pckText = serializeToPck(pkg)
   const blob = new Blob([pckText], { type: 'text/plain' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `${pkg.name.replace(/[^a-zA-Z0-9-_]/g, '_')}.pck`
-  a.click()
-  URL.revokeObjectURL(url)
+  await saveBlobFile(blob, `${pkg.name.replace(/[^a-zA-Z0-9-_]/g, '_')}.pck`)
 }
 
 // Delete
