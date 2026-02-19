@@ -2385,7 +2385,7 @@ function roundBoardMm(value: number): number {
 }
 
 watch(boardSizeMm, (dims) => {
-  if (!dims) return
+  if (!dims || !hasLoadedProjectData.value) return
   const current = pcbData.value ?? {}
   const nextSizeX = current.sizeX ?? roundBoardMm(dims.width)
   const nextSizeY = current.sizeY ?? roundBoardMm(dims.height)
@@ -4074,6 +4074,18 @@ onMounted(async () => {
 
   hasLoadedProjectData.value = true
 
+  // Auto-fill board dimensions from rendered Gerber data if not yet set.
+  // The boardSizeMm watcher is guarded by hasLoadedProjectData, so we handle
+  // the initial detection here to avoid a race where it fires before DB data loads.
+  if (boardSizeMm.value) {
+    const current = pcbData.value ?? {} as NonNullable<typeof pcbData.value>
+    const nextSizeX = current.sizeX ?? roundBoardMm(boardSizeMm.value.width)
+    const nextSizeY = current.sizeY ?? roundBoardMm(boardSizeMm.value.height)
+    if (current.sizeX !== nextSizeX || current.sizeY !== nextSizeY) {
+      pcbData.value = { ...current, sizeX: nextSizeX, sizeY: nextSizeY }
+    }
+  }
+
   // Hydrate PCB display defaults into the data model so that values shown in the
   // UI (via ?? fallbacks in PcbPanel) are always backed by persisted data.
   // Only runs once per project — subsequent opens already have the fields.
@@ -4085,8 +4097,9 @@ onMounted(async () => {
       panelizationMode: 'single',
     }
     let needsHydration = false
+    const raw = pcbData.value as Record<string, unknown>
     for (const key of Object.keys(PCB_DEFAULTS)) {
-      if ((pcbData.value as Record<string, unknown>)[key] === undefined) {
+      if (raw[key] === undefined) {
         needsHydration = true
         break
       }
