@@ -1,6 +1,6 @@
 # Deployment & Operations
 
-This document describes how Gerbtrace is deployed (web + desktop + API), which environment variables are required, and how the Supabase API server is set up on the DigitalOcean droplet.
+This document describes how Gerbtrace is deployed (web + desktop + API), which environment variables are required, and how production Supabase is operated after the cloud migration.
 
 ## Overview
 
@@ -8,7 +8,7 @@ Gerbtrace has three deployable surfaces:
 
 - **Web app**: a static Nuxt SPA hosted on **DigitalOcean Spaces** (`gerbtrace.com`).
 - **Desktop app**: Tauri 2 builds for macOS/Windows shipped via **GitHub Releases** with the Tauri updater.
-- **API server**: a **self-hosted Supabase** stack on a DigitalOcean droplet (`api.gerbtrace.com`), including Postgres, Storage, Realtime, and Edge Functions.
+- **API server**: **Supabase Cloud** project `gqrnlnlfidighosujpdb` served through `api.gerbtrace.com` reverse proxy.
 
 ## Environment variables (local)
 
@@ -16,7 +16,7 @@ The Nuxt app reads Supabase settings via runtime config. For local development, 
 
 - **`SUPABASE_URL`**: Supabase API base URL
   - local dev: `http://localhost:54321`
-  - production: `https://api.gerbtrace.com`
+- production: `https://api.gerbtrace.com` (proxying Supabase Cloud)
 - **`SUPABASE_ANON_KEY`**: Supabase anon key (JWT)
 
 You can also use Nuxt’s explicit public env vars (same values):
@@ -37,9 +37,8 @@ Workflows live in `.github/workflows/`:
 - **`deploy.yml`** (pushes to `main`)
   - Runs `nuxt generate` and uploads `.output/public` to DigitalOcean Spaces.
   - Optionally purges the DO CDN cache if configured.
-- **`deploy-supabase.yml`** (pushes to `main` changing `supabase/**` and manual dispatch)
-  - Uploads `supabase/**` to the droplet via SSH/SCP.
-  - Applies SQL migrations (idempotently) and syncs edge functions.
+- **`deploy-supabase.yml`**
+  - Legacy self-hosted deploy workflow, intentionally disabled.
 - **`build-desktop.yml`** (tag pushes `v*`)
   - Builds macOS and Windows installers.
   - Creates/publishes a GitHub Release and `latest.json` for the updater.
@@ -72,15 +71,10 @@ Apple signing / notarization (macOS builds):
 - **`APPLE_SIGNING_IDENTITY`**
 - **`APPLE_API_ISSUER`**, **`APPLE_API_KEY`**, **`APPLE_API_KEY_CONTENT`**
 
-### Droplet API deploy (`deploy-supabase.yml`)
+### Legacy droplet deploy
 
-- **`DROPLET_HOST`** (e.g. `api.gerbtrace.com`)
-- **`DROPLET_USER`** (e.g. `root`)
-- **`DROPLET_SSH_KEY`** (private key used by GitHub Actions)
-
-Security note:
-- Use a **dedicated deploy key** with minimal scope.
-- Do not reuse personal SSH keys for CI.
+- Legacy self-hosted deploy secrets are no longer part of the active production path.
+- Keep them only for emergency rollback operations.
 
 ## Web deploy (DigitalOcean Spaces)
 
@@ -112,61 +106,20 @@ Local build gate:
 - `npm run tauri:build`
   - This repo includes a small wrapper (`scripts/tauri-build.mjs`) to avoid CI env quirks and to allow compilation checks even when signing secrets are not available locally.
 
-## API server (Supabase on DigitalOcean droplet)
+## API server (Supabase Cloud)
 
-### Initial droplet provisioning
+Production database/auth/storage/functions live in Supabase Cloud project `gqrnlnlfidighosujpdb`.
 
-The repository includes a provisioning script:
-
-- `scripts/setup-supabase-droplet.sh`
-
-What it does (high level):
-- Installs Docker
-- Clones Supabase docker setup under `/opt/supabase`
-- Writes a droplet-local `.env` for Supabase (JWT secret, DB password, anon/service keys, redirect URLs)
-- Sets up nginx + optional Let’s Encrypt
-
-After provisioning, ensure DNS points:
-- `api.gerbtrace.com` → droplet IP
-
-### Migrations and edge functions
-
-Source of truth in this repo:
+Source of truth remains in this repository:
 
 - SQL migrations: `supabase/migrations/*.sql`
 - Edge functions: `supabase/functions/**`
 
-How CI deploys them (`deploy-supabase.yml`):
+Operational model:
 
-- Copies `supabase/**` to the droplet (temporary directory under `/tmp/gerbtrace-supabase-<sha>`).
-- Applies migrations **in timestamp order**.
-- Records applied migrations in `public.schema_migrations` (created if missing).
-- Syncs edge function code into the droplet’s functions volume directory:
-  - default path used: `/opt/supabase/docker/volumes/functions`
-- Restarts the Supabase **functions** service (or falls back to restarting all services).
-
-Important caveats:
-- If the droplet was already provisioned with an existing schema, the baseline migration may be skipped and recorded to avoid failing on “already exists”.
-- SQL is executed inside the Supabase Postgres container via `docker compose exec -T db psql ...`.
-
-### Manual deployment (break-glass)
-
-If GitHub Actions is unavailable, you can run the equivalent steps on the droplet:
-
-```bash
-cd /opt/supabase/docker
-
-# Apply migrations (example: run in order)
-for f in /path/to/repo/supabase/migrations/*.sql; do
-  docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 < "$f"
-done
-
-# Sync functions (example path)
-rm -rf /opt/supabase/docker/volumes/functions/*
-cp -R /path/to/repo/supabase/functions/* /opt/supabase/docker/volumes/functions/
-
-docker compose restart functions
-```
+- Apply schema/function changes to Supabase Cloud first.
+- Keep `api.gerbtrace.com` as the public endpoint via droplet nginx reverse proxy to `https://gqrnlnlfidighosujpdb.supabase.co`.
+- Keep the old self-hosted droplet stack as rollback standby; do not treat it as active production.
 
 ## Operational safety
 

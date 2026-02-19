@@ -36,19 +36,26 @@
               No matching docs.
             </div>
           </div>
-          <nav class="space-y-1">
-            <NuxtLink
-              v-for="item in docsNav"
-              :key="item.to"
-              :to="item.to"
-              class="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors"
-              :class="isActive(item.to)
-                ? 'bg-primary/10 text-primary'
-                : 'text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'"
-            >
-              <UIcon :name="item.icon" class="text-[11px] shrink-0" />
-              <span class="truncate">{{ item.label }}</span>
-            </NuxtLink>
+          <nav class="space-y-0.5">
+            <template v-for="item in docsNav" :key="item.key">
+              <div
+                v-if="item.type === 'section'"
+                class="text-[10px] font-semibold uppercase tracking-wide text-neutral-400 mt-3 mb-1 px-2 first:mt-0"
+              >
+                {{ item.label }}
+              </div>
+              <NuxtLink
+                v-else
+                :to="item.to"
+                class="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors"
+                :class="isActive(item.to)
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'"
+              >
+                <UIcon :name="item.icon" class="text-[11px] shrink-0" />
+                <span class="truncate">{{ item.label }}</span>
+              </NuxtLink>
+            </template>
           </nav>
         </aside>
 
@@ -136,17 +143,81 @@ const { data: doc } = await useAsyncData(
 )
 const { data: docsIndex } = await useAsyncData('docs:index', loadDocsIndex)
 
-const docsNav = computed(() => {
-  const fallback = [
-    { label: 'Overview', to: '/docs', icon: 'i-lucide-book-open' },
+interface NavItem {
+  type: 'link' | 'section'
+  key: string
+  label: string
+  to: string
+  icon: string
+}
+
+const SECTION_ICONS: Record<string, string> = {
+  viewer: 'i-lucide-layers',
+  tools: 'i-lucide-wrench',
+  collaboration: 'i-lucide-users',
+  app: 'i-lucide-settings',
+  guides: 'i-lucide-book-marked',
+  reference: 'i-lucide-file-code',
+  development: 'i-lucide-code',
+}
+
+const SECTION_LABELS: Record<string, string> = {
+  viewer: 'Viewer',
+  tools: 'Tools',
+  collaboration: 'Collaboration',
+  app: 'App',
+  guides: 'Guides',
+  reference: 'Reference',
+  development: 'Development',
+}
+
+function sectionFromPath(path: string): string | null {
+  const parts = path.replace(/^\/docs\/?/, '').split('/')
+  return parts.length >= 2 ? parts[0] : null
+}
+
+const docsNav = computed((): NavItem[] => {
+  const fallback: NavItem[] = [
+    { type: 'link', key: '/docs', label: 'Overview', to: '/docs', icon: 'i-lucide-book-open' },
   ]
   const entries = docsIndex.value ?? []
   if (entries.length === 0) return fallback
-  return entries.map((entry, idx) => ({
-    label: entry.title || entry.path.replace('/docs/', ''),
-    to: entry.path,
-    icon: idx === 0 ? 'i-lucide-book-open' : 'i-lucide-file-text',
-  }))
+
+  const items: NavItem[] = []
+  let lastSection: string | null = null
+
+  for (const entry of entries) {
+    const section = sectionFromPath(entry.path)
+    const isRoot = entry.path === '/docs' || entry.path === '/docs/'
+
+    if (section && section !== lastSection) {
+      items.push({
+        type: 'section',
+        key: `section-${section}`,
+        label: SECTION_LABELS[section] ?? section.charAt(0).toUpperCase() + section.slice(1),
+        to: '',
+        icon: '',
+      })
+      lastSection = section
+    } else if (!section && !isRoot && lastSection !== null) {
+      lastSection = null
+    }
+
+    const icon = isRoot
+      ? 'i-lucide-book-open'
+      : section
+        ? (SECTION_ICONS[section] ?? 'i-lucide-file-text')
+        : 'i-lucide-file-text'
+
+    items.push({
+      type: 'link',
+      key: entry.path,
+      label: entry.title || entry.path.replace('/docs/', ''),
+      to: entry.path,
+      icon,
+    })
+  }
+  return items
 })
 
 const filteredSearchResults = computed(() => {
@@ -162,6 +233,8 @@ const filteredSearchResults = computed(() => {
 })
 
 function isActive(to: string): boolean {
-  return route.path === to
+  const current = route.path.replace(/\/$/, '')
+  const target = to.replace(/\/$/, '')
+  return current === target
 }
 </script>

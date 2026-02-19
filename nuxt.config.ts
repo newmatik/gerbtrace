@@ -17,6 +17,16 @@ export default defineNuxtConfig({
 
   modules: ['@nuxt/ui', '@nuxt/content', '@sentry/nuxt/module'],
 
+  content: {
+    build: {
+      markdown: {
+        toc: {
+          searchDepth: 3,
+        },
+      },
+    },
+  },
+
   sentry: {
     org: 'newmatik',
     project: 'gerbtrace',
@@ -68,9 +78,9 @@ export default defineNuxtConfig({
   app: {
     baseURL: '/',
     head: {
-      title: 'Gerbtrace — Gerber Viewer & Comparator',
+      title: 'Gerbtrace — PCB NPI & Manufacturing Data Preparation',
       meta: [
-        { name: 'description', content: 'View and compare Gerber PCB files in the browser. Open source tool by Newmatik GmbH.' },
+        { name: 'description', content: 'Open-source PCB NPI platform. Import Gerber files, manage BOMs and Pick & Place, configure panelization and paste, estimate pricing, and collaborate with your team.' },
         { name: 'theme-color', content: '#3B8EF0' },
       ],
       link: [

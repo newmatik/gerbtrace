@@ -233,6 +233,7 @@
             :group-assignments="pnpGroupAssignments"
             :bom-designators="bomDesignators"
             :locked="!canEditTab('tht')"
+            :assembly-type-overrides="pnp.assemblyTypeOverrides.value"
             @update:search-query="pnp.searchQuery.value = $event"
             @update:show-packages="showPackages = $event"
             @update:pnp-convention="updateConvention"
@@ -260,6 +261,7 @@
             @edit="openComponentEdit($event)"
             @add-component="startAddComponent('tht')"
             @preview:package="previewPkgOverride = $event"
+            @update:assembly-type="handleAssemblyTypeUpdate($event)"
           />
 
           <PcbPanel
@@ -493,6 +495,8 @@
             :layers="layers"
             :documents="documents"
             :locked="!canEditTab('files')"
+            @select-layer="handleFilesLayerSelect"
+            @select-doc="handleFilesDocSelect"
             @change-layer-type="changeLayerType"
             @remove-layer="removeLayer"
             @rename-layer="renameLayer"
@@ -587,7 +591,7 @@
               <div v-if="filesSelectedLayer" class="h-full">
                 <FileTablePreview
                   v-if="isTabularPreviewFileName(filesSelectedLayer.file.fileName)"
-                  :key="`layer-${filesSelectedLayer.file.fileName}`"
+                  :key="`layer-${filesPreviewSelectionNonce}-${filesSelectedLayerIndex ?? 'na'}-${filesSelectedLayer.file.fileName}`"
                   :file-name="filesSelectedLayer.file.fileName"
                   :text-content="filesSelectedLayer.file.content"
                   :skip-rows="selectedLayerSkipRows"
@@ -743,6 +747,22 @@
           </section>
           </div>
         </div>
+      </template>
+
+      <!-- Summary: full width (no canvas) -->
+      <template v-else-if="sidebarTab === 'summary'">
+        <main class="flex-1 min-w-0 overflow-hidden bg-neutral-50 dark:bg-neutral-950">
+          <LazySummaryPanel
+            :pcb-data="pcbData"
+            :smd-components="(pnp.smdActiveComponents.value as any[])"
+            :tht-components="(pnp.thtActiveComponents.value as any[])"
+            :bom-lines="(bom.bomLines.value as any[])"
+            :match-package="pkgLib.matchPackage"
+            :match-tht-package="thtPkgLib.matchThtPackage"
+            :project-name="project?.name || 'Untitled'"
+            :assembly-type-overrides="pnp.assemblyTypeOverrides.value"
+          />
+        </main>
       </template>
 
       <!-- Pricing: full width (no canvas) -->
@@ -922,13 +942,14 @@ import { generatePnPExport, getPnPExportExtension, getPnPExportMimeType } from '
 import { removeSourceRanges } from '@lib/gerber/editor'
 import { parseBomFile } from '~/utils/bom-parser'
 import { parsePnPPreview, type PnPColumnMapping, type PnPCoordUnit } from '~/utils/pnp-parser'
+import { saveBlobFile } from '~/utils/file-download'
 
 const route = useRoute()
 const rawId = route.params.id as string
 const isTeamProject = rawId.startsWith('team-')
 const projectId = isTeamProject ? 0 : Number(rawId) // local projects use numeric IDs
 const teamProjectId = isTeamProject ? rawId.replace('team-', '') : null
-const { getProject, getFiles, addFiles, upsertFiles, clearFiles, renameFile, removeFile, getOriginalFiles, storeOriginalFiles, renameOriginalFile, removeOriginalFile, renameProject, updateFileLayerType, updateFileContent, updateProjectOrigin, updateProjectConvention, updateProjectRotationOverrides, updateProjectDnp, updateProjectCadPackageMap, updateProjectPolarizedOverrides, updateProjectComponentNotes, updateProjectFieldOverrides, updateProjectManualComponents, updateProjectDeletedComponents, updateProjectSortSmd, updateProjectSortTht, updateProjectManualOrderSmd, updateProjectManualOrderTht, updateProjectComponentGroups, updateProjectGroupAssignments, updateBomLines, updateBomPricingCache, updateBomBoardQuantity, updatePcbData, updatePanelData, updatePasteSettings: updateLocalPasteSettings, updateLayerOrder: updateLocalLayerOrder, updateDocumentOrder: updateLocalDocumentOrder, updateBomFileImportOptions: updateLocalBomFileImportOptions, updatePnpFileImportOptions: updateLocalPnpFileImportOptions, getDocuments, addDocument, removeDocument: removeDocumentFromDb, updateDocumentType: updateDocumentTypeInDb } = useProject()
+const { getProject, getFiles, addFiles, upsertFiles, clearFiles, renameFile, removeFile, getOriginalFiles, storeOriginalFiles, renameOriginalFile, removeOriginalFile, renameProject, updateFileLayerType, updateFileContent, updateProjectOrigin, updateProjectConvention, updateProjectRotationOverrides, updateProjectDnp, updateProjectCadPackageMap, updateProjectPolarizedOverrides, updateProjectComponentNotes, updateProjectFieldOverrides, updateProjectManualComponents, updateProjectDeletedComponents, updateProjectSortSmd, updateProjectSortTht, updateProjectManualOrderSmd, updateProjectManualOrderTht, updateProjectComponentGroups, updateProjectGroupAssignments, updatePnpAssemblyTypes, updateBomLines, updateBomPricingCache, updateBomBoardQuantity, updatePcbData, updatePanelData, updatePasteSettings: updateLocalPasteSettings, updateLayerOrder: updateLocalLayerOrder, updateDocumentOrder: updateLocalDocumentOrder, updateBomFileImportOptions: updateLocalBomFileImportOptions, updatePnpFileImportOptions: updateLocalPnpFileImportOptions, updateProjectPreview, getDocuments, addDocument, removeDocument: removeDocumentFromDb, updateDocumentType: updateDocumentTypeInDb } = useProject()
 
 // ── Team project support ──
 const teamProjectIdRef = ref(teamProjectId)
@@ -979,6 +1000,40 @@ type PageLockState = {
 type PageLocksRecord = Partial<Record<LockableTab, PageLockState>>
 
 const LOCKABLE_TABS: LockableTab[] = ['files', 'pcb', 'panel', 'paste', 'smd', 'tht', 'bom']
+
+function toPageLocksSnapshot(value: PageLocksRecord | null | undefined): PageLocksRecord {
+  const snapshot: PageLocksRecord = {}
+  if (!value || typeof value !== 'object') return snapshot
+  for (const tab of LOCKABLE_TABS) {
+    const entry = value[tab]
+    if (!entry || typeof entry !== 'object') continue
+    snapshot[tab] = {
+      locked: !!entry.locked,
+      locked_at: entry.locked_at ?? null,
+      locked_by: entry.locked_by ?? null,
+      locked_by_name: entry.locked_by_name ?? null,
+    }
+  }
+  return snapshot
+}
+
+function arePageLocksEqual(a: PageLocksRecord, b: PageLocksRecord): boolean {
+  for (const tab of LOCKABLE_TABS) {
+    const left = a[tab]
+    const right = b[tab]
+    if (!left && !right) continue
+    if (!left || !right) return false
+    if (
+      left.locked !== right.locked
+      || (left.locked_at ?? null) !== (right.locked_at ?? null)
+      || (left.locked_by ?? null) !== (right.locked_by ?? null)
+      || (left.locked_by_name ?? null) !== (right.locked_by_name ?? null)
+    ) {
+      return false
+    }
+  }
+  return true
+}
 const pageLocksOverride = ref<PageLocksRecord | null>(null)
 
 function isLockableTab(tab: string): tab is LockableTab {
@@ -1025,8 +1080,8 @@ function onSidebarDragStart(e: MouseEvent) {
 }
 
 // ── Sidebar tab (Files / PCB / Panel / SMD / THT / BOM / Pricing / Docs) ──
-type SidebarTab = 'files' | 'pcb' | 'panel' | 'paste' | 'smd' | 'tht' | 'bom' | 'pricing' | 'docs'
-const VALID_TABS: SidebarTab[] = ['files', 'pcb', 'panel', 'paste', 'smd', 'tht', 'bom', 'pricing', 'docs']
+type SidebarTab = 'files' | 'pcb' | 'panel' | 'paste' | 'smd' | 'tht' | 'bom' | 'pricing' | 'docs' | 'summary'
+const VALID_TABS: SidebarTab[] = ['files', 'pcb', 'panel', 'paste', 'smd', 'tht', 'bom', 'docs', 'summary', 'pricing']
 
 const router = useRouter()
 const initialTabRaw = (route.query.tab as string) || 'files'
@@ -1091,13 +1146,32 @@ const lockedTabsForNav = computed(() =>
 
 watch(() => projectSync?.project.value?.page_locks, (next) => {
   if (!next || typeof next !== 'object') return
+  const remoteSnapshot = toPageLocksSnapshot(next as PageLocksRecord)
+  if (pendingLocalPageLocks && !arePageLocksEqual(remoteSnapshot, pendingLocalPageLocks)) {
+    // Ignore stale realtime rows while a local lock write is still in flight.
+    return
+  }
+  if (pendingLocalPageLocks && arePageLocksEqual(remoteSnapshot, pendingLocalPageLocks)) {
+    pendingLocalPageLocks = null
+  }
+  if (arePageLocksEqual(remoteSnapshot, toPageLocksSnapshot(projectPageLocks.value))) return
   pageLocksOverride.value = null
-  if (project.value) project.value.pageLocks = next
+  if (project.value) project.value.pageLocks = remoteSnapshot
 }, { deep: true })
 
 watch(() => projectSync?.project.value?.paste_settings, (next) => {
   if (!next || typeof next !== 'object') return
-  pasteSettings.value = { ...pasteSettings.value, ...next }
+  const mergedRemote = { ...pasteSettings.value, ...next }
+  const remoteSnapshot = toPasteSettingsSnapshot(mergedRemote)
+  if (pendingLocalPasteSettings && !arePasteSettingsEqual(remoteSnapshot, pendingLocalPasteSettings)) {
+    // Ignore stale realtime rows while a local paste-settings write is still in flight.
+    return
+  }
+  if (pendingLocalPasteSettings && arePasteSettingsEqual(remoteSnapshot, pendingLocalPasteSettings)) {
+    pendingLocalPasteSettings = null
+  }
+  if (arePasteSettingsEqual(remoteSnapshot, toPasteSettingsSnapshot(pasteSettings.value))) return
+  pasteSettings.value = mergedRemote
 }, { deep: true })
 
 watch(() => projectSync?.project.value?.layer_order, (next) => {
@@ -1210,6 +1284,31 @@ const pasteSettings = prefs.pasteSettings
 const pnpUnitOverride = prefs.pnpUnitOverride
 const cachedTabVisibility = prefs.tabVisibility
 
+function toPasteSettingsSnapshot(settings: typeof pasteSettings.value) {
+  return {
+    mode: settings.mode,
+    dotDiameter: settings.dotDiameter,
+    dotSpacing: settings.dotSpacing,
+    pattern: settings.pattern,
+    dynamicDots: settings.dynamicDots,
+    highlightDots: settings.highlightDots,
+  }
+}
+
+function arePasteSettingsEqual(
+  a: ReturnType<typeof toPasteSettingsSnapshot>,
+  b: ReturnType<typeof toPasteSettingsSnapshot>,
+): boolean {
+  return (
+    a.mode === b.mode
+    && a.dotDiameter === b.dotDiameter
+    && a.dotSpacing === b.dotSpacing
+    && a.pattern === b.pattern
+    && a.dynamicDots === b.dynamicDots
+    && a.highlightDots === b.highlightDots
+  )
+}
+
 // ── Interaction mode management ──
 
 type InteractionMode = 'cursor' | 'measure' | 'info' | 'delete'
@@ -1305,12 +1404,9 @@ function handleKeyDown(e: KeyboardEvent) {
 function handlePackageMapping(payload: { cadPackage: string; packageName: string | null; componentKey?: string; isManual?: boolean }) {
   if (isCurrentTabLocked.value) return
   if (payload.isManual && payload.componentKey) {
-    // For manual components: update the package field directly on the ManualPnPComponent
     const manualId = payload.componentKey.replace(/^manual\|/, '')
     pnp.updateManualComponent(manualId, { package: payload.packageName ?? '' })
   }
-  // Always update the cadPackageMap too — for parsed components this is the primary mechanism,
-  // for manual components it's a belt-and-suspenders so the mapping is visible if cadPackage is populated.
   if (payload.cadPackage?.trim()) {
     pnp.setCadPackageMapping(payload.cadPackage, payload.packageName)
   }
@@ -1415,6 +1511,11 @@ function handleComponentPolarizedUpdate(payload: { key: string; polarized: boole
 function handleComponentNoteUpdate(payload: { key: string; note: string }) {
   if (!ensureTabEditable(sidebarTab.value === 'tht' ? 'tht' : 'smd')) return
   pnp.setComponentNote(payload.key, payload.note)
+}
+
+function handleAssemblyTypeUpdate(payload: { key: string; type: string | undefined }) {
+  if (!ensureTabEditable('tht')) return
+  pnp.setAssemblyType(payload.key, payload.type as any)
 }
 
 function handleComponentFieldsUpdate(payload: { key: string; designator?: string; value?: string; x?: number; y?: number }) {
@@ -1808,7 +1909,8 @@ const pcbData = ref<{
   sizeX?: number
   sizeY?: number
   layerCount?: number
-  surfaceFinish?: 'ENIG' | 'HAL'
+  material?: 'FR4' | 'IMS-AL' | 'Flex' | 'Rigid-Flex'
+  surfaceFinish?: 'ENIG' | 'HAL' | 'OSP'
   copperWeight?: '1oz' | '2oz'
   innerCopperWeight?: '0.5oz' | '1oz' | '2oz'
   thicknessMm?: PcbThicknessMm
@@ -2177,6 +2279,36 @@ const _liveBoardSizeMm = computed<{ width: number; height: number } | undefined>
 watch(_liveBoardSizeMm, (dims) => {
   if (dims) _cachedBoardSizeMm.value = dims
 }, { immediate: true })
+
+// ── Preview thumbnail capture ──
+let _previewTimer: ReturnType<typeof setTimeout> | null = null
+function schedulePreviewCapture() {
+  if (_previewTimer) clearTimeout(_previewTimer)
+  _previewTimer = setTimeout(async () => {
+    const canvas = boardCanvasRef.value
+    if (!canvas?.exportPng || !_liveBoardSizeMm.value) return
+    try {
+      const blob = await canvas.exportPng(72)
+      if (!blob) return
+      if (isTeamProject && teamProjectId) {
+        const teamId = currentTeamId.value || await waitForTeamId()
+        uploadPreviewImage(teamProjectId, teamId, blob)
+      } else if (projectId) {
+        updateProjectPreview(projectId, blob)
+      }
+    } catch (e) {
+      console.warn('[viewer] Preview capture failed:', e)
+    }
+  }, 1500)
+}
+
+watch(_liveBoardSizeMm, (dims) => {
+  if (dims) schedulePreviewCapture()
+})
+
+watch([selectedPreset, viewMode], () => {
+  if (_liveBoardSizeMm.value) schedulePreviewCapture()
+})
 
 // Gerber-based fallback: compute board dimensions directly from layer data.
 // Needed when BoardCanvas has never mounted (e.g. page opened on panel tab).
@@ -2663,6 +2795,7 @@ const selectedDocument = computed(() => documents.value.find(d => d.id === selec
 const filesSelectedLayerFileName = ref<string | null>(null)
 const filesSelectedLayerIndex = ref<number | null>(null)
 const filesSelectedDocId = ref<string | null>(null)
+const filesPreviewSelectionNonce = ref(0)
 const filesSelectedLayer = computed(() => {
   const selectedIndex = filesSelectedLayerIndex.value
   if (typeof selectedIndex === 'number' && selectedIndex >= 0 && selectedIndex < layers.value.length) {
@@ -2747,6 +2880,19 @@ const selectedLayerMappingByField = computed<Record<string, number | undefined>>
   if (isSelectedLayerPnp.value) return { ...selectedLayerPnpMapping.value }
   return {}
 })
+
+function handleFilesLayerSelect(payload: { index: number; fileName: string }) {
+  filesSelectedLayerIndex.value = payload.index
+  filesSelectedLayerFileName.value = payload.fileName
+  filesSelectedDocId.value = null
+  filesPreviewSelectionNonce.value++
+}
+
+function handleFilesDocSelect(id: string) {
+  filesSelectedDocId.value = id
+  filesSelectedLayerFileName.value = null
+  filesSelectedLayerIndex.value = null
+}
 
 function isTabularPreviewFileName(fileName: string): boolean {
   return /\.(csv|tsv|txt|xlsx|xls)$/i.test(fileName)
@@ -2897,16 +3043,14 @@ function moveDocument(fromIndex: number, toIndex: number) {
   syncDocumentOrderFromDocuments()
 }
 
-function downloadDocument(id: string) {
+async function downloadDocument(id: string) {
   const doc = documents.value.find(d => d.id === id)
   if (!doc) return
-  const a = document.createElement('a')
-  a.href = doc.blobUrl
-  a.download = doc.name
-  a.click()
+  const blob = await fetch(doc.blobUrl).then(r => r.blob())
+  await saveBlobFile(blob, doc.name)
 }
 
-function downloadLayer(index: number) {
+async function downloadLayer(index: number) {
   const layer = layers.value[index]
   if (!layer) return
   const lowerName = layer.file.fileName.toLowerCase()
@@ -2926,18 +3070,13 @@ function downloadLayer(index: number) {
     blob = new Blob([layer.file.content], { type: 'text/plain;charset=utf-8' })
   }
 
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = layer.file.fileName
-  a.click()
-  URL.revokeObjectURL(url)
+  await saveBlobFile(blob, layer.file.fileName)
 }
 
-function downloadSelectedLayer() {
+async function downloadSelectedLayer() {
   if (!filesSelectedLayer.value) return
   const idx = layers.value.findIndex(l => l.file.fileName === filesSelectedLayer.value!.file.fileName)
-  if (idx >= 0) downloadLayer(idx)
+  if (idx >= 0) await downloadLayer(idx)
 }
 
 function handleDocumentTypeUpdate(id: string, type: DocumentType) {
@@ -3155,27 +3294,55 @@ watch(activeFilter, (filter) => {
 
 let teamPersistQueue: Promise<void> = Promise.resolve()
 let pendingTeamUpdates: Record<string, any> = {}
+let disableTeamFileImportOptionPersistence = false
+let pendingLocalPageLocks: PageLocksRecord | null = null
+let pendingLocalPasteSettings: ReturnType<typeof toPasteSettingsSnapshot> | null = null
 
-function persistToProject(updates: Record<string, any>) {
-  if (isTeamProject && teamProjectId) {
-    if (!hasLoadedProjectData.value) {
-      pendingTeamUpdates = { ...pendingTeamUpdates, ...updates }
-      return
-    }
-    // Serialize writes so stale async responses cannot overwrite newer edits.
-    teamPersistQueue = teamPersistQueue.then(async () => {
-      const mapped: Record<string, any> = {}
-      for (const [k, v] of Object.entries(updates)) {
-        mapped[k.replace(/[A-Z]/g, m => '_' + m.toLowerCase())] = v
-      }
-      const { error } = await updateTeamProject(teamProjectId, mapped)
-      if (error) {
-        console.warn('[viewer] Failed to persist team project updates:', error.message ?? error)
-      }
-    }).catch((err) => {
-      console.warn('[viewer] Persist queue failed:', err)
-    })
+function persistToProject(updates: Record<string, any>): Promise<void> {
+  if (!isTeamProject || !teamProjectId) return Promise.resolve()
+  if (!hasLoadedProjectData.value) {
+    pendingTeamUpdates = { ...pendingTeamUpdates, ...updates }
+    return Promise.resolve()
   }
+  // Serialize writes so stale async responses cannot overwrite newer edits.
+  teamPersistQueue = teamPersistQueue.then(async () => {
+    const mapped: Record<string, any> = {}
+    for (const [k, v] of Object.entries(updates)) {
+      if (
+        disableTeamFileImportOptionPersistence
+        && (k === 'bomFileImportOptions' || k === 'pnpFileImportOptions')
+      ) {
+        continue
+      }
+      mapped[k.replace(/[A-Z]/g, m => '_' + m.toLowerCase())] = v
+    }
+    if (Object.keys(mapped).length === 0) return
+    const { error } = await updateTeamProject(teamProjectId, mapped)
+    if (error) {
+      const message = String(error.message ?? '')
+      const missingImportOptionColumns = (
+        message.includes("Could not find the 'bom_file_import_options' column")
+        || message.includes("Could not find the 'pnp_file_import_options' column")
+      )
+      if (missingImportOptionColumns) {
+        disableTeamFileImportOptionPersistence = true
+        const retryPayload: Record<string, any> = { ...mapped }
+        delete retryPayload.bom_file_import_options
+        delete retryPayload.pnp_file_import_options
+        if (Object.keys(retryPayload).length > 0) {
+          const retry = await updateTeamProject(teamProjectId, retryPayload)
+          if (retry.error) {
+            console.warn('[viewer] Failed to persist team project updates after retry:', retry.error.message ?? retry.error)
+          }
+        }
+        return
+      }
+      console.warn('[viewer] Failed to persist team project updates:', error.message ?? error)
+    }
+  }).catch((err) => {
+    console.warn('[viewer] Persist queue failed:', err)
+  })
+  return teamPersistQueue
 }
 
 watch(hasLoadedProjectData, (loaded) => {
@@ -3332,6 +3499,15 @@ watch(pnpGroupAssignments, (assignments) => {
   }
 }, { deep: true })
 
+watch(() => pnp.assemblyTypeOverridesRecord.value, (types) => {
+  if (!hasLoadedProjectData.value) return
+  if (isTeamProject) {
+    persistToProject({ pnpAssemblyTypes: types })
+  } else {
+    updatePnpAssemblyTypes(projectId, types)
+  }
+}, { deep: true })
+
 // ── Persist BOM data ──
 
 watch(bom.bomLinesRecord, (lines) => {
@@ -3402,10 +3578,16 @@ watch(panelData, (data) => {
 
 watch(pasteSettings, (settings) => {
   if (!hasLoadedProjectData.value) return
+  const snapshot = toPasteSettingsSnapshot(settings)
   if (isTeamProject) {
-    persistToProject({ pasteSettings: { ...settings } })
+    pendingLocalPasteSettings = snapshot
+    void persistToProject({ pasteSettings: { ...snapshot } }).finally(() => {
+      if (pendingLocalPasteSettings && arePasteSettingsEqual(pendingLocalPasteSettings, snapshot)) {
+        pendingLocalPasteSettings = null
+      }
+    })
   } else {
-    updateLocalPasteSettings(projectId, { ...settings })
+    updateLocalPasteSettings(projectId, { ...snapshot })
   }
 }, { deep: true })
 
@@ -3518,11 +3700,7 @@ const filterOptions: { label: string; value: LayerFilter }[] = [
   { label: 'Bot', value: 'bot' },
 ]
 
-/** In realistic mode, hide "All" since we can only show one side at a time */
 const activeFilterOptions = computed(() => {
-  if (viewMode.value === 'realistic') {
-    return filterOptions.filter(f => f.value !== 'all')
-  }
   return filterOptions
 })
 
@@ -3561,13 +3739,13 @@ function cancelEdit() {
 }
 
 // ── Team project actions (approve / revert) ──
-const { getProject: getTeamProject, approveProject: doApprove, revertToDraft: doRevert, updateProject: updateTeamProject, getProjectFiles: getTeamFiles, downloadFile: downloadTeamFile, uploadFile: uploadTeamFile, deleteFile: deleteTeamFile, getProjectDocuments: getTeamDocuments, uploadDocument: uploadTeamDocument, downloadDocument: downloadTeamDocument, updateDocumentType: updateTeamDocumentType, deleteDocument: deleteTeamDocument } = useTeamProjects()
+const { getProject: getTeamProject, approveProject: doApprove, revertToDraft: doRevert, updateProject: updateTeamProject, getProjectFiles: getTeamFiles, downloadFile: downloadTeamFile, uploadFile: uploadTeamFile, deleteFile: deleteTeamFile, getProjectDocuments: getTeamDocuments, uploadDocument: uploadTeamDocument, downloadDocument: downloadTeamDocument, updateDocumentType: updateTeamDocumentType, deleteDocument: deleteTeamDocument, uploadPreviewImage } = useTeamProjects()
 
 async function toggleCurrentTabLock() {
   if (!teamProjectId || !isLockableTab(sidebarTab.value) || !canToggleCurrentTabLock.value) return
 
   const tab = sidebarTab.value
-  const before = { ...projectPageLocks.value }
+  const before = toPageLocksSnapshot(projectPageLocks.value)
   const current = projectPageLocks.value[tab]
   const nextLocked = !current?.locked
   const next: PageLocksRecord = { ...projectPageLocks.value }
@@ -3584,12 +3762,14 @@ async function toggleCurrentTabLock() {
   }
 
   // Optimistic local update so lock state changes immediately.
+  pendingLocalPageLocks = toPageLocksSnapshot(next)
   pageLocksOverride.value = next
   if (project.value) project.value.pageLocks = next
 
   const { error } = await updateTeamProject(teamProjectId, { page_locks: next })
   if (error) {
     console.warn('Failed to update page lock:', error)
+    pendingLocalPageLocks = null
     pageLocksOverride.value = before
     if (project.value) project.value.pageLocks = before
     return
@@ -3825,6 +4005,9 @@ onMounted(async () => {
 
   // Restore persisted deleted component keys
   pnp.setDeletedKeys(project.value?.pnpDeletedComponents)
+
+  // Restore persisted THT assembly type overrides
+  pnp.setAssemblyTypeOverrides(project.value?.pnpAssemblyTypes)
 
   // Restore persisted component table sort state
   if (isValidSortState(project.value?.pnpSortSmd)) {
@@ -4401,7 +4584,7 @@ async function handleDownloadGerber() {
     zip.file(layer.file.fileName, layer.file.content)
   }
   const blob = await zip.generateAsync({ type: 'blob' })
-  triggerDownload(blob, `${project.value?.name || 'gerber-files'}.zip`)
+  await triggerDownload(blob, `${project.value?.name || 'gerber-files'}.zip`)
 }
 
 // ── Export handlers ──
@@ -4412,7 +4595,7 @@ async function handleExportPng() {
   const { settings: _appSettings } = useAppSettings()
   const blob = await canvas.exportPng(_appSettings.exportDpi)
   if (!blob) return
-  triggerDownload(blob, `${project.value?.name || 'pcb'}-${mirrored.value ? 'bottom' : 'top'}.png`)
+  await triggerDownload(blob, `${project.value?.name || 'pcb'}-${mirrored.value ? 'bottom' : 'top'}.png`)
 }
 
 async function handleExportSvg() {
@@ -4423,7 +4606,7 @@ async function handleExportSvg() {
   const svgExporter = await loadSvgExporter()
   const svgString = svgExporter.exportRealisticSvg(realisticLayers, selectedPreset.value, side)
   const blob = new Blob([svgString], { type: 'image/svg+xml' })
-  triggerDownload(blob, `${project.value?.name || 'pcb'}-${side}.svg`)
+  await triggerDownload(blob, `${project.value?.name || 'pcb'}-${side}.svg`)
 }
 
 async function handleExportImage(options: { format: 'png' | 'svg'; componentsMode: 'none' | 'smd' | 'tht' | 'all' | 'both'; sideMode: 'top' | 'bottom' | 'both'; dpi: number }) {
@@ -4507,7 +4690,7 @@ async function handleExportBoardImage(options: { format: 'png' | 'svg'; componen
   if (fileCount === 1) {
     const blob = await renderOne(sides[0]!, variants[0]!)
     if (!blob) return
-    triggerDownload(blob, fileNameFor(sides[0]!, variants[0]!))
+    await triggerDownload(blob, fileNameFor(sides[0]!, variants[0]!))
     return
   }
 
@@ -4521,7 +4704,7 @@ async function handleExportBoardImage(options: { format: 'png' | 'svg'; componen
     }
   }
   const zipBlob = await zip.generateAsync({ type: 'blob' })
-  triggerDownload(zipBlob, `${projectName}-images.zip`)
+  await triggerDownload(zipBlob, `${projectName}-images.zip`)
 }
 
 function panelPngBlobToSvgBlob(pngBlob: Blob, panelSizeMm?: { width: number; height: number } | null): Promise<Blob> {
@@ -4596,7 +4779,7 @@ async function handleExportPanelImage(options: { format: 'png' | 'svg'; componen
   if (fileCount === 1) {
     const blob = await renderOne(sides[0]!, variants[0]!)
     if (!blob) return
-    triggerDownload(blob, fileNameFor(sides[0]!, variants[0]!))
+    await triggerDownload(blob, fileNameFor(sides[0]!, variants[0]!))
     return
   }
 
@@ -4610,7 +4793,7 @@ async function handleExportPanelImage(options: { format: 'png' | 'svg'; componen
     }
   }
   const zipBlob = await zip.generateAsync({ type: 'blob' })
-  triggerDownload(zipBlob, `${projectName}-panel-images.zip`)
+  await triggerDownload(zipBlob, `${projectName}-panel-images.zip`)
 }
 
 async function handleExportPnP(options: { convention: PnPConvention; format: PnPExportFormat; sideMode: PnPExportSideMode; componentMode: string; excludeDnp: boolean }) {
@@ -4676,7 +4859,7 @@ async function handleExportPnP(options: { convention: PnPConvention; format: PnP
   if (files.length === 1) {
     const content = buildExport(files[0]!.components)
     const blob = new Blob([content], { type: mimeType })
-    triggerDownload(blob, files[0]!.filename)
+    await triggerDownload(blob, files[0]!.filename)
   } else {
     const JSZipCtor = await loadJsZipCtor()
     const zip = new JSZipCtor()
@@ -4684,19 +4867,12 @@ async function handleExportPnP(options: { convention: PnPConvention; format: PnP
       zip.file(f.filename, buildExport(f.components))
     }
     const blob = await zip.generateAsync({ type: 'blob' })
-    triggerDownload(blob, `${name}-pick-and-place.zip`)
+    await triggerDownload(blob, `${name}-pick-and-place.zip`)
   }
 }
 
-function triggerDownload(blob: Blob, fileName: string) {
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = fileName
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  URL.revokeObjectURL(url)
+async function triggerDownload(blob: Blob, fileName: string) {
+  await saveBlobFile(blob, fileName)
 }
 </script>
 

@@ -40,7 +40,7 @@
 </template>
 
 <script setup lang="ts">
-type ViewerPage = 'files' | 'pcb' | 'panel' | 'paste' | 'smd' | 'tht' | 'bom' | 'pricing' | 'docs'
+type ViewerPage = 'files' | 'pcb' | 'panel' | 'paste' | 'smd' | 'tht' | 'bom' | 'pricing' | 'docs' | 'summary'
 
 const page = defineModel<ViewerPage>({ required: true })
 
@@ -64,6 +64,7 @@ const allTabs = computed<TabDef[]>(() => [
   { label: 'THT', value: 'tht', icon: 'i-lucide-pin', visible: !!props.showPnP },
   { label: 'BOM', value: 'bom', icon: 'i-lucide-table', visible: !!props.showBom },
   { label: 'Docs', value: 'docs', icon: 'i-lucide-book-open-text', visible: !!props.showDocs },
+  { label: 'Summary', value: 'summary', icon: 'i-lucide-clipboard-list', visible: true },
   { label: 'Pricing', value: 'pricing', icon: 'i-lucide-dollar-sign', visible: true },
 ])
 

@@ -73,6 +73,34 @@
           </div>
         </div>
 
+        <div class="p-3 border-b border-neutral-200 dark:border-neutral-800 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-neutral-600 dark:text-neutral-300 uppercase tracking-wide">Quick Summary</span>
+            <UBadge size="xs" color="neutral" variant="subtle">{{ compareSummary.changedTotal }} changed</UBadge>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-[11px]">
+            <div class="rounded border border-neutral-200 dark:border-neutral-700 bg-neutral-50/70 dark:bg-neutral-900/50 px-2 py-1.5">
+              <div class="text-[10px] text-neutral-500 dark:text-neutral-400 uppercase">Routing</div>
+              <div class="font-semibold tabular-nums text-neutral-800 dark:text-neutral-100">{{ compareSummary.changedRouting }}</div>
+            </div>
+            <div class="rounded border border-neutral-200 dark:border-neutral-700 bg-neutral-50/70 dark:bg-neutral-900/50 px-2 py-1.5">
+              <div class="text-[10px] text-neutral-500 dark:text-neutral-400 uppercase">Assembly</div>
+              <div class="font-semibold tabular-nums text-neutral-800 dark:text-neutral-100">{{ compareSummary.changedAssembly }}</div>
+            </div>
+            <div class="rounded border border-neutral-200 dark:border-neutral-700 bg-neutral-50/70 dark:bg-neutral-900/50 px-2 py-1.5">
+              <div class="text-[10px] text-neutral-500 dark:text-neutral-400 uppercase">Only Packet 1</div>
+              <div class="font-semibold tabular-nums text-neutral-800 dark:text-neutral-100">{{ compareSummary.onlyInA }}</div>
+            </div>
+            <div class="rounded border border-neutral-200 dark:border-neutral-700 bg-neutral-50/70 dark:bg-neutral-900/50 px-2 py-1.5">
+              <div class="text-[10px] text-neutral-500 dark:text-neutral-400 uppercase">Only Packet 2</div>
+              <div class="font-semibold tabular-nums text-neutral-800 dark:text-neutral-100">{{ compareSummary.onlyInB }}</div>
+            </div>
+          </div>
+          <div class="text-[10px] text-neutral-500 dark:text-neutral-400">
+            Matched layers: {{ compareSummary.matched }} · Identical: {{ compareSummary.identical }}
+          </div>
+        </div>
+
         <!-- Alignment panel -->
         <div v-if="showAlignPanel" class="p-3 border-b border-neutral-200 dark:border-neutral-800">
           <div class="flex items-center justify-between mb-2">
@@ -304,6 +332,50 @@ function buildCompareName() {
 }
 
 const selectedMatchData = computed(() => matches.value[selectedMatch.value] || null)
+
+function classifyChangeBucket(type: string): 'routing' | 'assembly' | 'other' {
+  const normalized = type.toLowerCase()
+  if (
+    normalized.includes('copper')
+    || normalized.includes('outline')
+    || normalized.includes('keep-out')
+    || normalized.includes('drill')
+    || normalized.includes('inner')
+  ) return 'routing'
+  if (
+    normalized.includes('solder mask')
+    || normalized.includes('silkscreen')
+    || normalized.includes('paste')
+  ) return 'assembly'
+  return 'other'
+}
+
+const compareSummary = computed(() => {
+  const matched = matches.value.filter(m => !!m.fileB)
+  const identical = matched.filter(m => m.identical).length
+  const changed = matched.filter(m => !m.identical)
+  const onlyInA = matches.value.filter(m => !m.fileB).length
+  const matchedBNames = new Set(matched.map(m => m.fileB?.fileName).filter((name): name is string => !!name))
+  const onlyInB = filesB.value.filter(f => !matchedBNames.has(f.fileName)).length
+
+  let changedRouting = 0
+  let changedAssembly = 0
+  for (const entry of changed) {
+    const bucket = classifyChangeBucket(entry.type || entry.fileA.layerType || '')
+    if (bucket === 'routing') changedRouting++
+    else if (bucket === 'assembly') changedAssembly++
+  }
+
+  return {
+    matched: matched.length,
+    identical,
+    changedTotal: changed.length,
+    changedRouting,
+    changedAssembly,
+    onlyInA,
+    onlyInB,
+  }
+})
 
 onMounted(async () => {
   project.value = await getProject(projectId)

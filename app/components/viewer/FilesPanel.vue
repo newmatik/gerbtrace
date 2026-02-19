@@ -204,10 +204,12 @@ const emit = defineEmits<{
   duplicateLayer: [index: number]
   reorder: [fromIndex: number, toIndex: number]
   downloadLayer: [index: number]
+  selectLayer: [payload: { index: number; fileName: string }]
 
   updateDocumentType: [id: string, type: DocumentType]
   removeDocument: [id: string]
   downloadDocument: [id: string]
+  selectDoc: [id: string]
 }>()
 
 const layerTypeItems = ALL_LAYER_TYPES.map(t => ({ label: t, value: t }))
@@ -433,6 +435,7 @@ function selectLayer(fileName: string, index: number) {
   selectedLayerFileName.value = fileName
   selectedLayerIndex.value = index
   selectedDocId.value = null
+  emit('selectLayer', { index, fileName })
 }
 
 function onLayerRowClick(fileName: string, index: number) {
@@ -444,6 +447,7 @@ function selectDoc(id: string) {
   selectedDocId.value = id
   selectedLayerFileName.value = null
   selectedLayerIndex.value = null
+  emit('selectDoc', id)
 }
 
 function getLayerIconName(type: string): string {

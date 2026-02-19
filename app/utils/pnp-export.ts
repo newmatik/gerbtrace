@@ -21,6 +21,8 @@ export interface PnPExportOptions {
   matchPackage: (packageName: string) => PackageDefinition | undefined
   /** Whether to exclude DNP components (default: false — include but mark) */
   excludeDnp?: boolean
+  /** THT assembly type overrides (component key -> type) */
+  assemblyTypeOverrides?: Map<string, string>
 }
 
 /** Human-readable convention labels for the export header */
@@ -170,11 +172,13 @@ export function generatePnPExport(options: PnPExportOptions): string {
     components,
     matchPackage,
     excludeDnp = false,
+    assemblyTypeOverrides,
   } = options
 
   const delimiter = format === 'tsv' ? '\t' : ','
   const escape = format === 'csv' ? csvEscape : (v: string) => v
   const needsConversion = inputConvention !== outputConvention
+  const hasTht = components.some(c => c.componentType === 'tht')
 
   const timestamp = fmtTimestamp(new Date())
   const conventionLabel = CONVENTION_EXPORT_LABELS[outputConvention]
@@ -186,7 +190,7 @@ export function generatePnPExport(options: PnPExportOptions): string {
   lines.push(`# ${name}, ${conventionLabel}, metric (mm), exported ${timestamp} from Gerbtrace`)
 
   // Column header
-  const headers = ['Designator', 'Mid X', 'Mid Y', 'Rotation', 'Side', 'Value', 'Package', 'CAD Package', 'Polarized', 'Populated', 'Note', 'Comment']
+  const headers = ['Designator', 'Mid X', 'Mid Y', 'Rotation', 'Side', 'Value', 'Package', 'CAD Package', 'Polarized', 'Populated', ...(hasTht ? ['Assembly Type'] : []), 'Note', 'Comment']
   lines.push(headers.join(delimiter))
 
   // Filter out DNP if requested
@@ -218,6 +222,7 @@ export function generatePnPExport(options: PnPExportOptions): string {
       escape(cadPkg),
       fmtYesNo(!!comp.polarized),
       fmtYesNo(!comp.dnp),
+      ...(hasTht ? [escape(comp.componentType === 'tht' ? (assemblyTypeOverrides?.get(comp.key) ?? 'wave') : '')] : []),
       escape(comp.note || ''),
       escape(comment),
     ]

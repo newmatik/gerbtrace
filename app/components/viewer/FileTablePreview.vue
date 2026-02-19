@@ -124,6 +124,7 @@ import * as XLSX from 'xlsx'
 
 type DelimiterMode = 'auto' | ',' | ';' | '\t'
 type DecimalMode = 'auto' | '.' | ','
+const UNMAPPED_VALUE = '__unmapped__'
 
 const props = defineProps<{
   fileName: string
@@ -232,16 +233,16 @@ const sheetItems = computed(() => {
 })
 
 const mappingItems = computed(() => [
-  { value: '', label: '-- Unmapped --' },
+  { value: UNMAPPED_VALUE, label: '-- Unmapped --' },
   ...((props.mappingFields ?? []).map(field => ({ value: field.key, label: field.label }))),
 ])
 
 function fieldForColumn(columnIndex: number): string {
-  if (!props.mapping) return ''
+  if (!props.mapping) return UNMAPPED_VALUE
   for (const [fieldKey, idx] of Object.entries(props.mapping)) {
     if (idx === columnIndex) return fieldKey
   }
-  return ''
+  return UNMAPPED_VALUE
 }
 
 function updateColumnField(columnIndex: number, value: unknown) {
@@ -249,8 +250,8 @@ function updateColumnField(columnIndex: number, value: unknown) {
   for (const [key, idx] of Object.entries(next)) {
     if (idx === columnIndex) next[key] = undefined
   }
-  const fieldKey = String(value ?? '')
-  if (fieldKey) next[fieldKey] = columnIndex
+  const fieldKey = String(value ?? UNMAPPED_VALUE)
+  if (fieldKey && fieldKey !== UNMAPPED_VALUE) next[fieldKey] = columnIndex
   emit('update:mapping', next)
 }
 

@@ -37,6 +37,7 @@ import type { PnPConvention } from '~/utils/pnp-conventions'
 import { useGerberImageTreeCache } from '~/composables/useGerberImageTreeCache'
 
 export type ViewMode = 'layers' | 'realistic'
+type RealisticSide = 'top' | 'bottom' | 'all'
 
 const props = defineProps<{
   layers: LayerInfo[]
@@ -737,13 +738,35 @@ function sizeCanvas(): number {
   return dpr
 }
 
-function gatherRealisticLayers(side: 'top' | 'bottom'): RealisticLayers {
+function mergeImageTrees(trees: ImageTree[]): ImageTree | undefined {
+  if (!trees.length) return undefined
+  const units = trees[0]!.units
+  let bounds: BoundingBox = emptyBounds()
+  const children = trees
+    .filter(tree => tree.units === units)
+    .flatMap((tree) => {
+      bounds = mergeBounds(bounds, tree.bounds as BoundingBox)
+      return tree.children
+    })
+  if (!children.length) return undefined
+  return {
+    units,
+    bounds: isEmpty(bounds) ? ([0, 0, 0, 0] as BoundingBox) : bounds,
+    children,
+  }
+}
+
+function gatherRealisticLayers(side: RealisticSide): RealisticLayers {
   const source = props.allLayers ?? props.layers
   const result: RealisticLayers = {}
-  const copperType = side === 'top' ? 'Top Copper' : 'Bottom Copper'
-  const maskType = side === 'top' ? 'Top Solder Mask' : 'Bottom Solder Mask'
-  const silkType = side === 'top' ? 'Top Silkscreen' : 'Bottom Silkscreen'
-  const pasteType = side === 'top' ? 'Top Paste' : 'Bottom Paste'
+  const copperTypes = side === 'all' ? ['Top Copper', 'Bottom Copper'] : [side === 'top' ? 'Top Copper' : 'Bottom Copper']
+  const maskTypes = side === 'all' ? ['Top Solder Mask', 'Bottom Solder Mask'] : [side === 'top' ? 'Top Solder Mask' : 'Bottom Solder Mask']
+  const silkTypes = side === 'all' ? ['Top Silkscreen', 'Bottom Silkscreen'] : [side === 'top' ? 'Top Silkscreen' : 'Bottom Silkscreen']
+  const pasteTypes = side === 'all' ? ['Top Paste', 'Bottom Paste'] : [side === 'top' ? 'Top Paste' : 'Bottom Paste']
+  const copperTrees: ImageTree[] = []
+  const maskTrees: ImageTree[] = []
+  const silkTrees: ImageTree[] = []
+  const pasteTrees: ImageTree[] = []
   const drillTrees: ImageTree[] = []
   let outlineTree: ImageTree | undefined
   let detectedUnitsLocal: 'mm' | 'in' | undefined
@@ -752,20 +775,25 @@ function gatherRealisticLayers(side: 'top' | 'bottom'): RealisticLayers {
   for (const layer of source) {
     const tree = getImageTree(layer)
     if (!tree || tree.children.length === 0) continue
-    if (layer.type === copperType) { result.copper = tree; usedTrees.push(tree) }
-    else if (layer.type === maskType) { result.solderMask = tree; usedTrees.push(tree) }
-    else if (layer.type === silkType) { result.silkscreen = tree; usedTrees.push(tree) }
-    else if (layer.type === pasteType) {
-      const ps = props.pasteSettings
-      result.paste = ps && ps.mode === 'jetprint'
-        ? generateJetprintDots(tree, { dotDiameter: ps.dotDiameter, dotSpacing: ps.dotSpacing, pattern: ps.pattern, dynamicDots: ps.dynamicDots })
-        : tree
-      usedTrees.push(tree)
-    }
+    if (copperTypes.includes(layer.type)) { copperTrees.push(tree); usedTrees.push(tree) }
+    else if (maskTypes.includes(layer.type)) { maskTrees.push(tree); usedTrees.push(tree) }
+    else if (silkTypes.includes(layer.type)) { silkTrees.push(tree); usedTrees.push(tree) }
+    else if (pasteTypes.includes(layer.type)) { pasteTrees.push(tree); usedTrees.push(tree) }
     else if (layer.type === 'Drill') drillTrees.push(tree)
     else if (layer.type === 'Outline') outlineTree = tree
     else if (layer.type === 'Keep-Out' && !outlineTree) outlineTree = tree
     if (!detectedUnitsLocal) detectedUnitsLocal = tree.units
+  }
+
+  result.copper = mergeImageTrees(copperTrees)
+  result.solderMask = mergeImageTrees(maskTrees)
+  result.silkscreen = mergeImageTrees(silkTrees)
+  const mergedPaste = mergeImageTrees(pasteTrees)
+  if (mergedPaste) {
+    const ps = props.pasteSettings
+    result.paste = ps && ps.mode === 'jetprint'
+      ? generateJetprintDots(mergedPaste, { dotDiameter: ps.dotDiameter, dotSpacing: ps.dotSpacing, pattern: ps.pattern, dynamicDots: ps.dynamicDots })
+      : mergedPaste
   }
 
   if (drillTrees.length > 0) {
@@ -2684,7 +2712,7 @@ function draw() {
         offsetY: outlineBounds[3] * transform.scale,
         scale: transform.scale,
       }
-      const side = props.activeFilter === 'bot' ? 'bottom' : 'top'
+      const side: RealisticSide = props.activeFilter === 'bot' ? 'bottom' : props.activeFilter === 'all' ? 'all' : 'top'
       const tileKey = [
         pcbPixW,
         pcbPixH,
@@ -2708,15 +2736,39 @@ function draw() {
       } else {
         tileCanvas = acquireCanvas(pcbPixW, pcbPixH)
         if (isRealistic) {
-          const realisticLayers = gatherRealisticLayers(side)
           const ps = props.pasteSettings
-          renderRealisticView(realisticLayers, tileCanvas, {
-            preset: props.preset!,
-            transform: tileTransform,
-            dpr,
-            side,
-            pasteColor: ps?.mode === 'jetprint' && ps.highlightDots ? '#00FF66' : undefined,
-          })
+          if (side === 'all') {
+            renderRealisticView(gatherRealisticLayers('top'), tileCanvas, {
+              preset: props.preset!,
+              transform: tileTransform,
+              dpr,
+              side: 'top',
+              pasteColor: ps?.mode === 'jetprint' && ps.highlightDots ? '#00FF66' : undefined,
+            })
+            const bottomCanvas = acquireCanvas(pcbPixW, pcbPixH)
+            renderRealisticView(gatherRealisticLayers('bottom'), bottomCanvas, {
+              preset: props.preset!,
+              transform: tileTransform,
+              dpr,
+              side: 'bottom',
+              pasteColor: ps?.mode === 'jetprint' && ps.highlightDots ? '#00FF66' : undefined,
+            })
+            const tileCtx = tileCanvas.getContext('2d')!
+            tileCtx.save()
+            tileCtx.globalAlpha = 0.45
+            tileCtx.filter = 'grayscale(1)'
+            tileCtx.drawImage(bottomCanvas, 0, 0)
+            tileCtx.restore()
+            releaseCanvas(bottomCanvas)
+          } else {
+            renderRealisticView(gatherRealisticLayers(side), tileCanvas, {
+              preset: props.preset!,
+              transform: tileTransform,
+              dpr,
+              side,
+              pasteColor: ps?.mode === 'jetprint' && ps.highlightDots ? '#00FF66' : undefined,
+            })
+          }
         } else {
           const tileCtx = tileCanvas.getContext('2d')!
           for (const layer of props.layers) {
@@ -3134,13 +3186,13 @@ watch(addedRoutingEditMode, (mode) => {
 function exportPng(
   dpi: number = 600,
   options?: {
-    side?: 'top' | 'bottom'
+    side?: 'top' | 'bottom' | 'all'
     includeComponents?: boolean
     components?: EditablePnPComponent[]
     includePackages?: boolean
   },
 ): Promise<Blob | null> {
-  const exportSide = options?.side ?? (props.activeFilter === 'bot' ? 'bottom' : 'top')
+  const exportSide: RealisticSide = options?.side ?? (props.activeFilter === 'bot' ? 'bottom' : props.activeFilter === 'all' ? 'all' : 'top')
   const includeComponents = options?.includeComponents ?? true
   return new Promise((resolve) => {
     const panelLayout = layout.value
@@ -3179,7 +3231,7 @@ function exportPng(
       isRealistic,
       exportTransparent: true,
       mirrored: shouldMirror,
-      side: exportSide,
+      side: exportSide === 'all' ? 'top' : exportSide,
     }
 
     if (shouldMirror) {
@@ -3201,12 +3253,35 @@ function exportPng(
     let tileCanvas: HTMLCanvasElement
     if (isRealistic) {
       tileCanvas = acquireCanvas(tileW, tileH)
-      renderRealisticView(gatherRealisticLayers(exportSide), tileCanvas, {
-        preset: props.preset!,
-        transform: tileTransform,
-        dpr: 1,
-        side: exportSide,
-      })
+      if (exportSide === 'all') {
+        renderRealisticView(gatherRealisticLayers('top'), tileCanvas, {
+          preset: props.preset!,
+          transform: tileTransform,
+          dpr: 1,
+          side: 'top',
+        })
+        const bottomCanvas = acquireCanvas(tileW, tileH)
+        renderRealisticView(gatherRealisticLayers('bottom'), bottomCanvas, {
+          preset: props.preset!,
+          transform: tileTransform,
+          dpr: 1,
+          side: 'bottom',
+        })
+        const tileCtx = tileCanvas.getContext('2d')!
+        tileCtx.save()
+        tileCtx.globalAlpha = 0.45
+        tileCtx.filter = 'grayscale(1)'
+        tileCtx.drawImage(bottomCanvas, 0, 0)
+        tileCtx.restore()
+        releaseCanvas(bottomCanvas)
+      } else {
+        renderRealisticView(gatherRealisticLayers(exportSide), tileCanvas, {
+          preset: props.preset!,
+          transform: tileTransform,
+          dpr: 1,
+          side: exportSide,
+        })
+      }
     } else {
       tileCanvas = acquireCanvas(tileW, tileH)
       const tileCtx = tileCanvas.getContext('2d')!
@@ -3273,7 +3348,7 @@ function exportPng(
 }
 
 function exportPngForSide(
-  side: 'top' | 'bottom',
+  side: 'top' | 'bottom' | 'all',
   options?: {
     dpi?: number
     includeComponents?: boolean

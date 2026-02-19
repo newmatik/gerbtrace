@@ -69,6 +69,7 @@ export interface TeamProject {
   document_order: string[] | null
   bom_file_import_options: Record<string, { skipRows?: number; mapping?: BomColumnMapping }> | null
   pnp_file_import_options: Record<string, { skipRows?: number; mapping?: PnPColumnMapping; unitOverride?: 'auto' | PnPCoordUnit }> | null
+  preview_image_path: string | null
   created_at: string
   updated_at: string
 }
@@ -102,6 +103,7 @@ const projectFilesByPacketCache = new Map<string, TeamProjectFile[]>()
 const fileTextCache = new Map<string, string>()
 const projectDocumentsCache = new Map<string, TeamProjectDocument[]>()
 const documentBlobCache = new Map<string, Blob>()
+const previewUrlCache = new Map<string, { url: string; expiresAt: number }>()
 
 function getProjectPacketKey(projectId: string, packet: number) {
   return `${projectId}:${packet}`
@@ -529,6 +531,64 @@ export function useTeamProjects() {
     return { error }
   }
 
+  // ── Preview image operations ─────────────────────────────────────────
+
+  async function uploadPreviewImage(
+    projectId: string,
+    teamId: string,
+    blob: Blob,
+  ) {
+    const storagePath = `${teamId}/${projectId}/preview.png`
+
+    const { error: uploadError } = await supabase.storage
+      .from('gerber-files')
+      .upload(storagePath, blob, { upsert: true, contentType: 'image/png' })
+
+    if (uploadError) {
+      console.warn('[useTeamProjects] Preview upload failed:', uploadError.message)
+      return { error: uploadError }
+    }
+
+    const { error: updateError } = await supabase
+      .from('projects')
+      .update({ preview_image_path: storagePath })
+      .eq('id', projectId)
+
+    if (updateError) {
+      console.warn('[useTeamProjects] Preview path update failed:', updateError.message)
+      return { error: updateError }
+    }
+
+    const cached = projectByIdCache.get(projectId)
+    if (cached) cached.preview_image_path = storagePath
+
+    const idx = projects.value.findIndex(p => p.id === projectId)
+    if (idx >= 0) projects.value[idx].preview_image_path = storagePath
+
+    previewUrlCache.delete(projectId)
+
+    return { error: null }
+  }
+
+  async function getPreviewUrl(project: TeamProject): Promise<string | null> {
+    if (!project.preview_image_path) return null
+
+    const cached = previewUrlCache.get(project.id)
+    if (cached && cached.expiresAt > Date.now()) return cached.url
+
+    const { data, error } = await supabase.storage
+      .from('gerber-files')
+      .createSignedUrl(project.preview_image_path, 3600)
+
+    if (error || !data?.signedUrl) return null
+
+    previewUrlCache.set(project.id, {
+      url: data.signedUrl,
+      expiresAt: Date.now() + 3_500_000,
+    })
+    return data.signedUrl
+  }
+
   // Clear module-scoped caches on logout to prevent cross-session data leaks.
   const { isAuthenticated } = useAuth()
   watch(isAuthenticated, (authed) => {
@@ -538,6 +598,7 @@ export function useTeamProjects() {
       fileTextCache.clear()
       projectDocumentsCache.clear()
       documentBlobCache.clear()
+      previewUrlCache.clear()
       inFlightByTeam.clear()
       projects.value = []
       projectsByTeam.value = {}
@@ -581,5 +642,7 @@ export function useTeamProjects() {
     downloadDocument,
     updateDocumentType,
     deleteDocument,
+    uploadPreviewImage,
+    getPreviewUrl,
   }
 }

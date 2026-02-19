@@ -121,6 +121,8 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
   const fieldOverrides = ref(new Map<string, PnPFieldOverride>())
   // Deleted component keys (parsed components removed by the user)
   const deletedKeys = ref(new Set<string>())
+  // Per-THT-component assembly type override
+  const assemblyTypeOverrides = ref(new Map<string, 'wave' | 'hand' | 'mounting' | 'coating' | 'cable' | 'delivered-loose'>())
   // User-added manual components (not from PnP file)
   const manualComponents = shallowRef<ManualPnPComponent[]>([])
   // Optional matchers supplied by the viewer (package libraries)
@@ -766,6 +768,35 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
     manualComponents.value.map(mc => ({ ...mc })),
   )
 
+  // ── THT assembly type ──
+
+  type ThtAssemblyType = 'wave' | 'hand' | 'mounting' | 'coating' | 'cable' | 'delivered-loose'
+
+  function setAssemblyType(key: string, type: ThtAssemblyType | undefined) {
+    const next = new Map(assemblyTypeOverrides.value)
+    if (!type || type === 'wave') {
+      next.delete(key)
+    } else {
+      next.set(key, type)
+    }
+    assemblyTypeOverrides.value = next
+  }
+
+  function setAssemblyTypeOverrides(overrides: Record<string, string> | null | undefined) {
+    const valid = new Set<string>(['wave', 'hand', 'mounting', 'coating', 'cable', 'delivered-loose'])
+    const next = new Map<string, ThtAssemblyType>()
+    for (const [key, val] of Object.entries(overrides ?? {})) {
+      if (typeof val === 'string' && valid.has(val)) next.set(key, val as ThtAssemblyType)
+    }
+    assemblyTypeOverrides.value = next
+  }
+
+  const assemblyTypeOverridesRecord = computed<Record<string, string>>(() => {
+    const out: Record<string, string> = {}
+    for (const [k, v] of assemblyTypeOverrides.value.entries()) out[k] = v
+    return out
+  })
+
   // ── External package matcher (library) ──
 
   function setPackageMatcher(fn: ((name: string) => PackageDefinition | undefined) | null | undefined) {
@@ -1011,6 +1042,11 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
     deleteComponent,
     setDeletedKeys,
     deletedKeysRecord,
+    // THT assembly type
+    assemblyTypeOverrides,
+    setAssemblyType,
+    setAssemblyTypeOverrides,
+    assemblyTypeOverridesRecord,
     startPlacement,
     placingComponent,
     // Convention

@@ -65,6 +65,8 @@ interface ProjectRecord {
   pnpComponentGroups?: { id: string; componentType: 'smd' | 'tht'; name: string; comment: string; hidden: boolean; collapsed: boolean }[] | null
   /** Component key -> group id assignment map */
   pnpGroupAssignments?: Record<string, string> | null
+  /** Per-THT-component assembly type overrides */
+  pnpAssemblyTypes?: Record<string, string> | null
   /** BOM line items */
   bomLines?: BomLine[] | null
   /** Cached Elexess pricing data keyed by manufacturer part number */
@@ -80,7 +82,8 @@ interface ProjectRecord {
     copperWeight?: CopperWeight
     innerCopperWeight?: '0.5oz' | CopperWeight
     thicknessMm?: number
-    solderMaskColor?: 'green' | 'black' | 'blue' | 'red' | 'white' | 'purple'
+    solderMaskColor?: 'green' | 'black' | 'blue' | 'red' | 'white' | 'purple' | 'brown'
+    material?: 'FR4' | 'IMS-AL' | 'Flex' | 'Rigid-Flex'
     panelizationMode?: 'single' | 'panelized'
     pricingQuantities?: number[]
     selectedPricingQuantity?: number
@@ -97,6 +100,8 @@ interface ProjectRecord {
   bomFileImportOptions?: Record<string, { skipRows?: number; mapping?: BomColumnMapping }> | null
   /** Per-file PnP import options (header skip + mapping + unit override) */
   pnpFileImportOptions?: Record<string, { skipRows?: number; mapping?: PnPColumnMapping; unitOverride?: 'auto' | PnPCoordUnit }> | null
+  /** Small PNG thumbnail of the rendered PCB board */
+  previewImage?: Blob | null
 }
 
 interface FileRecord {
@@ -257,6 +262,13 @@ class GerbtraceDB extends Dexie {
     })
     // v22: add per-file BOM/PnP import options to projects
     this.version(22).stores({
+      projects: '++id, name, mode, createdAt, updatedAt',
+      files: '++id, projectId, packet, fileName',
+      fileOriginals: '++id, projectId, packet, fileName',
+      documents: '++id, projectId, fileName',
+    })
+    // v23: add previewImage (Blob) to projects for PCB thumbnail
+    this.version(23).stores({
       projects: '++id, name, mode, createdAt, updatedAt',
       files: '++id, projectId, packet, fileName',
       fileOriginals: '++id, projectId, packet, fileName',
@@ -439,6 +451,10 @@ export function useProject() {
     await db.projects.update(id, { pnpGroupAssignments: deepToRaw(assignments), updatedAt: new Date() })
   }
 
+  async function updatePnpAssemblyTypes(id: number, types: Record<string, string>) {
+    await db.projects.update(id, { pnpAssemblyTypes: deepToRaw(types), updatedAt: new Date() })
+  }
+
   async function updateBomLines(id: number, lines: BomLine[]) {
     await db.projects.update(id, { bomLines: deepToRaw(lines), updatedAt: new Date() })
   }
@@ -483,6 +499,10 @@ export function useProject() {
     options: Record<string, { skipRows?: number; mapping?: PnPColumnMapping; unitOverride?: 'auto' | PnPCoordUnit }>,
   ) {
     await db.projects.update(id, { pnpFileImportOptions: deepToRaw(options), updatedAt: new Date() })
+  }
+
+  async function updateProjectPreview(id: number, blob: Blob | null) {
+    await db.projects.update(id, { previewImage: blob, updatedAt: new Date() })
   }
 
   // ── File originals (for edit detection and reset) ──
@@ -626,6 +646,7 @@ export function useProject() {
     updateProjectManualOrderTht,
     updateProjectComponentGroups,
     updateProjectGroupAssignments,
+    updatePnpAssemblyTypes,
     updateBomLines,
     updateBomPricingCache,
     updateBomBoardQuantity,
@@ -636,6 +657,7 @@ export function useProject() {
     updateDocumentOrder,
     updateBomFileImportOptions,
     updatePnpFileImportOptions,
+    updateProjectPreview,
     getDocuments,
     addDocument,
     removeDocument,

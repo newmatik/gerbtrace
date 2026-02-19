@@ -83,6 +83,20 @@
             </div>
           </div>
 
+          <!-- Material -->
+          <div class="space-y-0.5">
+            <label class="text-[10px] text-neutral-400">Material</label>
+            <USelect
+              :model-value="localData.material ?? 'FR4'"
+              size="xs"
+              class="w-full"
+              :items="PCB_MATERIAL_OPTIONS"
+              value-key="value"
+              label-key="label"
+              @update:model-value="updateField('material', ($event as PcbMaterial | undefined))"
+            />
+          </div>
+
           <!-- Surface Finish -->
           <div class="space-y-0.5">
             <label class="text-[10px] text-neutral-400">Surface Finish</label>
@@ -272,8 +286,9 @@ import {
   SURFACE_FINISH_OPTIONS,
   COPPER_WEIGHT_OPTIONS,
   PCB_THICKNESS_OPTIONS,
+  PCB_MATERIAL_OPTIONS,
 } from '~/utils/pcb-pricing'
-import type { SurfaceFinish, CopperWeight, PcbThicknessMm } from '~/utils/pcb-pricing'
+import type { SurfaceFinish, CopperWeight, PcbThicknessMm, PcbMaterial } from '~/utils/pcb-pricing'
 import type { LayerInfo } from '~/utils/gerber-helpers'
 import { getLayerGroup, LAYER_GROUP_LABELS, type LayerGroupKey } from '~/utils/gerber-helpers'
 import { SOLDER_MASK_COLOR_OPTIONS, type SolderMaskColor } from '~/utils/pcb-presets'
@@ -282,6 +297,7 @@ interface PcbData {
   sizeX?: number
   sizeY?: number
   layerCount?: number
+  material?: PcbMaterial
   surfaceFinish?: SurfaceFinish
   copperWeight?: CopperWeight
   innerCopperWeight?: '0.5oz' | '1oz' | '2oz'
@@ -354,6 +370,7 @@ const SOLDER_MASK_SWATCHES: Record<SolderMaskColor, string> = {
   red: '#8b1a1a',
   white: '#e8e8e8',
   purple: '#4a1a6b',
+  brown: '#6B3A1A',
 }
 
 const solderMaskOptions = computed(() =>

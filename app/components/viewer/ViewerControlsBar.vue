@@ -386,7 +386,7 @@
 </template>
 
 <script setup lang="ts">
-type ViewerPage = 'files' | 'pcb' | 'panel' | 'paste' | 'smd' | 'tht' | 'bom' | 'pricing' | 'docs'
+type ViewerPage = 'files' | 'pcb' | 'panel' | 'paste' | 'smd' | 'tht' | 'bom' | 'pricing' | 'docs' | 'summary'
 type ViewMode = 'layers' | 'realistic'
 type LayerFilter = 'all' | 'top' | 'bot'
 type InteractionMode = 'cursor' | 'measure' | 'info' | 'delete'
