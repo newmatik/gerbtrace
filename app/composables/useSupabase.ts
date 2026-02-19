@@ -32,10 +32,10 @@ export function useSupabase(): SupabaseClient {
 
   if (!url || !key) {
     console.warn('[Supabase] Missing SUPABASE_URL or SUPABASE_ANON_KEY — collaborative features disabled')
-    // Create a dummy client pointing to localhost to prevent crashes.
+    // Create a dummy client pointing to production Supabase to prevent crashes.
     // All requests will fail gracefully.
     _available = false
-    _client = createClient('http://localhost:54321', 'dummy-key-not-configured', {
+    _client = createClient('https://gqrnlnlfidighosujpdb.supabase.co', 'dummy-key-not-configured', {
       auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
     })
     return _client

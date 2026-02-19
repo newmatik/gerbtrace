@@ -1,4 +1,5 @@
 import Dexie from 'dexie'
+import { toRaw } from 'vue'
 import type { PackageDefinition } from '~/utils/package-types'
 
 interface CustomPackageRecord {
@@ -21,6 +22,15 @@ class PackageDB extends Dexie {
 }
 
 const db = new PackageDB()
+
+function toIndexedDbSafe<T>(val: T): T {
+  const raw = toRaw(val)
+  try {
+    return structuredClone(raw)
+  } catch {
+    return JSON.parse(JSON.stringify(raw)) as T
+  }
+}
 
 /**
  * Composable for CRUD operations on user-created custom packages.
@@ -47,7 +57,7 @@ export function useCustomPackages() {
   async function addPackage(pkg: PackageDefinition): Promise<number> {
     const now = new Date()
     const record: CustomPackageRecord = {
-      data: pkg,
+      data: toIndexedDbSafe(pkg),
       createdAt: now,
       updatedAt: now,
     }
@@ -57,7 +67,7 @@ export function useCustomPackages() {
   }
 
   async function updatePackage(id: number, pkg: PackageDefinition) {
-    await db.packages.update(id, { data: pkg, updatedAt: new Date() })
+    await db.packages.update(id, { data: toIndexedDbSafe(pkg), updatedAt: new Date() })
     await loadCustomPackages()
   }
 
