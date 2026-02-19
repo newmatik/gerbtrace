@@ -9,6 +9,7 @@
  * are used as field delimiter. Handles optional header rows, empty value fields,
  * and trailing blank lines.
  */
+import * as XLSX from 'xlsx'
 
 export interface PnPComponent {
   /** Component reference designator (e.g. "C1", "U3", "R5") */
@@ -27,10 +28,62 @@ export interface PnPComponent {
   side: 'top' | 'bottom'
 }
 
-/** Common header keywords that indicate a header row rather than data */
-const HEADER_KEYWORDS = /^(ref\s?des|ref|designator|component|comp|part|name|x|y|rotation|angle|value|package|footprint|side|layer|pos\s?x|pos\s?y)/i
+export type PnPCoordUnit = 'mm' | 'mils' | 'inches'
+
+export interface PnPColumnMapping {
+  designator?: number
+  x?: number
+  y?: number
+  rotation?: number
+  value?: number
+  package?: number
+  side?: number
+}
+
+export interface ParsePnPOptions {
+  unitOverride?: PnPCoordUnit
+  skipRows?: number
+  mapping?: PnPColumnMapping
+}
 
 type Delimiter = '\t' | ',' | ';'
+
+function isExcelFileName(fileName?: string): boolean {
+  return !!fileName && /\.(xlsx|xls)$/i.test(fileName)
+}
+
+function dataUrlToArrayBuffer(dataUrl: string): ArrayBuffer | null {
+  const match = dataUrl.match(/^data:.*;base64,(.+)$/i)
+  if (!match?.[1]) return null
+  try {
+    const binary = atob(match[1])
+    const bytes = new Uint8Array(binary.length)
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+    return bytes.buffer
+  } catch {
+    return null
+  }
+}
+
+function excelContentToText(content: string): string {
+  let wb: XLSX.WorkBook | null = null
+  if (/^data:.*;base64,/i.test(content)) {
+    const buffer = dataUrlToArrayBuffer(content)
+    if (buffer) wb = XLSX.read(buffer, { type: 'array' })
+  } else {
+    try {
+      wb = XLSX.read(content, { type: 'binary' })
+    } catch {
+      wb = null
+    }
+  }
+  if (!wb) return content
+  const sheetName = wb.SheetNames[0]
+  if (!sheetName) return ''
+  const sheet = wb.Sheets[sheetName]
+  if (!sheet) return ''
+  return XLSX.utils.sheet_to_csv(sheet, { FS: '\t', RS: '\n' })
+}
 
 /**
  * Detect delimiter from content: tab first, then semicolon, then comma.
@@ -84,14 +137,14 @@ function splitLine(line: string, delimiter: Delimiter): string[] {
   return fields
 }
 
-type ColumnKey = 'designator' | 'x' | 'y' | 'rotation' | 'value' | 'package' | 'side'
+type ColumnKey = keyof PnPColumnMapping
 
 function normaliseHeaderName(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]/g, '')
 }
 
 interface HeaderMapResult {
-  map: Partial<Record<ColumnKey, number>>
+  map: PnPColumnMapping
   /** Scale factor to convert X/Y coordinates to mm (1 = already mm) */
   coordScale: number
 }
@@ -106,9 +159,15 @@ function detectCoordUnit(rawHeader: string): number {
   return 1
 }
 
-function buildHeaderMap(fields: string[]): HeaderMapResult {
+function getCoordScale(unit: PnPCoordUnit | undefined): number {
+  if (unit === 'mils') return 0.0254
+  if (unit === 'inches') return 25.4
+  return 1
+}
+
+function buildHeaderMap(fields: string[], unitOverride?: PnPCoordUnit): HeaderMapResult {
   const map: Partial<Record<ColumnKey, number>> = {}
-  let coordScale = 1
+  let coordScale = getCoordScale(unitOverride)
   for (let i = 0; i < fields.length; i++) {
     const raw = fields[i] || ''
     const h = normaliseHeaderName(raw)
@@ -116,7 +175,7 @@ function buildHeaderMap(fields: string[]): HeaderMapResult {
     if (!map.designator && /^(refdes(ignator)?|ref|designator|reference|name|component|part)$/.test(h)) map.designator = i
     else if (!map.x && /^(posx|x|centerx|midx|cx)/.test(h)) {
       map.x = i
-      coordScale = detectCoordUnit(raw)
+      if (!unitOverride) coordScale = detectCoordUnit(raw)
     }
     else if (!map.y && /^(posy|y|centery|midy|cy)/.test(h)) map.y = i
     else if (!map.rotation && /^(rot|rotation|angle|deg)/.test(h)) map.rotation = i
@@ -132,6 +191,102 @@ function getField(fields: string[], idx: number | undefined): string {
   return fields[idx] ?? ''
 }
 
+export interface PnPParsePreview {
+  delimiter: Delimiter
+  headers: string[]
+  rows: string[][]
+  mapping: PnPColumnMapping | null
+  headerRowIndex: number | null
+  coordScale: number
+}
+
+function countMappedColumns(map: PnPColumnMapping): number {
+  let count = 0
+  if (map.designator != null) count++
+  if (map.x != null) count++
+  if (map.y != null) count++
+  if (map.rotation != null) count++
+  if (map.value != null) count++
+  if (map.package != null) count++
+  if (map.side != null) count++
+  return count
+}
+
+export function parsePnPPreview(content: string, options?: ParsePnPOptions, fileName?: string): PnPParsePreview {
+  const normalizedContent = isExcelFileName(fileName) ? excelContentToText(content) : content
+  const lines = normalizedContent.split(/\r?\n/)
+  const delimiter = detectDelimiter(normalizedContent)
+  const skipRows = Math.max(0, options?.skipRows ?? 0)
+  const unitOverride = options?.unitOverride
+  const manualMapping = options?.mapping
+
+  const dataLines = lines.slice(skipRows).filter(line => line.trim() !== '')
+  const tableRows = dataLines.map(line => splitLine(line, delimiter))
+
+  if (tableRows.length === 0) {
+    return {
+      delimiter,
+      headers: [],
+      rows: [],
+      mapping: null,
+      headerRowIndex: null,
+      coordScale: getCoordScale(unitOverride),
+    }
+  }
+
+  if (manualMapping) {
+    const headers = tableRows[0] || []
+    return {
+      delimiter,
+      headers,
+      rows: tableRows.slice(1),
+      mapping: { ...manualMapping },
+      headerRowIndex: 0,
+      coordScale: getCoordScale(unitOverride),
+    }
+  }
+
+  let bestHeaderIdx: number | null = null
+  let bestMap: PnPColumnMapping | null = null
+  let bestScore = -1
+  let bestCoordScale = getCoordScale(unitOverride)
+  const scanLimit = Math.min(tableRows.length, 30)
+
+  for (let i = 0; i < scanLimit; i++) {
+    const fields = tableRows[i] || []
+    const result = buildHeaderMap(fields, unitOverride)
+    const requiredFound = result.map.designator != null && result.map.x != null && result.map.y != null && result.map.rotation != null
+    if (!requiredFound) continue
+    const score = countMappedColumns(result.map)
+    if (score > bestScore) {
+      bestScore = score
+      bestHeaderIdx = i
+      bestMap = result.map
+      bestCoordScale = result.coordScale
+    }
+  }
+
+  if (bestHeaderIdx != null && bestMap) {
+    return {
+      delimiter,
+      headers: tableRows[bestHeaderIdx] || [],
+      rows: tableRows.slice(bestHeaderIdx + 1),
+      mapping: bestMap,
+      headerRowIndex: bestHeaderIdx,
+      coordScale: bestCoordScale,
+    }
+  }
+
+  return {
+    delimiter,
+    headers: tableRows[0] || [],
+    rows: tableRows.slice(1),
+    mapping: null,
+    headerRowIndex: null,
+    coordScale: getCoordScale(unitOverride),
+  }
+}
+
 /**
  * Parse a numeric string, handling European comma decimal separators.
  * When semicolons are used as field delimiter, commas within numeric
@@ -143,18 +298,6 @@ function parseNumeric(s: string, delimiter: Delimiter): number {
     s = s.replace(/,/g, '.')
   }
   return parseFloat(s)
-}
-
-/**
- * Check if a row looks like a header rather than data.
- */
-function isHeaderRow(fields: string[], delimiter: Delimiter): boolean {
-  if (fields.length === 0) return false
-  // If the second field is not a number, it's likely a header
-  if (fields.length >= 2 && isNaN(parseNumeric(fields[1]!, delimiter))) return true
-  // Check if the first field matches common header keywords
-  if (HEADER_KEYWORDS.test(fields[0]!)) return true
-  return false
 }
 
 /**
@@ -174,39 +317,16 @@ export function isFiducial(comp: PnPComponent): boolean {
   return /fiducial|fiducia|fid\b/.test(lower) || /^fd\d/i.test(comp.designator)
 }
 
-export function parsePnPFile(content: string, side: 'top' | 'bottom'): PnPComponent[] {
-  const lines = content.split('\n')
-  const delimiter = detectDelimiter(content)
+export function parsePnPFile(content: string, side: 'top' | 'bottom', options?: ParsePnPOptions, fileName?: string): PnPComponent[] {
+  const preview = parsePnPPreview(content, options, fileName)
+  const delimiter = preview.delimiter
   const components: PnPComponent[] = []
-  let headerMap: Partial<Record<ColumnKey, number>> | null = null
-  let coordScale = 1
+  const headerMap = preview.mapping
+  const coordScale = preview.coordScale
 
-  for (const rawLine of lines) {
-    const line = rawLine.trim()
-    if (!line) continue
-
-    const fields = splitLine(line, delimiter)
-
+  for (const fields of preview.rows) {
     // Need at least 4 fields (designator, x, y, rotation) — value and package are optional
     if (fields.length < 4) continue
-
-    // If we haven't found a header yet, try to detect one.
-    // Once a valid header map is established, skip the heuristic check so
-    // data rows with non-numeric text columns (e.g. Altium "Comment") aren't
-    // misidentified as headers.
-    if (!headerMap && isHeaderRow(fields, delimiter)) {
-      const result = buildHeaderMap(fields)
-      if (
-        result.map.designator != null
-        && result.map.x != null
-        && result.map.y != null
-        && result.map.rotation != null
-      ) {
-        headerMap = result.map
-        coordScale = result.coordScale
-      }
-      continue
-    }
 
     // Default fixed order (legacy): Designator, X, Y, Rotation, Value, Package
     const designator = headerMap ? getField(fields, headerMap.designator) : (fields[0] || '')

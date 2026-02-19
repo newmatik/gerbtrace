@@ -24,8 +24,8 @@ import type { ImageTree, BoundingBox } from '@lib/gerber/types'
 import { renderToCanvas, renderOutlineMask, computeAutoFitTransform, renderGraphicSubset } from '@lib/renderer/canvas-renderer'
 import { renderRealisticView } from '@lib/renderer/realistic-renderer'
 import type { RealisticLayers } from '@lib/renderer/realistic-renderer'
-import { parseGerber } from '@lib/gerber'
-import { plotImageTree } from '@lib/gerber/plotter'
+import { generateJetprintDots } from '@lib/renderer/jetprint-dots'
+import type { PasteSettings } from '~/composables/usePasteSettings'
 import { mergeBounds, emptyBounds, isEmpty } from '@lib/gerber/bounding-box'
 import type { EditablePnPComponent } from '~/composables/usePickAndPlace'
 import type { AlignMode, AlignPoint } from '~/composables/usePickAndPlace'
@@ -33,8 +33,10 @@ import type { PackageDefinition, FootprintShape } from '~/utils/package-types'
 import type { PnPConvention } from '~/utils/pnp-conventions'
 import { computeFootprint, getConventionRotationTransform } from '~/utils/package-types'
 import { computeThtFootprint, type THTPackageDefinition, type ColoredFootprintShape } from '~/utils/tht-package-types'
+import { useGerberImageTreeCache } from '~/composables/useGerberImageTreeCache'
 
 export type ViewMode = 'layers' | 'realistic'
+type RealisticSide = 'top' | 'bottom' | 'all'
 
 const props = defineProps<{
   layers: LayerInfo[]
@@ -53,6 +55,8 @@ const props = defineProps<{
   preset?: PcbPreset
   /** All layers (including hidden ones) — needed for realistic mode to find layers by type */
   allLayers?: LayerInfo[]
+  /** Paste application settings (stencil vs jetprint) */
+  pasteSettings?: PasteSettings
   /** Visible PnP components to render as dots */
   pnpComponents?: EditablePnPComponent[]
   /** Currently selected PnP component designator */
@@ -76,6 +80,8 @@ const props = defineProps<{
   pnpConvention?: PnPConvention
   /** Board rotation in degrees (CW). Purely visual — does not modify data. */
   boardRotation?: number
+  /** Whether to render DNP components with a distinct blue highlight (default true) */
+  showDnpHighlight?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -227,6 +233,7 @@ function componentSignature(components: EditablePnPComponent[] | undefined): str
     comp.side,
     comp.componentType,
     comp.polarized ? 1 : 0,
+    comp.dnp ? 1 : 0,
   ].join(':')).join('|')
 }
 
@@ -238,6 +245,62 @@ function isCircleVisible(
   height: number,
 ): boolean {
   return !(x + radius < 0 || x - radius > width || y + radius < 0 || y - radius > height)
+}
+
+interface ProjectedPnPComponent {
+  comp: EditablePnPComponent
+  screenX: number
+  screenY: number
+  rotatedX: number
+  rotatedY: number
+}
+
+let projectedPnpCache: { key: string; items: ProjectedPnPComponent[] } | null = null
+
+function getProjectedPnPComponents(
+  components: EditablePnPComponent[],
+  cssWidth: number,
+  cssHeight: number,
+  transform: { offsetX: number; offsetY: number; scale: number },
+  mirrored: boolean,
+): ProjectedPnPComponent[] {
+  const units = detectUnits()
+  const { ox, oy } = getEffectiveOrigin()
+  const key = [
+    componentSignature(components),
+    cssWidth,
+    cssHeight,
+    transform.offsetX,
+    transform.offsetY,
+    transform.scale,
+    mirrored ? 1 : 0,
+    units,
+    ox,
+    oy,
+    props.boardRotation ?? 0,
+  ].join('|')
+
+  if (projectedPnpCache?.key === key) return projectedPnpCache.items
+
+  const items: ProjectedPnPComponent[] = []
+  for (const comp of components) {
+    const gx = pnpToGerber(comp.x, ox, units)
+    const gy = pnpToGerber(comp.y, oy, units)
+    let screenX = transform.offsetX + gx * transform.scale
+    const screenY = transform.offsetY - gy * transform.scale
+    if (mirrored) screenX = cssWidth - screenX
+    const rotated = rotateScreenPoint(screenX, screenY, cssWidth, cssHeight)
+    items.push({
+      comp,
+      screenX,
+      screenY,
+      rotatedX: rotated.x,
+      rotatedY: rotated.y,
+    })
+  }
+
+  projectedPnpCache = { key, items }
+  return items
 }
 
 // ── Reusable offscreen-canvas pool ──
@@ -263,25 +326,15 @@ function releaseCanvas(c: HTMLCanvasElement) {
   _canvasPool.push(c)
 }
 
-// Cache parsed image trees
-const imageTreeCache = new Map<string, ImageTree>()
+const gerberTreeCache = useGerberImageTreeCache()
 
 function getImageTree(layer: LayerInfo): ImageTree | null {
   // PnP layers are not Gerber — skip parsing
   if (isPnPLayer(layer.type)) return null
-
-  const key = layer.file.fileName
-  if (imageTreeCache.has(key)) return imageTreeCache.get(key)!
-
-  try {
-    const ast = parseGerber(layer.file.content)
-    const tree = plotImageTree(ast)
-    imageTreeCache.set(key, tree)
-    return tree
-  } catch (e) {
-    console.warn(`Failed to parse ${layer.file.fileName}:`, e)
-    return null
-  }
+  const tree = gerberTreeCache.getOrParseSync(layer)
+  if (tree) return tree
+  console.warn(`Failed to parse ${layer.file.fileName}`)
+  return null
 }
 
 // ── Mouse event routing ──
@@ -339,11 +392,12 @@ function onMouseDown(e: MouseEvent) {
       const rawClickX = e.clientX - rect.left
       const rawClickY = e.clientY - rect.top
       const { x: clickX, y: clickY } = unrotateScreenPoint(rawClickX, rawClickY)
-      const { cssWidth } = getCssDimensions()
+      const { cssWidth, cssHeight } = getCssDimensions()
       const hit = hitTestPnP(
         clickX,
         clickY,
         cssWidth,
+        cssHeight,
         props.interaction.transform.value,
         !!props.mirrored,
       )
@@ -363,8 +417,8 @@ function onDblClick(e: MouseEvent) {
   const rawClickX = e.clientX - rect.left
   const rawClickY = e.clientY - rect.top
   const { x: clickX, y: clickY } = unrotateScreenPoint(rawClickX, rawClickY)
-  const { cssWidth } = getCssDimensions()
-  const hit = hitTestPnP(clickX, clickY, cssWidth, props.interaction.transform.value, !!props.mirrored)
+  const { cssWidth, cssHeight } = getCssDimensions()
+  const hit = hitTestPnP(clickX, clickY, cssWidth, cssHeight, props.interaction.transform.value, !!props.mirrored)
   if (hit) emit('pnpDblclick', hit)
 }
 
@@ -458,15 +512,37 @@ function sizeCanvas(): number {
  * Gather categorized ImageTrees for realistic rendering.
  * Uses allLayers (all project layers) to find each layer type.
  */
-function gatherRealisticLayers(side: 'top' | 'bottom'): RealisticLayers {
+function mergeImageTrees(trees: ImageTree[]): ImageTree | undefined {
+  if (!trees.length) return undefined
+  const units = trees[0]!.units
+  let bounds: BoundingBox = emptyBounds()
+  const children = trees
+    .filter(tree => tree.units === units)
+    .flatMap((tree) => {
+      bounds = mergeBounds(bounds, tree.bounds as BoundingBox)
+      return tree.children
+    })
+  if (!children.length) return undefined
+  return {
+    units,
+    bounds: isEmpty(bounds) ? ([0, 0, 0, 0] as BoundingBox) : bounds,
+    children,
+  }
+}
+
+function gatherRealisticLayers(side: RealisticSide): RealisticLayers {
   const source = props.allLayers ?? props.layers
   const result: RealisticLayers = {}
 
-  const copperType = side === 'top' ? 'Top Copper' : 'Bottom Copper'
-  const maskType = side === 'top' ? 'Top Solder Mask' : 'Bottom Solder Mask'
-  const silkType = side === 'top' ? 'Top Silkscreen' : 'Bottom Silkscreen'
-  const pasteType = side === 'top' ? 'Top Paste' : 'Bottom Paste'
+  const copperTypes = side === 'all' ? ['Top Copper', 'Bottom Copper'] : [side === 'top' ? 'Top Copper' : 'Bottom Copper']
+  const maskTypes = side === 'all' ? ['Top Solder Mask', 'Bottom Solder Mask'] : [side === 'top' ? 'Top Solder Mask' : 'Bottom Solder Mask']
+  const silkTypes = side === 'all' ? ['Top Silkscreen', 'Bottom Silkscreen'] : [side === 'top' ? 'Top Silkscreen' : 'Bottom Silkscreen']
+  const pasteTypes = side === 'all' ? ['Top Paste', 'Bottom Paste'] : [side === 'top' ? 'Top Paste' : 'Bottom Paste']
 
+  const copperTrees: ImageTree[] = []
+  const maskTrees: ImageTree[] = []
+  const silkTrees: ImageTree[] = []
+  const pasteTrees: ImageTree[] = []
   const drillTrees: ImageTree[] = []
   let outlineTree: ImageTree | undefined
   let detectedUnits: 'mm' | 'in' | undefined
@@ -476,15 +552,29 @@ function gatherRealisticLayers(side: 'top' | 'bottom'): RealisticLayers {
     const tree = getImageTree(layer)
     if (!tree || tree.children.length === 0) continue
 
-    if (layer.type === copperType) { result.copper = tree; usedTrees.push(tree) }
-    else if (layer.type === maskType) { result.solderMask = tree; usedTrees.push(tree) }
-    else if (layer.type === silkType) { result.silkscreen = tree; usedTrees.push(tree) }
-    else if (layer.type === pasteType) { result.paste = tree; usedTrees.push(tree) }
+    // Outline/Keep-Out always participate (they define board shape),
+    // but all other layers respect visibility toggling.
+    if (layer.type === 'Outline') { outlineTree = tree }
+    else if (layer.type === 'Keep-Out' && !outlineTree) { outlineTree = tree }
+    else if (!layer.visible) { continue }
+    else if (copperTypes.includes(layer.type)) { copperTrees.push(tree); usedTrees.push(tree) }
+    else if (maskTypes.includes(layer.type)) { maskTrees.push(tree); usedTrees.push(tree) }
+    else if (silkTypes.includes(layer.type)) { silkTrees.push(tree); usedTrees.push(tree) }
+    else if (pasteTypes.includes(layer.type)) { pasteTrees.push(tree); usedTrees.push(tree) }
     else if (layer.type === 'Drill') drillTrees.push(tree)
-    else if (layer.type === 'Outline') outlineTree = tree
-    else if (layer.type === 'Keep-Out' && !outlineTree) outlineTree = tree
 
     if (!detectedUnits) detectedUnits = tree.units
+  }
+
+  result.copper = mergeImageTrees(copperTrees)
+  result.solderMask = mergeImageTrees(maskTrees)
+  result.silkscreen = mergeImageTrees(silkTrees)
+  const mergedPaste = mergeImageTrees(pasteTrees)
+  if (mergedPaste) {
+    const ps = props.pasteSettings
+    result.paste = ps && ps.mode === 'jetprint'
+      ? generateJetprintDots(mergedPaste, { dotDiameter: ps.dotDiameter, dotSpacing: ps.dotSpacing, pattern: ps.pattern, dynamicDots: ps.dynamicDots })
+      : mergedPaste
   }
 
   // Merge all drill sources (round holes + slots, etc.)
@@ -553,6 +643,8 @@ function detectUnits(): 'mm' | 'in' {
 
 /** Radius of PnP center dots in CSS pixels */
 const PNP_DOT_RADIUS = 3
+/** Larger radius for DNP dots so they stand out */
+const PNP_DNP_DOT_RADIUS = 5
 /** Hit-test radius for clicking PnP dots (CSS px) */
 const PNP_HIT_RADIUS = 8
 /** Extra slop for clicking footprint shapes (CSS px) */
@@ -561,6 +653,8 @@ const PNP_FOOTPRINT_HIT_TOLERANCE = 6
 const PNP_HIGHLIGHT_COLOR = '#00FFFF'
 /** Default PnP dot color (shown when no package footprint is rendered) */
 const PNP_DOT_COLOR = '#FF69B4'
+/** DNP dot color — blue to match Newmatik map convention */
+const PNP_DNP_DOT_COLOR = '#4A90D9'
 
 /**
  * Convert PnP mm coordinate to Gerber coordinate space,
@@ -619,25 +713,14 @@ function drawPnPMarkers(
 ) {
   const components = options?.components ?? props.pnpComponents
   if (!components || components.length === 0) return
-
-  const units = detectUnits()
-  const { ox, oy } = getEffectiveOrigin()
+  const projected = getProjectedPnPComponents(components, cssWidth, cssHeight, transform, mirrored)
 
   ctx.save()
   if (dpr !== 1) ctx.scale(dpr, dpr)
 
-  for (const comp of components) {
-    const gx = pnpToGerber(comp.x, ox, units)
-    const gy = pnpToGerber(comp.y, oy, units)
-
-    let screenX = transform.offsetX + gx * transform.scale
-    const screenY = transform.offsetY - gy * transform.scale
-
-    if (mirrored) {
-      screenX = cssWidth - screenX
-    }
-    const rotatedDot = rotateScreenPoint(screenX, screenY, cssWidth, cssHeight)
-    if (!isCircleVisible(rotatedDot.x, rotatedDot.y, PNP_DOT_RADIUS + 6, cssWidth, cssHeight)) continue
+  for (const item of projected) {
+    const comp = item.comp
+    if (!isCircleVisible(item.rotatedX, item.rotatedY, PNP_DOT_RADIUS + 6, cssWidth, cssHeight)) continue
 
     const isSelected = (options?.selectedDesignator ?? props.selectedPnpDesignator) === comp.designator
 
@@ -660,16 +743,17 @@ function drawPnPMarkers(
       }
     }
 
-    // Draw the filled dot
+    const isDnpHighlighted = comp.dnp && props.showDnpHighlight !== false
+    const dotRadius = isDnpHighlighted ? PNP_DNP_DOT_RADIUS : PNP_DOT_RADIUS
     ctx.beginPath()
-    ctx.arc(screenX, screenY, PNP_DOT_RADIUS, 0, Math.PI * 2)
-    ctx.fillStyle = PNP_DOT_COLOR
+    ctx.arc(item.screenX, item.screenY, dotRadius, 0, Math.PI * 2)
+    ctx.fillStyle = isDnpHighlighted ? PNP_DNP_DOT_COLOR : PNP_DOT_COLOR
     ctx.fill()
 
     // Draw highlight ring for selected component
     if (isSelected) {
       ctx.beginPath()
-      ctx.arc(screenX, screenY, PNP_DOT_RADIUS + 3, 0, Math.PI * 2)
+      ctx.arc(item.screenX, item.screenY, PNP_DOT_RADIUS + 3, 0, Math.PI * 2)
       ctx.strokeStyle = PNP_HIGHLIGHT_COLOR
       ctx.lineWidth = 2
       ctx.stroke()
@@ -677,7 +761,7 @@ function drawPnPMarkers(
       // Draw designator label
       ctx.font = '11px system-ui, sans-serif'
       ctx.fillStyle = PNP_HIGHLIGHT_COLOR
-      ctx.fillText(comp.designator, screenX + PNP_DOT_RADIUS + 5, screenY + 4)
+      ctx.fillText(comp.designator, item.screenX + PNP_DOT_RADIUS + 5, item.screenY + 4)
     }
   }
 
@@ -761,16 +845,19 @@ function drawPackageFootprints(
   if (!props.matchPackage && !props.matchThtPackage) return
 
   const units = detectUnits()
-  const { ox, oy } = getEffectiveOrigin()
 
   // Scale factor: mm -> screen pixels
   const mmToGerber = units === 'in' ? 1 / 25.4 : 1
   const mmToScreen = mmToGerber * transform.scale
+  const projected = getProjectedPnPComponents(components, cssWidth, cssHeight, transform, mirrored)
+  const simplifyFootprints = mmToScreen < 0.65
 
   ctx.save()
   if (dpr !== 1) ctx.scale(dpr, dpr)
 
-  for (const comp of components) {
+  for (const item of projected) {
+    const comp = item.comp
+    if (!isCircleVisible(item.rotatedX, item.rotatedY, 22, cssWidth, cssHeight)) continue
     const pkgName = comp.matchedPackage || comp.package
     const isTht = comp.componentType === 'tht'
 
@@ -797,36 +884,38 @@ function drawPackageFootprints(
       continue
     }
 
-    const gx = pnpToGerber(comp.x, ox, units)
-    const gy = pnpToGerber(comp.y, oy, units)
-
-    let centerSx = transform.offsetX + gx * transform.scale
-    const centerSy = transform.offsetY - gy * transform.scale
-    if (mirrored) centerSx = cssWidth - centerSx
-
     // Mirror flips the rotation direction
     const effectiveRot = mirrored ? -rotRad : rotRad
 
     const isSelected = (options?.selectedDesignator ?? props.selectedPnpDesignator) === comp.designator
     const extentPx = Math.max(6, computePkgExtent(shapes) * mmToScreen + 12)
-    const rotatedCenter = rotateScreenPoint(centerSx, centerSy, cssWidth, cssHeight)
-    if (!isCircleVisible(rotatedCenter.x, rotatedCenter.y, extentPx, cssWidth, cssHeight)) continue
+    if (!isCircleVisible(item.rotatedX, item.rotatedY, extentPx, cssWidth, cssHeight)) continue
 
     ctx.save()
-    ctx.translate(centerSx, centerSy)
+    ctx.translate(item.screenX, item.screenY)
     ctx.rotate(effectiveRot)
 
-    // Draw each shape
-    for (const shape of shapes) {
-      drawFootprintShape(ctx, shape, mmToScreen, mirrored, isSelected, comp.polarized)
-    }
-    if (!isTht && comp.polarized && props.matchPackage) {
-      const pkg = props.matchPackage(pkgName)
-      if (pkg && isLedPackage(pkg, comp.package)) {
-        drawLedPolarityLabels(ctx, shapes, mmToScreen, mirrored)
+    if (simplifyFootprints && !isSelected) {
+      const simpleSize = Math.max(3, extentPx * 0.55)
+      ctx.fillStyle = comp.dnp && props.showDnpHighlight !== false ? PKG_BODY_FILL_DNP : PKG_BODY_FILL
+      ctx.strokeStyle = comp.dnp && props.showDnpHighlight !== false ? PKG_BODY_STROKE_DNP : PKG_BODY_STROKE
+      ctx.lineWidth = 1
+      ctx.beginPath()
+      roundRect(ctx, -simpleSize, -simpleSize, simpleSize * 2, simpleSize * 2, Math.max(1.2, simpleSize * 0.3))
+      ctx.fill()
+      ctx.stroke()
+    } else {
+      // Draw each shape
+      for (const shape of shapes) {
+        drawFootprintShape(ctx, shape, mmToScreen, mirrored, isSelected, comp.polarized, comp.dnp && props.showDnpHighlight !== false)
+      }
+      if (!isTht && comp.polarized && props.matchPackage) {
+        const pkg = props.matchPackage(pkgName)
+        if (pkg && isLedPackage(pkg, comp.package)) {
+          drawLedPolarityLabels(ctx, shapes, mmToScreen, mirrored)
+        }
       }
     }
-
     ctx.restore()
   }
 
@@ -844,6 +933,11 @@ const PKG_PAD_FILL_SEL = 'rgba(140, 230, 230, 0.8)'
 const PKG_PIN1_FILL_SEL = '#FF3333'
 const LED_PIN_LABEL_FILL = 'rgba(255, 255, 255, 0.95)'
 const LED_PIN_LABEL_STROKE = 'rgba(0, 0, 0, 0.75)'
+// DNP blue tint (matches Newmatik map convention)
+const PKG_BODY_FILL_DNP = 'rgba(40, 80, 160, 0.80)'
+const PKG_BODY_STROKE_DNP = 'rgba(50, 100, 180, 0.9)'
+const PKG_PAD_FILL_DNP = 'rgba(100, 150, 220, 0.85)'
+const PKG_PIN1_FILL_DNP = 'rgba(100, 150, 220, 0.85)'
 
 /**
  * Ensure a CSS color has the desired alpha. If the color is a hex (#rrggbb)
@@ -886,6 +980,7 @@ function drawFootprintShape(
   mirrored: boolean,
   isSelected: boolean,
   polarized: boolean,
+  dnp = false,
 ) {
   const mirrorFactor = mirrored ? -1 : 1
   // Per-shape color overrides (from THT packages via ColoredFootprintShape)
@@ -901,6 +996,12 @@ function drawFootprintShape(
   const customFill = rawFill ? withAlpha(rawFill, a) : undefined
   const customStroke = rawStroke ? withAlpha(rawStroke, strokeAlpha) : undefined
 
+  // DNP overrides: blue-tinted fills take precedence over defaults but not selection
+  const bodyFill = dnp ? PKG_BODY_FILL_DNP : PKG_BODY_FILL
+  const bodyStroke = dnp ? PKG_BODY_STROKE_DNP : PKG_BODY_STROKE
+  const padFill = dnp ? PKG_PAD_FILL_DNP : PKG_PAD_FILL
+  const pin1Fill = dnp ? PKG_PIN1_FILL_DNP : PKG_PIN1_FILL
+
   if (shape.kind === 'rect') {
     const sx = shape.cx * mmToScreen * mirrorFactor
     const sy = -shape.cy * mmToScreen
@@ -910,16 +1011,16 @@ function drawFootprintShape(
     const role = (!polarized && shape.role === 'pin1') ? 'pad' : shape.role
 
     if (role === 'body') {
-      ctx.fillStyle = isSelected ? PKG_BODY_FILL_SEL : (customFill || PKG_BODY_FILL)
+      ctx.fillStyle = isSelected ? PKG_BODY_FILL_SEL : (customFill || bodyFill)
       ctx.fillRect(sx - sw / 2, sy - sh / 2, sw, sh)
-      ctx.strokeStyle = isSelected ? PKG_BODY_STROKE_SEL : (customStroke || PKG_BODY_STROKE)
+      ctx.strokeStyle = isSelected ? PKG_BODY_STROKE_SEL : (customStroke || bodyStroke)
       ctx.lineWidth = 1
       ctx.strokeRect(sx - sw / 2, sy - sh / 2, sw, sh)
     } else if (role === 'pad') {
-      ctx.fillStyle = isSelected ? PKG_PAD_FILL_SEL : (customFill || PKG_PAD_FILL)
+      ctx.fillStyle = isSelected ? PKG_PAD_FILL_SEL : (customFill || padFill)
       ctx.fillRect(sx - sw / 2, sy - sh / 2, sw, sh)
     } else if (role === 'pin1') {
-      ctx.fillStyle = isSelected ? PKG_PIN1_FILL_SEL : (customFill || PKG_PIN1_FILL)
+      ctx.fillStyle = isSelected ? PKG_PIN1_FILL_SEL : (customFill || pin1Fill)
       ctx.fillRect(sx - sw / 2, sy - sh / 2, sw, sh)
     }
   } else if (shape.kind === 'circle') {
@@ -932,20 +1033,20 @@ function drawFootprintShape(
     if (role === 'body') {
       ctx.beginPath()
       ctx.arc(sx, sy, sr, 0, Math.PI * 2)
-      ctx.fillStyle = isSelected ? PKG_BODY_FILL_SEL : (customFill || PKG_BODY_FILL)
+      ctx.fillStyle = isSelected ? PKG_BODY_FILL_SEL : (customFill || bodyFill)
       ctx.fill()
-      ctx.strokeStyle = isSelected ? PKG_BODY_STROKE_SEL : (customStroke || PKG_BODY_STROKE)
+      ctx.strokeStyle = isSelected ? PKG_BODY_STROKE_SEL : (customStroke || bodyStroke)
       ctx.lineWidth = 1
       ctx.stroke()
     } else if (role === 'pad') {
       ctx.beginPath()
       ctx.arc(sx, sy, Math.max(sr, 0.5), 0, Math.PI * 2)
-      ctx.fillStyle = isSelected ? PKG_PAD_FILL_SEL : (customFill || PKG_PAD_FILL)
+      ctx.fillStyle = isSelected ? PKG_PAD_FILL_SEL : (customFill || padFill)
       ctx.fill()
     } else if (role === 'pin1') {
       ctx.beginPath()
       ctx.arc(sx, sy, Math.max(sr, 0.5), 0, Math.PI * 2)
-      ctx.fillStyle = isSelected ? PKG_PIN1_FILL_SEL : (customFill || PKG_PIN1_FILL)
+      ctx.fillStyle = isSelected ? PKG_PIN1_FILL_SEL : (customFill || pin1Fill)
       ctx.fill()
     }
   } else if (shape.kind === 'roundedRect') {
@@ -959,13 +1060,13 @@ function drawFootprintShape(
     roundRect(ctx, sx - sw / 2, sy - sh / 2, sw, sh, sr)
 
     if (shape.role === 'body') {
-      ctx.fillStyle = isSelected ? PKG_BODY_FILL_SEL : (customFill || PKG_BODY_FILL)
+      ctx.fillStyle = isSelected ? PKG_BODY_FILL_SEL : (customFill || bodyFill)
       ctx.fill()
-      ctx.strokeStyle = isSelected ? PKG_BODY_STROKE_SEL : (customStroke || PKG_BODY_STROKE)
+      ctx.strokeStyle = isSelected ? PKG_BODY_STROKE_SEL : (customStroke || bodyStroke)
       ctx.lineWidth = 1
       ctx.stroke()
     } else {
-      ctx.fillStyle = isSelected ? PKG_PAD_FILL_SEL : (customFill || PKG_PAD_FILL)
+      ctx.fillStyle = isSelected ? PKG_PAD_FILL_SEL : (customFill || padFill)
       ctx.fill()
     }
   }
@@ -1042,6 +1143,7 @@ function hitTestPnP(
   screenClickX: number,
   screenClickY: number,
   cssWidth: number,
+  cssHeight: number,
   transform: { offsetX: number; offsetY: number; scale: number },
   mirrored: boolean,
 ): string | null {
@@ -1049,10 +1151,10 @@ function hitTestPnP(
   if (!components || components.length === 0) return null
 
   const units = detectUnits()
-  const { ox, oy } = getEffectiveOrigin()
   const includeFootprints = !!props.showPackages && !!props.matchPackage
   const mmToGerber = units === 'in' ? 1 / 25.4 : 1
   const mmToScreen = mmToGerber * transform.scale
+  const projected = getProjectedPnPComponents(components, cssWidth, cssHeight, transform, mirrored)
   let closest: { designator: string; dist: number } | null = null
 
   const rotate = (x: number, y: number, rad: number) => {
@@ -1061,19 +1163,10 @@ function hitTestPnP(
     return { x: x * c - y * s, y: x * s + y * c }
   }
 
-  for (const comp of components) {
-    const gx = pnpToGerber(comp.x, ox, units)
-    const gy = pnpToGerber(comp.y, oy, units)
-
-    let screenX = transform.offsetX + gx * transform.scale
-    const screenY = transform.offsetY - gy * transform.scale
-
-    if (mirrored) {
-      screenX = cssWidth - screenX
-    }
-
-    const dx = screenClickX - screenX
-    const dy = screenClickY - screenY
+  for (const item of projected) {
+    const comp = item.comp
+    const dx = screenClickX - item.screenX
+    const dy = screenClickY - item.screenY
     const dist = Math.hypot(dx, dy)
 
     // If a footprint is rendered, allow clicking anywhere on it.
@@ -1376,6 +1469,7 @@ function draw() {
 
   const dpr = sizeCanvas()
   const { cssWidth, cssHeight } = getCssDimensions()
+  if (cssWidth <= 0 || cssHeight <= 0) return
 
   const ctx = canvas.getContext('2d')!
   ctx.clearRect(0, 0, canvas.width, canvas.height)
@@ -1546,17 +1640,44 @@ function draw() {
 
     if (isRealistic) {
       // ── Realistic rendering mode ──
-      const side = props.activeFilter === 'bot' ? 'bottom' : 'top'
+      const side: RealisticSide = props.activeFilter === 'bot' ? 'bottom' : props.activeFilter === 'all' ? 'all' : 'top'
       const realisticLayers = gatherRealisticLayers(side)
 
       sceneCanvas = acquireCanvas(overscanW, overscanH)
 
-      renderRealisticView(realisticLayers, sceneCanvas, {
-        preset: props.preset!,
-        transform: osTransform,
-        dpr,
-        side,
-      })
+      const ps = props.pasteSettings
+      if (side === 'all') {
+        renderRealisticView(gatherRealisticLayers('top'), sceneCanvas, {
+          preset: props.preset!,
+          transform: osTransform,
+          dpr,
+          side: 'top',
+          pasteColor: ps?.mode === 'jetprint' && ps.highlightDots ? '#00FF66' : undefined,
+        })
+        const bottomCanvas = acquireCanvas(overscanW, overscanH)
+        renderRealisticView(gatherRealisticLayers('bottom'), bottomCanvas, {
+          preset: props.preset!,
+          transform: osTransform,
+          dpr,
+          side: 'bottom',
+          pasteColor: ps?.mode === 'jetprint' && ps.highlightDots ? '#00FF66' : undefined,
+        })
+        const sceneCtx = sceneCanvas.getContext('2d')!
+        sceneCtx.save()
+        sceneCtx.globalAlpha = 0.45
+        sceneCtx.filter = 'grayscale(1)'
+        sceneCtx.drawImage(bottomCanvas, 0, 0)
+        sceneCtx.restore()
+        releaseCanvas(bottomCanvas)
+      } else {
+        renderRealisticView(realisticLayers, sceneCanvas, {
+          preset: props.preset!,
+          transform: osTransform,
+          dpr,
+          side,
+          pasteColor: ps?.mode === 'jetprint' && ps.highlightDots ? '#00FF66' : undefined,
+        })
+      }
     } else {
       // ── Standard layer rendering mode ──
       sceneCanvas = acquireCanvas(overscanW, overscanH)
@@ -1670,12 +1791,34 @@ watch(
 )
 
 watch(
-  () => `${props.interaction.transform.value.offsetX}|${props.interaction.transform.value.offsetY}|${props.interaction.transform.value.scale}|${props.mirrored ? 1 : 0}|${appSettings.gridEnabled ? 1 : 0}|${appSettings.gridSpacingMm}|${bgColor.value}`,
+  () => [
+    props.interaction.transform.value.offsetX,
+    props.interaction.transform.value.offsetY,
+    props.interaction.transform.value.scale,
+    props.mirrored,
+    appSettings.gridEnabled,
+    appSettings.gridSpacingMm,
+    bgColor.value,
+  ],
   () => scheduleRedraw(),
 )
 
 watch(
-  () => `${props.viewMode ?? 'layers'}|${props.preset?.name ?? ''}|${props.cropToOutline ? 1 : 0}|${props.outlineLayer?.file.fileName ?? ''}|${props.activeFilter ?? 'all'}|${layerSignature(props.layers)}|${allLayerSignature(props.allLayers)}`,
+  () => [
+    props.viewMode ?? 'layers',
+    props.preset?.name ?? '',
+    props.cropToOutline,
+    props.outlineLayer?.file.fileName ?? '',
+    props.activeFilter ?? 'all',
+    layerSignature(props.layers),
+    allLayerSignature(props.allLayers),
+    props.pasteSettings?.mode ?? 'stencil',
+    props.pasteSettings?.dotDiameter ?? 0,
+    props.pasteSettings?.dotSpacing ?? 0,
+    props.pasteSettings?.pattern ?? 'hex',
+    props.pasteSettings?.highlightDots,
+    props.pasteSettings?.dynamicDots,
+  ],
   () => {
     invalidateSceneCache()
     scheduleRedraw()
@@ -1683,17 +1826,35 @@ watch(
 )
 
 watch(
-  () => `${componentSignature(props.pnpComponents)}|${props.selectedPnpDesignator ?? ''}|${props.showPackages ? 1 : 0}|${props.pnpConvention ?? 'iec61188'}|${props.packageLibraryVersion ?? 0}|${props.pnpOriginX ?? ''}|${props.pnpOriginY ?? ''}`,
+  () => [
+    componentSignature(props.pnpComponents),
+    props.selectedPnpDesignator ?? '',
+    props.showPackages,
+    props.pnpConvention ?? 'iec61188',
+    props.packageLibraryVersion ?? 0,
+    props.pnpOriginX ?? null,
+    props.pnpOriginY ?? null,
+    props.showDnpHighlight !== false,
+  ],
+  () => {
+    projectedPnpCache = null
+    scheduleRedraw()
+  },
+)
+
+watch(
+  () => [
+    props.alignMode ?? 'idle',
+    props.alignClickA?.x ?? null,
+    props.alignClickA?.y ?? null,
+    originCursorGerber.value?.x ?? null,
+    originCursorGerber.value?.y ?? null,
+  ],
   () => scheduleRedraw(),
 )
 
 watch(
-  () => `${props.alignMode ?? 'idle'}|${props.alignClickA?.x ?? ''}|${props.alignClickA?.y ?? ''}|${originCursorGerber.value?.x ?? ''}|${originCursorGerber.value?.y ?? ''}`,
-  () => scheduleRedraw(),
-)
-
-watch(
-  () => `${props.deleteTool?.pendingDeletion.value ?? ''}`,
+  () => props.deleteTool?.pendingDeletion.value ?? '',
   () => scheduleRedraw(),
 )
 
@@ -1804,7 +1965,7 @@ function exportPng(dpi: number = 600): Promise<Blob | null> {
     }
 
     if (isRealistic) {
-      const side = props.activeFilter === 'bot' ? 'bottom' : 'top'
+      const side: RealisticSide = props.activeFilter === 'bot' ? 'bottom' : props.activeFilter === 'all' ? 'all' : 'top'
       const realisticLayers = gatherRealisticLayers(side)
 
       const sceneCanvas = document.createElement('canvas')
@@ -1815,12 +1976,35 @@ function exportPng(dpi: number = 600): Promise<Blob | null> {
       sceneCtx.save()
       applyExportRotation(sceneCtx)
 
-      renderRealisticView(realisticLayers, sceneCanvas, {
-        preset: props.preset!,
-        transform: exportTransform,
-        dpr: 1,
-        side,
-      })
+      if (side === 'all') {
+        renderRealisticView(gatherRealisticLayers('top'), sceneCanvas, {
+          preset: props.preset!,
+          transform: exportTransform,
+          dpr: 1,
+          side: 'top',
+        })
+        const bottomCanvas = document.createElement('canvas')
+        bottomCanvas.width = canvasW
+        bottomCanvas.height = canvasH
+        renderRealisticView(gatherRealisticLayers('bottom'), bottomCanvas, {
+          preset: props.preset!,
+          transform: exportTransform,
+          dpr: 1,
+          side: 'bottom',
+        })
+        sceneCtx.save()
+        sceneCtx.globalAlpha = 0.45
+        sceneCtx.filter = 'grayscale(1)'
+        sceneCtx.drawImage(bottomCanvas, 0, 0)
+        sceneCtx.restore()
+      } else {
+        renderRealisticView(realisticLayers, sceneCanvas, {
+          preset: props.preset!,
+          transform: exportTransform,
+          dpr: 1,
+          side,
+        })
+      }
 
       sceneCtx.restore()
 
@@ -2107,13 +2291,13 @@ function getCanvas(): HTMLCanvasElement | null {
 /**
  * Get categorized image trees for SVG export.
  */
-function getRealisticLayersForExport(side: 'top' | 'bottom'): RealisticLayers {
+function getRealisticLayersForExport(side: RealisticSide): RealisticLayers {
   return gatherRealisticLayers(side)
 }
 
 /** Invalidate the cached ImageTree for a specific file so it gets re-parsed on next render. */
 function invalidateCache(fileName: string) {
-  imageTreeCache.delete(fileName)
+  gerberTreeCache.clearByFileName(fileName)
   invalidateSceneCache()
 }
 
@@ -2147,7 +2331,7 @@ function getPerformanceStats() {
     canvasPoolSize: _canvasPool.length,
     footprintCacheSize: footprintCache.size,
     thtFootprintCacheSize: thtFootprintCache.size,
-    parsedLayerCacheSize: imageTreeCache.size,
+    parsedLayerCacheSize: gerberTreeCache.getCacheSize(),
   }
 }
 

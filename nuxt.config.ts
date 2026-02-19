@@ -4,7 +4,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      appVersion: '1.1.0',
+      appVersion: '1.1.1',
       supabaseUrl: process.env.SUPABASE_URL || 'http://localhost:54321',
       supabaseAnonKey: process.env.SUPABASE_ANON_KEY || '',
       elexessUrl: process.env.ELEXESS_URL || 'https://api.dev.elexess.com/api',
@@ -15,7 +15,17 @@ export default defineNuxtConfig({
     },
   },
 
-  modules: ['@nuxt/ui', '@sentry/nuxt/module'],
+  modules: ['@nuxt/ui', '@nuxt/content', '@sentry/nuxt/module'],
+
+  content: {
+    build: {
+      markdown: {
+        toc: {
+          searchDepth: 3,
+        },
+      },
+    },
+  },
 
   sentry: {
     org: 'newmatik',
@@ -27,6 +37,21 @@ export default defineNuxtConfig({
   },
 
   sourcemap: { client: 'hidden', server: false },
+
+  vite: {
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules/jszip')) return 'vendor-jszip'
+            if (id.includes('/lib/gerber/')) return 'gerber-core'
+            if (id.includes('/lib/renderer/')) return 'render-core'
+            if (id.includes('node_modules/xlsx')) return 'vendor-xlsx'
+          },
+        },
+      },
+    },
+  },
 
   icon: {
     clientBundle: {
@@ -53,9 +78,9 @@ export default defineNuxtConfig({
   app: {
     baseURL: '/',
     head: {
-      title: 'Gerbtrace — Gerber Viewer & Comparator',
+      title: 'Gerbtrace — PCB NPI & Manufacturing Data Preparation',
       meta: [
-        { name: 'description', content: 'View and compare Gerber PCB files in the browser. Open source tool by Newmatik GmbH.' },
+        { name: 'description', content: 'Open-source PCB NPI platform. Import Gerber files, manage BOMs and Pick & Place, configure panelization and paste, estimate pricing, and collaborate with your team.' },
         { name: 'theme-color', content: '#3B8EF0' },
       ],
       link: [

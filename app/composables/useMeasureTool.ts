@@ -38,6 +38,7 @@ export function useMeasureTool() {
   const cursorGerber = ref<MeasurePoint>({ x: 0, y: 0 })
   const activeSnap = ref<SnapPoint | null>(null)
   const shiftHeld = ref(false)
+  const constraintMode = ref<'free' | 'horizontal' | 'vertical'>('free')
 
   /** Conversion factor: multiply gerber distance by this to get mm */
   const unitsToMm = ref(1)
@@ -89,7 +90,9 @@ export function useMeasureTool() {
 
   // ── Axis constraint ──
 
-  function constrainToAxis(from: MeasurePoint, to: MeasurePoint): MeasurePoint {
+  function constrainToAxis(from: MeasurePoint, to: MeasurePoint, mode: 'auto' | 'horizontal' | 'vertical' = 'auto'): MeasurePoint {
+    if (mode === 'horizontal') return { x: to.x, y: from.y }
+    if (mode === 'vertical') return { x: from.x, y: to.y }
     const dx = Math.abs(to.x - from.x)
     const dy = Math.abs(to.y - from.y)
     return dx > dy
@@ -156,8 +159,12 @@ export function useMeasureTool() {
       activeSnap.value = null
     }
 
-    if (shiftHeld.value && pointA.value) {
-      gerber = constrainToAxis(pointA.value, gerber)
+    if (pointA.value) {
+      if (constraintMode.value !== 'free') {
+        gerber = constrainToAxis(pointA.value, gerber, constraintMode.value)
+      } else if (shiftHeld.value) {
+        gerber = constrainToAxis(pointA.value, gerber, 'auto')
+      }
     }
 
     cursorGerber.value = gerber
@@ -175,8 +182,12 @@ export function useMeasureTool() {
       gerber = { x: snap.x, y: snap.y }
     }
 
-    if (e.shiftKey && pointA.value) {
-      gerber = constrainToAxis(pointA.value, gerber)
+    if (pointA.value) {
+      if (constraintMode.value !== 'free') {
+        gerber = constrainToAxis(pointA.value, gerber, constraintMode.value)
+      } else if (e.shiftKey) {
+        gerber = constrainToAxis(pointA.value, gerber, 'auto')
+      }
     }
 
     if (!pointA.value) {
@@ -314,6 +325,7 @@ export function useMeasureTool() {
     cursorGerber,
     activeSnap,
     shiftHeld,
+    constraintMode,
     unitsToMm,
     liveEnd,
     liveDistanceMm,

@@ -2,11 +2,6 @@
   <div class="flex-1 flex flex-col overflow-hidden">
     <div class="flex-1 overflow-y-auto">
       <div class="p-4 space-y-3">
-        <div class="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
-          <UIcon name="i-lucide-triangle-alert" class="mt-0.5 shrink-0" />
-          <p>Early preview: pricing is not configured correctly yet.</p>
-        </div>
-
         <!-- Missing parameters hint -->
         <div v-if="!pricingResult" class="text-xs text-neutral-400 py-6 text-center space-y-2">
           <UIcon name="i-lucide-calculator" class="text-2xl opacity-40" />
@@ -19,44 +14,6 @@
 
         <!-- Pricing table -->
         <template v-else>
-          <!-- Input summary -->
-          <div class="grid gap-2 md:grid-cols-2">
-            <div class="rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white/60 dark:bg-neutral-900/50 p-3 text-[11px]">
-              <div class="text-[10px] font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-1.5">
-                PCB Information
-              </div>
-              <div class="space-y-0.5 text-neutral-500 dark:text-neutral-400">
-                <div class="flex items-center gap-1.5">
-                  <span>{{ pcbData!.sizeX }} x {{ pcbData!.sizeY }} mm</span>
-                  <span class="opacity-40">|</span>
-                  <span>{{ pcbData!.layerCount }}L</span>
-                  <span class="opacity-40">|</span>
-                  <span>{{ pcbData!.surfaceFinish }}</span>
-                  <span class="opacity-40">|</span>
-                  <span>{{ pcbData!.copperWeight }}</span>
-                </div>
-                <div class="tabular-nums">
-                  Board area: {{ ((pcbData!.sizeX! * pcbData!.sizeY!) / 100).toFixed(1) }} cm²
-                </div>
-                <div class="tabular-nums">
-                  Thickness: {{ pcbData!.thicknessMm ?? 1.6 }} mm (panel recommendation only in v1)
-                </div>
-              </div>
-            </div>
-
-            <div class="rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white/60 dark:bg-neutral-900/50 p-3 text-[11px]">
-              <div class="text-[10px] font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-1.5">
-                Assembly Information
-              </div>
-              <div class="space-y-0.5 text-neutral-500 dark:text-neutral-400 tabular-nums">
-                <div>SMD components / board: {{ smdComponentsPerBoard }}</div>
-                <div>THT components / board: {{ thtComponentsPerBoard }}</div>
-                <div>SMD lines: {{ smdLineCount }}</div>
-                <div>THT lines: {{ thtLineCount }}</div>
-              </div>
-            </div>
-          </div>
-
           <!-- Table -->
           <div class="border border-neutral-200 dark:border-neutral-700 rounded-lg overflow-hidden">
             <table class="w-full text-xs">
@@ -149,6 +106,18 @@
               <span class="font-semibold tabular-nums text-neutral-800 dark:text-neutral-100">
                 {{ formatEur(getGrandTotalWithTooling(selectedTier, selectedBomSummary)) }}
               </span>
+            </div>
+            <div class="flex items-center justify-between text-neutral-500 dark:text-neutral-400">
+              <span>Assembly time estimate / board</span>
+              <span class="tabular-nums">~{{ formatMinutes(estimatedAssemblyMinutesPerBoard) }} min</span>
+            </div>
+            <div class="flex items-center justify-between text-neutral-500 dark:text-neutral-400">
+              <span>Labor estimate / board (@ €0.01533/s)</span>
+              <span class="tabular-nums">{{ formatEur(estimatedLaborCostPerBoard) }}</span>
+            </div>
+            <div class="flex items-center justify-between text-neutral-500 dark:text-neutral-400">
+              <span>Estimated boards per shift (8h)</span>
+              <span class="tabular-nums">{{ estimatedBoardsPerShift }}</span>
             </div>
           </div>
         </template>
@@ -268,6 +237,10 @@ function formatQty(n: number): string {
 
 function formatEur(n: number): string {
   return formatCurrency(n, 'EUR')
+}
+
+function formatMinutes(n: number): string {
+  return n.toFixed(1)
 }
 
 function conversionRate(from: 'USD' | 'EUR', to: 'USD' | 'EUR'): number | null {
@@ -416,6 +389,8 @@ const KITTING_COST_PER_SMD_LINE_EUR = 5
 const ORDER_OVERHEAD_EUR = 200
 const PCBA_TOOLING_COST_EUR = 100
 const MARKUP_RATE = 0.2
+const LABOR_RATE_PER_SECOND_EUR = 0.01533
+const SHIFT_SECONDS = 8 * 60 * 60
 
 const smdLineCount = computed(() => {
   let count = 0
@@ -451,6 +426,21 @@ const thtComponentsPerBoard = computed(() => {
     if (line.type === 'THT') count += line.quantity
   }
   return count
+})
+
+const estimatedAssemblySecondsPerBoard = computed(() => {
+  const smdSeconds = smdComponentsPerBoard.value * 1.2
+  const thtBaseSeconds = thtComponentsPerBoard.value * 3
+  const thtPinSeconds = thtComponentsPerBoard.value * 1.5
+  return smdSeconds + thtBaseSeconds + thtPinSeconds
+})
+
+const estimatedAssemblyMinutesPerBoard = computed(() => estimatedAssemblySecondsPerBoard.value / 60)
+const estimatedLaborCostPerBoard = computed(() => estimatedAssemblySecondsPerBoard.value * LABOR_RATE_PER_SECOND_EUR)
+const estimatedBoardsPerShift = computed(() => {
+  const seconds = estimatedAssemblySecondsPerBoard.value
+  if (!Number.isFinite(seconds) || seconds <= 0) return 0
+  return Math.max(1, Math.floor(SHIFT_SECONDS / seconds))
 })
 
 const assemblyVariablePerPiece = computed(() =>

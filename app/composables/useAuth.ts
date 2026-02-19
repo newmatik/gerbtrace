@@ -28,6 +28,30 @@ const session = ref<Session | null>(null)
 const loading = ref(true)
 const initialised = ref(false)
 
+function clearClientAuthStorage() {
+  if (!import.meta.client) return
+  const maybeAuthKey = (key: string) =>
+    key.includes('supabase.auth.token')
+    || key.endsWith('-auth-token')
+    || key.includes('sb-') && key.includes('auth-token')
+
+  try {
+    for (const key of Object.keys(window.localStorage)) {
+      if (maybeAuthKey(key)) window.localStorage.removeItem(key)
+    }
+  } catch {
+    // ignore storage access errors
+  }
+
+  try {
+    for (const key of Object.keys(window.sessionStorage)) {
+      if (maybeAuthKey(key)) window.sessionStorage.removeItem(key)
+    }
+  } catch {
+    // ignore storage access errors
+  }
+}
+
 export function useAuth() {
   const supabase = useSupabase()
 
@@ -94,14 +118,29 @@ export function useAuth() {
     return { data, error }
   }
 
-  /** Sign out (clears session) */
-  async function signOut() {
-    const { error } = await supabase.auth.signOut()
-    if (!error) {
+  /** Sign out (clears session). Force mode also purges local auth storage. */
+  async function signOut(options?: { force?: boolean }) {
+    if (options?.force) {
+      // Immediately clear reactive state so UI cannot remain in limbo.
       user.value = null
       session.value = null
+      clearClientAuthStorage()
     }
-    return { error }
+
+    // Prefer global sign-out in force mode, fallback to local if needed.
+    const { error } = options?.force
+      ? await supabase.auth.signOut({ scope: 'global' })
+      : await supabase.auth.signOut()
+
+    if (error && options?.force) {
+      await supabase.auth.signOut({ scope: 'local' })
+    }
+
+    user.value = null
+    session.value = null
+    if (options?.force) clearClientAuthStorage()
+
+    return { error: error ?? null }
   }
 
   /** Reset password */

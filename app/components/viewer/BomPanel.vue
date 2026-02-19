@@ -94,9 +94,21 @@
           <span>{{ isFetchingPricing ? `${queueDone}/${queueTotal}` : 'Fetch Prices' }}</span>
         </button>
         <button
+          v-if="cpLines.length > 0"
+          class="text-[10px] px-1.5 py-0.5 rounded-full border border-neutral-200 dark:border-neutral-700 transition-colors flex items-center gap-0.5"
+          :class="cpCopied
+            ? 'text-green-600 dark:text-green-400 border-green-300 dark:border-green-600'
+            : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 hover:border-neutral-300 dark:hover:border-neutral-600'"
+          :title="`Copy ${cpLines.length} customer-provided items to clipboard`"
+          @click="copyCpItems"
+        >
+          <UIcon :name="cpCopied ? 'i-lucide-check' : 'i-lucide-clipboard-copy'" class="text-[10px]" />
+          CP
+        </button>
+        <button
           class="text-[10px] px-1.5 py-0.5 rounded-full border border-neutral-200 dark:border-neutral-700 text-neutral-400 hover:text-green-600 dark:hover:text-green-400 hover:border-green-300 dark:hover:border-green-600 transition-colors flex items-center gap-0.5"
           title="Add BOM line"
-          @click="openEditModal(null)"
+          @click="emit('addLine')"
         >
           <UIcon name="i-lucide-plus" class="text-[10px]" />
           Add
@@ -187,6 +199,17 @@
     <div v-if="!hasCredentials && bomLines.length > 0" class="mx-3 mb-2 px-2 py-1.5 text-[10px] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded border border-amber-200 dark:border-amber-800">
       Elexess API not configured. Set credentials in Team Settings to fetch pricing.
     </div>
+    <div
+      v-if="mismatchSummary"
+      class="mx-3 mb-2 px-2 py-1.5 text-[10px] text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 rounded border border-amber-200 dark:border-amber-800 flex items-center gap-1.5"
+    >
+      <UIcon name="i-lucide-triangle-alert" class="shrink-0" />
+      <span>
+        {{ mismatchSummary.linesWithMissing }} BOM line{{ mismatchSummary.linesWithMissing === 1 ? '' : 's' }}
+        contain designators missing in PnP
+        ({{ mismatchSummary.uniqueMissingRefs }} unique refs).
+      </span>
+    </div>
 
     <!-- BOM table -->
     <div class="flex-1 overflow-y-auto px-3 pb-3">
@@ -235,6 +258,13 @@
             >
               DNP
             </span>
+            <!-- CP badge -->
+            <span
+              v-if="line.customerProvided"
+              class="text-[10px] px-1.5 py-0.5 rounded-full border shrink-0 border-teal-200 dark:border-teal-800 text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-900/20"
+            >
+              CP
+            </span>
             <!-- Type badge (click to cycle) -->
             <button
               class="text-[10px] px-1.5 py-0.5 rounded-full border shrink-0 transition-colors"
@@ -282,28 +312,12 @@
                 </template>
               </template>
             </template>
-            <!-- Edit button -->
-            <button
-              class="text-neutral-400 hover:text-primary transition-colors shrink-0"
-              title="Edit"
-              @click.stop="openEditModal(line)"
-            >
-              <UIcon name="i-lucide-pencil" class="text-xs" />
-            </button>
           </div>
 
         </div>
       </div>
     </div>
 
-    <!-- Edit modal -->
-    <BomLineEditModal
-      v-model:open="showEditModal"
-      :line="editingLine"
-      :pnp-designators="pnpDesignators"
-      @save="handleLineSave"
-      @delete="handleLineDelete"
-    />
   </div>
 </template>
 
@@ -353,7 +367,7 @@ function handleBoardQtyInput(e: Event) {
 
 // ── Filter chips + sort ──
 
-type FilterKey = 'smd' | 'tht' | 'dnp' | 'no-mfr' | 'no-price'
+type FilterKey = 'smd' | 'tht' | 'dnp' | 'cp' | 'no-mfr' | 'no-price'
 const activeFilters = ref(new Set<FilterKey>())
 const sortBy = ref<'designator' | 'price'>('designator')
 
@@ -382,6 +396,7 @@ const filterDefs = computed(() => {
     { key: 'smd' as FilterKey, label: 'SMD', count: lines.filter(l => l.type === 'SMD').length, activeClass: 'border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' },
     { key: 'tht' as FilterKey, label: 'THT', count: lines.filter(l => l.type === 'THT').length, activeClass: 'border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20' },
     { key: 'dnp' as FilterKey, label: 'DNP', count: lines.filter(l => l.dnp).length, activeClass: 'border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20' },
+    { key: 'cp' as FilterKey, label: 'CP', count: lines.filter(l => l.customerProvided).length, activeClass: 'border-teal-300 dark:border-teal-700 text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-900/20' },
     { key: 'no-mfr' as FilterKey, label: 'No MFR', count: lines.filter(l => !lineHasManufacturer(l)).length, activeClass: 'border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20' },
     { key: 'no-price' as FilterKey, label: 'No Price', count: lines.filter(l => !lineHasPrice(l)).length, activeClass: 'border-orange-300 dark:border-orange-700 text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20' },
   ]
@@ -397,6 +412,7 @@ const displayLines = computed(() => {
       if (filters.has('smd') && line.type === 'SMD') return true
       if (filters.has('tht') && line.type === 'THT') return true
       if (filters.has('dnp') && line.dnp) return true
+      if (filters.has('cp') && line.customerProvided) return true
       if (filters.has('no-mfr') && !lineHasManufacturer(line)) return true
       if (filters.has('no-price') && !lineHasPrice(line)) return true
       return false
@@ -420,27 +436,25 @@ const displayLines = computed(() => {
   return lines
 })
 
-// Edit modal
-const showEditModal = ref(false)
-const editingLine = ref<BomLine | null>(null)
+// ── Copy CP items to clipboard ──
 
-function openEditModal(line: BomLine | null) {
-  editingLine.value = line
-  showEditModal.value = true
+const cpLines = computed(() => props.bomLines.filter(l => l.customerProvided && !l.dnp))
+const cpCopied = ref(false)
+let cpCopyTimeout: ReturnType<typeof setTimeout> | undefined
+
+function copyCpItems() {
+  if (cpLines.value.length === 0) return
+  const text = cpLines.value.map((line) => {
+    const refs = line.references || '—'
+    const parts = [line.description, line.package, line.type].filter(Boolean).join('/')
+    return `${refs} = ${parts}`
+  }).join('\n')
+  navigator.clipboard.writeText(text).then(() => {
+    cpCopied.value = true
+    if (cpCopyTimeout) clearTimeout(cpCopyTimeout)
+    cpCopyTimeout = setTimeout(() => { cpCopied.value = false }, 1500)
+  })
 }
-
-function handleLineSave(line: BomLine) {
-  if (editingLine.value) {
-    emit('updateLine', line.id, line)
-  } else {
-    emit('addLine', line)
-  }
-}
-
-function handleLineDelete(id: string) {
-  emit('removeLine', id)
-}
-
 
 // ── Inline type cycling ──
 
@@ -531,6 +545,26 @@ function getMissingInPnP(line: BomLine): string[] {
   if (line.dnp || props.pnpDesignators.size === 0) return []
   return parseRefs(line.references).filter(r => !props.pnpDesignators.has(r))
 }
+
+const mismatchSummary = computed<{
+  linesWithMissing: number
+  uniqueMissingRefs: number
+} | null>(() => {
+  if (props.pnpDesignators.size === 0) return null
+  let linesWithMissing = 0
+  const missingRefs = new Set<string>()
+  for (const line of props.bomLines) {
+    const missing = getMissingInPnP(line)
+    if (missing.length === 0) continue
+    linesWithMissing++
+    for (const ref of missing) missingRefs.add(ref)
+  }
+  if (linesWithMissing === 0) return null
+  return {
+    linesWithMissing,
+    uniqueMissingRefs: missingRefs.size,
+  }
+})
 
 // ── Elexess pricing extraction ──
 // Elexess response: { results: [{ supplier, country, current_stock, moq, current_leadtime, pricebreaks: [{ quantity, price, currency }] }] }

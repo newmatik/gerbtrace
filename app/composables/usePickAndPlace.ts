@@ -1,6 +1,6 @@
 import type { LayerInfo } from '~/utils/gerber-helpers'
 import { isPnPLayer, isSmdPnPLayer, isThtPnPLayer } from '~/utils/gerber-helpers'
-import { parsePnPFile, isFiducial, type PnPComponent } from '~/utils/pnp-parser'
+import { parsePnPFile, isFiducial, type PnPComponent, type PnPCoordUnit, type PnPColumnMapping } from '~/utils/pnp-parser'
 import type { PnPConvention } from '~/utils/pnp-conventions'
 import type { PackageDefinition } from '~/utils/package-types'
 import type { THTPackageDefinition } from '~/utils/tht-package-types'
@@ -71,6 +71,12 @@ export interface ManualPnPComponent {
   componentType?: ComponentType
 }
 
+interface PnPFileImportOptions {
+  skipRows?: number
+  mapping?: PnPColumnMapping
+  unitOverride?: 'auto' | PnPCoordUnit
+}
+
 export type PnPRotationOverrides = Record<string, number>
 export type PnPPackageMap = Record<string, string>
 export type PnPPolarizedOverrides = Record<string, boolean>
@@ -115,11 +121,15 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
   const fieldOverrides = ref(new Map<string, PnPFieldOverride>())
   // Deleted component keys (parsed components removed by the user)
   const deletedKeys = ref(new Set<string>())
+  // Per-THT-component assembly type override
+  const assemblyTypeOverrides = ref(new Map<string, 'wave' | 'hand' | 'mounting' | 'coating' | 'cable' | 'delivered-loose'>())
   // User-added manual components (not from PnP file)
-  const manualComponents = ref<ManualPnPComponent[]>([])
+  const manualComponents = shallowRef<ManualPnPComponent[]>([])
   // Optional matchers supplied by the viewer (package libraries)
   const packageMatcher = ref<((name: string) => PackageDefinition | undefined) | null>(null)
   const thtPackageMatcher = ref<((name: string) => THTPackageDefinition | undefined) | null>(null)
+  const coordUnitOverride = ref<'auto' | PnPCoordUnit>('auto')
+  const fileImportOptions = ref<Record<string, PnPFileImportOptions>>({})
 
   function getComponentKey(comp: PnPComponent): string {
     return [
@@ -195,11 +205,19 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
   }
 
   function parseLayer(layer: LayerInfo): PnPComponent[] {
+    const fileOpts = fileImportOptions.value[layer.file.fileName]
+    const effectiveUnitOverride = fileOpts?.unitOverride && fileOpts.unitOverride !== 'auto'
+      ? fileOpts.unitOverride
+      : (coordUnitOverride.value === 'auto' ? undefined : coordUnitOverride.value)
     // Cache key includes layer type so same-content layers with different types get separate entries
-    const cacheKey = `${layer.file.fileName}::${layer.type}`
+    const cacheKey = `${layer.file.fileName}::${layer.type}::${coordUnitOverride.value}::${JSON.stringify(fileOpts ?? {})}`
     if (parsedCache.has(cacheKey)) return parsedCache.get(cacheKey)!
     const side = (layer.type === 'PnP Bottom' || layer.type === 'PnP Bottom (THT)') ? 'bottom' : 'top'
-    const allComponents = parsePnPFile(layer.file.content, side)
+    const allComponents = parsePnPFile(layer.file.content, side, {
+      unitOverride: effectiveUnitOverride,
+      skipRows: fileOpts?.skipRows,
+      mapping: fileOpts?.mapping,
+    }, layer.file.fileName)
     // Combined layers return all components; single-side layers filter by side
     const isCombined = layer.type === 'PnP Top + Bot' || layer.type === 'PnP Top + Bot (THT)'
     const components = isCombined
@@ -226,6 +244,19 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
     } else {
       parsedCache.clear()
     }
+  }
+
+  function setFileImportOptions(fileName: string, options: PnPFileImportOptions) {
+    fileImportOptions.value = {
+      ...fileImportOptions.value,
+      [fileName]: { ...options },
+    }
+    invalidateCache(fileName)
+  }
+
+  function setFileImportOptionsMap(optionsMap: Record<string, PnPFileImportOptions> | null | undefined) {
+    fileImportOptions.value = optionsMap ? { ...optionsMap } : {}
+    invalidateCache()
   }
 
   // ── PnP layers ──
@@ -286,19 +317,54 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
     }
   }
 
+  const parsedWithKeys = computed(() =>
+    allParsedComponents.value.map(comp => ({ comp, key: getComponentKey(comp) })),
+  )
+
+  const visibleParsedWithKeys = computed(() =>
+    visibleParsedComponents.value.map(comp => ({ comp, key: getComponentKey(comp) })),
+  )
+
+  const editableByKey = computed(() => {
+    const map = new Map<string, EditablePnPComponent>()
+    for (const item of parsedWithKeys.value) {
+      map.set(item.key, toEditable(item.comp, false))
+    }
+    for (const manual of manualComponents.value) {
+      const editable = toEditable(manualToPnP(manual), true)
+      map.set(editable.key, editable)
+    }
+    return map
+  })
+
   const allComponents = computed<EditablePnPComponent[]>(() => {
-    const parsed = allParsedComponents.value.map(c => toEditable(c, false))
-      .filter(c => !deletedKeys.value.has(c.key))
-    const manual = manualComponents.value.map(mc => toEditable(manualToPnP(mc), true))
-    return [...parsed, ...manual]
+    const result: EditablePnPComponent[] = []
+    const editableMap = editableByKey.value
+    for (const item of parsedWithKeys.value) {
+      if (deletedKeys.value.has(item.key)) continue
+      const editable = editableMap.get(item.key)
+      if (editable) result.push(editable)
+    }
+    for (const manual of manualComponents.value) {
+      const editable = editableMap.get(`manual|${manual.id}`)
+      if (editable) result.push(editable)
+    }
+    return result
   })
 
   /** Components from visible PnP layers, filtered by active side (for component panel base) */
   const activeComponents = computed<EditablePnPComponent[]>(() => {
-    const base = visibleParsedComponents.value.map(c => toEditable(c, false))
-      .filter(c => !deletedKeys.value.has(c.key))
-    const manual = manualComponents.value.map(mc => toEditable(manualToPnP(mc), true))
-    const combined = [...base, ...manual]
+    const editableMap = editableByKey.value
+    const combined: EditablePnPComponent[] = []
+    for (const item of visibleParsedWithKeys.value) {
+      if (deletedKeys.value.has(item.key)) continue
+      const editable = editableMap.get(item.key)
+      if (editable) combined.push(editable)
+    }
+    for (const manual of manualComponents.value) {
+      const editable = editableMap.get(`manual|${manual.id}`)
+      if (editable) combined.push(editable)
+    }
     const side = activeSideFilter.value
     if (side === 'all') return combined
     return combined.filter(c => c.side === side)
@@ -331,6 +397,17 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
   // ── Search & filtering ──
 
   const searchQuery = ref('')
+  const debouncedSearchQuery = ref('')
+  let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null
+  watch(searchQuery, (value) => {
+    if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
+    searchDebounceTimer = setTimeout(() => {
+      debouncedSearchQuery.value = value
+    }, 120)
+  }, { immediate: true })
+  onScopeDispose(() => {
+    if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
+  })
 
   function isComponentEdited(comp: EditablePnPComponent): boolean {
     return comp.rotationOverridden || comp.packageMapped || !comp.polarizedDefaulted || comp.dnp || comp.note !== '' || comp.fieldsOverridden || comp.manual
@@ -366,7 +443,7 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
 
   const filteredComponents = computed<EditablePnPComponent[]>(() => {
     let result = activeComponents.value.filter(matchesActiveFilters)
-    const q = searchQuery.value.trim().toLowerCase()
+    const q = debouncedSearchQuery.value.trim().toLowerCase()
     if (q) {
       const searchIndex = searchableComponentText.value
       result = result.filter(c => (searchIndex.get(c.key) ?? '').includes(q))
@@ -384,12 +461,13 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
     filteredComponents.value.filter(c => c.componentType === 'tht'),
   )
 
-  /** Components for canvas rendering — respects search + toggle filters when active */
+  /** Components for canvas rendering — respects search + toggle filters when active.
+   *  DNP components are always included; the viewer controls their canvas visibility. */
   const visibleComponents = computed<EditablePnPComponent[]>(() => {
     const hasFilters = activeFilters.value.size > 0
-    const hasSearch = searchQuery.value.trim() !== ''
+    const hasSearch = debouncedSearchQuery.value.trim() !== ''
     if (!hasFilters && !hasSearch) {
-      return activeComponents.value.filter(c => !c.dnp)
+      return activeComponents.value
     }
     return filteredComponents.value
   })
@@ -461,6 +539,7 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
     }
     return out
   })
+  const fileImportOptionsRecord = computed<Record<string, PnPFileImportOptions>>(() => ({ ...fileImportOptions.value }))
 
   // ── DNP (Do Not Populate) ──
 
@@ -689,6 +768,35 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
     manualComponents.value.map(mc => ({ ...mc })),
   )
 
+  // ── THT assembly type ──
+
+  type ThtAssemblyType = 'wave' | 'hand' | 'mounting' | 'coating' | 'cable' | 'delivered-loose'
+
+  function setAssemblyType(key: string, type: ThtAssemblyType | undefined) {
+    const next = new Map(assemblyTypeOverrides.value)
+    if (!type || type === 'wave') {
+      next.delete(key)
+    } else {
+      next.set(key, type)
+    }
+    assemblyTypeOverrides.value = next
+  }
+
+  function setAssemblyTypeOverrides(overrides: Record<string, string> | null | undefined) {
+    const valid = new Set<string>(['wave', 'hand', 'mounting', 'coating', 'cable', 'delivered-loose'])
+    const next = new Map<string, ThtAssemblyType>()
+    for (const [key, val] of Object.entries(overrides ?? {})) {
+      if (typeof val === 'string' && valid.has(val)) next.set(key, val as ThtAssemblyType)
+    }
+    assemblyTypeOverrides.value = next
+  }
+
+  const assemblyTypeOverridesRecord = computed<Record<string, string>>(() => {
+    const out: Record<string, string> = {}
+    for (const [k, v] of assemblyTypeOverrides.value.entries()) out[k] = v
+    return out
+  })
+
   // ── External package matcher (library) ──
 
   function setPackageMatcher(fn: ((name: string) => PackageDefinition | undefined) | null | undefined) {
@@ -897,6 +1005,10 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
     activeFilters,
     toggleFilter,
     clearFilters,
+    fileImportOptions,
+    fileImportOptionsRecord,
+    setFileImportOptions,
+    setFileImportOptionsMap,
     // DNP
     toggleDnp,
     setDnpKeys,
@@ -930,10 +1042,16 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
     deleteComponent,
     setDeletedKeys,
     deletedKeysRecord,
+    // THT assembly type
+    assemblyTypeOverrides,
+    setAssemblyType,
+    setAssemblyTypeOverrides,
+    assemblyTypeOverridesRecord,
     startPlacement,
     placingComponent,
     // Convention
     convention,
+    coordUnitOverride,
     // Origin
     originX,
     originY,

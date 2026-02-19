@@ -4,18 +4,21 @@
  * Composites Gerber layers into a photo-realistic PCB appearance using
  * multi-pass Canvas 2D rendering with the following layer order:
  *
- *   1. Substrate  — FR4 base material inside the board outline
- *   2. Copper     — traces and pads in a copper/dark color
- *   3. Solder Mask — covers everything except pad openings (semi-transparent)
+ *   1. Substrate      — FR4 base material inside the board outline
+ *   2. Copper         — traces and pads in a copper/dark color
+ *   3. Solder Mask    — covers everything except pad openings (semi-transparent)
  *   4. Surface Finish — exposed pads rendered in gold (ENIG) / silver (HASL) / etc.
- *   5. Silkscreen — component markings on top of solder mask
- *   6. Drill      — through-holes punched through everything
+ *   5. Solder Paste   — grey paste deposits on pads
+ *   6. Silkscreen     — component markings on top of solder mask
+ *   7. Drill          — through-holes punched through everything
  */
 
 import type { ImageTree } from '../gerber/types'
 import type { PcbPreset } from '../../app/utils/pcb-presets'
 import { renderToCanvas, renderOutlineMask } from './canvas-renderer'
 import type { CanvasTransform } from './canvas-renderer'
+
+const SOLDER_PASTE_COLOR = '#B0B0B0'
 
 export interface RealisticLayers {
   copper?: ImageTree
@@ -32,6 +35,8 @@ export interface RealisticRenderOptions {
   dpr: number
   /** Side being rendered — affects nothing in the render itself but is useful for callers */
   side: 'top' | 'bottom'
+  /** Override solder paste color (e.g. bright green for dot visibility) */
+  pasteColor?: string
 }
 
 /**
@@ -191,7 +196,30 @@ export function renderRealisticView(
     ctx.drawImage(finishCanvas, 0, 0)
   }
 
-  // ── 5. Silkscreen ──
+  // ── 5. Solder paste ──
+  // Paste deposits are rendered as a matte grey on the exposed pads.
+  if (layers.paste) {
+    const pasteCanvas = createOffscreen()
+    renderToCanvas(layers.paste, pasteCanvas, {
+      color: options.pasteColor ?? SOLDER_PASTE_COLOR,
+      transform,
+      dpr,
+    })
+
+    // Clip paste to outline
+    if (layers.outline) {
+      const outlineMask = createOffscreen()
+      renderOutlineMask(layers.outline, outlineMask, { color: '#ffffff', transform, dpr })
+      const pasteCtx = pasteCanvas.getContext('2d')!
+      pasteCtx.globalCompositeOperation = 'destination-in'
+      pasteCtx.drawImage(outlineMask, 0, 0)
+      pasteCtx.globalCompositeOperation = 'source-over'
+    }
+
+    ctx.drawImage(pasteCanvas, 0, 0)
+  }
+
+  // ── 6. Silkscreen ──
   if (layers.silkscreen) {
     const silkCanvas = createOffscreen()
     renderToCanvas(layers.silkscreen, silkCanvas, {
@@ -213,7 +241,7 @@ export function renderRealisticView(
     ctx.drawImage(silkCanvas, 0, 0)
   }
 
-  // ── 6. Drill holes ──
+  // ── 7. Drill holes ──
   // Punch through everything — drill holes are transparent (show background)
   if (layers.drill) {
     const drillCanvas = createOffscreen()

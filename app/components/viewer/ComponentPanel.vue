@@ -94,18 +94,30 @@
         </button>
       </div>
 
-      <!-- Convention selector -->
-      <USelect
-        :model-value="pnpConvention"
-        size="xs"
-        class="w-36"
-        :disabled="locked"
-        :items="conventionSelectItems"
-        value-key="value"
-        label-key="label"
-        title="PnP orientation standard"
-        @update:model-value="$emit('update:pnpConvention', String($event) as PnPConvention)"
-      />
+      <div class="flex items-center gap-1">
+        <USelect
+          :model-value="pnpUnitOverride"
+          size="xs"
+          class="w-24"
+          :disabled="locked"
+          :items="unitSelectItems"
+          value-key="value"
+          label-key="label"
+          title="PnP coordinate unit override"
+          @update:model-value="$emit('update:pnpUnitOverride', String($event) as 'auto' | PnPCoordUnit)"
+        />
+        <USelect
+          :model-value="pnpConvention"
+          size="xs"
+          class="w-36"
+          :disabled="locked"
+          :items="conventionSelectItems"
+          value-key="value"
+          label-key="label"
+          title="PnP orientation standard"
+          @update:model-value="$emit('update:pnpConvention', String($event) as PnPConvention)"
+        />
+      </div>
     </div>
 
     <!-- Alignment controls -->
@@ -191,6 +203,8 @@
           class="text-[9px] shrink-0"
         />
       </button>
+      <!-- THT assembly type header -->
+      <span v-if="isThtPanel" class="text-left">Type</span>
       <!-- Actions column header -->
       <span />
     </div>
@@ -429,41 +443,51 @@
                 @update:model-value="emit('update:polarized', { key: groupedRows[vRow.index].component.key, polarized: !!$event })"
               />
             </div>
-            <span class="truncate text-neutral-500" :title="groupedRows[vRow.index].component.value">{{ groupedRows[vRow.index].component.value || '—' }}</span>
+            <div class="min-w-0">
+              <span class="truncate block text-neutral-500" :title="groupedRows[vRow.index].component.value">{{ groupedRows[vRow.index].component.value || '—' }}</span>
+              <span
+                v-if="groupedRows[vRow.index].component.note"
+                class="truncate block text-[10px] text-amber-600/90 dark:text-amber-300/90"
+                :title="groupedRows[vRow.index].component.note"
+              >
+                {{ groupedRows[vRow.index].component.note }}
+              </span>
+            </div>
             <!-- CAD Package (customer footprint name) -->
             <span class="truncate text-neutral-500" :title="groupedRows[vRow.index].component.cadPackage">{{ groupedRows[vRow.index].component.cadPackage || '—' }}</span>
             <!-- Package (our matched package) -->
-            <USelectMenu
-              v-if="!locked"
-              :model-value="groupedRows[vRow.index].component.matchedPackage || undefined"
-              v-model:search-term="pkgSearchTerm"
-              :items="packageSelectItems"
-              value-key="value"
-              label-key="displayLabel"
-              size="xs"
-              searchable
-              ignore-filter
-              placeholder="—"
-              class="w-full min-w-0"
-              :class="groupedRows[vRow.index].component.packageMapped ? 'text-blue-700 dark:text-blue-300' : ''"
-              :search-input="{ placeholder: 'Search package or library...' }"
-              :ui="{ content: 'min-w-[28rem] max-w-[40rem]', itemLabel: 'whitespace-normal leading-tight' }"
-              @mousedown.stop
-              @highlight="onPkgHighlight(groupedRows[vRow.index].component.key, $event as any)"
-              @update:open="!$event && emit('preview:package', null)"
-              @update:model-value="onPackageMappingSelect(groupedRows[vRow.index].component, $event)"
-            >
-              <template #item="{ item }">
-                <div class="w-full py-0.5">
-                  <div class="text-xs font-medium text-neutral-800 dark:text-neutral-100 break-all leading-tight">
-                    {{ getPackageOption(item)?.label ?? getItemLabel(item) }}
+            <div v-if="!locked" class="flex items-center gap-1 min-w-0">
+              <USelectMenu
+                :model-value="groupedRows[vRow.index].component.matchedPackage || undefined"
+                v-model:search-term="pkgSearchTerm"
+                :items="packageSelectItems"
+                value-key="value"
+                label-key="displayLabel"
+                size="xs"
+                searchable
+                ignore-filter
+                placeholder="—"
+                class="w-full min-w-0"
+                :class="groupedRows[vRow.index].component.packageMapped ? 'text-blue-700 dark:text-blue-300' : ''"
+                :search-input="{ placeholder: 'Search package or library...' }"
+                :ui="{ content: 'min-w-[28rem] max-w-[40rem]', itemLabel: 'whitespace-normal leading-tight' }"
+                @mousedown.stop
+                @highlight="onPkgHighlight(groupedRows[vRow.index].component.key, $event as any)"
+                @update:open="!$event && emit('preview:package', null)"
+                @update:model-value="onPackageMappingSelect(groupedRows[vRow.index].component, $event)"
+              >
+                <template #item="{ item }">
+                  <div class="w-full py-0.5">
+                    <div class="text-xs font-medium text-neutral-800 dark:text-neutral-100 break-all leading-tight">
+                      {{ getPackageOption(item)?.label ?? getItemLabel(item) }}
+                    </div>
+                    <div class="text-[10px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                      {{ getPackageOption(item)?.libraryLabel ?? 'Local' }}
+                    </div>
                   </div>
-                  <div class="text-[10px] text-neutral-500 dark:text-neutral-400 mt-0.5">
-                    {{ getPackageOption(item)?.libraryLabel ?? 'Local' }}
-                  </div>
-                </div>
-              </template>
-            </USelectMenu>
+                </template>
+              </USelectMenu>
+            </div>
             <button
               v-else
               class="w-full min-w-0 text-left truncate rounded px-1.5 py-1 text-[11px] text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
@@ -472,6 +496,19 @@
             >
               {{ groupedRows[vRow.index].component.matchedPackage || '—' }}
             </button>
+            <!-- THT Assembly Type -->
+            <div v-if="isThtPanel" class="flex items-center" @click.stop @mousedown.stop>
+              <USelect
+                :model-value="getAssemblyType(groupedRows[vRow.index].component.key)"
+                size="xs"
+                class="w-full min-w-0"
+                :items="THT_ASSEMBLY_TYPE_OPTIONS"
+                value-key="value"
+                label-key="label"
+                :disabled="locked"
+                @update:model-value="emit('update:assemblyType', { key: groupedRows[vRow.index].component.key, type: $event as string })"
+              />
+            </div>
             <!-- Note indicator / edit button -->
             <div class="flex items-center justify-center" @click.stop>
               <button
@@ -503,6 +540,7 @@ import { useVirtualizer } from '@tanstack/vue-virtual'
 import type { EditablePnPComponent, AlignMode, PnPFilterKey } from '~/composables/usePickAndPlace'
 import type { PnPConvention } from '~/utils/pnp-conventions'
 import { PNP_CONVENTION_LABELS } from '~/utils/pnp-conventions'
+import type { PnPCoordUnit } from '~/utils/pnp-parser'
 
 const props = defineProps<{
   allComponents: EditablePnPComponent[]
@@ -516,6 +554,7 @@ const props = defineProps<{
   originY: number | null
   showPackages: boolean
   pnpConvention: PnPConvention
+  pnpUnitOverride: 'auto' | PnPCoordUnit
   packageOptions: Array<{
     value: string
     label: string
@@ -532,14 +571,31 @@ const props = defineProps<{
   /** Set of designators present in BOM data (excluding DNP lines) */
   bomDesignators?: Set<string>
   locked?: boolean
+  assemblyTypeOverrides?: Map<string, string>
 }>()
 
 const locked = computed(() => !!props.locked)
+
+const THT_ASSEMBLY_TYPE_OPTIONS = [
+  { value: 'wave', label: 'Wave' },
+  { value: 'hand', label: 'Hand' },
+  { value: 'mounting', label: 'Mounting' },
+  { value: 'coating', label: 'Coating' },
+  { value: 'cable', label: 'Cable' },
+  { value: 'delivered-loose', label: 'Loose' },
+]
+
+const isThtPanel = computed(() => props.allComponents.length > 0 && props.allComponents[0]?.componentType === 'tht')
+
+function getAssemblyType(key: string): string {
+  return props.assemblyTypeOverrides?.get(key) ?? 'wave'
+}
 
 const emit = defineEmits<{
   'update:searchQuery': [value: string]
   'update:showPackages': [value: boolean]
   'update:pnpConvention': [value: PnPConvention]
+  'update:pnpUnitOverride': [value: 'auto' | PnPCoordUnit]
   select: [designator: string | null]
   startSetOrigin: []
   startComponentAlign: []
@@ -563,12 +619,19 @@ const emit = defineEmits<{
   edit: [component: EditablePnPComponent]
   addComponent: []
   'preview:package': [payload: { componentKey: string; packageName: string } | null]
+  'update:assemblyType': [payload: { key: string; type: string | undefined }]
 }>()
 
 const conventionOptions = Object.entries(PNP_CONVENTION_LABELS) as [PnPConvention, string][]
 const conventionSelectItems = computed(() =>
   conventionOptions.map(([value, label]) => ({ value, label })),
 )
+const unitSelectItems = [
+  { value: 'auto', label: 'Unit: Auto' },
+  { value: 'mm', label: 'Unit: mm' },
+  { value: 'mils', label: 'Unit: mils' },
+  { value: 'inches', label: 'Unit: in' },
+]
 const PKG_DROPDOWN_LIMIT = 80
 
 const allPackageSelectItems = computed(() =>
@@ -637,11 +700,12 @@ const dnpCount = computed(() => props.allComponents.filter(c => c.dnp).length)
 // --- Column visibility ---
 const showCoords = ref(false)
 
-const gridCols = computed(() =>
-  showCoords.value
-    ? '1rem 3.6rem 3.2rem 3.2rem 4rem 2.4rem minmax(0,1fr) minmax(0,1fr) minmax(0,1.6fr) 1.6rem'
-    : '1rem 3.6rem 4rem 2.4rem minmax(0,1fr) minmax(0,1fr) minmax(0,1.6fr) 1.6rem',
-)
+const gridCols = computed(() => {
+  const thtCol = isThtPanel.value ? ' 5rem' : ''
+  return showCoords.value
+    ? `1rem 3.6rem 3.2rem 3.2rem 4rem 2.4rem minmax(0,1fr) minmax(0,1fr) minmax(0,1.6fr)${thtCol} 1.6rem`
+    : `1rem 3.6rem 4rem 2.4rem minmax(0,1fr) minmax(0,1fr) minmax(0,1.6fr)${thtCol} 1.6rem`
+})
 
 // --- Sorting ---
 type SortKey = 'ref' | 'x' | 'y' | 'rot' | 'pol' | 'value' | 'cadPackage' | 'package'

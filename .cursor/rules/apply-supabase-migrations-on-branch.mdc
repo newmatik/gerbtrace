@@ -1,45 +1,33 @@
 ---
-description: Apply Supabase migrations directly to the production droplet when working on a branch
+description: Apply Supabase migrations to Supabase Cloud immediately, even on feature branches
 globs: supabase/migrations/**/*.sql
 alwaysApply: false
 ---
 
 # Apply Supabase Migrations on Branch
 
-The automated deploy workflow (`.github/workflows/deploy-supabase.yml`) only runs on pushes to `main`. When working on a feature branch, new migrations are **not** applied to production until merge. This causes runtime errors like "Could not find column X in the schema cache."
+There is no automated CI pipeline that applies migrations to Supabase Cloud on push. Migrations must be applied manually using MCP tools immediately after creating them, even on a feature branch.
 
-## How to apply migrations manually
+Failing to apply a migration causes runtime errors like "Could not find column X in the schema cache."
 
-You have SSH access to the Supabase droplet:
+## How to apply migrations
 
-```bash
-ssh root@api.gerbtrace.com
+Use the Supabase MCP `apply_migration` tool targeting the Cloud project:
+
 ```
-
-### 1. Check which migrations are already applied
-
-```bash
-ssh root@api.gerbtrace.com \
-  "cd /opt/supabase/docker && docker compose exec -T db psql -U postgres -d postgres -tAc \
-   \"select name from public.schema_migrations order by name;\""
-```
-
-### 2. Apply a pending migration
-
-Run the SQL as `supabase_admin` (table owner), then record it as `postgres`:
-
-```bash
-ssh root@api.gerbtrace.com \
-  "cd /opt/supabase/docker && docker compose exec -T db psql -U supabase_admin -d postgres -v ON_ERROR_STOP=0" \
-  < supabase/migrations/<filename>.sql
-
-ssh root@api.gerbtrace.com \
-  "cd /opt/supabase/docker && docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
-   -c \"insert into public.schema_migrations(name) values ('<filename>.sql') on conflict (name) do nothing;\""
+apply_migration(
+  project_id: "gqrnlnlfidighosujpdb",
+  name: "descriptive_snake_case_name",
+  query: "<SQL>"
+)
 ```
 
 ## When to apply
 
 - **Always** apply migrations immediately after creating them, even on a branch.
 - Do **not** wait for merge to `main` — the app will break if it references columns that don't exist yet.
-- All migration SQL must be idempotent (`IF NOT EXISTS`, `CREATE OR REPLACE`, etc.) so re-running on deploy is safe.
+- All migration SQL must be idempotent (`IF NOT EXISTS`, `CREATE OR REPLACE`, etc.) so re-running is safe.
+
+## Do NOT use SSH
+
+The old self-hosted droplet (`root@gerbtrace.com`) is **not** the production database. Never SSH there to apply migrations. Use Supabase MCP tools instead.

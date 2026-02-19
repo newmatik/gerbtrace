@@ -30,6 +30,7 @@
       <ViewerPagesTabs
         v-model="sidebarTab"
         :show-panel="effectiveShowPanel"
+        :show-paste="effectiveShowPaste"
         :show-pn-p="effectiveShowPnP"
         :show-bom="effectiveShowBom"
         :show-docs="effectiveShowDocs"
@@ -126,9 +127,16 @@
       v-model:board-rotation="boardRotation"
       v-model:panel-tab-edit-mode="panelTabEditMode"
       v-model:panel-added-routing-edit-mode="panelAddedRoutingEditMode"
-      v-model:panel-show-components="panelShowComponents"
+      v-model:panel-show-smd-components="panelShowSmdComponents"
+      v-model:panel-show-tht-components="panelShowThtComponents"
       v-model:panel-show-danger-zones="panelShowDangerZones"
       v-model:panel-danger-inset-mm="panelDangerInsetMm"
+      v-model:pnp-show-dnp-highlight="pnpShowDnpHighlight"
+      v-model:pnp-show-smd="pnpShowSmd"
+      v-model:pnp-show-tht="pnpShowTht"
+      v-model:pnp-auto-focus-on-select="pnpAutoFocusOnSelect"
+      v-model:pnp-show-minimap="pnpShowMinimap"
+      v-model:measure-constraint-mode="measureTool.constraintMode.value"
       :page="sidebarTab"
       :has-outline="hasOutline"
       :layers-count="layers.length"
@@ -167,6 +175,7 @@
             :origin-y="pnp.originY.value"
             :show-packages="showPackages"
             :pnp-convention="pnp.convention.value"
+            :pnp-unit-override="pnp.coordUnitOverride.value"
             :package-options="packageOptions"
             :sort-state="pnpSortSmd"
             :manual-order="pnpManualOrderSmd"
@@ -177,6 +186,7 @@
             @update:search-query="pnp.searchQuery.value = $event"
             @update:show-packages="showPackages = $event"
             @update:pnp-convention="updateConvention"
+            @update:pnp-unit-override="pnp.coordUnitOverride.value = $event"
             @update:rotation="handleComponentRotationUpdate($event)"
             @reset:rotation="handleComponentResetRotation($event)"
             @toggle:dnp="handleComponentToggleDnp($event)"
@@ -193,7 +203,7 @@
             @delete:group="deleteGroup($event, 'smd')"
             @reorder:groups="reorderGroups('smd', $event)"
             @assign:group="assignComponentGroup($event, 'smd')"
-            @select="pnp.selectComponent($event)"
+            @select="handleComponentTableSelect($event)"
             @start-set-origin="startSetOrigin"
             @start-component-align="startComponentAlign"
             @reset-origin="handleResetOrigin"
@@ -215,6 +225,7 @@
             :origin-y="pnp.originY.value"
             :show-packages="showPackages"
             :pnp-convention="pnp.convention.value"
+            :pnp-unit-override="pnp.coordUnitOverride.value"
             :package-options="thtPackageOptions"
             :sort-state="pnpSortTht"
             :manual-order="pnpManualOrderTht"
@@ -222,9 +233,11 @@
             :group-assignments="pnpGroupAssignments"
             :bom-designators="bomDesignators"
             :locked="!canEditTab('tht')"
+            :assembly-type-overrides="pnp.assemblyTypeOverrides.value"
             @update:search-query="pnp.searchQuery.value = $event"
             @update:show-packages="showPackages = $event"
             @update:pnp-convention="updateConvention"
+            @update:pnp-unit-override="pnp.coordUnitOverride.value = $event"
             @update:rotation="handleComponentRotationUpdate($event)"
             @reset:rotation="handleComponentResetRotation($event)"
             @toggle:dnp="handleComponentToggleDnp($event)"
@@ -241,13 +254,14 @@
             @delete:group="deleteGroup($event, 'tht')"
             @reorder:groups="reorderGroups('tht', $event)"
             @assign:group="assignComponentGroup($event, 'tht')"
-            @select="pnp.selectComponent($event)"
+            @select="handleComponentTableSelect($event)"
             @start-set-origin="startSetOrigin"
             @start-component-align="startComponentAlign"
             @reset-origin="handleResetOrigin"
             @edit="openComponentEdit($event)"
             @add-component="startAddComponent('tht')"
             @preview:package="previewPkgOverride = $event"
+            @update:assembly-type="handleAssemblyTypeUpdate($event)"
           />
 
           <PcbPanel
@@ -279,6 +293,13 @@
             :locked="!canEditTab('panel')"
             @update:panel-data="handlePanelDataUpdate"
           />
+
+          <PastePanel
+            v-else-if="sidebarTab === 'paste'"
+            :paste-settings="pasteSettings"
+            :locked="!canEditTab('paste')"
+            @update:paste-settings="pasteSettings = $event"
+          />
         </aside>
 
         <div
@@ -308,13 +329,14 @@
               :active-filter="activeFilter"
               :view-mode="viewMode"
               :preset="viewMode === 'realistic' ? selectedPreset : undefined"
+              :paste-settings="pasteSettings"
               :project-name="project?.name || 'Untitled'"
               :pcb-data="pcbData"
               :panel-config="panelData"
               :board-size-mm="boardSizeMm"
               :danger-zone="panelDangerZone"
               :measure="measureTool"
-              :pnp-components="panelData.showComponents ? pnpComponentsWithPreview : []"
+              :pnp-components="panelPnpComponentsForCanvas"
               :match-package="pkgLib.matchPackage"
               :match-tht-package="thtPkgLib.matchThtPackage"
               :show-packages="showPackages"
@@ -336,7 +358,9 @@
               :delete-tool="deleteTool"
               :view-mode="viewMode"
               :preset="viewMode === 'realistic' ? selectedPreset : undefined"
-              :pnp-components="sidebarTab === 'pcb' ? [] : pnpComponentsWithPreview"
+              :paste-settings="pasteSettings"
+              :pnp-components="sidebarTab === 'pcb' || sidebarTab === 'paste' ? [] : pnpComponentsForCanvas"
+              :show-dnp-highlight="pnpShowDnpHighlight"
               :selected-pnp-designator="pnp.selectedDesignator.value"
               :pnp-origin-x="pnp.originX.value"
               :pnp-origin-y="pnp.originY.value"
@@ -348,7 +372,7 @@
               :show-packages="showPackages"
               :pnp-convention="pnp.convention.value"
               :board-rotation="boardRotation"
-              @pnp-click="pnp.selectComponent($event)"
+              @pnp-click="handleCanvasComponentClick($event)"
               @pnp-dblclick="handlePnPDblClick"
               @align-click="handleAlignClick"
             />
@@ -377,8 +401,59 @@
               </div>
             </Transition>
 
+            <Transition
+              enter-active-class="transition-opacity duration-100 ease-out"
+              enter-from-class="opacity-0"
+              enter-to-class="opacity-100"
+              leave-active-class="transition-opacity duration-120 ease-in"
+              leave-from-class="opacity-100"
+              leave-to-class="opacity-0"
+            >
+              <div
+                v-if="pnpMinimapVisible"
+                class="absolute bottom-14 right-4 z-20 w-44 h-28 rounded-md border border-neutral-300/60 dark:border-neutral-700/70 bg-white/60 dark:bg-neutral-900/60 backdrop-blur-sm shadow-md overflow-hidden"
+              >
+                <svg
+                  class="w-full h-full"
+                  viewBox="0 0 176 112"
+                  aria-label="PCB minimap"
+                >
+                  <rect x="0" y="0" width="176" height="112" fill="transparent" />
+                  <g v-if="pnpMinimapOutlinePaths.length > 0" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="1.4">
+                    <path
+                      v-for="(d, idx) in pnpMinimapOutlinePaths"
+                      :key="`mini-outline-${idx}`"
+                      :d="d"
+                    />
+                  </g>
+                  <rect
+                    v-else-if="pnpMinimapModel"
+                    :x="pnpMinimapModel.boardRect.x"
+                    :y="pnpMinimapModel.boardRect.y"
+                    :width="pnpMinimapModel.boardRect.w"
+                    :height="pnpMinimapModel.boardRect.h"
+                    rx="2"
+                    fill="none"
+                    stroke="rgba(255,255,255,0.9)"
+                    stroke-width="1.4"
+                  />
+                  <rect
+                    v-if="pnpMinimapModel"
+                    :x="pnpMinimapModel.viewportRect.x"
+                    :y="pnpMinimapModel.viewportRect.y"
+                    :width="pnpMinimapModel.viewportRect.w"
+                    :height="pnpMinimapModel.viewportRect.h"
+                    fill="none"
+                    stroke="#EF4444"
+                    stroke-width="1.8"
+                  />
+                </svg>
+              </div>
+            </Transition>
+
             <CanvasControls :interaction="canvasInteraction" :view-mode="viewMode" @open-settings="showSettings = true" />
             <BoardExtents :dimensions="sidebarTab === 'panel' ? panelDimensionsMm : (boardSizeMm ?? null)" />
+
           </div>
         </main>
       </template>
@@ -399,13 +474,29 @@
             <div v-else class="text-[11px] text-neutral-400">
               Files are locked. Import is disabled.
             </div>
+            <div
+              v-if="importLayerWarnings.length > 0"
+              class="mt-2 rounded-md border border-amber-300/70 dark:border-amber-500/40 bg-amber-50/70 dark:bg-amber-500/10 p-2"
+            >
+              <div class="text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
+                Import checks
+              </div>
+              <ul class="mt-1 space-y-0.5 text-[11px] text-amber-800 dark:text-amber-200">
+                <li v-for="warning in importLayerWarnings" :key="warning">
+                  - {{ warning }}
+                </li>
+              </ul>
+            </div>
           </div>
           <FilesPanel
             v-model:selected-layer-file-name="filesSelectedLayerFileName"
+            v-model:selected-layer-index="filesSelectedLayerIndex"
             v-model:selected-doc-id="filesSelectedDocId"
             :layers="layers"
             :documents="documents"
             :locked="!canEditTab('files')"
+            @select-layer="handleFilesLayerSelect"
+            @select-doc="handleFilesDocSelect"
             @change-layer-type="changeLayerType"
             @remove-layer="removeLayer"
             @rename-layer="renameLayer"
@@ -434,6 +525,20 @@
                 <UIcon name="i-lucide-file" class="text-sm text-blue-500 shrink-0" />
                 <span class="text-xs font-medium text-neutral-700 dark:text-neutral-200 truncate">{{ filesSelectedLayer.file.fileName }}</span>
                 <UBadge size="xs" variant="subtle" color="neutral" class="shrink-0">{{ filesSelectedLayer.type }}</UBadge>
+                <template v-if="isSelectedLayerImportConfigurable">
+                  <div class="flex items-center gap-1.5 ml-1">
+                    <USelect
+                      v-if="isSelectedLayerPnp"
+                      :model-value="selectedLayerPnpUnit"
+                      :items="pnpUnitItems"
+                      value-key="value"
+                      label-key="label"
+                      size="xs"
+                      class="w-28"
+                      @update:model-value="updateSelectedLayerPnpUnit($event)"
+                    />
+                  </div>
+                </template>
                 <div class="flex-1" />
                 <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-download" @click="downloadSelectedLayer">
                   Download
@@ -483,11 +588,31 @@
             </div>
 
             <div class="flex-1 min-h-0 overflow-hidden">
-              <div v-if="filesSelectedLayer" class="h-full overflow-auto p-4">
-                <pre class="text-[11px] leading-relaxed font-mono whitespace-pre-wrap break-words text-neutral-700 dark:text-neutral-200">{{ filesSelectedLayer.file.content }}</pre>
+              <div v-if="filesSelectedLayer" class="h-full">
+                <FileTablePreview
+                  v-if="isTabularPreviewFileName(filesSelectedLayer.file.fileName)"
+                  :key="`layer-${filesPreviewSelectionNonce}-${filesSelectedLayerIndex ?? 'na'}-${filesSelectedLayer.file.fileName}`"
+                  :file-name="filesSelectedLayer.file.fileName"
+                  :text-content="filesSelectedLayer.file.content"
+                  :skip-rows="selectedLayerSkipRows"
+                  :mapping="selectedLayerMappingByField"
+                  :mapping-fields="selectedLayerMappingFields"
+                  @update:skip-rows="updateSelectedLayerSkipRows"
+                  @update:mapping="updateSelectedLayerMappingByField"
+                />
+                <div v-else class="h-full overflow-auto p-4">
+                  <pre class="text-[11px] leading-relaxed font-mono whitespace-pre-wrap break-words text-neutral-700 dark:text-neutral-200">{{ filesSelectedLayer.file.content }}</pre>
+                </div>
               </div>
               <div v-else-if="filesSelectedDoc" class="h-full">
+                <FileTablePreview
+                  v-if="isTabularPreviewFileName(filesSelectedDoc.name)"
+                  :key="`doc-${filesSelectedDoc.id}`"
+                  :file-name="filesSelectedDoc.name"
+                  :blob-url="filesSelectedDoc.blobUrl"
+                />
                 <iframe
+                  v-else
                   :src="filesSelectedDoc.blobUrl + '#toolbar=0'"
                   class="w-full h-full border-0"
                   title="Document preview"
@@ -526,6 +651,17 @@
               />
             </div>
             <div class="flex-1" />
+            <UButton
+              v-if="bomCpLines.length > 0"
+              size="xs"
+              :color="bomCpCopied ? 'success' : 'neutral'"
+              :variant="bomCpCopied ? 'soft' : 'outline'"
+              :icon="bomCpCopied ? 'i-lucide-check' : 'i-lucide-clipboard-copy'"
+              :title="`Copy ${bomCpLines.length} customer-provided items to clipboard`"
+              @click="copyBomCpItems"
+            >
+              {{ bomCpCopied ? 'Copied' : 'Copy CP List' }}
+            </UButton>
             <UPopover
               v-model:open="bomLockPopoverOpen"
               :content="{ side: 'bottom', align: 'end', sideOffset: 6 }"
@@ -613,6 +749,22 @@
         </div>
       </template>
 
+      <!-- Summary: full width (no canvas) -->
+      <template v-else-if="sidebarTab === 'summary'">
+        <main class="flex-1 min-w-0 overflow-hidden bg-neutral-50 dark:bg-neutral-950">
+          <LazySummaryPanel
+            :pcb-data="pcbData"
+            :smd-components="(pnp.smdActiveComponents.value as any[])"
+            :tht-components="(pnp.thtActiveComponents.value as any[])"
+            :bom-lines="(bom.bomLines.value as any[])"
+            :match-package="pkgLib.matchPackage"
+            :match-tht-package="thtPkgLib.matchThtPackage"
+            :project-name="project?.name || 'Untitled'"
+            :assembly-type-overrides="pnp.assemblyTypeOverrides.value"
+          />
+        </main>
+      </template>
+
       <!-- Pricing: full width (no canvas) -->
       <template v-else-if="sidebarTab === 'pricing'">
         <div class="flex-1 min-w-0 flex flex-col overflow-hidden bg-neutral-50 dark:bg-neutral-950">
@@ -654,7 +806,7 @@
             </UPopover>
           </div>
           <main class="flex-1 min-w-0 overflow-hidden">
-            <PricingPanel
+            <LazyPricingPanel
               :pcb-data="pcbData"
               :bom-lines="(bom.bomLines.value as BomLine[])"
               :pricing-cache="(bom.pricingCache.value as any)"
@@ -713,7 +865,7 @@
     />
 
     <!-- PnP export modal -->
-    <PnPExportModal
+    <LazyPnPExportModal
       v-model:open="showPnPExport"
       :default-convention="pnp.convention.value"
       :components="pnp.allComponents.value"
@@ -724,7 +876,7 @@
     />
 
     <!-- Image export modal -->
-    <ImageExportModal
+    <LazyImageExportModal
       v-model:open="showImageExport"
       :has-pn-p="pnp.hasPnP.value"
       :board-size-mm="imageExportTarget === 'panel' ? (panelDimensionsMm ?? undefined) : boardSizeMm"
@@ -733,7 +885,7 @@
     />
 
     <!-- Component edit modal -->
-    <ComponentEditModal
+    <LazyComponentEditModal
       v-model:open="showComponentEdit"
       :component="editingComponent"
       :package-options="editingComponent?.componentType === 'tht' ? thtPackageOptions : packageOptions"
@@ -753,15 +905,6 @@
       @delete:component="handleDeleteComponent($event)"
       @assign:group="assignEditingComponentGroup($event)"
       @preview:package="previewPkgOverride = $event"
-    />
-
-    <!-- BOM field mapping modal -->
-    <BomFieldMappingModal
-      v-model:open="showBomFieldMapping"
-      :headers="[...(bom.pendingParseResult.value?.headers ?? [])]"
-      :rows="(bom.pendingParseResult.value?.rows ?? []).map(r => [...r])"
-      @confirm="handleBomFieldMappingConfirm"
-      @cancel="handleBomFieldMappingCancel"
     />
 
     <!-- Overwrite confirmation modal -->
@@ -785,8 +928,6 @@
 <script setup lang="ts">
 import type { GerberFile, LayerInfo, LayerFilter } from '~/utils/gerber-helpers'
 import type { SourceRange, ImageTree, BoundingBox } from '@lib/gerber/types'
-import { parseGerber } from '@lib/gerber'
-import { plotImageTree } from '@lib/gerber/plotter'
 import { mergeBounds, emptyBounds, isEmpty } from '@lib/gerber/bounding-box'
 import { sortLayersByPcbOrder, isTopLayer, isBottomLayer, isSharedLayer, getColorForType, isPnPLayer } from '~/utils/gerber-helpers'
 import type { BomLine, BomColumnMapping } from '~/utils/bom-types'
@@ -798,17 +939,17 @@ import type { PcbThicknessMm } from '~/utils/pcb-pricing'
 import type { PnPConvention } from '~/utils/pnp-conventions'
 import type { PnPExportFormat, PnPExportSideMode } from '~/utils/pnp-export'
 import { generatePnPExport, getPnPExportExtension, getPnPExportMimeType } from '~/utils/pnp-export'
-import { exportRealisticSvg } from '../../../lib/renderer/svg-exporter'
-import * as SvgExporter from '../../../lib/renderer/svg-exporter'
 import { removeSourceRanges } from '@lib/gerber/editor'
-import JSZip from 'jszip'
+import { parseBomFile } from '~/utils/bom-parser'
+import { parsePnPPreview, type PnPColumnMapping, type PnPCoordUnit } from '~/utils/pnp-parser'
+import { saveBlobFile } from '~/utils/file-download'
 
 const route = useRoute()
 const rawId = route.params.id as string
 const isTeamProject = rawId.startsWith('team-')
 const projectId = isTeamProject ? 0 : Number(rawId) // local projects use numeric IDs
 const teamProjectId = isTeamProject ? rawId.replace('team-', '') : null
-const { getProject, getFiles, addFiles, upsertFiles, clearFiles, renameFile, removeFile, getOriginalFiles, storeOriginalFiles, renameOriginalFile, removeOriginalFile, renameProject, updateFileLayerType, updateFileContent, updateProjectOrigin, updateProjectConvention, updateProjectRotationOverrides, updateProjectDnp, updateProjectCadPackageMap, updateProjectPolarizedOverrides, updateProjectComponentNotes, updateProjectFieldOverrides, updateProjectManualComponents, updateProjectDeletedComponents, updateProjectSortSmd, updateProjectSortTht, updateProjectManualOrderSmd, updateProjectManualOrderTht, updateProjectComponentGroups, updateProjectGroupAssignments, updateBomLines, updateBomPricingCache, updateBomBoardQuantity, updatePcbData, updatePanelData, getDocuments, addDocument, removeDocument: removeDocumentFromDb, updateDocumentType: updateDocumentTypeInDb } = useProject()
+const { getProject, getFiles, addFiles, upsertFiles, clearFiles, renameFile, removeFile, getOriginalFiles, storeOriginalFiles, renameOriginalFile, removeOriginalFile, renameProject, updateFileLayerType, updateFileContent, updateProjectOrigin, updateProjectConvention, updateProjectRotationOverrides, updateProjectDnp, updateProjectCadPackageMap, updateProjectPolarizedOverrides, updateProjectComponentNotes, updateProjectFieldOverrides, updateProjectManualComponents, updateProjectDeletedComponents, updateProjectSortSmd, updateProjectSortTht, updateProjectManualOrderSmd, updateProjectManualOrderTht, updateProjectComponentGroups, updateProjectGroupAssignments, updatePnpAssemblyTypes, updateBomLines, updateBomPricingCache, updateBomBoardQuantity, updatePcbData, updatePanelData, updatePasteSettings: updateLocalPasteSettings, updateLayerOrder: updateLocalLayerOrder, updateDocumentOrder: updateLocalDocumentOrder, updateBomFileImportOptions: updateLocalBomFileImportOptions, updatePnpFileImportOptions: updateLocalPnpFileImportOptions, updateProjectPreview, getDocuments, addDocument, removeDocument: removeDocumentFromDb, updateDocumentType: updateDocumentTypeInDb } = useProject()
 
 // ── Team project support ──
 const teamProjectIdRef = ref(teamProjectId)
@@ -849,7 +990,7 @@ const canEdit = computed(() => {
   return currentTeamRole.value === 'editor' || currentTeamRole.value === 'admin'
 })
 
-type LockableTab = 'files' | 'pcb' | 'panel' | 'smd' | 'tht' | 'bom'
+type LockableTab = 'files' | 'pcb' | 'panel' | 'paste' | 'smd' | 'tht' | 'bom'
 type PageLockState = {
   locked: boolean
   locked_at: string | null
@@ -858,7 +999,41 @@ type PageLockState = {
 }
 type PageLocksRecord = Partial<Record<LockableTab, PageLockState>>
 
-const LOCKABLE_TABS: LockableTab[] = ['files', 'pcb', 'panel', 'smd', 'tht', 'bom']
+const LOCKABLE_TABS: LockableTab[] = ['files', 'pcb', 'panel', 'paste', 'smd', 'tht', 'bom']
+
+function toPageLocksSnapshot(value: PageLocksRecord | null | undefined): PageLocksRecord {
+  const snapshot: PageLocksRecord = {}
+  if (!value || typeof value !== 'object') return snapshot
+  for (const tab of LOCKABLE_TABS) {
+    const entry = value[tab]
+    if (!entry || typeof entry !== 'object') continue
+    snapshot[tab] = {
+      locked: !!entry.locked,
+      locked_at: entry.locked_at ?? null,
+      locked_by: entry.locked_by ?? null,
+      locked_by_name: entry.locked_by_name ?? null,
+    }
+  }
+  return snapshot
+}
+
+function arePageLocksEqual(a: PageLocksRecord, b: PageLocksRecord): boolean {
+  for (const tab of LOCKABLE_TABS) {
+    const left = a[tab]
+    const right = b[tab]
+    if (!left && !right) continue
+    if (!left || !right) return false
+    if (
+      left.locked !== right.locked
+      || (left.locked_at ?? null) !== (right.locked_at ?? null)
+      || (left.locked_by ?? null) !== (right.locked_by ?? null)
+      || (left.locked_by_name ?? null) !== (right.locked_by_name ?? null)
+    ) {
+      return false
+    }
+  }
+  return true
+}
 const pageLocksOverride = ref<PageLocksRecord | null>(null)
 
 function isLockableTab(tab: string): tab is LockableTab {
@@ -882,6 +1057,7 @@ const canvasAreaBg = computed(() =>
 const sidebarFiles = useSidebarWidth('files')
 const sidebarPcb = useSidebarWidth('pcb')
 const sidebarPanel = useSidebarWidth('panel')
+const sidebarPaste = useSidebarWidth('paste')
 const sidebarSmd = useSidebarWidth('smd')
 const sidebarTht = useSidebarWidth('tht')
 const sidebarDocs = useSidebarWidth('docs')
@@ -891,6 +1067,7 @@ const sidebarMap: Record<string, ReturnType<typeof useSidebarWidth>> = {
   files: sidebarFiles,
   pcb: sidebarPcb,
   panel: sidebarPanel,
+  paste: sidebarPaste,
   smd: sidebarSmd,
   tht: sidebarTht,
   docs: sidebarDocs,
@@ -903,8 +1080,8 @@ function onSidebarDragStart(e: MouseEvent) {
 }
 
 // ── Sidebar tab (Files / PCB / Panel / SMD / THT / BOM / Pricing / Docs) ──
-type SidebarTab = 'files' | 'pcb' | 'panel' | 'smd' | 'tht' | 'bom' | 'pricing' | 'docs'
-const VALID_TABS: SidebarTab[] = ['files', 'pcb', 'panel', 'smd', 'tht', 'bom', 'pricing', 'docs']
+type SidebarTab = 'files' | 'pcb' | 'panel' | 'paste' | 'smd' | 'tht' | 'bom' | 'pricing' | 'docs' | 'summary'
+const VALID_TABS: SidebarTab[] = ['files', 'pcb', 'panel', 'paste', 'smd', 'tht', 'bom', 'docs', 'summary', 'pricing']
 
 const router = useRouter()
 const initialTabRaw = (route.query.tab as string) || 'files'
@@ -969,8 +1146,56 @@ const lockedTabsForNav = computed(() =>
 
 watch(() => projectSync?.project.value?.page_locks, (next) => {
   if (!next || typeof next !== 'object') return
+  const remoteSnapshot = toPageLocksSnapshot(next as PageLocksRecord)
+  if (pendingLocalPageLocks && !arePageLocksEqual(remoteSnapshot, pendingLocalPageLocks)) {
+    // Ignore stale realtime rows while a local lock write is still in flight.
+    return
+  }
+  if (pendingLocalPageLocks && arePageLocksEqual(remoteSnapshot, pendingLocalPageLocks)) {
+    pendingLocalPageLocks = null
+  }
+  if (arePageLocksEqual(remoteSnapshot, toPageLocksSnapshot(projectPageLocks.value))) return
   pageLocksOverride.value = null
-  if (project.value) project.value.pageLocks = next
+  if (project.value) project.value.pageLocks = remoteSnapshot
+}, { deep: true })
+
+watch(() => projectSync?.project.value?.paste_settings, (next) => {
+  if (!next || typeof next !== 'object') return
+  const mergedRemote = { ...pasteSettings.value, ...next }
+  const remoteSnapshot = toPasteSettingsSnapshot(mergedRemote)
+  if (pendingLocalPasteSettings && !arePasteSettingsEqual(remoteSnapshot, pendingLocalPasteSettings)) {
+    // Ignore stale realtime rows while a local paste-settings write is still in flight.
+    return
+  }
+  if (pendingLocalPasteSettings && arePasteSettingsEqual(remoteSnapshot, pendingLocalPasteSettings)) {
+    pendingLocalPasteSettings = null
+  }
+  if (arePasteSettingsEqual(remoteSnapshot, toPasteSettingsSnapshot(pasteSettings.value))) return
+  pasteSettings.value = mergedRemote
+}, { deep: true })
+
+watch(() => projectSync?.project.value?.layer_order, (next) => {
+  if (!isStringArray(next)) return
+  layerOrder.value = [...next]
+  layers.value = applyLayerOrder(layers.value)
+  syncLayerOrderFromLayers()
+}, { deep: true })
+
+watch(() => projectSync?.project.value?.document_order, (next) => {
+  if (!isStringArray(next)) return
+  documentOrder.value = [...next]
+  documents.value = applyDocumentOrder(documents.value)
+  syncDocumentOrderFromDocuments()
+}, { deep: true })
+
+watch(() => projectSync?.project.value?.bom_file_import_options, (next) => {
+  if (!next || typeof next !== 'object') return
+  bom.setFileImportOptionsMap(next)
+}, { deep: true })
+
+watch(() => projectSync?.project.value?.pnp_file_import_options, (next) => {
+  if (!next || typeof next !== 'object') return
+  pnp.setFileImportOptionsMap(next)
 }, { deep: true })
 
 onMounted(() => {
@@ -994,7 +1219,7 @@ watch(sidebarTab, (tab) => {
 })
 
 const isCanvasPage = computed(() => {
-  return sidebarTab.value === 'pcb' || sidebarTab.value === 'panel' || sidebarTab.value === 'smd' || sidebarTab.value === 'tht'
+  return sidebarTab.value === 'pcb' || sidebarTab.value === 'panel' || sidebarTab.value === 'paste' || sidebarTab.value === 'smd' || sidebarTab.value === 'tht'
 })
 
 const showControlsBar = isCanvasPage
@@ -1024,6 +1249,13 @@ watch(sidebarTab, (tab) => {
     panelTabEditMode.value = 'off'
     panelAddedRoutingEditMode.value = 'off'
   }
+  if (tab === 'smd') {
+    pnpShowSmd.value = true
+    pnpShowTht.value = false
+  } else if (tab === 'tht') {
+    pnpShowSmd.value = false
+    pnpShowTht.value = true
+  }
 })
 
 watch(isCurrentTabLocked, (locked) => {
@@ -1048,7 +1280,34 @@ const cropToOutline = prefs.cropToOutline
 const hasStoredCropToOutline = prefs.hasStoredCropToOutline
 const mirrored = prefs.mirrored
 const boardRotation = prefs.boardRotation
+const pasteSettings = prefs.pasteSettings
+const pnpUnitOverride = prefs.pnpUnitOverride
 const cachedTabVisibility = prefs.tabVisibility
+
+function toPasteSettingsSnapshot(settings: typeof pasteSettings.value) {
+  return {
+    mode: settings.mode,
+    dotDiameter: settings.dotDiameter,
+    dotSpacing: settings.dotSpacing,
+    pattern: settings.pattern,
+    dynamicDots: settings.dynamicDots,
+    highlightDots: settings.highlightDots,
+  }
+}
+
+function arePasteSettingsEqual(
+  a: ReturnType<typeof toPasteSettingsSnapshot>,
+  b: ReturnType<typeof toPasteSettingsSnapshot>,
+): boolean {
+  return (
+    a.mode === b.mode
+    && a.dotDiameter === b.dotDiameter
+    && a.dotSpacing === b.dotSpacing
+    && a.pattern === b.pattern
+    && a.dynamicDots === b.dynamicDots
+    && a.highlightDots === b.highlightDots
+  )
+}
 
 // ── Interaction mode management ──
 
@@ -1099,9 +1358,11 @@ watch(() => deleteTool.active.value, (isActive) => {
 
 // Panel view does not support info/delete tools; fall back to cursor.
 watch(sidebarTab, (tab) => {
-  // Leaving the docs tab should always close any open document preview.
   if (tab !== 'docs' && selectedDocumentId.value) {
     selectedDocumentId.value = null
+  }
+  if (tab === 'docs' && !selectedDocumentId.value && documents.value.length) {
+    selectedDocumentId.value = documents.value[0].id
   }
   if (tab === 'panel' && (activeMode.value === 'info' || activeMode.value === 'delete')) {
     setMode('cursor')
@@ -1145,12 +1406,9 @@ function handleKeyDown(e: KeyboardEvent) {
 function handlePackageMapping(payload: { cadPackage: string; packageName: string | null; componentKey?: string; isManual?: boolean }) {
   if (isCurrentTabLocked.value) return
   if (payload.isManual && payload.componentKey) {
-    // For manual components: update the package field directly on the ManualPnPComponent
     const manualId = payload.componentKey.replace(/^manual\|/, '')
     pnp.updateManualComponent(manualId, { package: payload.packageName ?? '' })
   }
-  // Always update the cadPackageMap too — for parsed components this is the primary mechanism,
-  // for manual components it's a belt-and-suspenders so the mapping is visible if cadPackage is populated.
   if (payload.cadPackage?.trim()) {
     pnp.setCadPackageMapping(payload.cadPackage, payload.packageName)
   }
@@ -1195,6 +1453,16 @@ function startAddComponent(componentType: import('~/composables/usePickAndPlace'
 function handlePnPDblClick(designator: string) {
   const comp = pnp.allComponents.value.find(c => c.designator === designator)
   if (comp) openComponentEdit(comp)
+}
+
+function handleComponentTableSelect(designator: string | null) {
+  pnpSelectionSource.value = 'table'
+  pnp.selectComponent(designator)
+}
+
+function handleCanvasComponentClick(designator: string | null) {
+  pnpSelectionSource.value = 'canvas'
+  pnp.selectComponent(designator)
 }
 
 function startSetOrigin() {
@@ -1247,6 +1515,11 @@ function handleComponentNoteUpdate(payload: { key: string; note: string }) {
   pnp.setComponentNote(payload.key, payload.note)
 }
 
+function handleAssemblyTypeUpdate(payload: { key: string; type: string | undefined }) {
+  if (!ensureTabEditable('tht')) return
+  pnp.setAssemblyType(payload.key, payload.type as any)
+}
+
 function handleComponentFieldsUpdate(payload: { key: string; designator?: string; value?: string; x?: number; y?: number }) {
   if (!ensureTabEditable(sidebarTab.value === 'tht' ? 'tht' : 'smd')) return
   pnp.setFieldOverride(payload.key, payload)
@@ -1293,18 +1566,353 @@ function detectGerberUnits(): 'mm' | 'in' {
   return 'mm'
 }
 
+interface MinimapBounds {
+  minX: number
+  minY: number
+  maxX: number
+  maxY: number
+}
+
+function hasValidBounds(b: number[] | undefined): b is [number, number, number, number] {
+  if (!b || b.length < 4) return false
+  const [minX, minY, maxX, maxY] = b
+  return Number.isFinite(minX) && Number.isFinite(minY) && Number.isFinite(maxX) && Number.isFinite(maxY)
+    && maxX > minX && maxY > minY
+}
+
+const pnpMinimapBounds = computed<MinimapBounds | null>(() => {
+  const canvas = boardCanvasRef.value
+  if (!canvas || layers.value.length === 0) return null
+
+  const outlineLayer = layers.value.find(l => l.type === 'Outline')
+    ?? layers.value.find(l => l.type === 'Keep-Out')
+  if (outlineLayer) {
+    const outlineTree = canvas.getImageTree(outlineLayer)
+    const ob = outlineTree?.bounds as number[] | undefined
+    if (outlineTree && outlineTree.children.length > 0 && hasValidBounds(ob)) {
+      return { minX: ob[0], minY: ob[1], maxX: ob[2], maxY: ob[3] }
+    }
+  }
+
+  let minX = Infinity
+  let minY = Infinity
+  let maxX = -Infinity
+  let maxY = -Infinity
+  for (const layer of layers.value) {
+    const tree = canvas.getImageTree(layer)
+    const b = tree?.bounds as number[] | undefined
+    if (!tree || tree.children.length === 0 || !hasValidBounds(b)) continue
+    minX = Math.min(minX, b[0])
+    minY = Math.min(minY, b[1])
+    maxX = Math.max(maxX, b[2])
+    maxY = Math.max(maxY, b[3])
+  }
+  if (!Number.isFinite(minX) || !Number.isFinite(minY) || !Number.isFinite(maxX) || !Number.isFinite(maxY)) return null
+  return { minX, minY, maxX, maxY }
+})
+
+const pnpMinimapOutlineTree = computed<ImageTree | null>(() => {
+  const canvas = boardCanvasRef.value
+  if (!canvas) return null
+  const outlineSrc = layers.value.find(l => l.type === 'Outline')
+    ?? layers.value.find(l => l.type === 'Keep-Out')
+  if (!outlineSrc) return null
+  const tree = canvas.getImageTree(outlineSrc) as ImageTree | null
+  if (!tree || tree.children.length === 0) return null
+  const b = tree.bounds as number[] | undefined
+  if (!hasValidBounds(b)) return null
+  return tree
+})
+
+const pnpMinimapModel = computed<{
+  mapW: number
+  mapH: number
+  fit: number
+  minX: number
+  maxY: number
+  drawX: number
+  drawY: number
+  boardRect: { x: number; y: number; w: number; h: number }
+  viewportRect: { x: number; y: number; w: number; h: number }
+} | null>(() => {
+  const bounds = pnpMinimapBounds.value
+  if (!bounds) return null
+
+  const canvasEl = boardCanvasRef.value?.getCanvas?.() as HTMLCanvasElement | null | undefined
+  if (!canvasEl) return null
+
+  const vw = canvasEl.clientWidth || canvasEl.width
+  const vh = canvasEl.clientHeight || canvasEl.height
+  if (!vw || !vh) return null
+
+  const scale = canvasInteraction.transform.value.scale
+  if (!Number.isFinite(scale) || scale <= 0) return null
+  const offX = canvasInteraction.transform.value.offsetX
+  const offY = canvasInteraction.transform.value.offsetY
+
+  const viewLeft = (0 - offX) / scale
+  const viewRight = (vw - offX) / scale
+  const viewTop = offY / scale
+  const viewBottom = (offY - vh) / scale
+
+  const mapW = 176
+  const mapH = 112
+  const pad = 8
+  const availableW = mapW - pad * 2
+  const availableH = mapH - pad * 2
+  const boardW = Math.max(1e-9, bounds.maxX - bounds.minX)
+  const boardH = Math.max(1e-9, bounds.maxY - bounds.minY)
+  const fit = Math.min(availableW / boardW, availableH / boardH)
+  const drawW = boardW * fit
+  const drawH = boardH * fit
+  const drawX = (mapW - drawW) / 2
+  const drawY = (mapH - drawH) / 2
+
+  const nx = (x: number) => drawX + (x - bounds.minX) * fit
+  const ny = (y: number) => drawY + (bounds.maxY - y) * fit
+  const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v))
+
+  const vx0 = clamp(nx(Math.min(viewLeft, viewRight)), drawX, drawX + drawW)
+  const vx1 = clamp(nx(Math.max(viewLeft, viewRight)), drawX, drawX + drawW)
+  const vy0 = clamp(ny(Math.max(viewTop, viewBottom)), drawY, drawY + drawH)
+  const vy1 = clamp(ny(Math.min(viewTop, viewBottom)), drawY, drawY + drawH)
+
+  return {
+    mapW,
+    mapH,
+    fit,
+    minX: bounds.minX,
+    maxY: bounds.maxY,
+    drawX,
+    drawY,
+    boardRect: { x: drawX, y: drawY, w: drawW, h: drawH },
+    viewportRect: {
+      x: vx0,
+      y: vy0,
+      w: Math.max(2, vx1 - vx0),
+      h: Math.max(2, vy1 - vy0),
+    },
+  }
+})
+
+const pnpMinimapVisible = computed(() => {
+  if (sidebarTab.value !== 'smd' && sidebarTab.value !== 'tht') return false
+  if (!pnpShowMinimap.value || !pnpMinimapModel.value) return false
+  const board = pnpMinimapModel.value.boardRect
+  const viewport = pnpMinimapModel.value.viewportRect
+  const boardArea = Math.max(1, board.w * board.h)
+  const viewportArea = Math.max(0, viewport.w * viewport.h)
+  const coverage = viewportArea / boardArea
+  // Hide minimap when nearly fully zoomed out (whole PCB in view).
+  return coverage < 0.88
+})
+
+function sampleArcPoints(
+  start: [number, number],
+  end: [number, number],
+  center: [number, number],
+  radius: number,
+  startAngle: number,
+  endAngle: number,
+  counterclockwise: boolean,
+): Array<[number, number]> {
+  let delta = endAngle - startAngle
+  if (counterclockwise) {
+    while (delta < 0) delta += Math.PI * 2
+  } else {
+    while (delta > 0) delta -= Math.PI * 2
+  }
+  const steps = Math.max(8, Math.ceil(Math.abs(delta) / (Math.PI / 18)))
+  const pts: Array<[number, number]> = [start]
+  for (let i = 1; i < steps; i++) {
+    const t = i / steps
+    const a = startAngle + delta * t
+    pts.push([center[0] + Math.cos(a) * radius, center[1] + Math.sin(a) * radius])
+  }
+  pts.push(end)
+  return pts
+}
+
+const pnpMinimapOutlinePaths = computed<string[]>(() => {
+  const tree = pnpMinimapOutlineTree.value
+  const model = pnpMinimapModel.value
+  if (!tree || !model) return []
+
+  const nx = (x: number) => model.drawX + (x - model.minX) * model.fit
+  const ny = (y: number) => model.drawY + (model.maxY - y) * model.fit
+
+  const pathFromSegments = (segments: any[], closePath = false): string => {
+    if (!Array.isArray(segments) || segments.length === 0) return ''
+    let d = ''
+    let started = false
+    for (const seg of segments) {
+      if (seg?.type === 'line' && Array.isArray(seg.start) && Array.isArray(seg.end)) {
+        const sx = nx(seg.start[0]); const sy = ny(seg.start[1])
+        const ex = nx(seg.end[0]); const ey = ny(seg.end[1])
+        if (!started) { d += `M ${sx} ${sy} `; started = true }
+        d += `L ${ex} ${ey} `
+      } else if (
+        seg?.type === 'arc'
+        && Array.isArray(seg.start) && Array.isArray(seg.end) && Array.isArray(seg.center)
+        && Number.isFinite(seg.radius) && Number.isFinite(seg.startAngle) && Number.isFinite(seg.endAngle)
+      ) {
+        const sampled = sampleArcPoints(
+          seg.start, seg.end, seg.center, seg.radius, seg.startAngle, seg.endAngle, !!seg.counterclockwise,
+        )
+        if (!started) {
+          const [sx, sy] = sampled[0]!
+          d += `M ${nx(sx)} ${ny(sy)} `
+          started = true
+        }
+        for (let i = 1; i < sampled.length; i++) {
+          const [px, py] = sampled[i]!
+          d += `L ${nx(px)} ${ny(py)} `
+        }
+      }
+    }
+    if (closePath && d) d += 'Z'
+    return d.trim()
+  }
+
+  const out: string[] = []
+  for (const g of tree.children as any[]) {
+    if (g?.type === 'path') {
+      const d = pathFromSegments(g.segments, false)
+      if (d) out.push(d)
+    } else if (g?.type === 'region') {
+      const d = pathFromSegments(g.segments, true)
+      if (d) out.push(d)
+    } else if (g?.type === 'shape') {
+      const s = g.shape
+      if (!s) continue
+      if (s.type === 'outline' && Array.isArray(s.segments)) {
+        const d = pathFromSegments(s.segments, true)
+        if (d) out.push(d)
+      } else if (s.type === 'polygon' && Array.isArray(s.points) && s.points.length > 1) {
+        const first = s.points[0]!
+        let d = `M ${nx(first[0])} ${ny(first[1])} `
+        for (let i = 1; i < s.points.length; i++) {
+          const p = s.points[i]!
+          d += `L ${nx(p[0])} ${ny(p[1])} `
+        }
+        out.push((d + 'Z').trim())
+      } else if (s.type === 'rect') {
+        const x0 = nx(s.x)
+        const y0 = ny(s.y + s.h)
+        const x1 = nx(s.x + s.w)
+        const y1 = ny(s.y)
+        out.push(`M ${x0} ${y0} L ${x1} ${y0} L ${x1} ${y1} L ${x0} ${y1} Z`)
+      }
+    }
+  }
+  return out
+})
+
+function focusComponentOnCanvas(comp: { x: number; y: number }) {
+  const canvasEl = boardCanvasRef.value?.getCanvas?.() as HTMLCanvasElement | null | undefined
+  if (!canvasEl) return
+
+  const rect = canvasEl.getBoundingClientRect()
+  const cssWidth = rect.width || canvasEl.clientWidth || canvasEl.width
+  const cssHeight = rect.height || canvasEl.clientHeight || canvasEl.height
+  if (!cssWidth || !cssHeight) return
+
+  const units = detectGerberUnits()
+  const xInGerber = units === 'in' ? comp.x / 25.4 : comp.x
+  const yInGerber = units === 'in' ? comp.y / 25.4 : comp.y
+  const ox = pnp.originX.value ?? 0
+  const oy = pnp.originY.value ?? 0
+  const gx = ox + xInGerber
+  const gy = oy + yInGerber
+
+  // Use a fixed focus scale so selection zoom feels consistent.
+  // Relative scaling (based on current zoom) makes jumps unpredictable.
+  const targetScale = 18
+
+  canvasInteraction.transform.value = {
+    scale: targetScale,
+    offsetX: cssWidth / 2 - gx * targetScale,
+    offsetY: cssHeight / 2 + gy * targetScale,
+  }
+}
+
 function handleKeyUp(e: KeyboardEvent) {
   measureTool.handleKeyUp(e)
 }
 
 const layers = ref<LayerInfo[]>([])
+const layerOrder = ref<string[]>([])
+const documentOrder = ref<string[]>([])
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every(v => typeof v === 'string' && v.trim().length > 0)
+}
+
+function sortBySavedOrder<T>(items: T[], getKey: (item: T) => string, savedOrder: string[], fallbackSort: (items: T[]) => T[]): T[] {
+  const rank = new Map<string, number>()
+  for (let i = 0; i < savedOrder.length; i++) {
+    const key = savedOrder[i]
+    if (!rank.has(key)) rank.set(key, i)
+  }
+
+  const inOrder: Array<{ item: T; rank: number; index: number }> = []
+  const remaining: T[] = []
+
+  items.forEach((item, index) => {
+    const itemRank = rank.get(getKey(item))
+    if (itemRank == null) {
+      remaining.push(item)
+      return
+    }
+    inOrder.push({ item, rank: itemRank, index })
+  })
+
+  inOrder.sort((a, b) => a.rank - b.rank || a.index - b.index)
+  if (remaining.length === 0) return inOrder.map(entry => entry.item)
+  return [...inOrder.map(entry => entry.item), ...fallbackSort(remaining)]
+}
+
+function applyLayerOrder(nextLayers: LayerInfo[]): LayerInfo[] {
+  const normalizedOrder = isStringArray(layerOrder.value) ? layerOrder.value : []
+  if (normalizedOrder.length === 0) return sortLayersByPcbOrder(nextLayers)
+  return sortBySavedOrder(
+    nextLayers,
+    layer => layer.file.fileName,
+    normalizedOrder,
+    sortLayersByPcbOrder,
+  )
+}
+
+function applyDocumentOrder(nextDocuments: ProjectDocument[]): ProjectDocument[] {
+  const normalizedOrder = isStringArray(documentOrder.value) ? documentOrder.value : []
+  if (normalizedOrder.length === 0) return [...nextDocuments]
+  return sortBySavedOrder(
+    nextDocuments,
+    doc => doc.name,
+    normalizedOrder,
+    (docs) => [...docs],
+  )
+}
+
+function syncLayerOrderFromLayers() {
+  const next = layers.value.map(layer => layer.file.fileName)
+  if (next.length === layerOrder.value.length && next.every((name, idx) => name === layerOrder.value[idx])) return
+  layerOrder.value = next
+}
+
+function syncDocumentOrderFromDocuments() {
+  const next = documents.value.map(doc => doc.name)
+  if (next.length === documentOrder.value.length && next.every((name, idx) => name === documentOrder.value[idx])) return
+  documentOrder.value = next
+}
 
 // ── PCB parameters for pricing ──
 const pcbData = ref<{
   sizeX?: number
   sizeY?: number
   layerCount?: number
-  surfaceFinish?: 'ENIG' | 'HAL'
+  material?: 'FR4' | 'IMS-AL' | 'Flex' | 'Rigid-Flex'
+  surfaceFinish?: 'ENIG' | 'HAL' | 'OSP'
   copperWeight?: '1oz' | '2oz'
   innerCopperWeight?: '0.5oz' | '1oz' | '2oz'
   thicknessMm?: PcbThicknessMm
@@ -1374,11 +1982,31 @@ const panelData = ref<PanelConfig>(DEFAULT_PANEL_CONFIG())
 const panelDangerZone = ref<DangerZoneConfig>({ enabled: false, insetMm: 2 })
 const hasLoadedProjectData = ref(false)
 
-const panelShowComponents = computed<boolean>({
-  get: () => panelData.value.showComponents !== false,
+const panelShowSmdComponents = computed<boolean>({
+  get: () => panelData.value.showSmdComponents !== false,
   set: (v) => {
     // Viewing overlay toggle should remain usable even when Panel is locked.
-    panelData.value = normalizePanelConfig({ ...(panelData.value as any), showComponents: v } as PanelConfig)
+    const nextShowSmd = !!v
+    const nextShowTht = panelData.value.showThtComponents !== false
+    panelData.value = normalizePanelConfig({
+      ...(panelData.value as any),
+      showSmdComponents: nextShowSmd,
+      showComponents: nextShowSmd || nextShowTht,
+    } as PanelConfig)
+  },
+})
+
+const panelShowThtComponents = computed<boolean>({
+  get: () => panelData.value.showThtComponents !== false,
+  set: (v) => {
+    // Viewing overlay toggle should remain usable even when Panel is locked.
+    const nextShowTht = !!v
+    const nextShowSmd = panelData.value.showSmdComponents !== false
+    panelData.value = normalizePanelConfig({
+      ...(panelData.value as any),
+      showThtComponents: nextShowTht,
+      showComponents: nextShowSmd || nextShowTht,
+    } as PanelConfig)
   },
 })
 
@@ -1434,6 +2062,9 @@ const selectedPreset = computed(() =>
   getPresetForAppearance(pcbData.value?.surfaceFinish, pcbData.value?.solderMaskColor),
 )
 const isPanelizedMode = computed(() => pcbData.value?.panelizationMode !== 'single')
+const hasPasteLayers = computed(() =>
+  layers.value.some(l => l.type === 'Top Paste' || l.type === 'Bottom Paste'),
+)
 const boardCanvasRef = ref<any>(null)
 const panelCanvasRef = ref<any>(null)
 
@@ -1464,6 +2095,7 @@ const editingComponent = ref<import('~/composables/usePickAndPlace').EditablePnP
 const performanceSnapshot = ref<{
   fpsApprox?: number
   frameMs?: number
+  importToVisibleMs?: number
   longTaskCount30s?: number
   memorySupported?: boolean
   heapUsedBytes?: number
@@ -1484,8 +2116,28 @@ let perfFrameReq = 0
 let perfRefreshTimer: ReturnType<typeof setInterval> | null = null
 let perfLastRafTs = 0
 let perfFrameMs = 0
+const importPerfStartMs = ref<number | null>(null)
+const importToVisibleMs = ref(0)
 const longTaskTimestamps: number[] = []
 let longTaskObserver: PerformanceObserver | null = null
+
+function markImportVisible() {
+  if (importPerfStartMs.value == null) return
+  importToVisibleMs.value = performance.now() - importPerfStartMs.value
+  importPerfStartMs.value = null
+}
+
+watch(
+  () => layers.value.map(layer => `${layer.file.fileName}:${layer.file.content.length}:${layer.type}`).join('|'),
+  () => {
+    importPerfStartMs.value = performance.now()
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        markImportVisible()
+      })
+    })
+  },
+)
 
 function estimateProjectBytes(): number {
   const encoder = new TextEncoder()
@@ -1571,6 +2223,7 @@ async function refreshPerformanceSnapshot() {
   performanceSnapshot.value = {
     fpsApprox: perfFrameMs > 0 ? 1000 / perfFrameMs : 0,
     frameMs: perfFrameMs,
+    importToVisibleMs: importToVisibleMs.value,
     longTaskCount30s: longTaskTimestamps.length,
     memorySupported: !!mem,
     heapUsedBytes: mem?.usedJSHeapSize ?? 0,
@@ -1629,9 +2282,39 @@ watch(_liveBoardSizeMm, (dims) => {
   if (dims) _cachedBoardSizeMm.value = dims
 }, { immediate: true })
 
+// ── Preview thumbnail capture ──
+let _previewTimer: ReturnType<typeof setTimeout> | null = null
+function schedulePreviewCapture() {
+  if (_previewTimer) clearTimeout(_previewTimer)
+  _previewTimer = setTimeout(async () => {
+    const canvas = boardCanvasRef.value
+    if (!canvas?.exportPng || !_liveBoardSizeMm.value) return
+    try {
+      const blob = await canvas.exportPng(72)
+      if (!blob) return
+      if (isTeamProject && teamProjectId) {
+        const teamId = currentTeamId.value || await waitForTeamId()
+        uploadPreviewImage(teamProjectId, teamId, blob)
+      } else if (projectId) {
+        updateProjectPreview(projectId, blob)
+      }
+    } catch (e) {
+      console.warn('[viewer] Preview capture failed:', e)
+    }
+  }, 1500)
+}
+
+watch(_liveBoardSizeMm, (dims) => {
+  if (dims) schedulePreviewCapture()
+})
+
+watch([selectedPreset, viewMode], () => {
+  if (_liveBoardSizeMm.value) schedulePreviewCapture()
+})
+
 // Gerber-based fallback: compute board dimensions directly from layer data.
 // Needed when BoardCanvas has never mounted (e.g. page opened on panel tab).
-const _gerberImageTreeCache = new Map<string, ImageTree>()
+const gerberTreeCache = useGerberImageTreeCache()
 const _gerberBoardSizeMm = computed<{ width: number; height: number } | undefined>(() => {
   const ls = layers.value
   if (ls.length === 0) return undefined
@@ -1671,21 +2354,48 @@ const _gerberBoardSizeMm = computed<{ width: number; height: number } | undefine
 
 
 function _parseLayerTree(layer: LayerInfo): ImageTree | null {
-  const key = layer.file.fileName
-  if (_gerberImageTreeCache.has(key)) return _gerberImageTreeCache.get(key)!
-  try {
-    const ast = parseGerber(layer.file.content)
-    const tree = plotImageTree(ast)
-    _gerberImageTreeCache.set(key, tree)
-    return tree
-  } catch {
-    return null
-  }
+  return gerberTreeCache.getOrParseSync(layer)
 }
 
 const boardSizeMm = computed<{ width: number; height: number } | undefined>(() => {
   return _liveBoardSizeMm.value ?? _cachedBoardSizeMm.value ?? _gerberBoardSizeMm.value
 })
+
+let gerberPrewarmTimer: ReturnType<typeof setTimeout> | null = null
+watch(
+  () => layers.value
+    .filter(layer => !isPnPLayer(layer.type))
+    .map((layer) => {
+      const content = layer.file.content
+      return `${layer.file.fileName}:${content.length}:${content.slice(0, 32)}:${content.slice(-32)}`
+    })
+    .join('|'),
+  () => {
+    if (gerberPrewarmTimer) clearTimeout(gerberPrewarmTimer)
+    gerberPrewarmTimer = setTimeout(() => {
+      const targetLayers = layers.value.filter(layer => !isPnPLayer(layer.type))
+      gerberTreeCache.prewarmLayers(targetLayers).catch(() => {})
+    }, 40)
+  },
+  { immediate: true },
+)
+
+function roundBoardMm(value: number): number {
+  return Math.round(value * 100) / 100
+}
+
+watch(boardSizeMm, (dims) => {
+  if (!dims || !hasLoadedProjectData.value) return
+  const current = pcbData.value ?? {}
+  const nextSizeX = current.sizeX ?? roundBoardMm(dims.width)
+  const nextSizeY = current.sizeY ?? roundBoardMm(dims.height)
+  if (current.sizeX === nextSizeX && current.sizeY === nextSizeY) return
+  pcbData.value = {
+    ...current,
+    sizeX: nextSizeX,
+    sizeY: nextSizeY,
+  }
+}, { immediate: true })
 
 /** Count copper layers from loaded Gerber files to suggest PCB layer count */
 const detectedLayerCount = computed<number | null>(() => {
@@ -1731,9 +2441,58 @@ const downloadMenuItems = computed(() => {
 
 const outlineLayer = computed(() => layers.value.find(l => l.type === 'Outline') || undefined)
 const hasOutline = computed(() => layers.value.some(l => l.type === 'Outline'))
+const importLayerWarnings = computed<string[]>(() => {
+  if (layers.value.length === 0) return []
+
+  const types = layers.value.map(l => l.type)
+  const hasTopCopper = types.includes('Top Copper')
+  const hasBottomCopper = types.includes('Bottom Copper')
+  const innerLayerCount = types.filter(t => t === 'Inner Layer').length
+  const hasAnyCopper = hasTopCopper || hasBottomCopper || innerLayerCount > 0
+  const hasDrill = types.includes('Drill')
+  const hasOutlineLike = types.includes('Outline') || types.includes('Keep-Out')
+  const configuredLayerCount = Number(pcbData.value?.layerCount ?? 0)
+
+  const warnings: string[] = []
+  if (!hasAnyCopper) {
+    warnings.push('No copper layers detected. Check file types for Top/Bottom/Inner copper.')
+  }
+  if (!hasDrill) {
+    warnings.push('No drill layer detected. Through-hole and via data may be incomplete.')
+  }
+  if (!hasOutlineLike) {
+    warnings.push('No outline layer detected. Board dimensions/cropping may be inaccurate.')
+  }
+  if (hasTopCopper !== hasBottomCopper) {
+    warnings.push('Only one outer copper side is detected (Top or Bottom).')
+  }
+  if (configuredLayerCount > 2 && innerLayerCount === 0) {
+    warnings.push(`Layer count is set to ${configuredLayerCount} but no inner copper layers were detected.`)
+  }
+  return warnings
+})
 
 // ── Pick & Place ──
 const pnp = usePickAndPlace(layers)
+watch(pnpUnitOverride, (next) => {
+  pnp.coordUnitOverride.value = next
+}, { immediate: true })
+watch(() => pnp.coordUnitOverride.value, (next) => {
+  pnpUnitOverride.value = next
+})
+watch(
+  () => pnp.selectedComponent.value?.key ?? null,
+  async () => {
+    if (sidebarTab.value !== 'smd' && sidebarTab.value !== 'tht') return
+    if (!pnpAutoFocusOnSelect.value) return
+    if (pnpSelectionSource.value !== 'table') return
+    const selected = pnp.selectedComponent.value
+    if (!selected) return
+    await nextTick()
+    focusComponentOnCanvas(selected)
+    pnpSelectionSource.value = 'other'
+  },
+)
 const pkgLib = usePackageLibrary()
 const thtPkgLib = useThtPackageLibrary()
 const panelEdgeConstraints = computed(() => {
@@ -1746,6 +2505,16 @@ const panelEdgeConstraints = computed(() => {
   })
 })
 const showPackages = ref(true)
+const pnpShowDnpHighlight = ref(true)
+const pnpShowSmd = ref(true)
+const pnpShowTht = ref(false)
+const pnpAutoFocusOnSelect = ref(true)
+const pnpShowMinimap = ref(false)
+const pnpSelectionSource = ref<'table' | 'canvas' | 'other'>('other')
+
+watch(pnpAutoFocusOnSelect, (enabled) => {
+  if (enabled) pnpShowMinimap.value = true
+}, { immediate: true })
 
 const previewPkgOverride = ref<{ componentKey: string; packageName: string } | null>(null)
 const pnpComponentsWithPreview = computed(() => {
@@ -1757,6 +2526,28 @@ const pnpComponentsWithPreview = computed(() => {
       ? { ...c, matchedPackage: override.packageName }
       : c,
   )
+})
+
+const pnpComponentsForCanvas = computed(() => {
+  const showSmd = pnpShowSmd.value
+  const showTht = pnpShowTht.value
+  const showDnp = pnpShowDnpHighlight.value
+  return pnpComponentsWithPreview.value.filter((c) => {
+    if (c.dnp && !showDnp) return false
+    if (c.componentType === 'smd') return showSmd
+    if (c.componentType === 'tht') return showTht
+    return true
+  })
+})
+
+const panelPnpComponentsForCanvas = computed(() => {
+  const showSmd = panelData.value.showSmdComponents !== false
+  const showTht = panelData.value.showThtComponents !== false
+  return pnpComponentsWithPreview.value.filter((c) => {
+    if (c.componentType === 'smd') return showSmd
+    if (c.componentType === 'tht') return showTht
+    return true
+  })
 })
 
 // Monotonic version counter — bumped whenever any package source changes.
@@ -2004,18 +2795,166 @@ const selectedDocument = computed(() => documents.value.find(d => d.id === selec
 
 // Files page selection (raw file/doc preview)
 const filesSelectedLayerFileName = ref<string | null>(null)
+const filesSelectedLayerIndex = ref<number | null>(null)
 const filesSelectedDocId = ref<string | null>(null)
-const filesSelectedLayer = computed(() => layers.value.find(l => l.file.fileName === filesSelectedLayerFileName.value) ?? null)
+const filesPreviewSelectionNonce = ref(0)
+const filesSelectedLayer = computed(() => {
+  const selectedIndex = filesSelectedLayerIndex.value
+  if (typeof selectedIndex === 'number' && selectedIndex >= 0 && selectedIndex < layers.value.length) {
+    const byIndex = layers.value[selectedIndex] ?? null
+    if (!filesSelectedLayerFileName.value || byIndex?.file.fileName === filesSelectedLayerFileName.value) {
+      return byIndex
+    }
+  }
+  return layers.value.find(l => l.file.fileName === filesSelectedLayerFileName.value) ?? null
+})
 const filesSelectedDoc = computed(() => documents.value.find(d => d.id === filesSelectedDocId.value) ?? null)
+const isSelectedLayerBom = computed(() => !!filesSelectedLayer.value && filesSelectedLayer.value.type === 'BOM')
+const isSelectedLayerPnp = computed(() => !!filesSelectedLayer.value && isPnPLayer(filesSelectedLayer.value.type))
+const isSelectedLayerImportConfigurable = computed(() => isSelectedLayerBom.value || isSelectedLayerPnp.value)
+const bomMappingFields: { key: keyof BomColumnMapping; label: string }[] = [
+  { key: 'references', label: 'References' },
+  { key: 'quantity', label: 'Quantity' },
+  { key: 'description', label: 'Description' },
+  { key: 'type', label: 'Type' },
+  { key: 'customerProvided', label: 'Customer Provided' },
+  { key: 'customerItemNo', label: 'Customer Item No' },
+  { key: 'package', label: 'Package' },
+  { key: 'comment', label: 'Comment' },
+  { key: 'manufacturer', label: 'Manufacturer' },
+  { key: 'manufacturerPart', label: 'Manufacturer Part' },
+]
+const pnpMappingFields: { key: keyof PnPColumnMapping; label: string }[] = [
+  { key: 'designator', label: 'Designator' },
+  { key: 'x', label: 'X' },
+  { key: 'y', label: 'Y' },
+  { key: 'rotation', label: 'Rotation' },
+  { key: 'value', label: 'Value' },
+  { key: 'package', label: 'Package' },
+  { key: 'side', label: 'Side' },
+]
+const pnpUnitItems = [
+  { label: 'Unit: Auto', value: 'auto' as const },
+  { label: 'Unit: mm', value: 'mm' as const },
+  { label: 'Unit: mils', value: 'mils' as const },
+  { label: 'Unit: inches', value: 'inches' as const },
+]
+const selectedLayerSkipRows = computed(() => {
+  const layer = filesSelectedLayer.value
+  if (!layer) return 0
+  if (isSelectedLayerBom.value) return bom.fileImportOptions.value[layer.file.fileName]?.skipRows ?? 0
+  if (isSelectedLayerPnp.value) return pnp.fileImportOptions.value[layer.file.fileName]?.skipRows ?? 0
+  return 0
+})
+const selectedLayerPnpUnit = computed<'auto' | PnPCoordUnit>(() => {
+  const layer = filesSelectedLayer.value
+  if (!layer || !isSelectedLayerPnp.value) return 'auto'
+  return pnp.fileImportOptions.value[layer.file.fileName]?.unitOverride ?? 'auto'
+})
+const selectedLayerBomMapping = computed<BomColumnMapping>(() => {
+  const layer = filesSelectedLayer.value
+  if (!layer || !isSelectedLayerBom.value) return {}
+  const fileName = layer.file.fileName
+  const opts = bom.fileImportOptions.value[fileName]
+  if (opts?.mapping) return opts.mapping
+  const auto = parseBomFile(fileName, layer.file.content, { skipRows: opts?.skipRows }).mapping
+  return auto ?? {}
+})
+const selectedLayerPnpMapping = computed<PnPColumnMapping>(() => {
+  const layer = filesSelectedLayer.value
+  if (!layer || !isSelectedLayerPnp.value) return {}
+  const fileName = layer.file.fileName
+  const opts = pnp.fileImportOptions.value[fileName]
+  if (opts?.mapping) return opts.mapping
+  const auto = parsePnPPreview(layer.file.content, {
+    skipRows: opts?.skipRows,
+    unitOverride: resolveSelectedPnpUnitOverride(fileName),
+  }, fileName).mapping
+  return auto ?? {}
+})
+const selectedLayerMappingFields = computed<Array<{ key: string; label: string }>>(() => {
+  if (isSelectedLayerBom.value) return bomMappingFields.map(f => ({ key: f.key, label: f.label }))
+  if (isSelectedLayerPnp.value) return pnpMappingFields.map(f => ({ key: f.key, label: f.label }))
+  return []
+})
+const selectedLayerMappingByField = computed<Record<string, number | undefined>>(() => {
+  if (isSelectedLayerBom.value) return { ...selectedLayerBomMapping.value }
+  if (isSelectedLayerPnp.value) return { ...selectedLayerPnpMapping.value }
+  return {}
+})
+
+function handleFilesLayerSelect(payload: { index: number; fileName: string }) {
+  filesSelectedLayerIndex.value = payload.index
+  filesSelectedLayerFileName.value = payload.fileName
+  filesSelectedDocId.value = null
+  filesPreviewSelectionNonce.value++
+}
+
+function handleFilesDocSelect(id: string) {
+  filesSelectedDocId.value = id
+  filesSelectedLayerFileName.value = null
+  filesSelectedLayerIndex.value = null
+}
+
+function isTabularPreviewFileName(fileName: string): boolean {
+  return /\.(csv|tsv|txt|xlsx|xls)$/i.test(fileName)
+}
+
+function updateSelectedLayerPnpUnit(value: unknown) {
+  const layer = filesSelectedLayer.value
+  if (!layer || !isSelectedLayerPnp.value) return
+  const raw = String(value ?? 'auto')
+  const unitOverride: 'auto' | PnPCoordUnit =
+    raw === 'mm' || raw === 'mils' || raw === 'inches' ? raw : 'auto'
+  const prev = pnp.fileImportOptions.value[layer.file.fileName] ?? {}
+  pnp.setFileImportOptions(layer.file.fileName, { ...prev, unitOverride })
+}
+
+function updateSelectedLayerSkipRows(value: number) {
+  const layer = filesSelectedLayer.value
+  if (!layer) return
+  const skipRows = Math.max(0, Number(value) || 0)
+  if (isSelectedLayerBom.value) {
+    const prev = bom.fileImportOptions.value[layer.file.fileName] ?? {}
+    bom.setFileImportOptions(layer.file.fileName, { ...prev, skipRows })
+    return
+  }
+  if (isSelectedLayerPnp.value) {
+    const prev = pnp.fileImportOptions.value[layer.file.fileName] ?? {}
+    pnp.setFileImportOptions(layer.file.fileName, { ...prev, skipRows })
+  }
+}
+
+function updateSelectedLayerMappingByField(next: Record<string, number | undefined>) {
+  const layer = filesSelectedLayer.value
+  if (!layer) return
+  if (isSelectedLayerBom.value) {
+    const prev = bom.fileImportOptions.value[layer.file.fileName] ?? {}
+    bom.setFileImportOptions(layer.file.fileName, { ...prev, mapping: next as BomColumnMapping })
+    return
+  }
+  if (isSelectedLayerPnp.value) {
+    const prev = pnp.fileImportOptions.value[layer.file.fileName] ?? {}
+    pnp.setFileImportOptions(layer.file.fileName, { ...prev, mapping: next as PnPColumnMapping })
+  }
+}
+
+function resolveSelectedPnpUnitOverride(layerFileName: string): PnPCoordUnit | undefined {
+  const fileOverride = pnp.fileImportOptions.value[layerFileName]?.unitOverride
+  if (fileOverride && fileOverride !== 'auto') return fileOverride
+  return pnp.coordUnitOverride.value === 'auto' ? undefined : pnp.coordUnitOverride.value
+}
 
 watch(sidebarTab, (tab) => {
   if (tab !== 'files') return
   if (filesSelectedLayerFileName.value || filesSelectedDocId.value) return
   if (layers.value.length > 0) {
+    filesSelectedLayerIndex.value = 0
     filesSelectedLayerFileName.value = layers.value[0].file.fileName
     filesSelectedDocId.value = null
   } else if (documents.value.length > 0) {
     filesSelectedDocId.value = documents.value[0].id
+    filesSelectedLayerIndex.value = null
     filesSelectedLayerFileName.value = null
   }
 }, { immediate: true })
@@ -2053,10 +2992,13 @@ async function handleDocumentsAdd(files: File[]) {
     documents.value.push(entry)
     if (!firstNewId) firstNewId = id
   }
+  documents.value = applyDocumentOrder(documents.value)
+  syncDocumentOrderFromDocuments()
   // Switch to Files and preview the first new document
   if (firstNewId) {
     selectedDocumentId.value = firstNewId
     filesSelectedDocId.value = firstNewId
+    filesSelectedLayerIndex.value = null
     filesSelectedLayerFileName.value = null
     sidebarTab.value = 'files'
   }
@@ -2075,11 +3017,13 @@ async function handleDocumentRemove(id: string) {
   }
   if (filesSelectedDocId.value === id) {
     filesSelectedDocId.value = documents.value.length > 0 ? documents.value[0].id : null
+    filesSelectedLayerIndex.value = null
   }
   // Switch away from docs tab when all documents are removed
   if (documents.value.length === 0 && sidebarTab.value === 'docs') {
     sidebarTab.value = 'files'
   }
+  syncDocumentOrderFromDocuments()
   // Remove from storage
   if (isTeamProject && doc.dbId && doc.storagePath) {
     await deleteTeamDocument(doc.dbId, doc.storagePath)
@@ -2098,33 +3042,43 @@ function moveDocument(fromIndex: number, toIndex: number) {
   if (!moved) return
   arr.splice(toIndex, 0, moved)
   documents.value = arr
+  syncDocumentOrderFromDocuments()
 }
 
-function downloadDocument(id: string) {
+async function downloadDocument(id: string) {
   const doc = documents.value.find(d => d.id === id)
   if (!doc) return
-  const a = document.createElement('a')
-  a.href = doc.blobUrl
-  a.download = doc.name
-  a.click()
+  const blob = await fetch(doc.blobUrl).then(r => r.blob())
+  await saveBlobFile(blob, doc.name)
 }
 
-function downloadLayer(index: number) {
+async function downloadLayer(index: number) {
   const layer = layers.value[index]
   if (!layer) return
-  const blob = new Blob([layer.file.content], { type: 'text/plain;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = layer.file.fileName
-  a.click()
-  URL.revokeObjectURL(url)
+  const lowerName = layer.file.fileName.toLowerCase()
+  let blob: Blob
+
+  if ((lowerName.endsWith('.xlsx') || lowerName.endsWith('.xls')) && /^data:.*;base64,/i.test(layer.file.content)) {
+    const match = layer.file.content.match(/^data:(.*);base64,(.+)$/i)
+    if (match?.[2]) {
+      const binary = atob(match[2])
+      const bytes = new Uint8Array(binary.length)
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+      blob = new Blob([bytes], { type: match[1] || 'application/octet-stream' })
+    } else {
+      blob = new Blob([layer.file.content], { type: 'text/plain;charset=utf-8' })
+    }
+  } else {
+    blob = new Blob([layer.file.content], { type: 'text/plain;charset=utf-8' })
+  }
+
+  await saveBlobFile(blob, layer.file.fileName)
 }
 
-function downloadSelectedLayer() {
+async function downloadSelectedLayer() {
   if (!filesSelectedLayer.value) return
   const idx = layers.value.findIndex(l => l.file.fileName === filesSelectedLayer.value!.file.fileName)
-  if (idx >= 0) downloadLayer(idx)
+  if (idx >= 0) await downloadLayer(idx)
 }
 
 function handleDocumentTypeUpdate(id: string, type: DocumentType) {
@@ -2143,6 +3097,7 @@ function handleDocumentTypeUpdate(id: string, type: DocumentType) {
 onUnmounted(() => {
   for (const doc of documents.value) URL.revokeObjectURL(doc.blobUrl)
   if (perfRefreshTimer) clearInterval(perfRefreshTimer)
+  if (gerberPrewarmTimer) clearTimeout(gerberPrewarmTimer)
   stopPerfFrameLoop()
   stopLongTaskObserver()
 })
@@ -2160,6 +3115,24 @@ watch(pricingQuantities, (list) => {
 const bomSplitEl = ref<HTMLElement | null>(null)
 const bomLeftPct = bomSplit.pct
 const bomDragging = bomSplit.dragging
+
+const bomCpLines = computed(() => (bom.bomLines.value as BomLine[]).filter(l => l.customerProvided && !l.dnp))
+const bomCpCopied = ref(false)
+let bomCpCopyTimeout: ReturnType<typeof setTimeout> | undefined
+
+function copyBomCpItems() {
+  if (bomCpLines.value.length === 0) return
+  const text = bomCpLines.value.map((line) => {
+    const refs = line.references || '—'
+    const parts = [line.description, line.package, line.type].filter(Boolean).join('/')
+    return `${refs} = ${parts}`
+  }).join('\n')
+  navigator.clipboard.writeText(text).then(() => {
+    bomCpCopied.value = true
+    if (bomCpCopyTimeout) clearTimeout(bomCpCopyTimeout)
+    bomCpCopyTimeout = setTimeout(() => { bomCpCopied.value = false }, 1500)
+  })
+}
 
 const selectedBomLineId = ref<string | null>(null)
 const selectedBomLine = computed(() => {
@@ -2209,7 +3182,6 @@ const bomDesignators = computed(() => {
   return s
 })
 
-const showBomFieldMapping = ref(false)
 
 // Auto-switch to SMD tab when PnP layers appear for the first time
 // (skip if the URL already specified a tab)
@@ -2227,6 +3199,12 @@ watch(isPanelizedMode, (enabled) => {
   }
 }, { immediate: true })
 
+watch(hasPasteLayers, (has) => {
+  if (!has && sidebarTab.value === 'paste') {
+    sidebarTab.value = 'pcb'
+  }
+}, { immediate: true })
+
 // Auto-switch to BOM tab when BOM data appears and no PnP
 watch(bom.hasBom, (has) => {
   if (has && sidebarTab.value === 'files' && !pnp.hasPnP.value && !hadExplicitTab) {
@@ -2239,6 +3217,7 @@ watch(bom.hasBom, (has) => {
 const effectiveShowPanel = computed(() =>
   hasLoadedProjectData.value ? isPanelizedMode.value : (cachedTabVisibility.value.panel || isPanelizedMode.value),
 )
+const effectiveShowPaste = computed(() => hasPasteLayers.value)
 const effectiveShowPnP = computed(() =>
   hasLoadedProjectData.value ? pnp.hasPnP.value : (cachedTabVisibility.value.pnp || pnp.hasPnP.value),
 )
@@ -2260,7 +3239,9 @@ watch(
 
 // Show field mapping modal when needed
 watch(bom.needsFieldMapping, (needs) => {
-  if (needs) showBomFieldMapping.value = true
+  // Mapping is now adjusted inline in the Files tab table mapping popover.
+  // Keep this watcher to acknowledge unresolved mappings without forcing a modal.
+  void needs
 })
 
 // Keep group assignments clean when components/groups change.
@@ -2315,27 +3296,55 @@ watch(activeFilter, (filter) => {
 
 let teamPersistQueue: Promise<void> = Promise.resolve()
 let pendingTeamUpdates: Record<string, any> = {}
+let disableTeamFileImportOptionPersistence = false
+let pendingLocalPageLocks: PageLocksRecord | null = null
+let pendingLocalPasteSettings: ReturnType<typeof toPasteSettingsSnapshot> | null = null
 
-function persistToProject(updates: Record<string, any>) {
-  if (isTeamProject && teamProjectId) {
-    if (!hasLoadedProjectData.value) {
-      pendingTeamUpdates = { ...pendingTeamUpdates, ...updates }
-      return
-    }
-    // Serialize writes so stale async responses cannot overwrite newer edits.
-    teamPersistQueue = teamPersistQueue.then(async () => {
-      const mapped: Record<string, any> = {}
-      for (const [k, v] of Object.entries(updates)) {
-        mapped[k.replace(/[A-Z]/g, m => '_' + m.toLowerCase())] = v
-      }
-      const { error } = await updateTeamProject(teamProjectId, mapped)
-      if (error) {
-        console.warn('[viewer] Failed to persist team project updates:', error.message ?? error)
-      }
-    }).catch((err) => {
-      console.warn('[viewer] Persist queue failed:', err)
-    })
+function persistToProject(updates: Record<string, any>): Promise<void> {
+  if (!isTeamProject || !teamProjectId) return Promise.resolve()
+  if (!hasLoadedProjectData.value) {
+    pendingTeamUpdates = { ...pendingTeamUpdates, ...updates }
+    return Promise.resolve()
   }
+  // Serialize writes so stale async responses cannot overwrite newer edits.
+  teamPersistQueue = teamPersistQueue.then(async () => {
+    const mapped: Record<string, any> = {}
+    for (const [k, v] of Object.entries(updates)) {
+      if (
+        disableTeamFileImportOptionPersistence
+        && (k === 'bomFileImportOptions' || k === 'pnpFileImportOptions')
+      ) {
+        continue
+      }
+      mapped[k.replace(/[A-Z]/g, m => '_' + m.toLowerCase())] = v
+    }
+    if (Object.keys(mapped).length === 0) return
+    const { error } = await updateTeamProject(teamProjectId, mapped)
+    if (error) {
+      const message = String(error.message ?? '')
+      const missingImportOptionColumns = (
+        message.includes("Could not find the 'bom_file_import_options' column")
+        || message.includes("Could not find the 'pnp_file_import_options' column")
+      )
+      if (missingImportOptionColumns) {
+        disableTeamFileImportOptionPersistence = true
+        const retryPayload: Record<string, any> = { ...mapped }
+        delete retryPayload.bom_file_import_options
+        delete retryPayload.pnp_file_import_options
+        if (Object.keys(retryPayload).length > 0) {
+          const retry = await updateTeamProject(teamProjectId, retryPayload)
+          if (retry.error) {
+            console.warn('[viewer] Failed to persist team project updates after retry:', retry.error.message ?? retry.error)
+          }
+        }
+        return
+      }
+      console.warn('[viewer] Failed to persist team project updates:', error.message ?? error)
+    }
+  }).catch((err) => {
+    console.warn('[viewer] Persist queue failed:', err)
+  })
+  return teamPersistQueue
 }
 
 watch(hasLoadedProjectData, (loaded) => {
@@ -2492,6 +3501,15 @@ watch(pnpGroupAssignments, (assignments) => {
   }
 }, { deep: true })
 
+watch(() => pnp.assemblyTypeOverridesRecord.value, (types) => {
+  if (!hasLoadedProjectData.value) return
+  if (isTeamProject) {
+    persistToProject({ pnpAssemblyTypes: types })
+  } else {
+    updatePnpAssemblyTypes(projectId, types)
+  }
+}, { deep: true })
+
 // ── Persist BOM data ──
 
 watch(bom.bomLinesRecord, (lines) => {
@@ -2521,6 +3539,26 @@ watch(() => bom.boardQuantity.value, (qty) => {
   }
 })
 
+watch(bom.fileImportOptionsRecord, (options) => {
+  if (!hasLoadedProjectData.value) return
+  const snapshot = { ...options }
+  if (isTeamProject) {
+    persistToProject({ bomFileImportOptions: snapshot })
+  } else {
+    updateLocalBomFileImportOptions(projectId, snapshot)
+  }
+}, { deep: true })
+
+watch(pnp.fileImportOptionsRecord, (options) => {
+  if (!hasLoadedProjectData.value) return
+  const snapshot = { ...options }
+  if (isTeamProject) {
+    persistToProject({ pnpFileImportOptions: snapshot })
+  } else {
+    updateLocalPnpFileImportOptions(projectId, snapshot)
+  }
+}, { deep: true })
+
 watch(pcbData, (data) => {
   if (!hasLoadedProjectData.value) return
   if (isTeamProject) {
@@ -2540,8 +3578,44 @@ watch(panelData, (data) => {
   }
 }, { deep: true })
 
+watch(pasteSettings, (settings) => {
+  if (!hasLoadedProjectData.value) return
+  const snapshot = toPasteSettingsSnapshot(settings)
+  if (isTeamProject) {
+    pendingLocalPasteSettings = snapshot
+    void persistToProject({ pasteSettings: { ...snapshot } }).finally(() => {
+      if (pendingLocalPasteSettings && arePasteSettingsEqual(pendingLocalPasteSettings, snapshot)) {
+        pendingLocalPasteSettings = null
+      }
+    })
+  } else {
+    updateLocalPasteSettings(projectId, { ...snapshot })
+  }
+}, { deep: true })
+
+watch(layerOrder, (order) => {
+  if (!hasLoadedProjectData.value) return
+  const snapshot = [...order]
+  if (isTeamProject) {
+    persistToProject({ layerOrder: snapshot })
+  } else {
+    updateLocalLayerOrder(projectId, snapshot)
+  }
+}, { deep: true })
+
+watch(documentOrder, (order) => {
+  if (!hasLoadedProjectData.value) return
+  const snapshot = [...order]
+  if (isTeamProject) {
+    persistToProject({ documentOrder: snapshot })
+  } else {
+    updateLocalDocumentOrder(projectId, snapshot)
+  }
+}, { deep: true })
+
 // BOM pricing fetch handlers
 async function handleFetchAllPricing() {
+  if (!ensureTabEditable('bom')) return
   const updatedCache = await elexess.fetchAllPricing(
     bom.bomLines.value as BomLine[],
     bom.pricingCache.value as Record<string, any>,
@@ -2550,6 +3624,7 @@ async function handleFetchAllPricing() {
 }
 
 async function handleFetchSinglePricing(partNumber: string) {
+  if (!ensureTabEditable('bom')) return
   const entry = await elexess.fetchSinglePricing(partNumber)
   if (entry) {
     bom.updateSinglePricing(partNumber, entry.data)
@@ -2605,16 +3680,6 @@ function handleManualOrderUpdate(type: 'smd' | 'tht', value: string[]) {
   else pnpManualOrderTht.value = value
 }
 
-function handleBomFieldMappingConfirm(mapping: BomColumnMapping) {
-  bom.applyFieldMapping(mapping)
-  showBomFieldMapping.value = false
-}
-
-function handleBomFieldMappingCancel() {
-  bom.cancelFieldMapping()
-  showBomFieldMapping.value = false
-}
-
 // Update PnP convention and persist
 function updateConvention(convention: PnPConvention) {
   if (!ensureTabEditable(sidebarTab.value === 'tht' ? 'tht' : 'smd')) return
@@ -2637,11 +3702,7 @@ const filterOptions: { label: string; value: LayerFilter }[] = [
   { label: 'Bot', value: 'bot' },
 ]
 
-/** In realistic mode, hide "All" since we can only show one side at a time */
 const activeFilterOptions = computed(() => {
-  if (viewMode.value === 'realistic') {
-    return filterOptions.filter(f => f.value !== 'all')
-  }
   return filterOptions
 })
 
@@ -2680,13 +3741,13 @@ function cancelEdit() {
 }
 
 // ── Team project actions (approve / revert) ──
-const { getProject: getTeamProject, approveProject: doApprove, revertToDraft: doRevert, updateProject: updateTeamProject, getProjectFiles: getTeamFiles, downloadFile: downloadTeamFile, uploadFile: uploadTeamFile, deleteFile: deleteTeamFile, getProjectDocuments: getTeamDocuments, uploadDocument: uploadTeamDocument, downloadDocument: downloadTeamDocument, updateDocumentType: updateTeamDocumentType, deleteDocument: deleteTeamDocument } = useTeamProjects()
+const { getProject: getTeamProject, approveProject: doApprove, revertToDraft: doRevert, updateProject: updateTeamProject, getProjectFiles: getTeamFiles, downloadFile: downloadTeamFile, uploadFile: uploadTeamFile, deleteFile: deleteTeamFile, getProjectDocuments: getTeamDocuments, uploadDocument: uploadTeamDocument, downloadDocument: downloadTeamDocument, updateDocumentType: updateTeamDocumentType, deleteDocument: deleteTeamDocument, uploadPreviewImage } = useTeamProjects()
 
 async function toggleCurrentTabLock() {
   if (!teamProjectId || !isLockableTab(sidebarTab.value) || !canToggleCurrentTabLock.value) return
 
   const tab = sidebarTab.value
-  const before = { ...projectPageLocks.value }
+  const before = toPageLocksSnapshot(projectPageLocks.value)
   const current = projectPageLocks.value[tab]
   const nextLocked = !current?.locked
   const next: PageLocksRecord = { ...projectPageLocks.value }
@@ -2703,12 +3764,14 @@ async function toggleCurrentTabLock() {
   }
 
   // Optimistic local update so lock state changes immediately.
+  pendingLocalPageLocks = toPageLocksSnapshot(next)
   pageLocksOverride.value = next
   if (project.value) project.value.pageLocks = next
 
   const { error } = await updateTeamProject(teamProjectId, { page_locks: next })
   if (error) {
     console.warn('Failed to update page lock:', error)
+    pendingLocalPageLocks = null
     pageLocksOverride.value = before
     if (project.value) project.value.pageLocks = before
     return
@@ -2834,11 +3897,18 @@ onMounted(async () => {
         pcbData: tp.pcb_data,
         panelData: tp.panel_data,
         pageLocks: tp.page_locks,
+        pasteSettings: tp.paste_settings,
+        layerOrder: tp.layer_order,
+        documentOrder: tp.document_order,
+        bomFileImportOptions: tp.bom_file_import_options,
+        pnpFileImportOptions: tp.pnp_file_import_options,
       }
     }
   } else {
     project.value = await getProject(projectId)
   }
+  layerOrder.value = isStringArray(project.value?.layerOrder) ? [...project.value.layerOrder] : []
+  documentOrder.value = isStringArray(project.value?.documentOrder) ? [...project.value.documentOrder] : []
   let loadedFiles: GerberFile[] = []
   if (isTeamProject && teamProjectId) {
     // Try loading files from Supabase for team projects
@@ -2856,7 +3926,7 @@ onMounted(async () => {
   } else {
     loadedFiles = await getFiles(projectId, 1)
   }
-  layers.value = sortLayersByPcbOrder(loadedFiles.map(f => {
+  layers.value = applyLayerOrder(loadedFiles.map(f => {
     const type = resolveLayerType(f.fileName, f.layerType)
     return {
       file: f,
@@ -2938,6 +4008,9 @@ onMounted(async () => {
   // Restore persisted deleted component keys
   pnp.setDeletedKeys(project.value?.pnpDeletedComponents)
 
+  // Restore persisted THT assembly type overrides
+  pnp.setAssemblyTypeOverrides(project.value?.pnpAssemblyTypes)
+
   // Restore persisted component table sort state
   if (isValidSortState(project.value?.pnpSortSmd)) {
     pnpSortSmd.value = project.value.pnpSortSmd
@@ -2983,6 +4056,8 @@ onMounted(async () => {
   }
   bom.setPricingCache(restoredCache)
   bom.setBoardQuantity(project.value?.bomBoardQuantity)
+  bom.setFileImportOptionsMap(project.value?.bomFileImportOptions)
+  pnp.setFileImportOptionsMap(project.value?.pnpFileImportOptions)
 
   // Restore persisted PCB data
   pcbData.value = project.value?.pcbData ?? null
@@ -2991,7 +4066,48 @@ onMounted(async () => {
   if (project.value?.panelData) {
     panelData.value = normalizePanelConfig(project.value.panelData)
   }
+
+  // Restore persisted paste settings (merge with defaults for forward-compat)
+  if (project.value?.pasteSettings) {
+    pasteSettings.value = { ...pasteSettings.value, ...project.value.pasteSettings }
+  }
+
   hasLoadedProjectData.value = true
+
+  // Auto-fill board dimensions from rendered Gerber data if not yet set.
+  // The boardSizeMm watcher is guarded by hasLoadedProjectData, so we handle
+  // the initial detection here to avoid a race where it fires before DB data loads.
+  if (boardSizeMm.value) {
+    const current = pcbData.value ?? {} as NonNullable<typeof pcbData.value>
+    const nextSizeX = current.sizeX ?? roundBoardMm(boardSizeMm.value.width)
+    const nextSizeY = current.sizeY ?? roundBoardMm(boardSizeMm.value.height)
+    if (current.sizeX !== nextSizeX || current.sizeY !== nextSizeY) {
+      pcbData.value = { ...current, sizeX: nextSizeX, sizeY: nextSizeY }
+    }
+  }
+
+  // Hydrate PCB display defaults into the data model so that values shown in the
+  // UI (via ?? fallbacks in PcbPanel) are always backed by persisted data.
+  // Only runs once per project — subsequent opens already have the fields.
+  if (pcbData.value && typeof pcbData.value === 'object') {
+    const PCB_DEFAULTS: Record<string, string | number> = {
+      material: 'FR4',
+      thicknessMm: 1.6,
+      solderMaskColor: 'green',
+      panelizationMode: 'single',
+    }
+    let needsHydration = false
+    const raw = pcbData.value as Record<string, unknown>
+    for (const key of Object.keys(PCB_DEFAULTS)) {
+      if (raw[key] === undefined) {
+        needsHydration = true
+        break
+      }
+    }
+    if (needsHydration) {
+      pcbData.value = { ...PCB_DEFAULTS, ...pcbData.value }
+    }
+  }
 
   // Restore persisted documents (PDFs)
   if (isTeamProject && teamProjectId) {
@@ -3013,6 +4129,10 @@ onMounted(async () => {
       documents.value.push({ id, name: doc.fileName, type: doc.docType, blobUrl })
     }
   }
+
+  documents.value = applyDocumentOrder(documents.value)
+  syncLayerOrderFromLayers()
+  syncDocumentOrderFromDocuments()
 
 })
 
@@ -3114,7 +4234,8 @@ async function doImport(newFiles: GerberFile[], sourceName: string) {
 
   // Merge: keep existing layers that aren't overwritten, then add/replace with incoming
   const keptLayers = layers.value.filter(l => !newFileNames.has(l.file.fileName))
-  layers.value = sortLayersByPcbOrder([...keptLayers, ...incomingLayers])
+  layers.value = applyLayerOrder([...keptLayers, ...incomingLayers])
+  syncLayerOrderFromLayers()
   applyFilterVisibility(activeFilter.value)
   applyDefaultCropToOutline()
 
@@ -3172,7 +4293,8 @@ async function changeLayerType(index: number, type: string) {
   layer.type = type
   layer.color = getColorForType(type)
   layer.file.layerType = type
-  layers.value = sortLayersByPcbOrder([...layers.value])
+  layers.value = applyLayerOrder([...layers.value])
+  syncLayerOrderFromLayers()
   if (isTeamProject && teamProjectId) {
     const teamId = currentTeamId.value || await waitForTeamId()
     await uploadTeamFile(teamProjectId, teamId, 1, layer.file.fileName, layer.file.content, type)
@@ -3188,6 +4310,7 @@ function reorderLayers(fromIndex: number, toIndex: number) {
   if (!moved) return
   arr.splice(toIndex, 0, moved)
   layers.value = arr
+  syncLayerOrderFromLayers()
 }
 
 // ── Reset layer to original content ──
@@ -3217,6 +4340,7 @@ async function resetLayer(index: number) {
 
   // Force re-render
   layers.value = [...layers.value]
+  syncLayerOrderFromLayers()
 }
 
 // ── Rename layer ──
@@ -3266,6 +4390,7 @@ async function renameLayer(index: number, newName: string) {
     canvas.invalidateCache(newName)
   }
   layers.value = [...layers.value]
+  syncLayerOrderFromLayers()
 }
 
 // ── Duplicate layer ──
@@ -3309,7 +4434,8 @@ async function duplicateLayer(index: number) {
     color: layer.color,
     type: layer.type,
   }
-  layers.value = sortLayersByPcbOrder([...layers.value, newLayer])
+  layers.value = applyLayerOrder([...layers.value, newLayer])
+  syncLayerOrderFromLayers()
   applyFilterVisibility(activeFilter.value)
 
   // Track the duplicate's content as its original
@@ -3340,6 +4466,7 @@ async function removeLayer(index: number) {
 
   // Remove from in-memory state + originals DB
   layers.value = layers.value.filter(l => l.file.fileName !== fileName)
+  syncLayerOrderFromLayers()
   originalContent.delete(fileName)
   if (!isTeamProject) {
     await removeOriginalFile(projectId, 1, fileName)
@@ -3468,15 +4595,33 @@ async function handleUndo() {
 
 // ── Download Gerber handler ──
 
+let jsZipCtorPromise: Promise<any> | null = null
+function loadJsZipCtor(): Promise<any> {
+  if (!jsZipCtorPromise) {
+    jsZipCtorPromise = import('jszip').then(mod => (mod as any).default ?? mod)
+  }
+  return jsZipCtorPromise
+}
+
+type SvgExporterModule = typeof import('../../../lib/renderer/svg-exporter')
+let svgExporterPromise: Promise<SvgExporterModule> | null = null
+function loadSvgExporter(): Promise<SvgExporterModule> {
+  if (!svgExporterPromise) {
+    svgExporterPromise = import('../../../lib/renderer/svg-exporter')
+  }
+  return svgExporterPromise
+}
+
 async function handleDownloadGerber() {
-  const zip = new JSZip()
+  const JSZipCtor = await loadJsZipCtor()
+  const zip = new JSZipCtor()
   for (const layer of layers.value) {
     // Skip PnP layers from Gerber download
     if (isPnPLayer(layer.type)) continue
     zip.file(layer.file.fileName, layer.file.content)
   }
   const blob = await zip.generateAsync({ type: 'blob' })
-  triggerDownload(blob, `${project.value?.name || 'gerber-files'}.zip`)
+  await triggerDownload(blob, `${project.value?.name || 'gerber-files'}.zip`)
 }
 
 // ── Export handlers ──
@@ -3487,18 +4632,18 @@ async function handleExportPng() {
   const { settings: _appSettings } = useAppSettings()
   const blob = await canvas.exportPng(_appSettings.exportDpi)
   if (!blob) return
-  triggerDownload(blob, `${project.value?.name || 'pcb'}-${mirrored.value ? 'bottom' : 'top'}.png`)
+  await triggerDownload(blob, `${project.value?.name || 'pcb'}-${mirrored.value ? 'bottom' : 'top'}.png`)
 }
 
-function handleExportSvg() {
+async function handleExportSvg() {
   const canvas = boardCanvasRef.value
   if (!canvas) return
   const side = mirrored.value ? 'bottom' : 'top'
   const realisticLayers = canvas.getRealisticLayersForExport(side)
-
-  const svgString = exportRealisticSvg(realisticLayers, selectedPreset.value, side)
+  const svgExporter = await loadSvgExporter()
+  const svgString = svgExporter.exportRealisticSvg(realisticLayers, selectedPreset.value, side)
   const blob = new Blob([svgString], { type: 'image/svg+xml' })
-  triggerDownload(blob, `${project.value?.name || 'pcb'}-${side}.svg`)
+  await triggerDownload(blob, `${project.value?.name || 'pcb'}-${side}.svg`)
 }
 
 async function handleExportImage(options: { format: 'png' | 'svg'; componentsMode: 'none' | 'smd' | 'tht' | 'all' | 'both'; sideMode: 'top' | 'bottom' | 'both'; dpi: number }) {
@@ -3512,8 +4657,9 @@ async function handleExportImage(options: { format: 'png' | 'svg'; componentsMod
 async function handleExportBoardImage(options: { format: 'png' | 'svg'; componentsMode: 'none' | 'smd' | 'tht' | 'all' | 'both'; sideMode: 'top' | 'bottom' | 'both'; dpi: number }) {
   const canvas = boardCanvasRef.value
   if (!canvas) return
+  const svgExporter = await loadSvgExporter()
   // Ensure SVG exporter uses fresh footprint shapes (not stale cached data)
-  ;(SvgExporter as any).clearFootprintCaches?.()
+  ;(svgExporter as any).clearFootprintCaches?.()
 
   const projectName = project.value?.name || 'pcb'
   const sides: Array<'top' | 'bottom'> = options.sideMode === 'both' ? ['top', 'bottom'] : [options.sideMode]
@@ -3553,12 +4699,12 @@ async function handleExportBoardImage(options: { format: 'png' | 'svg'; componen
     // SVG
     const realisticLayers = canvas.getRealisticLayersForExport(side)
     if (!withComponents) {
-      const svgString = exportRealisticSvg(realisticLayers, selectedPreset.value, side)
+      const svgString = svgExporter.exportRealisticSvg(realisticLayers, selectedPreset.value, side)
       return new Blob([svgString], { type: 'image/svg+xml' })
     }
 
     const comps = buildComponentsForSide(side)
-    const svgString = (SvgExporter as any).exportRealisticSvgWithComponents(realisticLayers, selectedPreset.value, side, {
+    const svgString = (svgExporter as any).exportRealisticSvgWithComponents(realisticLayers, selectedPreset.value, side, {
       components: comps,
       pnpOriginX: pnp.originX.value,
       pnpOriginY: pnp.originY.value,
@@ -3581,11 +4727,12 @@ async function handleExportBoardImage(options: { format: 'png' | 'svg'; componen
   if (fileCount === 1) {
     const blob = await renderOne(sides[0]!, variants[0]!)
     if (!blob) return
-    triggerDownload(blob, fileNameFor(sides[0]!, variants[0]!))
+    await triggerDownload(blob, fileNameFor(sides[0]!, variants[0]!))
     return
   }
 
-  const zip = new JSZip()
+  const JSZipCtor = await loadJsZipCtor()
+  const zip = new JSZipCtor()
   for (const side of sides) {
     for (const withComponents of variants) {
       const blob = await renderOne(side, withComponents)
@@ -3594,7 +4741,7 @@ async function handleExportBoardImage(options: { format: 'png' | 'svg'; componen
     }
   }
   const zipBlob = await zip.generateAsync({ type: 'blob' })
-  triggerDownload(zipBlob, `${projectName}-images.zip`)
+  await triggerDownload(zipBlob, `${projectName}-images.zip`)
 }
 
 function panelPngBlobToSvgBlob(pngBlob: Blob, panelSizeMm?: { width: number; height: number } | null): Promise<Blob> {
@@ -3669,11 +4816,12 @@ async function handleExportPanelImage(options: { format: 'png' | 'svg'; componen
   if (fileCount === 1) {
     const blob = await renderOne(sides[0]!, variants[0]!)
     if (!blob) return
-    triggerDownload(blob, fileNameFor(sides[0]!, variants[0]!))
+    await triggerDownload(blob, fileNameFor(sides[0]!, variants[0]!))
     return
   }
 
-  const zip = new JSZip()
+  const JSZipCtor = await loadJsZipCtor()
+  const zip = new JSZipCtor()
   for (const side of sides) {
     for (const withComponents of variants) {
       const blob = await renderOne(side, withComponents)
@@ -3682,7 +4830,7 @@ async function handleExportPanelImage(options: { format: 'png' | 'svg'; componen
     }
   }
   const zipBlob = await zip.generateAsync({ type: 'blob' })
-  triggerDownload(zipBlob, `${projectName}-panel-images.zip`)
+  await triggerDownload(zipBlob, `${projectName}-panel-images.zip`)
 }
 
 async function handleExportPnP(options: { convention: PnPConvention; format: PnPExportFormat; sideMode: PnPExportSideMode; componentMode: string; excludeDnp: boolean }) {
@@ -3748,26 +4896,20 @@ async function handleExportPnP(options: { convention: PnPConvention; format: PnP
   if (files.length === 1) {
     const content = buildExport(files[0]!.components)
     const blob = new Blob([content], { type: mimeType })
-    triggerDownload(blob, files[0]!.filename)
+    await triggerDownload(blob, files[0]!.filename)
   } else {
-    const zip = new JSZip()
+    const JSZipCtor = await loadJsZipCtor()
+    const zip = new JSZipCtor()
     for (const f of files) {
       zip.file(f.filename, buildExport(f.components))
     }
     const blob = await zip.generateAsync({ type: 'blob' })
-    triggerDownload(blob, `${name}-pick-and-place.zip`)
+    await triggerDownload(blob, `${name}-pick-and-place.zip`)
   }
 }
 
-function triggerDownload(blob: Blob, fileName: string) {
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = fileName
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  URL.revokeObjectURL(url)
+async function triggerDownload(blob: Blob, fileName: string) {
+  await saveBlobFile(blob, fileName)
 }
 </script>
 

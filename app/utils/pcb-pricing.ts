@@ -10,18 +10,21 @@
  *   3. One-time NRE / tooling cost (shown separately, not amortized)
  */
 
-export type SurfaceFinish = 'ENIG' | 'HAL'
+export type SurfaceFinish = 'ENIG' | 'HAL' | 'OSP'
 export type CopperWeight = '1oz' | '2oz'
 export type PcbThicknessMm = 0.6 | 0.8 | 1.0 | 1.2 | 1.6 | 2.0
+export type PcbMaterial = 'FR4' | 'IMS-AL' | 'Flex' | 'Rigid-Flex'
 
 export interface PcbParams {
   sizeX: number        // mm
   sizeY: number        // mm
-  layerCount: number   // 1, 2, 4, 6, 8, 10
+  layerCount: number   // 1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20
   surfaceFinish: SurfaceFinish
   copperWeight: CopperWeight
   /** Standard board thickness in mm (recommendation-only in v1). */
   thicknessMm?: PcbThicknessMm
+  /** PCB base material */
+  material?: PcbMaterial
 }
 
 export interface PriceTier {
@@ -51,12 +54,26 @@ const LAYER_FACTORS: Record<number, number> = {
   6: 1.62,
   8: 2.46,
   10: 2.55,
+  12: 3.0,
+  14: 3.5,
+  16: 4.0,
+  18: 4.5,
+  20: 5.0,
 }
 
 /** Surface finish multipliers relative to ENIG baseline */
 const SURFACE_FACTORS: Record<SurfaceFinish, number> = {
   HAL: 0.81,
   ENIG: 1.0,
+  OSP: 0.70,
+}
+
+/** Board material multipliers relative to FR4 baseline */
+const MATERIAL_FACTORS: Record<PcbMaterial, number> = {
+  'FR4': 1.0,
+  'IMS-AL': 1.8,
+  'Flex': 2.5,
+  'Rigid-Flex': 3.5,
 }
 
 /** Copper weight multipliers relative to 1oz baseline */
@@ -102,6 +119,11 @@ const NRE_BY_LAYERS: Record<number, number> = {
   6: 158,
   8: 209,
   10: 250,
+  12: 300,
+  14: 350,
+  16: 400,
+  18: 450,
+  20: 500,
 }
 
 // ─── Standard output tiers ──────────────────────────────────────────────
@@ -135,7 +157,8 @@ export function computePiecePrice(params: PcbParams): number {
   const layerFactor = LAYER_FACTORS[params.layerCount] ?? LAYER_FACTORS[2]
   const surfaceFactor = SURFACE_FACTORS[params.surfaceFinish]
   const copperFactor = COPPER_FACTORS[params.copperWeight]
-  return areaCm2 * BASE_RATE * layerFactor * surfaceFactor * copperFactor
+  const materialFactor = MATERIAL_FACTORS[params.material ?? 'FR4']
+  return areaCm2 * BASE_RATE * layerFactor * surfaceFactor * copperFactor * materialFactor
 }
 
 /**
@@ -214,12 +237,21 @@ function round2(n: number): number { return Math.round(n * 100) / 100 }
 function round3(n: number): number { return Math.round(n * 1000) / 1000 }
 
 /** Available layer count options */
-export const LAYER_COUNT_OPTIONS = [1, 2, 4, 6, 8, 10] as const
+export const LAYER_COUNT_OPTIONS = [1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20] as const
 
 /** Available surface finish options with display labels */
 export const SURFACE_FINISH_OPTIONS: { value: SurfaceFinish; label: string }[] = [
   { value: 'ENIG', label: 'ENIG (Ni/Au)' },
   { value: 'HAL', label: 'HAL (HASL)' },
+  { value: 'OSP', label: 'OSP' },
+]
+
+/** Available PCB material options with display labels */
+export const PCB_MATERIAL_OPTIONS: { value: PcbMaterial; label: string }[] = [
+  { value: 'FR4', label: 'FR4' },
+  { value: 'IMS-AL', label: 'IMS Aluminium' },
+  { value: 'Flex', label: 'Flex (Polyimide)' },
+  { value: 'Rigid-Flex', label: 'Rigid-Flex' },
 ]
 
 /** Available copper weight options with display labels */

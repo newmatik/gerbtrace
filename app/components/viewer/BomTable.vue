@@ -74,8 +74,8 @@
           v-if="hasCredentials"
           class="text-[10px] px-1.5 py-0.5 rounded-full border border-neutral-200 dark:border-neutral-700 text-neutral-400 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-300 dark:hover:border-blue-600 transition-colors flex items-center gap-0.5"
           title="Fetch pricing for all manufacturer parts from Elexess"
-          :disabled="isFetchingPricing"
-          @click="emit('fetchAllPricing')"
+          :disabled="isFetchingPricing || props.locked"
+          @click="handleFetchAllPricing"
         >
           <UIcon :name="isFetchingPricing ? 'i-lucide-loader-2' : 'i-lucide-refresh-cw'" class="text-[10px]" :class="{ 'animate-spin': isFetchingPricing }" />
           <span>{{ isFetchingPricing ? `${queueDone}/${queueTotal}` : 'Fetch Prices' }}</span>
@@ -84,7 +84,7 @@
           class="text-[10px] px-1.5 py-0.5 rounded-full border border-neutral-200 dark:border-neutral-700 text-neutral-400 hover:text-green-600 dark:hover:text-green-400 hover:border-green-300 dark:hover:border-green-600 transition-colors flex items-center gap-0.5"
           title="Add BOM line"
           :disabled="props.locked"
-          @click="openEditModal(null)"
+          @click="emit('addLine')"
         >
           <UIcon name="i-lucide-plus" class="text-[10px]" />
           Add
@@ -224,6 +224,12 @@
             >
               DNP
             </span>
+            <span
+              v-if="line.customerProvided"
+              class="text-[10px] px-1.5 py-0.5 rounded-full border shrink-0 border-teal-200 dark:border-teal-800 text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-900/20"
+            >
+              CP
+            </span>
             <button
               class="text-[10px] px-1.5 py-0.5 rounded-full border shrink-0 transition-colors"
               :disabled="props.locked"
@@ -270,26 +276,11 @@
                 </template>
               </template>
             </template>
-            <button
-              class="text-neutral-400 hover:text-primary transition-colors shrink-0"
-              :disabled="props.locked"
-              title="Edit"
-              @click.stop="openEditModal(line)"
-            >
-              <UIcon name="i-lucide-pencil" class="text-xs" />
-            </button>
           </div>
         </div>
       </div>
     </div>
 
-    <BomLineEditModal
-      v-model:open="showEditModal"
-      :line="editingLine"
-      :pnp-designators="pnpDesignators"
-      @save="handleLineSave"
-      @delete="handleLineDelete"
-    />
   </div>
 </template>
 
@@ -327,12 +318,17 @@ const emit = defineEmits<{
   'selectLine': [id: string]
 }>()
 
+function handleFetchAllPricing() {
+  if (props.locked) return
+  emit('fetchAllPricing')
+}
+
 const searchQuery = computed({
   get: () => props.searchQuery,
   set: v => emit('update:searchQuery', v),
 })
 
-type FilterKey = 'smd' | 'tht' | 'dnp' | 'no-mfr' | 'no-price' | 'missing-pnp'
+type FilterKey = 'smd' | 'tht' | 'dnp' | 'cp' | 'no-mfr' | 'no-price' | 'missing-pnp'
 const activeFilters = ref(new Set<FilterKey>())
 const sortBy = ref<'designator' | 'price'>('designator')
 
@@ -386,27 +382,6 @@ function commitQty(lineId: string) {
 
 function cancelQty() {
   editingQtyId.value = null
-}
-
-// Edit modal
-const showEditModal = ref(false)
-const editingLine = ref<BomLine | null>(null)
-
-function openEditModal(line: BomLine | null) {
-  if (props.locked) return
-  editingLine.value = line
-  showEditModal.value = true
-}
-
-function handleLineSave(line: BomLine) {
-  if (props.locked) return
-  if (editingLine.value) emit('updateLine', line.id, line)
-  else emit('addLine', line)
-}
-
-function handleLineDelete(id: string) {
-  if (props.locked) return
-  emit('removeLine', id)
 }
 
 // Queue strip
@@ -621,6 +596,7 @@ const filterDefs = computed(() => {
     smd: lines.filter(l => l.type === 'SMD').length,
     tht: lines.filter(l => l.type === 'THT').length,
     dnp: lines.filter(l => l.dnp).length,
+    cp: lines.filter(l => l.customerProvided).length,
     'no-mfr': lines.filter(l => !lineHasManufacturer(l)).length,
     'no-price': lines.filter(l => !lineHasPrice(l)).length,
     'missing-pnp': lines.filter(l => getMissingInPnP(l).length > 0).length,
@@ -629,6 +605,7 @@ const filterDefs = computed(() => {
     { key: 'smd' as const, label: 'SMD', count: counts.smd, activeClass: 'border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' },
     { key: 'tht' as const, label: 'THT', count: counts.tht, activeClass: 'border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20' },
     { key: 'dnp' as const, label: 'DNP', count: counts.dnp, activeClass: 'border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20' },
+    { key: 'cp' as const, label: 'CP', count: counts.cp, activeClass: 'border-teal-300 dark:border-teal-700 text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-900/20' },
     { key: 'no-mfr' as const, label: 'No Mfr', count: counts['no-mfr'], activeClass: 'border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20' },
     { key: 'no-price' as const, label: 'No Price', count: counts['no-price'], activeClass: 'border-orange-300 dark:border-orange-700 text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20' },
     { key: 'missing-pnp' as const, label: 'Missing PnP', count: counts['missing-pnp'], activeClass: 'border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20' },
@@ -643,6 +620,7 @@ const displayLines = computed(() => {
       if (filters.has('smd') && line.type === 'SMD') return true
       if (filters.has('tht') && line.type === 'THT') return true
       if (filters.has('dnp') && line.dnp) return true
+      if (filters.has('cp') && line.customerProvided) return true
       if (filters.has('no-mfr') && !lineHasManufacturer(line)) return true
       if (filters.has('no-price') && !lineHasPrice(line)) return true
       if (filters.has('missing-pnp') && getMissingInPnP(line).length > 0) return true

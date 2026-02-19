@@ -7,6 +7,9 @@
 
 import type { BomLine, BomPricingCache } from '~/utils/bom-types'
 import type { PanelConfig } from '~/utils/panel-types'
+import type { PasteSettings } from '~/composables/usePasteSettings'
+import type { BomColumnMapping } from '~/utils/bom-types'
+import type { PnPColumnMapping, PnPCoordUnit } from '~/utils/pnp-parser'
 
 export type LockableViewerTab = 'files' | 'pcb' | 'panel' | 'smd' | 'tht' | 'bom'
 
@@ -51,16 +54,24 @@ export interface TeamProject {
     sizeX?: number
     sizeY?: number
     layerCount?: number
+    material?: string
     surfaceFinish?: string
     copperWeight?: string
     innerCopperWeight?: string
     thicknessMm?: number
+    solderMaskColor?: string
     panelizationMode?: 'single' | 'panelized'
     pricingQuantities?: number[]
     selectedPricingQuantity?: number
   } | null
   panel_data: PanelConfig | null
   page_locks: Partial<Record<LockableViewerTab, ViewerPageLockState>> | null
+  paste_settings: PasteSettings | null
+  layer_order: string[] | null
+  document_order: string[] | null
+  bom_file_import_options: Record<string, { skipRows?: number; mapping?: BomColumnMapping }> | null
+  pnp_file_import_options: Record<string, { skipRows?: number; mapping?: PnPColumnMapping; unitOverride?: 'auto' | PnPCoordUnit }> | null
+  preview_image_path: string | null
   created_at: string
   updated_at: string
 }
@@ -94,6 +105,7 @@ const projectFilesByPacketCache = new Map<string, TeamProjectFile[]>()
 const fileTextCache = new Map<string, string>()
 const projectDocumentsCache = new Map<string, TeamProjectDocument[]>()
 const documentBlobCache = new Map<string, Blob>()
+const previewUrlCache = new Map<string, { url: string; expiresAt: number }>()
 
 function getProjectPacketKey(projectId: string, packet: number) {
   return `${projectId}:${packet}`
@@ -161,7 +173,7 @@ export function useTeamProjects() {
         return hasCached ? cached : []
       }
 
-      const nextProjects = (data ?? []) as TeamProject[]
+      const nextProjects = (data ?? []) as unknown as TeamProject[]
       setProjectsForTeam(teamId, nextProjects)
       return nextProjects
     })()
@@ -194,7 +206,7 @@ export function useTeamProjects() {
       .single()
 
     if (error) return null
-    const project = data as TeamProject
+    const project = data as unknown as TeamProject
     projectByIdCache.set(projectId, project)
     return project
   }
@@ -219,12 +231,12 @@ export function useTeamProjects() {
       .single()
 
     if (!error && data) {
-      projectByIdCache.set((data as TeamProject).id, data as TeamProject)
-      const nextProjects = [data as TeamProject, ...projects.value]
+      projectByIdCache.set((data as unknown as TeamProject).id, data as unknown as TeamProject)
+      const nextProjects = [data as unknown as TeamProject, ...projects.value]
       setProjectsForTeam(teamId, nextProjects)
     }
 
-    return { project: data as TeamProject | null, error }
+    return { project: (data as unknown as TeamProject) ?? null, error }
   }
 
   /** Update project metadata */
@@ -240,16 +252,16 @@ export function useTeamProjects() {
       .maybeSingle()
 
     if (!error && data) {
-      projectByIdCache.set(projectId, data as TeamProject)
+      projectByIdCache.set(projectId, data as unknown as TeamProject)
       const idx = projects.value.findIndex(p => p.id === projectId)
       if (idx >= 0) {
         const nextProjects = [...projects.value]
-        nextProjects[idx] = data as TeamProject
+        nextProjects[idx] = data as unknown as TeamProject
         setProjectsForTeam(teamId, nextProjects)
       }
     }
 
-    return { data: data as TeamProject | null, error }
+    return { data: (data as unknown as TeamProject) ?? null, error }
   }
 
   /** Delete a project (admin only) */
@@ -521,6 +533,64 @@ export function useTeamProjects() {
     return { error }
   }
 
+  // ── Preview image operations ─────────────────────────────────────────
+
+  async function uploadPreviewImage(
+    projectId: string,
+    teamId: string,
+    blob: Blob,
+  ) {
+    const storagePath = `${teamId}/${projectId}/preview.png`
+
+    const { error: uploadError } = await supabase.storage
+      .from('gerber-files')
+      .upload(storagePath, blob, { upsert: true, contentType: 'image/png' })
+
+    if (uploadError) {
+      console.warn('[useTeamProjects] Preview upload failed:', uploadError.message)
+      return { error: uploadError }
+    }
+
+    const { error: updateError } = await supabase
+      .from('projects')
+      .update({ preview_image_path: storagePath })
+      .eq('id', projectId)
+
+    if (updateError) {
+      console.warn('[useTeamProjects] Preview path update failed:', updateError.message)
+      return { error: updateError }
+    }
+
+    const cached = projectByIdCache.get(projectId)
+    if (cached) cached.preview_image_path = storagePath
+
+    const idx = projects.value.findIndex(p => p.id === projectId)
+    if (idx >= 0) projects.value[idx].preview_image_path = storagePath
+
+    previewUrlCache.delete(projectId)
+
+    return { error: null }
+  }
+
+  async function getPreviewUrl(project: Pick<TeamProject, 'id' | 'preview_image_path'>): Promise<string | null> {
+    if (!project.preview_image_path) return null
+
+    const cached = previewUrlCache.get(project.id)
+    if (cached && cached.expiresAt > Date.now()) return cached.url
+
+    const { data, error } = await supabase.storage
+      .from('gerber-files')
+      .createSignedUrl(project.preview_image_path, 3600)
+
+    if (error || !data?.signedUrl) return null
+
+    previewUrlCache.set(project.id, {
+      url: data.signedUrl,
+      expiresAt: Date.now() + 3_500_000,
+    })
+    return data.signedUrl
+  }
+
   // Clear module-scoped caches on logout to prevent cross-session data leaks.
   const { isAuthenticated } = useAuth()
   watch(isAuthenticated, (authed) => {
@@ -530,6 +600,7 @@ export function useTeamProjects() {
       fileTextCache.clear()
       projectDocumentsCache.clear()
       documentBlobCache.clear()
+      previewUrlCache.clear()
       inFlightByTeam.clear()
       projects.value = []
       projectsByTeam.value = {}
@@ -573,5 +644,7 @@ export function useTeamProjects() {
     downloadDocument,
     updateDocumentType,
     deleteDocument,
+    uploadPreviewImage,
+    getPreviewUrl,
   }
 }

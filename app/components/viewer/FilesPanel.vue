@@ -46,7 +46,8 @@
 
                 <div
                   class="group flex items-center gap-2 px-2 py-1.5 rounded text-xs select-none transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                  :class="isLayerSelected(entry.layer.file.fileName) ? 'bg-blue-50/80 dark:bg-blue-500/10' : ''"
+                  :class="isLayerSelected(entry.layer.file.fileName, entry.flatIndex) ? 'bg-blue-50/80 dark:bg-blue-500/10' : ''"
+                  @click="onLayerRowClick(entry.layer.file.fileName, entry.flatIndex)"
                 >
                   <UIcon :name="getLayerIconName(entry.layer.type)" :class="getLayerIconClass(entry.layer.type)" />
                   <div class="flex-1 min-w-0">
@@ -64,7 +65,7 @@
                     <span
                       v-else
                       class="truncate block"
-                      :class="isLayerSelected(entry.layer.file.fileName) ? 'text-blue-700 dark:text-blue-300 font-medium' : ''"
+                      :class="isLayerSelected(entry.layer.file.fileName, entry.flatIndex) ? 'text-blue-700 dark:text-blue-300 font-medium' : ''"
                     >
                       {{ entry.layer.file.fileName }}
                     </span>
@@ -185,6 +186,7 @@ import { ALL_LAYER_TYPES, getLayerGroup, LAYER_GROUP_ORDER, LAYER_GROUP_LABELS, 
 import type { DocumentType, ProjectDocument } from '~/utils/document-types'
 
 const selectedLayerFileName = defineModel<string | null>('selectedLayerFileName', { default: null })
+const selectedLayerIndex = defineModel<number | null>('selectedLayerIndex', { default: null })
 const selectedDocId = defineModel<string | null>('selectedDocId', { default: null })
 
 const props = defineProps<{
@@ -202,10 +204,12 @@ const emit = defineEmits<{
   duplicateLayer: [index: number]
   reorder: [fromIndex: number, toIndex: number]
   downloadLayer: [index: number]
+  selectLayer: [payload: { index: number; fileName: string }]
 
   updateDocumentType: [id: string, type: DocumentType]
   removeDocument: [id: string]
   downloadDocument: [id: string]
+  selectDoc: [id: string]
 }>()
 
 const layerTypeItems = ALL_LAYER_TYPES.map(t => ({ label: t, value: t }))
@@ -258,10 +262,16 @@ const showIndicatorAt = computed<number | null>(() => {
 })
 
 function onPointerDownLayer(index: number, e: PointerEvent) {
-  if (locked.value) return
   if (e.button !== 0) return
   const target = e.target as HTMLElement | null
   if (target?.closest('button, select, input, textarea, [role="button"]')) return
+
+  if (locked.value) {
+    // Locked files tab still allows read-only layer selection.
+    const layer = props.layers[index]
+    if (layer) selectLayer(layer.file.fileName, index)
+    return
+  }
 
   dragFrom.value = index
   startY.value = e.clientY
@@ -297,7 +307,7 @@ function onPointerDownLayer(index: number, e: PointerEvent) {
     } else {
       // Treat a non-drag pointer interaction as selection.
       const layer = props.layers[index]
-      if (layer) selectLayer(layer.file.fileName)
+      if (layer) selectLayer(layer.file.fileName, index)
     }
 
     dragFrom.value = null
@@ -412,7 +422,8 @@ function docMenuItems(id: string) {
   ]
 }
 
-function isLayerSelected(fileName: string) {
+function isLayerSelected(fileName: string, index: number) {
+  if (selectedLayerIndex.value != null) return selectedLayerIndex.value === index
   return selectedLayerFileName.value === fileName
 }
 
@@ -420,14 +431,23 @@ function isDocSelected(id: string) {
   return selectedDocId.value === id
 }
 
-function selectLayer(fileName: string) {
+function selectLayer(fileName: string, index: number) {
   selectedLayerFileName.value = fileName
+  selectedLayerIndex.value = index
   selectedDocId.value = null
+  emit('selectLayer', { index, fileName })
+}
+
+function onLayerRowClick(fileName: string, index: number) {
+  if (isDragging.value) return
+  selectLayer(fileName, index)
 }
 
 function selectDoc(id: string) {
   selectedDocId.value = id
   selectedLayerFileName.value = null
+  selectedLayerIndex.value = null
+  emit('selectDoc', id)
 }
 
 function getLayerIconName(type: string): string {

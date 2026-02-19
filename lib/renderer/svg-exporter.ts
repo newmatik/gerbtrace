@@ -10,8 +10,9 @@
  *   3. Copper traces/pads
  *   4. Solder mask (inverted: covers board except pad openings)
  *   5. Surface finish (copper intersected with mask openings)
- *   6. Silkscreen on top
- *   7. Drill holes punch through everything
+ *   6. Solder paste (grey deposits on pads)
+ *   7. Silkscreen on top
+ *   8. Drill holes punch through everything
  */
 
 import type {
@@ -39,7 +40,7 @@ export function exportRealisticSvg(
 ): string {
   // Compute view bounds from all available layers
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
-  const allTrees = [layers.copper, layers.solderMask, layers.silkscreen, layers.drill, layers.outline].filter(Boolean) as ImageTree[]
+  const allTrees = [layers.copper, layers.solderMask, layers.paste, layers.silkscreen, layers.drill, layers.outline].filter(Boolean) as ImageTree[]
 
   for (const tree of allTrees) {
     const [x1, y1, x2, y2] = tree.bounds
@@ -162,7 +163,12 @@ export function exportRealisticSvg(
     parts.push(imageTreeToSvgPaths(layers.copper, preset.surfaceFinish))
   }
 
-  // 5. Silkscreen
+  // 5. Solder paste
+  if (layers.paste) {
+    parts.push(imageTreeToSvgPaths(layers.paste, SVG_SOLDER_PASTE_COLOR))
+  }
+
+  // 6. Silkscreen
   if (layers.silkscreen) {
     parts.push(imageTreeToSvgPaths(layers.silkscreen, preset.silkscreen))
   }
@@ -205,7 +211,7 @@ export function exportRealisticSvgWithComponents(
 ): string {
   // Compute view bounds from all available layers
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
-  const allTrees = [layers.copper, layers.solderMask, layers.silkscreen, layers.drill, layers.outline].filter(Boolean) as ImageTree[]
+  const allTrees = [layers.copper, layers.solderMask, layers.paste, layers.silkscreen, layers.drill, layers.outline].filter(Boolean) as ImageTree[]
 
   for (const tree of allTrees) {
     const [x1, y1, x2, y2] = tree.bounds
@@ -362,14 +368,19 @@ export function exportRealisticSvgWithComponents(
     parts.push(imageTreeToSvgPaths(layers.copper, preset.surfaceFinish))
   }
 
-  // 5. Silkscreen
+  // 5. Solder paste
+  if (layers.paste) {
+    parts.push(imageTreeToSvgPaths(layers.paste, SVG_SOLDER_PASTE_COLOR))
+  }
+
+  // 6. Silkscreen
   if (layers.silkscreen) {
     parts.push(imageTreeToSvgPaths(layers.silkscreen, preset.silkscreen))
   }
 
   parts.push('</g>') // end clip+drill group
 
-  // 6. Components overlay — rendered OUTSIDE the outline clip so components
+  // 7. Components overlay — rendered OUTSIDE the outline clip so components
   //    extending beyond the board edge are not cropped.
   parts.push(renderComponentsOverlaySvg(options.components, {
     units,
@@ -567,6 +578,7 @@ function pnpToGerber(mmVal: number, originGerber: number, units: 'mm' | 'in'): n
   return originGerber + inGerberUnits
 }
 
+const SVG_SOLDER_PASTE_COLOR = '#B0B0B0'
 const PKG_BODY_FILL = 'rgba(50, 50, 50, 0.85)'
 const PKG_BODY_STROKE = 'rgba(80, 80, 80, 0.9)'
 const PKG_PAD_FILL = 'rgba(205, 205, 205, 0.9)'

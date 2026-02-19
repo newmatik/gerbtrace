@@ -1,47 +1,43 @@
 ---
-description: How to apply Supabase migrations to the production droplet
+description: How to apply Supabase migrations to Supabase Cloud
 globs: supabase/migrations/**/*.sql
 alwaysApply: false
 ---
 
-# Running Supabase Migrations on the Production Droplet
+# Running Supabase Migrations on Supabase Cloud
 
-When a new migration file is created under `supabase/migrations/`, apply it directly to the production droplet. Do NOT wait for CI — the agent has SSH access.
+When a new migration file is created under `supabase/migrations/`, apply it to **Supabase Cloud** using MCP tools. Do NOT use SSH to the old droplet — the droplet database is no longer production.
 
-## Droplet details
+## Supabase Cloud project
 
-Connection details are in the `supabase-droplet-ssh.mdc` rule. Use `supabase_admin` for DDL and `postgres` for bookkeeping (`schema_migrations` inserts).
+- **Project ID:** `gqrnlnlfidighosujpdb`
 
 ## Step-by-step
 
-1. **Check which migrations are already applied:**
+1. **Create the migration file** in `supabase/migrations/` with a timestamped name.
 
-```bash
-ssh root@api.gerbtrace.com "cd /opt/supabase/docker && docker compose exec -T db psql -U postgres -d postgres -tAc \"select name from public.schema_migrations order by name;\""
+2. **Apply the migration** using the `apply_migration` MCP tool:
+
+```
+apply_migration(
+  project_id: "gqrnlnlfidighosujpdb",
+  name: "descriptive_snake_case_name",
+  query: "<SQL from the migration file>"
+)
 ```
 
-2. **Apply each pending migration** (in timestamp order, as `supabase_admin`):
+3. **Verify** the migration was applied:
 
-```bash
-cat supabase/migrations/<MIGRATION_FILE>.sql | ssh root@api.gerbtrace.com "cd /opt/supabase/docker && docker compose exec -T db psql -U supabase_admin -d postgres -v ON_ERROR_STOP=0"
 ```
-
-3. **Record the migration** in the bookkeeping table (as `postgres`):
-
-```bash
-ssh root@api.gerbtrace.com "cd /opt/supabase/docker && docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 -c \"insert into public.schema_migrations(name) values ('<MIGRATION_FILE>.sql') on conflict (name) do nothing;\""
-```
-
-4. **Verify** the migration is recorded:
-
-```bash
-ssh root@api.gerbtrace.com "cd /opt/supabase/docker && docker compose exec -T db psql -U postgres -d postgres -tAc \"select name from public.schema_migrations order by name;\""
+execute_sql(
+  project_id: "gqrnlnlfidighosujpdb",
+  query: "SELECT column_name, data_type FROM information_schema.columns WHERE table_schema='public' AND table_name='<table>';"
+)
 ```
 
 ## Important notes
 
 - All DDL statements must be **idempotent** (`IF NOT EXISTS`, `CREATE OR REPLACE`, etc.).
-- Apply migrations as `supabase_admin`, record them as `postgres`.
-- The CI workflow (`.github/workflows/deploy-supabase.yml`) also applies migrations on push to `main`, so the bookkeeping table prevents double-application.
+- Supabase Cloud automatically reloads the PostgREST schema cache after `apply_migration`.
+- The deploy workflow (`.github/workflows/deploy-supabase.yml`) is disabled for the legacy droplet. Migrations are applied via MCP tools or the Supabase dashboard.
 - If a migration produces `NOTICE: ... already exists, skipping` that is fine.
-- **Manually inspect the migration output.** The command uses `ON_ERROR_STOP=0` so psql continues on errors. If you see `ERROR:` lines that are NOT "already exists" family, do NOT proceed to step 3. Investigate and resolve the errors first.

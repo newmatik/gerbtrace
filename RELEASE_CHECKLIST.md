@@ -27,7 +27,6 @@ If the release includes new SQL migrations:
       error is in the deploy script's allow list)
 - [ ] Dedup `DELETE` statements use `row_number()` with a stable tiebreaker (not just `created_at`)
 - [ ] No statement depends on `postgres` being able to `SET ROLE supabase_admin`
-      (it cannot on the production droplet)
 - [ ] No statement requires table/function ownership that `supabase_admin` does not have
 
 ## 3. Merge to main
@@ -37,24 +36,12 @@ If the release includes new SQL migrations:
 
 ## 4. Verify CI workflows
 
-After merge to main, two workflows trigger:
+After merge to main:
 
 - [ ] **Deploy Web to DigitalOcean Spaces** — succeeds
-- [ ] **Deploy Supabase (Droplet)** — succeeds
+- [ ] **Supabase migrations applied** — confirm via `execute_sql` or Supabase dashboard
 
-If the Supabase deploy fails:
-
-1. Read the failed run logs: `gh run view <id> --log-failed`
-2. Common errors and fixes:
-   - `must be owner of table/function` — the migration is running as the wrong
-     role. Check that `deploy-supabase.yml` uses `-U supabase_admin` for the
-     migration SQL.
-   - `permission denied to set role` — a migration tried `SET ROLE` to a role
-     the current user is not a member of. Remove the `SET ROLE` and ensure the
-     deploy script runs as the correct user.
-   - `already exists` / `duplicate key` — non-idempotent migration. Add
-     `IF NOT EXISTS` / `CREATE OR REPLACE` / `pg_constraint` checks.
-3. Fix on a branch, merge via PR, and verify the re-triggered deploy succeeds.
+Migrations are applied to **Supabase Cloud** (project `gqrnlnlfidighosujpdb`) using the Supabase MCP tools. The legacy `deploy-supabase.yml` droplet workflow is disabled.
 
 ## 5. Verify website version
 
