@@ -84,6 +84,7 @@ const emit = defineEmits<{ openPerformanceMonitor: [] }>()
 const router = useRouter()
 const colorMode = useColorMode()
 const isDark = computed(() => colorMode.value === 'dark')
+const { openDocs } = useDocsLink()
 
 const isTauri = import.meta.client && coreIsTauri()
 const { isAuthenticated, signOut } = useAuth()
@@ -133,7 +134,7 @@ const settingsMenuItems = computed(() => {
           onSelect: () => emit('openPerformanceMonitor'),
         }]
       : []),
-    { label: 'Docs / Help', icon: 'i-lucide-book-open-text', onSelect: () => router.push('/docs') },
+    { label: 'Docs / Help', icon: 'i-lucide-book-open-text', onSelect: () => { void openDocs() } },
     { label: 'Report a Bug', icon: 'i-lucide-bug', onSelect: () => { bugReportOpen.value = true } },
     {
       label: isDark.value ? 'Light Mode' : 'Dark Mode',

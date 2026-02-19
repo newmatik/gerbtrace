@@ -201,22 +201,92 @@ export function useTeamMembers() {
     if (!currentTeamId.value) return { error: new Error('No team selected') }
 
     try {
+      const { data: userData, error: userError } = await supabase.auth.getUser()
+      if (userError || !userData.user) return { error: userError ?? new Error('Not authenticated') }
+
+      let { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError) return { error: sessionError }
+      let accessToken = sessionData.session?.access_token
+      if (!accessToken) {
+        const refreshed = await supabase.auth.refreshSession()
+        sessionData = refreshed.data
+        sessionError = refreshed.error
+        if (sessionError) return { error: sessionError }
+        accessToken = sessionData.session?.access_token
+      }
+      if (!accessToken) return { error: new Error('Not authenticated') }
+
       const { error } = await supabase.functions.invoke('admin-password-reset', {
         body: {
           team_id: currentTeamId.value,
           user_id: userId,
           new_password: newPassword,
         },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
       })
+
+      if (error) {
+        const context = (error as any).context
+        if (context && typeof context.text === 'function') {
+          try {
+            const text = await context.text()
+            const payload = JSON.parse(text)
+            if (payload?.error && typeof payload.error === 'string') {
+              return { error: new Error(payload.error) }
+            }
+          } catch {
+            // keep original error when response body is not parseable
+          }
+        }
+      }
+
       return { error }
     } catch (error) {
       return { error: error as Error }
     }
   }
 
-  // Auto-fetch when team changes
-  watch(currentTeamId, () => {
-    fetchMembers()
+  // Auto-fetch when team changes, and subscribe to realtime updates
+  watch(currentTeamId, async (teamId, _old, onCleanup) => {
+    if (!teamId) {
+      members.value = []
+      invitations.value = []
+      return
+    }
+
+    await fetchMembers()
+
+    const channel = supabase.channel(`team-members:${teamId}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'team_members',
+        filter: `team_id=eq.${teamId}`,
+      }, () => {
+        fetchMembers()
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'team_invitations',
+        filter: `team_id=eq.${teamId}`,
+      }, () => {
+        fetchMembers()
+      })
+
+    await channel.subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        console.log('[useTeamMembers] Real-time subscription established')
+      } else if (status === 'CHANNEL_ERROR') {
+        console.error('[useTeamMembers] Real-time subscription failed')
+      }
+    })
+
+    onCleanup(() => {
+      supabase.removeChannel(channel)
+    })
   }, { immediate: true })
 
   return {

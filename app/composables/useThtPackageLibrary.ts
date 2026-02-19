@@ -29,6 +29,16 @@ export function useThtPackageLibrary() {
   const loaded = ref(false)
   const loading = ref(false)
 
+  async function safeFetchJson<T>(url: string): Promise<T | null> {
+    try {
+      const res = await fetch(url)
+      if (!res.ok) return null
+      return await res.json() as T
+    } catch {
+      return null
+    }
+  }
+
   /** All THT packages: local custom first (highest priority), then team */
   const allThtPackages = computed(() => [...customPackages.value, ...teamPackages.value, ...builtInPackages.value])
 
@@ -93,10 +103,12 @@ export function useThtPackageLibrary() {
     }
 
     const next = { ...builtInByLibrary.value }
+    const tree = await safeFetchJson<any>('/packages/tht-libraries/_tree.json')
     for (const id of misses) {
-      const treeRes = await fetch('/packages/tht-libraries/_tree.json')
-      if (!treeRes.ok) continue
-      const tree = await treeRes.json()
+      if (!tree) {
+        next[id] = []
+        continue
+      }
       const entry = (tree?.libraries ?? []).find((l: any) => l.id === id)
       if (!entry) {
         next[id] = []
@@ -104,19 +116,14 @@ export function useThtPackageLibrary() {
       }
       const files = Array.isArray(entry.packages) ? entry.packages : []
       const loadedPkgs = await Promise.all(files.map(async (p: any) => {
-        try {
-          const res = await fetch(`/packages/tht-libraries/${id}/packages/${p.file}`)
-          if (!res.ok) return null
-          const pkg = await res.json()
-          return {
-            ...pkg,
-            libraryId: id,
-            libraryName: entry.library?.displayName ?? id,
-            attribution: entry.library?.attribution,
-          } as BuiltinThtPackage
-        } catch {
-          return null
-        }
+        const pkg = await safeFetchJson<any>(`/packages/tht-libraries/${id}/packages/${p.file}`)
+        if (!pkg) return null
+        return {
+          ...pkg,
+          libraryId: id,
+          libraryName: entry.library?.displayName ?? id,
+          attribution: entry.library?.attribution,
+        } as BuiltinThtPackage
       }))
       next[id] = loadedPkgs.filter((p): p is BuiltinThtPackage => p !== null)
     }
@@ -133,12 +140,11 @@ export function useThtPackageLibrary() {
     if (loaded.value || loading.value) return
     loading.value = true
     try {
-      const res = await fetch('/packages/tht-libraries/_tree.json')
-      if (!res.ok) {
+      const tree = await safeFetchJson<any>('/packages/tht-libraries/_tree.json')
+      if (!tree) {
         loaded.value = true
         return
       }
-      const tree = await res.json()
       const libs = Array.isArray(tree?.libraries) ? tree.libraries : []
       libraries.value = libs.map((l: any) => ({
         id: l.id,

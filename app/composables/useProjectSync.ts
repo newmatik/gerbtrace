@@ -82,7 +82,13 @@ export function useProjectSync(projectId: Ref<string | null>) {
       }
     })
 
-    await channel.subscribe()
+    await channel.subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        console.log('[useProjectSync] Real-time subscription established')
+      } else if (status === 'CHANNEL_ERROR') {
+        console.error('[useProjectSync] Real-time subscription failed')
+      }
+    })
 
     // Load initial data
     await fetchProject()

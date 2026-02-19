@@ -4,8 +4,8 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      appVersion: '1.1.1',
-      supabaseUrl: process.env.SUPABASE_URL || 'http://localhost:54321',
+      appVersion: '1.1.2',
+      supabaseUrl: process.env.SUPABASE_URL || 'https://gqrnlnlfidighosujpdb.supabase.co',
       supabaseAnonKey: process.env.SUPABASE_ANON_KEY || '',
       elexessUrl: process.env.ELEXESS_URL || 'https://api.dev.elexess.com/api',
       sentry: {
@@ -16,6 +16,10 @@ export default defineNuxtConfig({
   },
 
   modules: ['@nuxt/ui', '@nuxt/content', '@sentry/nuxt/module'],
+
+  experimental: {
+    emitRouteChunkError: 'automatic-immediate',
+  },
 
   content: {
     build: {

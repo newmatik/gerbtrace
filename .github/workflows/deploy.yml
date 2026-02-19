@@ -1,14 +1,12 @@
-name: Deploy Web to DigitalOcean Spaces
+name: Deploy Web
+
 on:
-  workflow_dispatch:
   push:
     branches: [main]
-    paths-ignore:
-      - 'supabase/**'
-      - 'src-tauri/**'
 
 jobs:
   deploy:
+    name: Deploy Web to DigitalOcean Spaces
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,38 +14,28 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
 
-      - run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Generate static site
+      - name: Build static site
         run: npx nuxt generate
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: newmatik
-          SENTRY_PROJECT: gerbtrace
 
       - name: Deploy to DigitalOcean Spaces
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_KEY }}
-        run: |
-          aws s3 sync .output/public/ \
-            "s3://${{ secrets.DO_SPACES_BUCKET }}/" \
-            --endpoint-url "https://${{ secrets.DO_SPACES_REGION }}.digitaloceanspaces.com" \
-            --acl public-read \
-            --delete
+        uses: BetaHuhn/do-spaces-action@v2
+        with:
+          access_key: ${{ secrets.DO_SPACES_ACCESS_KEY }}
+          secret_key: ${{ secrets.DO_SPACES_SECRET_KEY }}
+          space_name: ${{ secrets.DO_SPACES_BUCKET }}
+          space_region: ${{ secrets.DO_SPACES_REGION }}
+          source: .output/public/
+          destination: /
+          acl: public-read
 
-      - name: Purge CDN cache
-        env:
-          DO_API_TOKEN: ${{ secrets.DO_API_TOKEN }}
-          DO_CDN_ENDPOINT_ID: ${{ secrets.DO_CDN_ENDPOINT_ID }}
-        if: env.DO_API_TOKEN != ''
+      - name: Purge CDN cache (optional)
+        if: env.DO_API_TOKEN != null && env.DO_CDN_ENDPOINT_ID != null
         run: |
-          curl -s -X DELETE \
-            -H "Authorization: Bearer ${DO_API_TOKEN}" \
-            "https://api.digitalocean.com/v2/cdn/endpoints/${DO_CDN_ENDPOINT_ID}/cache" \
-            -H "Content-Type: application/json" \
-            -d '{"files": ["*"]}' || true
+          curl -X DELETE \
+            -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
+            "https://api.digitalocean.com/v2/cdn/endpoints/${{ secrets.DO_CDN_ENDPOINT_ID }}/cache"

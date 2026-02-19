@@ -126,15 +126,22 @@ export function useTeamPackages() {
   }
 
   // Subscribe to real-time changes on team_packages
-  watch(currentTeamId, (teamId) => {
+  let currentFetchToken: string | null = null
+  watch(currentTeamId, async (teamId, _old, onCleanup) => {
     if (!teamId) {
       teamPackages.value = []
       return
     }
 
-    fetchTeamPackages()
+    // Generate a new token for this fetch to prevent stale updates
+    const fetchToken = `${teamId}-${Date.now()}`
+    currentFetchToken = fetchToken
 
-    // Set up real-time subscription
+    await fetchTeamPackages()
+
+    // Only proceed if this is still the current fetch
+    if (currentFetchToken !== fetchToken) return
+
     const channel = supabase.channel(`team-packages:${teamId}`)
       .on('postgres_changes', {
         event: '*',
@@ -142,20 +149,40 @@ export function useTeamPackages() {
         table: 'team_packages',
         filter: `team_id=eq.${teamId}`,
       }, (payload) => {
+        // Validate that this update is still for the current team
+        if (currentTeamId.value !== teamId) return
+
         if (payload.eventType === 'INSERT' && payload.new) {
-          const existing = teamPackages.value.find(tp => tp.id === (payload.new as TeamPackageRecord).id)
-          if (!existing) teamPackages.value.push(payload.new as TeamPackageRecord)
+          const rec = payload.new as TeamPackageRecord
+          const normalized = {
+            ...rec,
+            data: normalizePackageType(rec.data) as PackageDefinition,
+          }
+          const existing = teamPackages.value.find(tp => tp.id === normalized.id)
+          if (!existing) teamPackages.value.push(normalized)
         } else if (payload.eventType === 'UPDATE' && payload.new) {
-          const idx = teamPackages.value.findIndex(tp => tp.id === (payload.new as TeamPackageRecord).id)
-          if (idx >= 0) teamPackages.value[idx] = payload.new as TeamPackageRecord
+          const rec = payload.new as TeamPackageRecord
+          const normalized = {
+            ...rec,
+            data: normalizePackageType(rec.data) as PackageDefinition,
+          }
+          const idx = teamPackages.value.findIndex(tp => tp.id === normalized.id)
+          if (idx >= 0) teamPackages.value[idx] = normalized
         } else if (payload.eventType === 'DELETE' && payload.old) {
           teamPackages.value = teamPackages.value.filter(tp => tp.id !== (payload.old as TeamPackageRecord).id)
         }
       })
-      .subscribe()
 
-    // Clean up on team change
-    onBeforeUnmount(() => {
+    await channel.subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        console.log('[useTeamPackages] Real-time subscription established')
+      } else if (status === 'CHANNEL_ERROR') {
+        console.error('[useTeamPackages] Real-time subscription failed')
+      }
+    })
+
+    onCleanup(() => {
+      currentFetchToken = null
       supabase.removeChannel(channel)
     })
   }, { immediate: true })

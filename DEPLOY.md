@@ -8,15 +8,14 @@ Gerbtrace has three deployable surfaces:
 
 - **Web app**: a static Nuxt SPA hosted on **DigitalOcean Spaces** (`gerbtrace.com`).
 - **Desktop app**: Tauri 2 builds for macOS/Windows shipped via **GitHub Releases** with the Tauri updater.
-- **API server**: **Supabase Cloud** project `gqrnlnlfidighosujpdb` served through `api.gerbtrace.com` reverse proxy.
+- **API server**: **Supabase Cloud** project `gqrnlnlfidighosujpdb` at `https://gqrnlnlfidighosujpdb.supabase.co`.
 
 ## Environment variables (local)
 
 The Nuxt app reads Supabase settings via runtime config. For local development, copy `.env.example` to `.env` and set:
 
 - **`SUPABASE_URL`**: Supabase API base URL
-  - local dev: `http://localhost:54321`
-- production: `https://api.gerbtrace.com` (proxying Supabase Cloud)
+  - use: `https://gqrnlnlfidighosujpdb.supabase.co`
 - **`SUPABASE_ANON_KEY`**: Supabase anon key (JWT)
 
 You can also use Nuxt’s explicit public env vars (same values):
@@ -62,7 +61,7 @@ Updater signing (required for updater artifacts):
 
 Runtime Supabase config passed to builds:
 
-- **`SUPABASE_URL`**
+- `SUPABASE_URL` is fixed in workflows to `https://gqrnlnlfidighosujpdb.supabase.co`
 - **`SUPABASE_ANON_KEY`**
 
 Apple signing / notarization (macOS builds):
@@ -119,7 +118,7 @@ Source of truth remains in this repository:
 Operational model:
 
 - Apply schema/function changes to Supabase Cloud using the MCP tools (`apply_migration`, `execute_sql`) or the Supabase dashboard.
-- `api.gerbtrace.com` routes through the droplet's nginx reverse proxy to `https://gqrnlnlfidighosujpdb.supabase.co`.
+- Clients connect directly to `https://gqrnlnlfidighosujpdb.supabase.co` (no droplet reverse proxy).
 - The old self-hosted droplet database is **not** production. Do not apply migrations there.
 
 ## Operational safety

@@ -60,7 +60,7 @@
           </div>
 
           <div class="flex items-center gap-3 w-full sm:w-auto">
-            <UButton to="/docs" icon="i-lucide-circle-help" color="neutral" variant="outline">
+            <UButton icon="i-lucide-circle-help" color="neutral" variant="outline" @click="openDocs()">
               Docs / Help
             </UButton>
           </div>
@@ -360,37 +360,37 @@
           </div>
 
           <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
-            <NuxtLink to="/docs/viewer/panel" class="group block p-4 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-all">
+            <button type="button" class="group block p-4 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-all text-left w-full" @click="openDocs('/viewer/panel')">
               <div class="p-2 rounded bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white inline-block mb-3">
                 <UIcon name="i-lucide-layout-grid" class="text-xl" />
               </div>
               <h3 class="font-semibold text-sm text-gray-900 dark:text-white mb-1.5 group-hover:underline">Panelization</h3>
               <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Create production panels with frames, fiducials, and mouse bites in seconds.</p>
-            </NuxtLink>
+            </button>
 
-            <NuxtLink to="/docs/viewer/bom" class="group block p-4 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-all">
+            <button type="button" class="group block p-4 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-all text-left w-full" @click="openDocs('/viewer/bom')">
               <div class="p-2 rounded bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white inline-block mb-3">
                 <UIcon name="i-lucide-list-todo" class="text-xl" />
               </div>
               <h3 class="font-semibold text-sm text-gray-900 dark:text-white mb-1.5 group-hover:underline">BOM Manager</h3>
               <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Import BOMs, automatic part matching, and real-time pricing estimation.</p>
-            </NuxtLink>
+            </button>
 
-            <NuxtLink to="/docs/viewer/smd" class="group block p-4 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-all">
+            <button type="button" class="group block p-4 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-all text-left w-full" @click="openDocs('/viewer/smd')">
               <div class="p-2 rounded bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white inline-block mb-3">
                 <UIcon name="i-lucide-cpu" class="text-xl" />
               </div>
               <h3 class="font-semibold text-sm text-gray-900 dark:text-white mb-1.5 group-hover:underline">Pick & Place</h3>
               <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Visualize component placement, verify rotations, and export machine files.</p>
-            </NuxtLink>
+            </button>
 
-            <NuxtLink to="/docs" class="group block p-4 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-all">
+            <button type="button" class="group block p-4 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-all text-left w-full" @click="openDocs()">
               <div class="p-2 rounded bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white inline-block mb-3">
                 <UIcon name="i-lucide-book" class="text-xl" />
               </div>
               <h3 class="font-semibold text-sm text-gray-900 dark:text-white mb-1.5 group-hover:underline">Documentation</h3>
               <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Learn how to use all features with our comprehensive guides and tutorials.</p>
-            </NuxtLink>
+            </button>
           </div>
         </section>
 
@@ -407,7 +407,7 @@
         </div>
         
         <div class="flex items-center gap-6 text-xs text-gray-500">
-          <NuxtLink to="/docs" class="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Documentation</NuxtLink>
+          <button class="hover:text-primary-600 dark:hover:text-primary-400 transition-colors" @click="openDocs()">Documentation</button>
           <a v-if="release?.releasePage" :href="release.releasePage" target="_blank" class="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Releases</a>
           <button class="hover:text-primary-600 dark:hover:text-primary-400 transition-colors" @click="aboutOpen = true">About</button>
         </div>
@@ -496,6 +496,7 @@ import { isTauri as coreIsTauri } from '@tauri-apps/api/core'
 const router = useRouter()
 const colorMode = useColorMode()
 const isDark = computed(() => colorMode.value === 'dark')
+const { openDocs } = useDocsLink()
 const { projects, createNewProject, removeProject } = useProject()
 const { loadSampleProject } = useSampleProject()
 const { release, platform } = useLatestRelease()

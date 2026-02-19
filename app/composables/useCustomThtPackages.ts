@@ -1,4 +1,5 @@
 import Dexie from 'dexie'
+import { toRaw } from 'vue'
 import type { THTPackageDefinition } from '~/utils/tht-package-types'
 
 interface CustomThtPackageRecord {
@@ -21,6 +22,32 @@ class ThtPackageDB extends Dexie {
 }
 
 const db = new ThtPackageDB()
+
+function deepToRaw<T>(val: T): T {
+  const raw = toRaw(val)
+  if (Array.isArray(raw)) return raw.map(deepToRaw) as T
+  if (raw !== null && typeof raw === 'object' && !(raw instanceof Date) && !(raw instanceof Blob)) {
+    return Object.fromEntries(
+      Object.entries(raw).map(([k, v]) => [k, deepToRaw(v)]),
+    ) as T
+  }
+  return raw
+}
+
+function toIndexedDbSafe<T>(val: T): T {
+  const raw = deepToRaw(val)
+  try {
+    return structuredClone(raw)
+  } catch {
+    return JSON.parse(
+      JSON.stringify(raw, (_, value) => {
+        if (typeof value === 'bigint') return value.toString()
+        if (typeof value === 'function' || typeof value === 'symbol') return undefined
+        return value
+      }),
+    ) as T
+  }
+}
 
 /**
  * Composable for CRUD operations on user-created custom THT packages.
@@ -47,7 +74,7 @@ export function useCustomThtPackages() {
   async function addPackage(pkg: THTPackageDefinition): Promise<number> {
     const now = new Date()
     const record: CustomThtPackageRecord = {
-      data: pkg,
+      data: toIndexedDbSafe(pkg),
       createdAt: now,
       updatedAt: now,
     }
@@ -57,7 +84,7 @@ export function useCustomThtPackages() {
   }
 
   async function updatePackage(id: number, pkg: THTPackageDefinition) {
-    await db.packages.update(id, { data: pkg, updatedAt: new Date() })
+    await db.packages.update(id, { data: toIndexedDbSafe(pkg), updatedAt: new Date() })
     await loadCustomThtPackages()
   }
 

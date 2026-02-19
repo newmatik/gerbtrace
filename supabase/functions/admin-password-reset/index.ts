@@ -33,7 +33,9 @@ serve(async (req: Request) => {
 
   try {
     const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
+    const bearerMatch = authHeader?.match(/^Bearer\s+(.+)$/i)
+    const accessToken = bearerMatch?.[1]?.trim()
+    if (!accessToken) {
       return new Response(JSON.stringify({ error: 'Not authenticated' }), {
         status: 401,
         headers: corsHeaders,
@@ -59,13 +61,7 @@ serve(async (req: Request) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     )
 
-    const supabaseUser = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } },
-    )
-
-    const { data: { user }, error: userError } = await supabaseUser.auth.getUser()
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(accessToken)
     if (userError || !user) {
       return new Response(JSON.stringify({ error: 'Invalid authentication' }), {
         status: 401,
@@ -123,11 +119,15 @@ serve(async (req: Request) => {
       password: new_password,
     })
     if (updateError) {
-      return new Response(JSON.stringify({ error: updateError.message }), {
+      console.error('[admin-password-reset] Failed to update user password:', updateError)
+      return new Response(JSON.stringify({ error: 'Failed to update password' }), {
         status: 400,
         headers: corsHeaders,
       })
     }
+
+    // Audit log: password reset performed
+    console.log('admin-password-reset success:', { adminId: user.id, targetUserId: user_id, teamId: team_id })
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
