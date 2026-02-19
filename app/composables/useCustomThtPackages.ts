@@ -23,12 +23,29 @@ class ThtPackageDB extends Dexie {
 
 const db = new ThtPackageDB()
 
-function toIndexedDbSafe<T>(val: T): T {
+function deepToRaw<T>(val: T): T {
   const raw = toRaw(val)
+  if (Array.isArray(raw)) return raw.map(deepToRaw) as T
+  if (raw !== null && typeof raw === 'object' && !(raw instanceof Date) && !(raw instanceof Blob)) {
+    return Object.fromEntries(
+      Object.entries(raw).map(([k, v]) => [k, deepToRaw(v)]),
+    ) as T
+  }
+  return raw
+}
+
+function toIndexedDbSafe<T>(val: T): T {
+  const raw = deepToRaw(val)
   try {
     return structuredClone(raw)
   } catch {
-    return JSON.parse(JSON.stringify(raw)) as T
+    return JSON.parse(
+      JSON.stringify(raw, (_, value) => {
+        if (typeof value === 'bigint') return value.toString()
+        if (typeof value === 'function' || typeof value === 'symbol') return undefined
+        return value
+      }),
+    ) as T
   }
 }
 

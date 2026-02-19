@@ -33,7 +33,9 @@ serve(async (req: Request) => {
 
   try {
     const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
+    const bearerMatch = authHeader?.match(/^Bearer\s+(.+)$/i)
+    const accessToken = bearerMatch?.[1]?.trim()
+    if (!accessToken) {
       return new Response(JSON.stringify({ error: 'Not authenticated' }), {
         status: 401,
         headers: corsHeaders,
@@ -59,13 +61,7 @@ serve(async (req: Request) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     )
 
-    const supabaseUser = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } },
-    )
-
-    const { data: { user }, error: userError } = await supabaseUser.auth.getUser()
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(accessToken)
     if (userError || !user) {
       return new Response(JSON.stringify({ error: 'Invalid authentication' }), {
         status: 401,
