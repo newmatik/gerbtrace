@@ -1357,6 +1357,7 @@ function toPcbDataSnapshot(data: unknown): PcbDataSnapshot | null {
   if (!data || typeof data !== 'object') return null
   const raw = toRaw(data) as Record<string, unknown>
   const numberOrUndefined = (value: unknown) => {
+    if (value == null) return undefined
     const n = Number(value)
     return Number.isFinite(n) ? n : undefined
   }
@@ -3493,11 +3494,21 @@ function persistToProject(updates: Record<string, any>): Promise<void> {
       const missingColumn = message.includes('Could not find the')
         && message.includes('column')
       if (missingColumn) {
+        const missingColumnName = message.match(/Could not find the '([^']+)' column/i)?.[1]
+        if (missingColumnName && missingColumnName in mapped) {
+          // Retry without only the missing field so unrelated updates still persist.
+          const retryPayload: Record<string, any> = { ...mapped }
+          delete retryPayload[missingColumnName]
+          if (Object.keys(retryPayload).length > 0) {
+            const retry = await updateTeamProject(teamProjectId, retryPayload)
+            if (retry.error) {
+              console.warn('[viewer] Failed retry after dropping missing column:', retry.error.message ?? retry.error)
+            }
+          }
+          return
+        }
         // Skip persists for columns that don't exist in the schema yet
         console.warn('[viewer] Skipping persist for missing column:', message)
-        if (import.meta.dev && 'pcb_data' in mapped) {
-          console.debug('[viewer] pcb_data persist skipped due schema mismatch')
-        }
         return
       }
       console.warn('[viewer] Failed to persist team project updates:', error.message ?? error)
