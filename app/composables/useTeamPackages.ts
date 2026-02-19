@@ -126,15 +126,14 @@ export function useTeamPackages() {
   }
 
   // Subscribe to real-time changes on team_packages
-  watch(currentTeamId, (teamId) => {
+  watch(currentTeamId, async (teamId, _old, onCleanup) => {
     if (!teamId) {
       teamPackages.value = []
       return
     }
 
-    fetchTeamPackages()
+    await fetchTeamPackages()
 
-    // Set up real-time subscription
     const channel = supabase.channel(`team-packages:${teamId}`)
       .on('postgres_changes', {
         event: '*',
@@ -143,19 +142,29 @@ export function useTeamPackages() {
         filter: `team_id=eq.${teamId}`,
       }, (payload) => {
         if (payload.eventType === 'INSERT' && payload.new) {
-          const existing = teamPackages.value.find(tp => tp.id === (payload.new as TeamPackageRecord).id)
-          if (!existing) teamPackages.value.push(payload.new as TeamPackageRecord)
+          const rec = payload.new as TeamPackageRecord
+          const normalized = {
+            ...rec,
+            data: normalizePackageType(rec.data) as PackageDefinition,
+          }
+          const existing = teamPackages.value.find(tp => tp.id === normalized.id)
+          if (!existing) teamPackages.value.push(normalized)
         } else if (payload.eventType === 'UPDATE' && payload.new) {
-          const idx = teamPackages.value.findIndex(tp => tp.id === (payload.new as TeamPackageRecord).id)
-          if (idx >= 0) teamPackages.value[idx] = payload.new as TeamPackageRecord
+          const rec = payload.new as TeamPackageRecord
+          const normalized = {
+            ...rec,
+            data: normalizePackageType(rec.data) as PackageDefinition,
+          }
+          const idx = teamPackages.value.findIndex(tp => tp.id === normalized.id)
+          if (idx >= 0) teamPackages.value[idx] = normalized
         } else if (payload.eventType === 'DELETE' && payload.old) {
           teamPackages.value = teamPackages.value.filter(tp => tp.id !== (payload.old as TeamPackageRecord).id)
         }
       })
-      .subscribe()
 
-    // Clean up on team change
-    onBeforeUnmount(() => {
+    await channel.subscribe()
+
+    onCleanup(() => {
       supabase.removeChannel(channel)
     })
   }, { immediate: true })

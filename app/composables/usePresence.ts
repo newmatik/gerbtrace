@@ -7,6 +7,8 @@ import type { RealtimeChannel } from '@supabase/supabase-js'
  * Uses Supabase Realtime Presence.
  */
 
+export type PresenceTab = 'files' | 'pcb' | 'panel' | 'paste' | 'smd' | 'tht' | 'bom' | 'pricing' | 'docs' | 'summary'
+
 export interface PresenceUser {
   userId: string
   name: string
@@ -15,6 +17,8 @@ export interface PresenceUser {
   mode: 'viewing' | 'editing'
   /** ISO timestamp when user joined */
   joinedAt: string
+  /** Tab the user is currently viewing (per-tab presence) */
+  currentTab?: PresenceTab
 }
 
 export function usePresence(projectId: Ref<string | null>) {
@@ -67,7 +71,7 @@ export function usePresence(projectId: Ref<string | null>) {
     })
   }
 
-  async function updateMode(mode: 'viewing' | 'editing') {
+  async function updatePresence(mode: 'viewing' | 'editing', currentTab?: PresenceTab) {
     if (!channel || !user.value) return
     await channel.track({
       userId: user.value.id,
@@ -76,7 +80,13 @@ export function usePresence(projectId: Ref<string | null>) {
       role: currentTeamRole.value ?? 'viewer',
       mode,
       joinedAt: new Date().toISOString(),
+      ...(currentTab !== undefined && { currentTab }),
     } satisfies PresenceUser)
+  }
+
+  /** @deprecated Use updatePresence instead. Kept for backwards compatibility. */
+  async function updateMode(mode: 'viewing' | 'editing') {
+    await updatePresence(mode)
   }
 
   function leave() {
@@ -99,8 +109,15 @@ export function usePresence(projectId: Ref<string | null>) {
     leave()
   })
 
+  /** Users currently in a specific tab (filters by currentTab) */
+  function presentUsersInTab(tab: PresenceTab): PresenceUser[] {
+    return presentUsers.value.filter(u => u.currentTab === tab)
+  }
+
   return {
     presentUsers: readonly(presentUsers),
+    presentUsersInTab,
+    updatePresence,
     updateMode,
     leave,
   }
