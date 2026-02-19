@@ -248,9 +248,39 @@ export function useTeamMembers() {
     }
   }
 
-  // Auto-fetch when team changes
-  watch(currentTeamId, () => {
-    fetchMembers()
+  // Auto-fetch when team changes, and subscribe to realtime updates
+  watch(currentTeamId, async (teamId, _old, onCleanup) => {
+    if (!teamId) {
+      members.value = []
+      invitations.value = []
+      return
+    }
+
+    await fetchMembers()
+
+    const channel = supabase.channel(`team-members:${teamId}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'team_members',
+        filter: `team_id=eq.${teamId}`,
+      }, () => {
+        fetchMembers()
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'team_invitations',
+        filter: `team_id=eq.${teamId}`,
+      }, () => {
+        fetchMembers()
+      })
+
+    await channel.subscribe()
+
+    onCleanup(() => {
+      supabase.removeChannel(channel)
+    })
   }, { immediate: true })
 
   return {

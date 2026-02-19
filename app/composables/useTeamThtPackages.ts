@@ -110,13 +110,13 @@ export function useTeamThtPackages() {
   }
 
   // Subscribe to real-time changes on team_tht_packages
-  watch(currentTeamId, (teamId, _old, onCleanup) => {
+  watch(currentTeamId, async (teamId, _old, onCleanup) => {
     if (!teamId) {
       teamThtPackages.value = []
       return
     }
 
-    fetchTeamThtPackages()
+    await fetchTeamThtPackages()
 
     const channel = supabase.channel(`team-tht-packages:${teamId}`)
       .on('postgres_changes', {
@@ -135,7 +135,8 @@ export function useTeamThtPackages() {
           teamThtPackages.value = teamThtPackages.value.filter(tp => tp.id !== (payload.old as TeamThtPackageRecord).id)
         }
       })
-      .subscribe()
+
+    await channel.subscribe()
 
     onCleanup(() => {
       supabase.removeChannel(channel)

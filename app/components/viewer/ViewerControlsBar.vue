@@ -356,7 +356,26 @@
       </div>
     </template>
 
-    <div v-if="showLockControl" class="ml-auto shrink-0">
+    <div v-if="(usersInTab && usersInTab.length > 0) || showLockControl" class="ml-auto shrink-0 flex items-center gap-2">
+      <template v-if="usersInTab && usersInTab.length > 0">
+        <div class="flex items-center -space-x-1" :title="usersInTab.map(u => u.name).join(', ')">
+          <div
+            v-for="u in usersInTab.slice(0, 4)"
+            :key="u.userId"
+            class="size-5 rounded-full border-2 border-white dark:border-neutral-900 flex items-center justify-center text-[8px] font-bold bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-300"
+          >
+            {{ u.name.split(' ').map((p: string) => p[0]).join('').toUpperCase().slice(0, 2) }}
+          </div>
+          <div
+            v-if="usersInTab.length > 4"
+            class="size-5 rounded-full border-2 border-white dark:border-neutral-900 bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center text-[8px] font-medium text-neutral-500 dark:text-neutral-400"
+          >
+            +{{ usersInTab.length - 4 }}
+          </div>
+        </div>
+      </template>
+
+      <div v-if="showLockControl">
       <UPopover v-model:open="lockPopoverOpen" :content="{ side: 'bottom', align: 'end', sideOffset: 6 }">
         <div
           @mouseenter="lockPopoverOpen = true"
@@ -381,6 +400,7 @@
           </div>
         </template>
       </UPopover>
+      </div>
     </div>
   </div>
 </template>
@@ -393,8 +413,15 @@ type InteractionMode = 'cursor' | 'measure' | 'info' | 'delete'
 type PanelTabEditMode = 'off' | 'move' | 'add' | 'delete'
 type PanelAddedRoutingEditMode = 'off' | 'add' | 'move' | 'delete'
 
+interface PresenceUser {
+  userId: string
+  name: string
+}
+
 const props = defineProps<{
   page: ViewerPage
+  /** Users currently viewing this tab (per-tab presence) */
+  usersInTab?: PresenceUser[]
   hasOutline: boolean
   layersCount: number
   activeFilterOptions: { label: string; value: LayerFilter }[]

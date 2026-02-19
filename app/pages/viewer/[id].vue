@@ -138,6 +138,7 @@
       v-model:pnp-show-minimap="pnpShowMinimap"
       v-model:measure-constraint-mode="measureTool.constraintMode.value"
       :page="sidebarTab"
+      :users-in-tab="isTeamProject && isCanvasPage ? presentUsersInTab(sidebarTab) : []"
       :has-outline="hasOutline"
       :layers-count="layers.length"
       :active-filter-options="activeFilterOptions"
@@ -662,6 +663,23 @@
             >
               {{ bomCpCopied ? 'Copied' : 'Copy CP List' }}
             </UButton>
+            <template v-if="isTeamProject && presentUsersInTab('bom').length > 0">
+              <div class="flex items-center -space-x-1" :title="presentUsersInTab('bom').map(u => u.name).join(', ')">
+                <div
+                  v-for="u in presentUsersInTab('bom').slice(0, 4)"
+                  :key="u.userId"
+                  class="size-5 rounded-full border-2 border-white dark:border-neutral-900 flex items-center justify-center text-[8px] font-bold bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-300"
+                >
+                  {{ u.name.split(' ').map((p: string) => p[0]).join('').toUpperCase().slice(0, 2) }}
+                </div>
+                <div
+                  v-if="presentUsersInTab('bom').length > 4"
+                  class="size-5 rounded-full border-2 border-white dark:border-neutral-900 bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center text-[8px] font-medium text-neutral-500 dark:text-neutral-400"
+                >
+                  +{{ presentUsersInTab('bom').length - 4 }}
+                </div>
+              </div>
+            </template>
             <UPopover
               v-model:open="bomLockPopoverOpen"
               :content="{ side: 'bottom', align: 'end', sideOffset: 6 }"
@@ -777,6 +795,23 @@
               />
             </div>
             <div class="flex-1" />
+            <template v-if="isTeamProject && presentUsersInTab('pricing').length > 0">
+              <div class="flex items-center -space-x-1" :title="presentUsersInTab('pricing').map(u => u.name).join(', ')">
+                <div
+                  v-for="u in presentUsersInTab('pricing').slice(0, 4)"
+                  :key="u.userId"
+                  class="size-5 rounded-full border-2 border-white dark:border-neutral-900 flex items-center justify-center text-[8px] font-bold bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-300"
+                >
+                  {{ u.name.split(' ').map((p: string) => p[0]).join('').toUpperCase().slice(0, 2) }}
+                </div>
+                <div
+                  v-if="presentUsersInTab('pricing').length > 4"
+                  class="size-5 rounded-full border-2 border-white dark:border-neutral-900 bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center text-[8px] font-medium text-neutral-500 dark:text-neutral-400"
+                >
+                  +{{ presentUsersInTab('pricing').length - 4 }}
+                </div>
+              </div>
+            </template>
             <UPopover
               v-model:open="bomLockPopoverOpen"
               :content="{ side: 'bottom', align: 'end', sideOffset: 6 }"
@@ -971,7 +1006,8 @@ function waitForTeamId(): Promise<string> {
     })
   })
 }
-const { presentUsers } = isTeamProject ? usePresence(teamProjectIdRef) : { presentUsers: ref([]) }
+const presence = isTeamProject ? usePresence(teamProjectIdRef) : { presentUsers: ref([]), presentUsersInTab: () => [], updatePresence: async () => {}, updateMode: async () => {} }
+const { presentUsers, presentUsersInTab, updatePresence } = presence
 const projectSync = isTeamProject ? useProjectSync(teamProjectIdRef) : null
 const { user } = useAuth()
 const { profile } = useCurrentUser()
@@ -1246,6 +1282,12 @@ watch(sidebarTab, (tab) => {
   } else query.tab = tab
   router.replace({ query })
 })
+
+// Presence: update viewing vs editing mode and current tab when switching
+watch(sidebarTab, (tab) => {
+  const editableTabs = ['bom', 'smd', 'tht', 'paste', 'panel']
+  updatePresence(editableTabs.includes(tab) ? 'editing' : 'viewing', tab)
+}, { immediate: true })
 
 const isCanvasPage = computed(() => {
   return sidebarTab.value === 'pcb' || sidebarTab.value === 'panel' || sidebarTab.value === 'paste' || sidebarTab.value === 'smd' || sidebarTab.value === 'tht'
