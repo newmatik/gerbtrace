@@ -23,6 +23,8 @@ import type { ImageTree, BoundingBox } from '@lib/gerber/types'
 import { renderToCanvas, renderOutlineMask, renderOuterBoundaryOnly, computeAutoFitTransform } from '@lib/renderer/canvas-renderer'
 import { renderRealisticView } from '@lib/renderer/realistic-renderer'
 import type { RealisticLayers } from '@lib/renderer/realistic-renderer'
+import { generateJetprintDots } from '@lib/renderer/jetprint-dots'
+import type { PasteSettings } from '~/composables/usePasteSettings'
 import { parseGerber } from '@lib/gerber'
 import { plotImageTree } from '@lib/gerber/plotter'
 import { mergeBounds, emptyBounds, isEmpty } from '@lib/gerber/bounding-box'
@@ -56,6 +58,7 @@ const props = defineProps<{
   matchThtPackage?: (name: string) => THTPackageDefinition | undefined
   showPackages?: boolean
   pnpConvention?: PnPConvention
+  pasteSettings?: PasteSettings
 }>()
 
 const emit = defineEmits<{
@@ -270,6 +273,13 @@ function componentSignature(components: EditablePnPComponent[] | undefined): str
   ].join(':')).join('|')
 }
 
+function panelComponentsEnabled(): boolean {
+  const legacy = props.panelConfig.showComponents === true
+  const showSmd = props.panelConfig.showSmdComponents ?? legacy
+  const showTht = props.panelConfig.showThtComponents ?? legacy
+  return !!(showSmd || showTht)
+}
+
 function panelGeometrySignature(): string {
   const cfg = props.panelConfig
   const supports = cfg.supports ?? { enabled: true, xGaps: [], yGaps: [], widthColumns: 0, widthRows: 0 }
@@ -287,6 +297,8 @@ function panelGeometrySignature(): string {
     fiducials: cfg.fiducials,
     toolingHoles: cfg.toolingHoles,
     tabs: cfg.tabs,
+    showSmdComponents: cfg.showSmdComponents,
+    showThtComponents: cfg.showThtComponents,
     showComponents: cfg.showComponents,
   })
 }
@@ -741,7 +753,13 @@ function gatherRealisticLayers(side: 'top' | 'bottom'): RealisticLayers {
     if (layer.type === copperType) { result.copper = tree; usedTrees.push(tree) }
     else if (layer.type === maskType) { result.solderMask = tree; usedTrees.push(tree) }
     else if (layer.type === silkType) { result.silkscreen = tree; usedTrees.push(tree) }
-    else if (layer.type === pasteType) { result.paste = tree; usedTrees.push(tree) }
+    else if (layer.type === pasteType) {
+      const ps = props.pasteSettings
+      result.paste = ps && ps.mode === 'jetprint'
+        ? generateJetprintDots(tree, { dotDiameter: ps.dotDiameter, dotSpacing: ps.dotSpacing, pattern: ps.pattern, dynamicDots: ps.dynamicDots })
+        : tree
+      usedTrees.push(tree)
+    }
     else if (layer.type === 'Drill') drillTrees.push(tree)
     else if (layer.type === 'Outline') outlineTree = tree
     else if (layer.type === 'Keep-Out' && !outlineTree) outlineTree = tree
@@ -2283,7 +2301,7 @@ function drawComponentsOnContext(
   const components = options?.components ?? props.pnpComponents
   if (!components || components.length === 0) return
   const includePackages = options?.includePackages ?? !!props.showPackages
-  if (!includePackages && !props.panelConfig.showComponents) return
+  if (!includePackages && !panelComponentsEnabled()) return
 
   const units = detectUnits()
   const { ox, oy } = getEffectivePnpOrigin(outlineBounds)
@@ -2421,7 +2439,7 @@ function drawPanelComponents(
     enabled?: boolean
   },
 ) {
-  const enabled = options?.enabled ?? props.panelConfig.showComponents
+  const enabled = options?.enabled ?? panelComponentsEnabled()
   if (!enabled) return
   const components = options?.components ?? props.pnpComponents
   if (!components || components.length === 0) return
@@ -2689,11 +2707,13 @@ function draw() {
         tileCanvas = acquireCanvas(pcbPixW, pcbPixH)
         if (isRealistic) {
           const realisticLayers = gatherRealisticLayers(side)
+          const ps = props.pasteSettings
           renderRealisticView(realisticLayers, tileCanvas, {
             preset: props.preset!,
             transform: tileTransform,
             dpr,
             side,
+            pasteColor: ps?.mode === 'jetprint' && ps.highlightDots ? '#00FF66' : undefined,
           })
         } else {
           const tileCtx = tileCanvas.getContext('2d')!
@@ -2991,7 +3011,7 @@ watch(
 )
 
 watch(
-  () => `${props.viewMode ?? 'layers'}|${props.preset?.name ?? ''}|${props.activeFilter ?? 'all'}|${layerSignature(props.layers)}|${allLayerSignature(props.allLayers)}`,
+  () => `${props.viewMode ?? 'layers'}|${props.preset?.name ?? ''}|${props.activeFilter ?? 'all'}|${layerSignature(props.layers)}|${allLayerSignature(props.allLayers)}|${props.pasteSettings?.mode ?? 'stencil'}|${props.pasteSettings?.dotDiameter ?? 0}|${props.pasteSettings?.dotSpacing ?? 0}|${props.pasteSettings?.pattern ?? 'hex'}|${props.pasteSettings?.highlightDots ? 1 : 0}|${props.pasteSettings?.dynamicDots ? 1 : 0}`,
   () => {
     invalidatePanelRenderCaches()
     scheduleRedraw()

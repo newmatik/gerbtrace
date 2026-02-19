@@ -7,6 +7,7 @@
 
 import type { BomLine, BomPricingCache } from '~/utils/bom-types'
 import type { PanelConfig } from '~/utils/panel-types'
+import type { PasteSettings } from '~/composables/usePasteSettings'
 
 export type LockableViewerTab = 'files' | 'pcb' | 'panel' | 'smd' | 'tht' | 'bom'
 
@@ -61,6 +62,9 @@ export interface TeamProject {
   } | null
   panel_data: PanelConfig | null
   page_locks: Partial<Record<LockableViewerTab, ViewerPageLockState>> | null
+  paste_settings: PasteSettings | null
+  layer_order: string[] | null
+  document_order: string[] | null
   created_at: string
   updated_at: string
 }

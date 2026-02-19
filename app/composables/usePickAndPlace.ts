@@ -1,6 +1,6 @@
 import type { LayerInfo } from '~/utils/gerber-helpers'
 import { isPnPLayer, isSmdPnPLayer, isThtPnPLayer } from '~/utils/gerber-helpers'
-import { parsePnPFile, isFiducial, type PnPComponent } from '~/utils/pnp-parser'
+import { parsePnPFile, isFiducial, type PnPComponent, type PnPCoordUnit } from '~/utils/pnp-parser'
 import type { PnPConvention } from '~/utils/pnp-conventions'
 import type { PackageDefinition } from '~/utils/package-types'
 import type { THTPackageDefinition } from '~/utils/tht-package-types'
@@ -120,6 +120,7 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
   // Optional matchers supplied by the viewer (package libraries)
   const packageMatcher = ref<((name: string) => PackageDefinition | undefined) | null>(null)
   const thtPackageMatcher = ref<((name: string) => THTPackageDefinition | undefined) | null>(null)
+  const coordUnitOverride = ref<'auto' | PnPCoordUnit>('auto')
 
   function getComponentKey(comp: PnPComponent): string {
     return [
@@ -196,10 +197,12 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
 
   function parseLayer(layer: LayerInfo): PnPComponent[] {
     // Cache key includes layer type so same-content layers with different types get separate entries
-    const cacheKey = `${layer.file.fileName}::${layer.type}`
+    const cacheKey = `${layer.file.fileName}::${layer.type}::${coordUnitOverride.value}`
     if (parsedCache.has(cacheKey)) return parsedCache.get(cacheKey)!
     const side = (layer.type === 'PnP Bottom' || layer.type === 'PnP Bottom (THT)') ? 'bottom' : 'top'
-    const allComponents = parsePnPFile(layer.file.content, side)
+    const allComponents = parsePnPFile(layer.file.content, side, {
+      unitOverride: coordUnitOverride.value === 'auto' ? undefined : coordUnitOverride.value,
+    })
     // Combined layers return all components; single-side layers filter by side
     const isCombined = layer.type === 'PnP Top + Bot' || layer.type === 'PnP Top + Bot (THT)'
     const components = isCombined
@@ -384,12 +387,13 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
     filteredComponents.value.filter(c => c.componentType === 'tht'),
   )
 
-  /** Components for canvas rendering — respects search + toggle filters when active */
+  /** Components for canvas rendering — respects search + toggle filters when active.
+   *  DNP components are always included; the viewer controls their canvas visibility. */
   const visibleComponents = computed<EditablePnPComponent[]>(() => {
     const hasFilters = activeFilters.value.size > 0
     const hasSearch = searchQuery.value.trim() !== ''
     if (!hasFilters && !hasSearch) {
-      return activeComponents.value.filter(c => !c.dnp)
+      return activeComponents.value
     }
     return filteredComponents.value
   })
@@ -934,6 +938,7 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
     placingComponent,
     // Convention
     convention,
+    coordUnitOverride,
     // Origin
     originX,
     originY,

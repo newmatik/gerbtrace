@@ -205,12 +205,16 @@ export function computePanelLayout(
   const frameBottom = config.frame.enabled ? Math.max(0, config.frame.widthBottom ?? 0) : 0
   const frameLeft = config.frame.enabled ? Math.max(0, config.frame.widthLeft ?? 0) : 0
   const frameRight = config.frame.enabled ? Math.max(0, config.frame.widthRight ?? 0) : 0
+  const hasFrameTop = config.frame.enabled && frameTop > 0
+  const hasFrameBottom = config.frame.enabled && frameBottom > 0
+  const hasFrameLeft = config.frame.enabled && frameLeft > 0
+  const hasFrameRight = config.frame.enabled && frameRight > 0
 
   // Determine routing gap for each frame edge independently in mixed mode.
-  const frameGapTop = config.frame.enabled && edgeRoutedTop ? toolD : 0
-  const frameGapBottom = config.frame.enabled && edgeRoutedBottom ? toolD : 0
-  const frameGapLeft = config.frame.enabled && edgeRoutedLeft ? toolD : 0
-  const frameGapRight = config.frame.enabled && edgeRoutedRight ? toolD : 0
+  const frameGapTop = hasFrameTop && edgeRoutedTop ? toolD : 0
+  const frameGapBottom = hasFrameBottom && edgeRoutedBottom ? toolD : 0
+  const frameGapLeft = hasFrameLeft && edgeRoutedLeft ? toolD : 0
+  const frameGapRight = hasFrameRight && edgeRoutedRight ? toolD : 0
 
   // Compute gap for each column gap (between col i and col i+1).
   // Support widths are the actual FR4 rail material widths.
@@ -433,25 +437,25 @@ export function computePanelLayout(
     const edgeEndY = totalHeight - frameBottom
 
     // Left edge
-    if (isEdgeRouted('left')) {
+    if (hasFrameLeft && isEdgeRouted('left')) {
       for (const seg of subtractRanges(horizontalRailRanges, edgeStartY, edgeEndY)) {
         routingChannels.push({ x1: innerLeft, y1: seg.start, x2: innerLeft, y2: seg.end, width: toolD })
       }
     }
     // Right edge
-    if (isEdgeRouted('right')) {
+    if (hasFrameRight && isEdgeRouted('right')) {
       for (const seg of subtractRanges(horizontalRailRanges, edgeStartY, edgeEndY)) {
         routingChannels.push({ x1: innerRight, y1: seg.start, x2: innerRight, y2: seg.end, width: toolD })
       }
     }
     // Top edge
-    if (isEdgeRouted('top')) {
+    if (hasFrameTop && isEdgeRouted('top')) {
       for (const seg of subtractRanges(verticalRailRanges, edgeStartX, edgeEndX)) {
         routingChannels.push({ x1: seg.start, y1: innerTop, x2: seg.end, y2: innerTop, width: toolD })
       }
     }
     // Bottom edge
-    if (isEdgeRouted('bottom')) {
+    if (hasFrameBottom && isEdgeRouted('bottom')) {
       for (const seg of subtractRanges(verticalRailRanges, edgeStartX, edgeEndX)) {
         routingChannels.push({ x1: seg.start, y1: innerBottom, x2: seg.end, y2: innerBottom, width: toolD })
       }
@@ -465,10 +469,10 @@ export function computePanelLayout(
     const leftScored = isScoredSep || config.edges.left.type === 'scored'
     const rightScored = isScoredSep || config.edges.right.type === 'scored'
 
-    if (topScored) vcutLines.push({ x1: 0, y1: frameTop, x2: totalWidth, y2: frameTop })
-    if (bottomScored) vcutLines.push({ x1: 0, y1: totalHeight - frameBottom, x2: totalWidth, y2: totalHeight - frameBottom })
-    if (leftScored) vcutLines.push({ x1: frameLeft, y1: 0, x2: frameLeft, y2: totalHeight })
-    if (rightScored) vcutLines.push({ x1: totalWidth - frameRight, y1: 0, x2: totalWidth - frameRight, y2: totalHeight })
+    if (hasFrameTop && topScored) vcutLines.push({ x1: 0, y1: frameTop, x2: totalWidth, y2: frameTop })
+    if (hasFrameBottom && bottomScored) vcutLines.push({ x1: 0, y1: totalHeight - frameBottom, x2: totalWidth, y2: totalHeight - frameBottom })
+    if (hasFrameLeft && leftScored) vcutLines.push({ x1: frameLeft, y1: 0, x2: frameLeft, y2: totalHeight })
+    if (hasFrameRight && rightScored) vcutLines.push({ x1: totalWidth - frameRight, y1: 0, x2: totalWidth - frameRight, y2: totalHeight })
   }
 
   // Support rails
@@ -659,14 +663,17 @@ export function computePanelLayout(
 
       switch (pos) {
         case 'top-left':
+          if (!hasFrameTop || !hasFrameLeft) continue
           fx = insetLeft
           fy = insetTop
           break
         case 'bottom-left':
+          if (!hasFrameBottom || !hasFrameLeft) continue
           fx = insetLeft
           fy = totalHeight - insetBottom
           break
         case 'bottom-right':
+          if (!hasFrameBottom || !hasFrameRight) continue
           fx = totalWidth - insetRight
           fy = totalHeight - insetBottom
           break
@@ -695,18 +702,22 @@ export function computePanelLayout(
 
       switch (pos) {
         case 'top-left':
+          if (!hasFrameTop || !hasFrameLeft) continue
           tx = insetLeft
           ty = insetTop + offset
           break
         case 'top-right':
+          if (!hasFrameTop || !hasFrameRight) continue
           tx = totalWidth - insetRight
           ty = insetTop + offset
           break
         case 'bottom-left':
+          if (!hasFrameBottom || !hasFrameLeft) continue
           tx = insetLeft
           ty = totalHeight - insetBottom - offset
           break
         case 'bottom-right':
+          if (!hasFrameBottom || !hasFrameRight) continue
           tx = totalWidth - insetRight
           ty = totalHeight - insetBottom - offset
           break

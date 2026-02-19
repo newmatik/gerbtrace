@@ -1,7 +1,7 @@
 <template>
-  <UModal v-model:open="open" :ui="{ content: 'sm:max-w-md' }">
+  <UModal v-model:open="open" :ui="{ content: 'sm:max-w-lg' }">
     <template #content>
-      <div class="p-5 space-y-4" @keydown.stop>
+      <div class="p-5 space-y-4 max-h-[85vh] overflow-y-auto" @keydown.stop>
         <!-- Header -->
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
@@ -90,136 +90,122 @@
 
           <div class="h-px bg-neutral-200 dark:bg-neutral-700" />
 
-          <!-- Editable fields -->
-          <div class="space-y-3">
-          <!-- Rotation -->
-          <div class="flex items-center justify-between">
-            <label class="text-xs text-neutral-500 dark:text-neutral-400">Rotation</label>
-            <div class="flex items-center gap-1.5">
-              <input
-                v-model="localRotation"
-                type="number"
-                step="0.1"
-                class="w-20 text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md px-2 py-1 outline-none tabular-nums text-right focus:border-primary transition-colors"
-                :class="{ 'text-amber-600 dark:text-amber-300': isRotationOverridden }"
-                @keydown.enter="($event.target as HTMLInputElement).blur()"
-              />
-              <span class="text-[10px] text-neutral-400">deg</span>
-              <button
-                class="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors p-0.5"
-                title="Rotate 90 CCW"
-                @click="localRotation = normaliseRotation(Number(localRotation) - 90).toString()"
-              >
-                <UIcon name="i-lucide-rotate-ccw" class="text-xs" />
-              </button>
-              <button
-                v-if="isRotationOverridden"
-                class="text-amber-600/90 dark:text-amber-300/90 hover:text-red-500 transition-colors p-0.5"
-                title="Reset to original rotation"
-                @click="localRotation = formatRotation(component!.originalRotation)"
-              >
-                <UIcon name="i-lucide-undo-2" class="text-xs" />
-              </button>
+          <!-- Rotation + toggles row -->
+          <div class="grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs">
+            <div>
+              <label class="text-neutral-400 dark:text-neutral-500 uppercase tracking-wide text-[10px] font-medium">Rotation</label>
+              <div class="mt-0.5 flex items-center gap-1.5">
+                <input
+                  v-model="localRotation"
+                  type="number"
+                  step="0.1"
+                  class="w-full text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md px-2 py-1 outline-none tabular-nums focus:border-primary transition-colors"
+                  :class="{ 'text-amber-600 dark:text-amber-300': isRotationOverridden }"
+                  @keydown.enter="($event.target as HTMLInputElement).blur()"
+                />
+                <span class="text-[10px] text-neutral-400 shrink-0">deg</span>
+                <UButton
+                  size="xs"
+                  variant="ghost"
+                  color="neutral"
+                  icon="i-lucide-rotate-ccw"
+                  class="shrink-0"
+                  title="Rotate 90 CCW"
+                  @click="localRotation = normaliseRotation(Number(localRotation) - 90).toString()"
+                />
+                <UButton
+                  v-if="isRotationOverridden"
+                  size="xs"
+                  variant="ghost"
+                  color="warning"
+                  icon="i-lucide-undo-2"
+                  class="shrink-0"
+                  title="Reset to original rotation"
+                  @click="localRotation = formatRotation(component!.originalRotation)"
+                />
+              </div>
             </div>
-          </div>
 
-          <!-- Side (manual components only) -->
-          <div v-if="component?.manual" class="flex items-center justify-between">
-            <label class="text-xs text-neutral-500 dark:text-neutral-400">Side</label>
-            <div class="flex gap-1.5">
-              <button
-                v-for="s in sideOptions"
-                :key="s.value"
-                class="px-2.5 py-1 text-xs rounded border transition-colors"
-                :class="localSide === s.value
-                  ? 'border-primary bg-primary/10 text-primary font-medium'
-                  : 'border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:border-neutral-400'"
-                @click="localSide = s.value"
-              >
-                {{ s.label }}
-              </button>
+            <!-- Side (manual) -->
+            <div v-if="component?.manual">
+              <label class="text-neutral-400 dark:text-neutral-500 uppercase tracking-wide text-[10px] font-medium">Side</label>
+              <USelect
+                v-model="localSide"
+                :items="sideOptions"
+                value-key="value"
+                label-key="label"
+                size="xs"
+                class="mt-0.5 w-full"
+              />
             </div>
-          </div>
 
-          <!-- DNP -->
-          <div class="flex items-center justify-between">
-            <label class="text-xs text-neutral-500 dark:text-neutral-400">Do Not Populate</label>
-            <button
-              class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-              :class="localDnp ? 'bg-red-500' : 'bg-neutral-200 dark:bg-neutral-700'"
-              role="switch"
-              :aria-checked="localDnp"
-              @click="localDnp = !localDnp"
-            >
-              <span
-                class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                :class="localDnp ? 'translate-x-4' : 'translate-x-0'"
-              />
-            </button>
-          </div>
+            <div>
+              <label class="text-neutral-400 dark:text-neutral-500 uppercase tracking-wide text-[10px] font-medium">Do Not Populate</label>
+              <div class="mt-1.5 flex items-center gap-2">
+                <USwitch
+                  :model-value="localDnp"
+                  size="sm"
+                  @update:model-value="localDnp = !!$event"
+                />
+                <span class="text-xs text-neutral-600 dark:text-neutral-300">{{ localDnp ? 'Yes' : 'No' }}</span>
+              </div>
+            </div>
 
-          <!-- Polarized -->
-          <div class="flex items-center justify-between">
-            <label class="text-xs text-neutral-500 dark:text-neutral-400">Polarized (Pin 1)</label>
-            <button
-              class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-              :class="localPolarized ? 'bg-primary' : 'bg-neutral-200 dark:bg-neutral-700'"
-              role="switch"
-              :aria-checked="localPolarized"
-              @click="localPolarized = !localPolarized"
-            >
-              <span
-                class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                :class="localPolarized ? 'translate-x-4' : 'translate-x-0'"
-              />
-            </button>
-          </div>
+            <div>
+              <label class="text-neutral-400 dark:text-neutral-500 uppercase tracking-wide text-[10px] font-medium">Polarized (Pin 1)</label>
+              <div class="mt-1.5 flex items-center gap-2">
+                <USwitch
+                  :model-value="localPolarized"
+                  size="sm"
+                  @update:model-value="localPolarized = !!$event"
+                />
+                <span class="text-xs text-neutral-600 dark:text-neutral-300">{{ localPolarized ? 'Yes' : 'No' }}</span>
+              </div>
+            </div>
 
-          <!-- Package mapping -->
-          <div class="flex items-center justify-between">
-            <label class="text-xs text-neutral-500 dark:text-neutral-400">Package</label>
-            <USelectMenu
-              v-model="localPackage"
-              v-model:search-term="modalPkgSearchTerm"
-              :items="packageSelectItems"
-              value-key="value"
-              label-key="displayLabel"
-              size="xs"
-              searchable
-              ignore-filter
-              class="max-w-[16rem] w-full"
-              :class="localPackage ? 'text-blue-700 dark:text-blue-300' : ''"
-              :search-input="{ placeholder: 'Search package or library...' }"
-              :ui="{ content: 'min-w-[28rem] max-w-[40rem]', itemLabel: 'whitespace-normal leading-tight' }"
-              placeholder="—"
-              @highlight="onPkgHighlight($event as any)"
-              @update:open="!$event && emit('preview:package', null)"
-            >
-              <template #item="{ item }">
-                <div class="w-full py-0.5">
-                  <div class="text-xs font-medium text-neutral-800 dark:text-neutral-100 break-all leading-tight">
-                    {{ getPackageOption(item)?.label ?? getItemLabel(item) }}
+            <div>
+              <label class="text-neutral-400 dark:text-neutral-500 uppercase tracking-wide text-[10px] font-medium">Package</label>
+              <USelectMenu
+                v-model="localPackage"
+                v-model:search-term="modalPkgSearchTerm"
+                :items="packageSelectItems"
+                value-key="value"
+                label-key="displayLabel"
+                size="xs"
+                searchable
+                ignore-filter
+                class="mt-0.5 w-full"
+                :class="localPackage ? 'text-blue-700 dark:text-blue-300' : ''"
+                :search-input="{ placeholder: 'Search package or library...' }"
+                :ui="{ content: 'min-w-[28rem] max-w-[40rem]', itemLabel: 'whitespace-normal leading-tight' }"
+                placeholder="—"
+                @highlight="onPkgHighlight($event as any)"
+                @update:open="!$event && emit('preview:package', null)"
+              >
+                <template #item="{ item }">
+                  <div class="w-full py-0.5">
+                    <div class="text-xs font-medium text-neutral-800 dark:text-neutral-100 break-all leading-tight">
+                      {{ getPackageOption(item)?.label ?? getItemLabel(item) }}
+                    </div>
+                    <div class="text-[10px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                      {{ getPackageOption(item)?.libraryLabel ?? 'Local' }}
+                    </div>
                   </div>
-                  <div class="text-[10px] text-neutral-500 dark:text-neutral-400 mt-0.5">
-                    {{ getPackageOption(item)?.libraryLabel ?? 'Local' }}
-                  </div>
-                </div>
-              </template>
-            </USelectMenu>
-          </div>
+                </template>
+              </USelectMenu>
+            </div>
 
-          <!-- Group assignment -->
-          <div class="flex items-center justify-between">
-            <label class="text-xs text-neutral-500 dark:text-neutral-400">Group</label>
-            <USelect
-              v-model="localGroupId"
-              :items="groupSelectItems"
-              value-key="value"
-              label-key="label"
-              size="xs"
-              class="max-w-[12rem] w-full"
-            />
-          </div>
+            <div>
+              <label class="text-neutral-400 dark:text-neutral-500 uppercase tracking-wide text-[10px] font-medium">Group</label>
+              <USelect
+                v-model="localGroupId"
+                :items="groupSelectItems"
+                value-key="value"
+                label-key="label"
+                size="xs"
+                class="mt-0.5 w-full"
+              />
+            </div>
           </div>
 
           <div class="h-px bg-neutral-200 dark:bg-neutral-700" />

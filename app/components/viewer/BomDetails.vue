@@ -48,6 +48,34 @@
           />
         </div>
 
+        <div class="grid grid-cols-3 gap-2 items-end">
+          <div>
+            <div class="text-[10px] text-neutral-400 mb-1">Type</div>
+            <USelect
+              :model-value="line.type"
+              :items="BOM_LINE_TYPES"
+              size="sm"
+              @update:model-value="(v: any) => emitUpdate({ type: v })"
+            />
+          </div>
+          <label class="flex items-center gap-1.5 text-xs text-neutral-600 dark:text-neutral-300 pb-1">
+            <USwitch
+              :model-value="line.customerProvided"
+              size="xs"
+              @update:model-value="(v: boolean) => emitUpdate({ customerProvided: v })"
+            />
+            Customer provided
+          </label>
+          <label class="flex items-center gap-1.5 text-xs text-neutral-600 dark:text-neutral-300 pb-1">
+            <USwitch
+              :model-value="line.dnp"
+              size="xs"
+              @update:model-value="(v: boolean) => emitUpdate({ dnp: v })"
+            />
+            DNP
+          </label>
+        </div>
+
         <div class="grid grid-cols-3 gap-2">
           <div>
             <div class="text-[10px] text-neutral-400 mb-1">Package</div>
@@ -316,6 +344,7 @@
 
 <script setup lang="ts">
 import type { BomLine, BomPricingCache, BomManufacturer } from '~/utils/bom-types'
+import { BOM_LINE_TYPES } from '~/utils/bom-types'
 import type { ExchangeRateSnapshot, PricingQueueItem } from '~/composables/useElexessApi'
 import { formatCurrency, normalizeCurrencyCode } from '~/utils/currency'
 

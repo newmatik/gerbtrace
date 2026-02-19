@@ -94,18 +94,30 @@
         </button>
       </div>
 
-      <!-- Convention selector -->
-      <USelect
-        :model-value="pnpConvention"
-        size="xs"
-        class="w-36"
-        :disabled="locked"
-        :items="conventionSelectItems"
-        value-key="value"
-        label-key="label"
-        title="PnP orientation standard"
-        @update:model-value="$emit('update:pnpConvention', String($event) as PnPConvention)"
-      />
+      <div class="flex items-center gap-1">
+        <USelect
+          :model-value="pnpUnitOverride"
+          size="xs"
+          class="w-24"
+          :disabled="locked"
+          :items="unitSelectItems"
+          value-key="value"
+          label-key="label"
+          title="PnP coordinate unit override"
+          @update:model-value="$emit('update:pnpUnitOverride', String($event) as 'auto' | PnPCoordUnit)"
+        />
+        <USelect
+          :model-value="pnpConvention"
+          size="xs"
+          class="w-36"
+          :disabled="locked"
+          :items="conventionSelectItems"
+          value-key="value"
+          label-key="label"
+          title="PnP orientation standard"
+          @update:model-value="$emit('update:pnpConvention', String($event) as PnPConvention)"
+        />
+      </div>
     </div>
 
     <!-- Alignment controls -->
@@ -503,6 +515,7 @@ import { useVirtualizer } from '@tanstack/vue-virtual'
 import type { EditablePnPComponent, AlignMode, PnPFilterKey } from '~/composables/usePickAndPlace'
 import type { PnPConvention } from '~/utils/pnp-conventions'
 import { PNP_CONVENTION_LABELS } from '~/utils/pnp-conventions'
+import type { PnPCoordUnit } from '~/utils/pnp-parser'
 
 const props = defineProps<{
   allComponents: EditablePnPComponent[]
@@ -516,6 +529,7 @@ const props = defineProps<{
   originY: number | null
   showPackages: boolean
   pnpConvention: PnPConvention
+  pnpUnitOverride: 'auto' | PnPCoordUnit
   packageOptions: Array<{
     value: string
     label: string
@@ -540,6 +554,7 @@ const emit = defineEmits<{
   'update:searchQuery': [value: string]
   'update:showPackages': [value: boolean]
   'update:pnpConvention': [value: PnPConvention]
+  'update:pnpUnitOverride': [value: 'auto' | PnPCoordUnit]
   select: [designator: string | null]
   startSetOrigin: []
   startComponentAlign: []
@@ -569,6 +584,12 @@ const conventionOptions = Object.entries(PNP_CONVENTION_LABELS) as [PnPConventio
 const conventionSelectItems = computed(() =>
   conventionOptions.map(([value, label]) => ({ value, label })),
 )
+const unitSelectItems = [
+  { value: 'auto', label: 'Unit: Auto' },
+  { value: 'mm', label: 'Unit: mm' },
+  { value: 'mils', label: 'Unit: mils' },
+  { value: 'inches', label: 'Unit: in' },
+] as const
 const PKG_DROPDOWN_LIMIT = 80
 
 const allPackageSelectItems = computed(() =>

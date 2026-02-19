@@ -27,6 +27,12 @@ export interface PnPComponent {
   side: 'top' | 'bottom'
 }
 
+export type PnPCoordUnit = 'mm' | 'mils' | 'inches'
+
+interface ParsePnPOptions {
+  unitOverride?: PnPCoordUnit
+}
+
 /** Common header keywords that indicate a header row rather than data */
 const HEADER_KEYWORDS = /^(ref\s?des|ref|designator|component|comp|part|name|x|y|rotation|angle|value|package|footprint|side|layer|pos\s?x|pos\s?y)/i
 
@@ -106,9 +112,15 @@ function detectCoordUnit(rawHeader: string): number {
   return 1
 }
 
-function buildHeaderMap(fields: string[]): HeaderMapResult {
+function getCoordScale(unit: PnPCoordUnit | undefined): number {
+  if (unit === 'mils') return 0.0254
+  if (unit === 'inches') return 25.4
+  return 1
+}
+
+function buildHeaderMap(fields: string[], unitOverride?: PnPCoordUnit): HeaderMapResult {
   const map: Partial<Record<ColumnKey, number>> = {}
-  let coordScale = 1
+  let coordScale = getCoordScale(unitOverride)
   for (let i = 0; i < fields.length; i++) {
     const raw = fields[i] || ''
     const h = normaliseHeaderName(raw)
@@ -116,7 +128,7 @@ function buildHeaderMap(fields: string[]): HeaderMapResult {
     if (!map.designator && /^(refdes(ignator)?|ref|designator|reference|name|component|part)$/.test(h)) map.designator = i
     else if (!map.x && /^(posx|x|centerx|midx|cx)/.test(h)) {
       map.x = i
-      coordScale = detectCoordUnit(raw)
+      if (!unitOverride) coordScale = detectCoordUnit(raw)
     }
     else if (!map.y && /^(posy|y|centery|midy|cy)/.test(h)) map.y = i
     else if (!map.rotation && /^(rot|rotation|angle|deg)/.test(h)) map.rotation = i
@@ -174,12 +186,13 @@ export function isFiducial(comp: PnPComponent): boolean {
   return /fiducial|fiducia|fid\b/.test(lower) || /^fd\d/i.test(comp.designator)
 }
 
-export function parsePnPFile(content: string, side: 'top' | 'bottom'): PnPComponent[] {
+export function parsePnPFile(content: string, side: 'top' | 'bottom', options?: ParsePnPOptions): PnPComponent[] {
   const lines = content.split('\n')
   const delimiter = detectDelimiter(content)
   const components: PnPComponent[] = []
   let headerMap: Partial<Record<ColumnKey, number>> | null = null
-  let coordScale = 1
+  const unitOverride = options?.unitOverride
+  let coordScale = getCoordScale(unitOverride)
 
   for (const rawLine of lines) {
     const line = rawLine.trim()
@@ -195,7 +208,7 @@ export function parsePnPFile(content: string, side: 'top' | 'bottom'): PnPCompon
     // data rows with non-numeric text columns (e.g. Altium "Comment") aren't
     // misidentified as headers.
     if (!headerMap && isHeaderRow(fields, delimiter)) {
-      const result = buildHeaderMap(fields)
+      const result = buildHeaderMap(fields, unitOverride)
       if (
         result.map.designator != null
         && result.map.x != null

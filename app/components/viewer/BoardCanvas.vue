@@ -24,6 +24,8 @@ import type { ImageTree, BoundingBox } from '@lib/gerber/types'
 import { renderToCanvas, renderOutlineMask, computeAutoFitTransform, renderGraphicSubset } from '@lib/renderer/canvas-renderer'
 import { renderRealisticView } from '@lib/renderer/realistic-renderer'
 import type { RealisticLayers } from '@lib/renderer/realistic-renderer'
+import { generateJetprintDots } from '@lib/renderer/jetprint-dots'
+import type { PasteSettings } from '~/composables/usePasteSettings'
 import { parseGerber } from '@lib/gerber'
 import { plotImageTree } from '@lib/gerber/plotter'
 import { mergeBounds, emptyBounds, isEmpty } from '@lib/gerber/bounding-box'
@@ -53,6 +55,8 @@ const props = defineProps<{
   preset?: PcbPreset
   /** All layers (including hidden ones) — needed for realistic mode to find layers by type */
   allLayers?: LayerInfo[]
+  /** Paste application settings (stencil vs jetprint) */
+  pasteSettings?: PasteSettings
   /** Visible PnP components to render as dots */
   pnpComponents?: EditablePnPComponent[]
   /** Currently selected PnP component designator */
@@ -76,6 +80,8 @@ const props = defineProps<{
   pnpConvention?: PnPConvention
   /** Board rotation in degrees (CW). Purely visual — does not modify data. */
   boardRotation?: number
+  /** Whether to render DNP components with a distinct blue highlight (default true) */
+  showDnpHighlight?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -476,13 +482,22 @@ function gatherRealisticLayers(side: 'top' | 'bottom'): RealisticLayers {
     const tree = getImageTree(layer)
     if (!tree || tree.children.length === 0) continue
 
-    if (layer.type === copperType) { result.copper = tree; usedTrees.push(tree) }
+    // Outline/Keep-Out always participate (they define board shape),
+    // but all other layers respect visibility toggling.
+    if (layer.type === 'Outline') { outlineTree = tree }
+    else if (layer.type === 'Keep-Out' && !outlineTree) { outlineTree = tree }
+    else if (!layer.visible) { continue }
+    else if (layer.type === copperType) { result.copper = tree; usedTrees.push(tree) }
     else if (layer.type === maskType) { result.solderMask = tree; usedTrees.push(tree) }
     else if (layer.type === silkType) { result.silkscreen = tree; usedTrees.push(tree) }
-    else if (layer.type === pasteType) { result.paste = tree; usedTrees.push(tree) }
+    else if (layer.type === pasteType) {
+      const ps = props.pasteSettings
+      result.paste = ps && ps.mode === 'jetprint'
+        ? generateJetprintDots(tree, { dotDiameter: ps.dotDiameter, dotSpacing: ps.dotSpacing, pattern: ps.pattern, dynamicDots: ps.dynamicDots })
+        : tree
+      usedTrees.push(tree)
+    }
     else if (layer.type === 'Drill') drillTrees.push(tree)
-    else if (layer.type === 'Outline') outlineTree = tree
-    else if (layer.type === 'Keep-Out' && !outlineTree) outlineTree = tree
 
     if (!detectedUnits) detectedUnits = tree.units
   }
@@ -553,6 +568,8 @@ function detectUnits(): 'mm' | 'in' {
 
 /** Radius of PnP center dots in CSS pixels */
 const PNP_DOT_RADIUS = 3
+/** Larger radius for DNP dots so they stand out */
+const PNP_DNP_DOT_RADIUS = 5
 /** Hit-test radius for clicking PnP dots (CSS px) */
 const PNP_HIT_RADIUS = 8
 /** Extra slop for clicking footprint shapes (CSS px) */
@@ -561,6 +578,8 @@ const PNP_FOOTPRINT_HIT_TOLERANCE = 6
 const PNP_HIGHLIGHT_COLOR = '#00FFFF'
 /** Default PnP dot color (shown when no package footprint is rendered) */
 const PNP_DOT_COLOR = '#FF69B4'
+/** DNP dot color — blue to match Newmatik map convention */
+const PNP_DNP_DOT_COLOR = '#4A90D9'
 
 /**
  * Convert PnP mm coordinate to Gerber coordinate space,
@@ -660,10 +679,11 @@ function drawPnPMarkers(
       }
     }
 
-    // Draw the filled dot
+    const isDnpHighlighted = comp.dnp && props.showDnpHighlight !== false
+    const dotRadius = isDnpHighlighted ? PNP_DNP_DOT_RADIUS : PNP_DOT_RADIUS
     ctx.beginPath()
-    ctx.arc(screenX, screenY, PNP_DOT_RADIUS, 0, Math.PI * 2)
-    ctx.fillStyle = PNP_DOT_COLOR
+    ctx.arc(screenX, screenY, dotRadius, 0, Math.PI * 2)
+    ctx.fillStyle = isDnpHighlighted ? PNP_DNP_DOT_COLOR : PNP_DOT_COLOR
     ctx.fill()
 
     // Draw highlight ring for selected component
@@ -818,7 +838,7 @@ function drawPackageFootprints(
 
     // Draw each shape
     for (const shape of shapes) {
-      drawFootprintShape(ctx, shape, mmToScreen, mirrored, isSelected, comp.polarized)
+      drawFootprintShape(ctx, shape, mmToScreen, mirrored, isSelected, comp.polarized, comp.dnp && props.showDnpHighlight !== false)
     }
     if (!isTht && comp.polarized && props.matchPackage) {
       const pkg = props.matchPackage(pkgName)
@@ -844,6 +864,11 @@ const PKG_PAD_FILL_SEL = 'rgba(140, 230, 230, 0.8)'
 const PKG_PIN1_FILL_SEL = '#FF3333'
 const LED_PIN_LABEL_FILL = 'rgba(255, 255, 255, 0.95)'
 const LED_PIN_LABEL_STROKE = 'rgba(0, 0, 0, 0.75)'
+// DNP blue tint (matches Newmatik map convention)
+const PKG_BODY_FILL_DNP = 'rgba(40, 80, 160, 0.80)'
+const PKG_BODY_STROKE_DNP = 'rgba(50, 100, 180, 0.9)'
+const PKG_PAD_FILL_DNP = 'rgba(100, 150, 220, 0.85)'
+const PKG_PIN1_FILL_DNP = 'rgba(100, 150, 220, 0.85)'
 
 /**
  * Ensure a CSS color has the desired alpha. If the color is a hex (#rrggbb)
@@ -886,6 +911,7 @@ function drawFootprintShape(
   mirrored: boolean,
   isSelected: boolean,
   polarized: boolean,
+  dnp = false,
 ) {
   const mirrorFactor = mirrored ? -1 : 1
   // Per-shape color overrides (from THT packages via ColoredFootprintShape)
@@ -901,6 +927,12 @@ function drawFootprintShape(
   const customFill = rawFill ? withAlpha(rawFill, a) : undefined
   const customStroke = rawStroke ? withAlpha(rawStroke, strokeAlpha) : undefined
 
+  // DNP overrides: blue-tinted fills take precedence over defaults but not selection
+  const bodyFill = dnp ? PKG_BODY_FILL_DNP : PKG_BODY_FILL
+  const bodyStroke = dnp ? PKG_BODY_STROKE_DNP : PKG_BODY_STROKE
+  const padFill = dnp ? PKG_PAD_FILL_DNP : PKG_PAD_FILL
+  const pin1Fill = dnp ? PKG_PIN1_FILL_DNP : PKG_PIN1_FILL
+
   if (shape.kind === 'rect') {
     const sx = shape.cx * mmToScreen * mirrorFactor
     const sy = -shape.cy * mmToScreen
@@ -910,16 +942,16 @@ function drawFootprintShape(
     const role = (!polarized && shape.role === 'pin1') ? 'pad' : shape.role
 
     if (role === 'body') {
-      ctx.fillStyle = isSelected ? PKG_BODY_FILL_SEL : (customFill || PKG_BODY_FILL)
+      ctx.fillStyle = isSelected ? PKG_BODY_FILL_SEL : (customFill || bodyFill)
       ctx.fillRect(sx - sw / 2, sy - sh / 2, sw, sh)
-      ctx.strokeStyle = isSelected ? PKG_BODY_STROKE_SEL : (customStroke || PKG_BODY_STROKE)
+      ctx.strokeStyle = isSelected ? PKG_BODY_STROKE_SEL : (customStroke || bodyStroke)
       ctx.lineWidth = 1
       ctx.strokeRect(sx - sw / 2, sy - sh / 2, sw, sh)
     } else if (role === 'pad') {
-      ctx.fillStyle = isSelected ? PKG_PAD_FILL_SEL : (customFill || PKG_PAD_FILL)
+      ctx.fillStyle = isSelected ? PKG_PAD_FILL_SEL : (customFill || padFill)
       ctx.fillRect(sx - sw / 2, sy - sh / 2, sw, sh)
     } else if (role === 'pin1') {
-      ctx.fillStyle = isSelected ? PKG_PIN1_FILL_SEL : (customFill || PKG_PIN1_FILL)
+      ctx.fillStyle = isSelected ? PKG_PIN1_FILL_SEL : (customFill || pin1Fill)
       ctx.fillRect(sx - sw / 2, sy - sh / 2, sw, sh)
     }
   } else if (shape.kind === 'circle') {
@@ -932,20 +964,20 @@ function drawFootprintShape(
     if (role === 'body') {
       ctx.beginPath()
       ctx.arc(sx, sy, sr, 0, Math.PI * 2)
-      ctx.fillStyle = isSelected ? PKG_BODY_FILL_SEL : (customFill || PKG_BODY_FILL)
+      ctx.fillStyle = isSelected ? PKG_BODY_FILL_SEL : (customFill || bodyFill)
       ctx.fill()
-      ctx.strokeStyle = isSelected ? PKG_BODY_STROKE_SEL : (customStroke || PKG_BODY_STROKE)
+      ctx.strokeStyle = isSelected ? PKG_BODY_STROKE_SEL : (customStroke || bodyStroke)
       ctx.lineWidth = 1
       ctx.stroke()
     } else if (role === 'pad') {
       ctx.beginPath()
       ctx.arc(sx, sy, Math.max(sr, 0.5), 0, Math.PI * 2)
-      ctx.fillStyle = isSelected ? PKG_PAD_FILL_SEL : (customFill || PKG_PAD_FILL)
+      ctx.fillStyle = isSelected ? PKG_PAD_FILL_SEL : (customFill || padFill)
       ctx.fill()
     } else if (role === 'pin1') {
       ctx.beginPath()
       ctx.arc(sx, sy, Math.max(sr, 0.5), 0, Math.PI * 2)
-      ctx.fillStyle = isSelected ? PKG_PIN1_FILL_SEL : (customFill || PKG_PIN1_FILL)
+      ctx.fillStyle = isSelected ? PKG_PIN1_FILL_SEL : (customFill || pin1Fill)
       ctx.fill()
     }
   } else if (shape.kind === 'roundedRect') {
@@ -959,13 +991,13 @@ function drawFootprintShape(
     roundRect(ctx, sx - sw / 2, sy - sh / 2, sw, sh, sr)
 
     if (shape.role === 'body') {
-      ctx.fillStyle = isSelected ? PKG_BODY_FILL_SEL : (customFill || PKG_BODY_FILL)
+      ctx.fillStyle = isSelected ? PKG_BODY_FILL_SEL : (customFill || bodyFill)
       ctx.fill()
-      ctx.strokeStyle = isSelected ? PKG_BODY_STROKE_SEL : (customStroke || PKG_BODY_STROKE)
+      ctx.strokeStyle = isSelected ? PKG_BODY_STROKE_SEL : (customStroke || bodyStroke)
       ctx.lineWidth = 1
       ctx.stroke()
     } else {
-      ctx.fillStyle = isSelected ? PKG_PAD_FILL_SEL : (customFill || PKG_PAD_FILL)
+      ctx.fillStyle = isSelected ? PKG_PAD_FILL_SEL : (customFill || padFill)
       ctx.fill()
     }
   }
@@ -1376,6 +1408,7 @@ function draw() {
 
   const dpr = sizeCanvas()
   const { cssWidth, cssHeight } = getCssDimensions()
+  if (cssWidth <= 0 || cssHeight <= 0) return
 
   const ctx = canvas.getContext('2d')!
   ctx.clearRect(0, 0, canvas.width, canvas.height)
@@ -1551,11 +1584,13 @@ function draw() {
 
       sceneCanvas = acquireCanvas(overscanW, overscanH)
 
+      const ps = props.pasteSettings
       renderRealisticView(realisticLayers, sceneCanvas, {
         preset: props.preset!,
         transform: osTransform,
         dpr,
         side,
+        pasteColor: ps?.mode === 'jetprint' && ps.highlightDots ? '#00FF66' : undefined,
       })
     } else {
       // ── Standard layer rendering mode ──
@@ -1675,7 +1710,7 @@ watch(
 )
 
 watch(
-  () => `${props.viewMode ?? 'layers'}|${props.preset?.name ?? ''}|${props.cropToOutline ? 1 : 0}|${props.outlineLayer?.file.fileName ?? ''}|${props.activeFilter ?? 'all'}|${layerSignature(props.layers)}|${allLayerSignature(props.allLayers)}`,
+  () => `${props.viewMode ?? 'layers'}|${props.preset?.name ?? ''}|${props.cropToOutline ? 1 : 0}|${props.outlineLayer?.file.fileName ?? ''}|${props.activeFilter ?? 'all'}|${layerSignature(props.layers)}|${allLayerSignature(props.allLayers)}|${props.pasteSettings?.mode ?? 'stencil'}|${props.pasteSettings?.dotDiameter ?? 0}|${props.pasteSettings?.dotSpacing ?? 0}|${props.pasteSettings?.pattern ?? 'hex'}|${props.pasteSettings?.highlightDots ? 1 : 0}|${props.pasteSettings?.dynamicDots ? 1 : 0}`,
   () => {
     invalidateSceneCache()
     scheduleRedraw()

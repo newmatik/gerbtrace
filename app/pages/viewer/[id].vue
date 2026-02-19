@@ -30,6 +30,7 @@
       <ViewerPagesTabs
         v-model="sidebarTab"
         :show-panel="effectiveShowPanel"
+        :show-paste="effectiveShowPaste"
         :show-pn-p="effectiveShowPnP"
         :show-bom="effectiveShowBom"
         :show-docs="effectiveShowDocs"
@@ -126,9 +127,16 @@
       v-model:board-rotation="boardRotation"
       v-model:panel-tab-edit-mode="panelTabEditMode"
       v-model:panel-added-routing-edit-mode="panelAddedRoutingEditMode"
-      v-model:panel-show-components="panelShowComponents"
+      v-model:panel-show-smd-components="panelShowSmdComponents"
+      v-model:panel-show-tht-components="panelShowThtComponents"
       v-model:panel-show-danger-zones="panelShowDangerZones"
       v-model:panel-danger-inset-mm="panelDangerInsetMm"
+      v-model:pnp-show-dnp-highlight="pnpShowDnpHighlight"
+      v-model:pnp-show-smd="pnpShowSmd"
+      v-model:pnp-show-tht="pnpShowTht"
+      v-model:pnp-auto-focus-on-select="pnpAutoFocusOnSelect"
+      v-model:pnp-show-minimap="pnpShowMinimap"
+      v-model:measure-constraint-mode="measureTool.constraintMode.value"
       :page="sidebarTab"
       :has-outline="hasOutline"
       :layers-count="layers.length"
@@ -167,6 +175,7 @@
             :origin-y="pnp.originY.value"
             :show-packages="showPackages"
             :pnp-convention="pnp.convention.value"
+            :pnp-unit-override="pnp.coordUnitOverride.value"
             :package-options="packageOptions"
             :sort-state="pnpSortSmd"
             :manual-order="pnpManualOrderSmd"
@@ -177,6 +186,7 @@
             @update:search-query="pnp.searchQuery.value = $event"
             @update:show-packages="showPackages = $event"
             @update:pnp-convention="updateConvention"
+            @update:pnp-unit-override="pnp.coordUnitOverride.value = $event"
             @update:rotation="handleComponentRotationUpdate($event)"
             @reset:rotation="handleComponentResetRotation($event)"
             @toggle:dnp="handleComponentToggleDnp($event)"
@@ -193,7 +203,7 @@
             @delete:group="deleteGroup($event, 'smd')"
             @reorder:groups="reorderGroups('smd', $event)"
             @assign:group="assignComponentGroup($event, 'smd')"
-            @select="pnp.selectComponent($event)"
+            @select="handleComponentTableSelect($event)"
             @start-set-origin="startSetOrigin"
             @start-component-align="startComponentAlign"
             @reset-origin="handleResetOrigin"
@@ -215,6 +225,7 @@
             :origin-y="pnp.originY.value"
             :show-packages="showPackages"
             :pnp-convention="pnp.convention.value"
+            :pnp-unit-override="pnp.coordUnitOverride.value"
             :package-options="thtPackageOptions"
             :sort-state="pnpSortTht"
             :manual-order="pnpManualOrderTht"
@@ -225,6 +236,7 @@
             @update:search-query="pnp.searchQuery.value = $event"
             @update:show-packages="showPackages = $event"
             @update:pnp-convention="updateConvention"
+            @update:pnp-unit-override="pnp.coordUnitOverride.value = $event"
             @update:rotation="handleComponentRotationUpdate($event)"
             @reset:rotation="handleComponentResetRotation($event)"
             @toggle:dnp="handleComponentToggleDnp($event)"
@@ -241,7 +253,7 @@
             @delete:group="deleteGroup($event, 'tht')"
             @reorder:groups="reorderGroups('tht', $event)"
             @assign:group="assignComponentGroup($event, 'tht')"
-            @select="pnp.selectComponent($event)"
+            @select="handleComponentTableSelect($event)"
             @start-set-origin="startSetOrigin"
             @start-component-align="startComponentAlign"
             @reset-origin="handleResetOrigin"
@@ -279,6 +291,13 @@
             :locked="!canEditTab('panel')"
             @update:panel-data="handlePanelDataUpdate"
           />
+
+          <PastePanel
+            v-else-if="sidebarTab === 'paste'"
+            :paste-settings="pasteSettings"
+            :locked="!canEditTab('paste')"
+            @update:paste-settings="pasteSettings = $event"
+          />
         </aside>
 
         <div
@@ -308,13 +327,14 @@
               :active-filter="activeFilter"
               :view-mode="viewMode"
               :preset="viewMode === 'realistic' ? selectedPreset : undefined"
+              :paste-settings="pasteSettings"
               :project-name="project?.name || 'Untitled'"
               :pcb-data="pcbData"
               :panel-config="panelData"
               :board-size-mm="boardSizeMm"
               :danger-zone="panelDangerZone"
               :measure="measureTool"
-              :pnp-components="panelData.showComponents ? pnpComponentsWithPreview : []"
+              :pnp-components="panelPnpComponentsForCanvas"
               :match-package="pkgLib.matchPackage"
               :match-tht-package="thtPkgLib.matchThtPackage"
               :show-packages="showPackages"
@@ -336,7 +356,9 @@
               :delete-tool="deleteTool"
               :view-mode="viewMode"
               :preset="viewMode === 'realistic' ? selectedPreset : undefined"
-              :pnp-components="sidebarTab === 'pcb' ? [] : pnpComponentsWithPreview"
+              :paste-settings="pasteSettings"
+              :pnp-components="sidebarTab === 'pcb' || sidebarTab === 'paste' ? [] : pnpComponentsForCanvas"
+              :show-dnp-highlight="pnpShowDnpHighlight"
               :selected-pnp-designator="pnp.selectedDesignator.value"
               :pnp-origin-x="pnp.originX.value"
               :pnp-origin-y="pnp.originY.value"
@@ -348,7 +370,7 @@
               :show-packages="showPackages"
               :pnp-convention="pnp.convention.value"
               :board-rotation="boardRotation"
-              @pnp-click="pnp.selectComponent($event)"
+              @pnp-click="handleCanvasComponentClick($event)"
               @pnp-dblclick="handlePnPDblClick"
               @align-click="handleAlignClick"
             />
@@ -377,8 +399,59 @@
               </div>
             </Transition>
 
+            <Transition
+              enter-active-class="transition-opacity duration-100 ease-out"
+              enter-from-class="opacity-0"
+              enter-to-class="opacity-100"
+              leave-active-class="transition-opacity duration-120 ease-in"
+              leave-from-class="opacity-100"
+              leave-to-class="opacity-0"
+            >
+              <div
+                v-if="pnpMinimapVisible"
+                class="absolute bottom-14 right-4 z-20 w-44 h-28 rounded-md border border-neutral-300/60 dark:border-neutral-700/70 bg-white/60 dark:bg-neutral-900/60 backdrop-blur-sm shadow-md overflow-hidden"
+              >
+                <svg
+                  class="w-full h-full"
+                  viewBox="0 0 176 112"
+                  aria-label="PCB minimap"
+                >
+                  <rect x="0" y="0" width="176" height="112" fill="transparent" />
+                  <g v-if="pnpMinimapOutlinePaths.length > 0" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="1.4">
+                    <path
+                      v-for="(d, idx) in pnpMinimapOutlinePaths"
+                      :key="`mini-outline-${idx}`"
+                      :d="d"
+                    />
+                  </g>
+                  <rect
+                    v-else-if="pnpMinimapModel"
+                    :x="pnpMinimapModel.boardRect.x"
+                    :y="pnpMinimapModel.boardRect.y"
+                    :width="pnpMinimapModel.boardRect.w"
+                    :height="pnpMinimapModel.boardRect.h"
+                    rx="2"
+                    fill="none"
+                    stroke="rgba(255,255,255,0.9)"
+                    stroke-width="1.4"
+                  />
+                  <rect
+                    v-if="pnpMinimapModel"
+                    :x="pnpMinimapModel.viewportRect.x"
+                    :y="pnpMinimapModel.viewportRect.y"
+                    :width="pnpMinimapModel.viewportRect.w"
+                    :height="pnpMinimapModel.viewportRect.h"
+                    fill="none"
+                    stroke="#EF4444"
+                    stroke-width="1.8"
+                  />
+                </svg>
+              </div>
+            </Transition>
+
             <CanvasControls :interaction="canvasInteraction" :view-mode="viewMode" @open-settings="showSettings = true" />
             <BoardExtents :dimensions="sidebarTab === 'panel' ? panelDimensionsMm : (boardSizeMm ?? null)" />
+
           </div>
         </main>
       </template>
@@ -526,6 +599,17 @@
               />
             </div>
             <div class="flex-1" />
+            <UButton
+              v-if="bomCpLines.length > 0"
+              size="xs"
+              :color="bomCpCopied ? 'success' : 'neutral'"
+              :variant="bomCpCopied ? 'soft' : 'outline'"
+              :icon="bomCpCopied ? 'i-lucide-check' : 'i-lucide-clipboard-copy'"
+              :title="`Copy ${bomCpLines.length} customer-provided items to clipboard`"
+              @click="copyBomCpItems"
+            >
+              {{ bomCpCopied ? 'Copied' : 'Copy CP List' }}
+            </UButton>
             <UPopover
               v-model:open="bomLockPopoverOpen"
               :content="{ side: 'bottom', align: 'end', sideOffset: 6 }"
@@ -808,7 +892,7 @@ const rawId = route.params.id as string
 const isTeamProject = rawId.startsWith('team-')
 const projectId = isTeamProject ? 0 : Number(rawId) // local projects use numeric IDs
 const teamProjectId = isTeamProject ? rawId.replace('team-', '') : null
-const { getProject, getFiles, addFiles, upsertFiles, clearFiles, renameFile, removeFile, getOriginalFiles, storeOriginalFiles, renameOriginalFile, removeOriginalFile, renameProject, updateFileLayerType, updateFileContent, updateProjectOrigin, updateProjectConvention, updateProjectRotationOverrides, updateProjectDnp, updateProjectCadPackageMap, updateProjectPolarizedOverrides, updateProjectComponentNotes, updateProjectFieldOverrides, updateProjectManualComponents, updateProjectDeletedComponents, updateProjectSortSmd, updateProjectSortTht, updateProjectManualOrderSmd, updateProjectManualOrderTht, updateProjectComponentGroups, updateProjectGroupAssignments, updateBomLines, updateBomPricingCache, updateBomBoardQuantity, updatePcbData, updatePanelData, getDocuments, addDocument, removeDocument: removeDocumentFromDb, updateDocumentType: updateDocumentTypeInDb } = useProject()
+const { getProject, getFiles, addFiles, upsertFiles, clearFiles, renameFile, removeFile, getOriginalFiles, storeOriginalFiles, renameOriginalFile, removeOriginalFile, renameProject, updateFileLayerType, updateFileContent, updateProjectOrigin, updateProjectConvention, updateProjectRotationOverrides, updateProjectDnp, updateProjectCadPackageMap, updateProjectPolarizedOverrides, updateProjectComponentNotes, updateProjectFieldOverrides, updateProjectManualComponents, updateProjectDeletedComponents, updateProjectSortSmd, updateProjectSortTht, updateProjectManualOrderSmd, updateProjectManualOrderTht, updateProjectComponentGroups, updateProjectGroupAssignments, updateBomLines, updateBomPricingCache, updateBomBoardQuantity, updatePcbData, updatePanelData, updatePasteSettings: updateLocalPasteSettings, updateLayerOrder: updateLocalLayerOrder, updateDocumentOrder: updateLocalDocumentOrder, getDocuments, addDocument, removeDocument: removeDocumentFromDb, updateDocumentType: updateDocumentTypeInDb } = useProject()
 
 // ── Team project support ──
 const teamProjectIdRef = ref(teamProjectId)
@@ -849,7 +933,7 @@ const canEdit = computed(() => {
   return currentTeamRole.value === 'editor' || currentTeamRole.value === 'admin'
 })
 
-type LockableTab = 'files' | 'pcb' | 'panel' | 'smd' | 'tht' | 'bom'
+type LockableTab = 'files' | 'pcb' | 'panel' | 'paste' | 'smd' | 'tht' | 'bom'
 type PageLockState = {
   locked: boolean
   locked_at: string | null
@@ -858,7 +942,7 @@ type PageLockState = {
 }
 type PageLocksRecord = Partial<Record<LockableTab, PageLockState>>
 
-const LOCKABLE_TABS: LockableTab[] = ['files', 'pcb', 'panel', 'smd', 'tht', 'bom']
+const LOCKABLE_TABS: LockableTab[] = ['files', 'pcb', 'panel', 'paste', 'smd', 'tht', 'bom']
 const pageLocksOverride = ref<PageLocksRecord | null>(null)
 
 function isLockableTab(tab: string): tab is LockableTab {
@@ -882,6 +966,7 @@ const canvasAreaBg = computed(() =>
 const sidebarFiles = useSidebarWidth('files')
 const sidebarPcb = useSidebarWidth('pcb')
 const sidebarPanel = useSidebarWidth('panel')
+const sidebarPaste = useSidebarWidth('paste')
 const sidebarSmd = useSidebarWidth('smd')
 const sidebarTht = useSidebarWidth('tht')
 const sidebarDocs = useSidebarWidth('docs')
@@ -891,6 +976,7 @@ const sidebarMap: Record<string, ReturnType<typeof useSidebarWidth>> = {
   files: sidebarFiles,
   pcb: sidebarPcb,
   panel: sidebarPanel,
+  paste: sidebarPaste,
   smd: sidebarSmd,
   tht: sidebarTht,
   docs: sidebarDocs,
@@ -903,8 +989,8 @@ function onSidebarDragStart(e: MouseEvent) {
 }
 
 // ── Sidebar tab (Files / PCB / Panel / SMD / THT / BOM / Pricing / Docs) ──
-type SidebarTab = 'files' | 'pcb' | 'panel' | 'smd' | 'tht' | 'bom' | 'pricing' | 'docs'
-const VALID_TABS: SidebarTab[] = ['files', 'pcb', 'panel', 'smd', 'tht', 'bom', 'pricing', 'docs']
+type SidebarTab = 'files' | 'pcb' | 'panel' | 'paste' | 'smd' | 'tht' | 'bom' | 'pricing' | 'docs'
+const VALID_TABS: SidebarTab[] = ['files', 'pcb', 'panel', 'paste', 'smd', 'tht', 'bom', 'pricing', 'docs']
 
 const router = useRouter()
 const initialTabRaw = (route.query.tab as string) || 'files'
@@ -973,6 +1059,25 @@ watch(() => projectSync?.project.value?.page_locks, (next) => {
   if (project.value) project.value.pageLocks = next
 }, { deep: true })
 
+watch(() => projectSync?.project.value?.paste_settings, (next) => {
+  if (!next || typeof next !== 'object') return
+  pasteSettings.value = { ...pasteSettings.value, ...next }
+}, { deep: true })
+
+watch(() => projectSync?.project.value?.layer_order, (next) => {
+  if (!isStringArray(next)) return
+  layerOrder.value = [...next]
+  layers.value = applyLayerOrder(layers.value)
+  syncLayerOrderFromLayers()
+}, { deep: true })
+
+watch(() => projectSync?.project.value?.document_order, (next) => {
+  if (!isStringArray(next)) return
+  documentOrder.value = [...next]
+  documents.value = applyDocumentOrder(documents.value)
+  syncDocumentOrderFromDocuments()
+}, { deep: true })
+
 onMounted(() => {
   const raw = new URLSearchParams(window.location.search).get('tab') || 'files'
   const clientTab = raw === 'layers' ? 'files' : raw
@@ -994,7 +1099,7 @@ watch(sidebarTab, (tab) => {
 })
 
 const isCanvasPage = computed(() => {
-  return sidebarTab.value === 'pcb' || sidebarTab.value === 'panel' || sidebarTab.value === 'smd' || sidebarTab.value === 'tht'
+  return sidebarTab.value === 'pcb' || sidebarTab.value === 'panel' || sidebarTab.value === 'paste' || sidebarTab.value === 'smd' || sidebarTab.value === 'tht'
 })
 
 const showControlsBar = isCanvasPage
@@ -1024,6 +1129,13 @@ watch(sidebarTab, (tab) => {
     panelTabEditMode.value = 'off'
     panelAddedRoutingEditMode.value = 'off'
   }
+  if (tab === 'smd') {
+    pnpShowSmd.value = true
+    pnpShowTht.value = false
+  } else if (tab === 'tht') {
+    pnpShowSmd.value = false
+    pnpShowTht.value = true
+  }
 })
 
 watch(isCurrentTabLocked, (locked) => {
@@ -1048,6 +1160,8 @@ const cropToOutline = prefs.cropToOutline
 const hasStoredCropToOutline = prefs.hasStoredCropToOutline
 const mirrored = prefs.mirrored
 const boardRotation = prefs.boardRotation
+const pasteSettings = prefs.pasteSettings
+const pnpUnitOverride = prefs.pnpUnitOverride
 const cachedTabVisibility = prefs.tabVisibility
 
 // ── Interaction mode management ──
@@ -1197,6 +1311,16 @@ function handlePnPDblClick(designator: string) {
   if (comp) openComponentEdit(comp)
 }
 
+function handleComponentTableSelect(designator: string | null) {
+  pnpSelectionSource.value = 'table'
+  pnp.selectComponent(designator)
+}
+
+function handleCanvasComponentClick(designator: string | null) {
+  pnpSelectionSource.value = 'canvas'
+  pnp.selectComponent(designator)
+}
+
 function startSetOrigin() {
   if (!ensureTabEditable(sidebarTab.value === 'tht' ? 'tht' : 'smd')) return
   // Switch to cursor mode to allow canvas clicking
@@ -1293,11 +1417,339 @@ function detectGerberUnits(): 'mm' | 'in' {
   return 'mm'
 }
 
+interface MinimapBounds {
+  minX: number
+  minY: number
+  maxX: number
+  maxY: number
+}
+
+function hasValidBounds(b: number[] | undefined): b is [number, number, number, number] {
+  if (!b || b.length < 4) return false
+  const [minX, minY, maxX, maxY] = b
+  return Number.isFinite(minX) && Number.isFinite(minY) && Number.isFinite(maxX) && Number.isFinite(maxY)
+    && maxX > minX && maxY > minY
+}
+
+const pnpMinimapBounds = computed<MinimapBounds | null>(() => {
+  const canvas = boardCanvasRef.value
+  if (!canvas || layers.value.length === 0) return null
+
+  const outlineLayer = layers.value.find(l => l.type === 'Outline')
+    ?? layers.value.find(l => l.type === 'Keep-Out')
+  if (outlineLayer) {
+    const outlineTree = canvas.getImageTree(outlineLayer)
+    const ob = outlineTree?.bounds as number[] | undefined
+    if (outlineTree && outlineTree.children.length > 0 && hasValidBounds(ob)) {
+      return { minX: ob[0], minY: ob[1], maxX: ob[2], maxY: ob[3] }
+    }
+  }
+
+  let minX = Infinity
+  let minY = Infinity
+  let maxX = -Infinity
+  let maxY = -Infinity
+  for (const layer of layers.value) {
+    const tree = canvas.getImageTree(layer)
+    const b = tree?.bounds as number[] | undefined
+    if (!tree || tree.children.length === 0 || !hasValidBounds(b)) continue
+    minX = Math.min(minX, b[0])
+    minY = Math.min(minY, b[1])
+    maxX = Math.max(maxX, b[2])
+    maxY = Math.max(maxY, b[3])
+  }
+  if (!Number.isFinite(minX) || !Number.isFinite(minY) || !Number.isFinite(maxX) || !Number.isFinite(maxY)) return null
+  return { minX, minY, maxX, maxY }
+})
+
+const pnpMinimapOutlineTree = computed<ImageTree | null>(() => {
+  const canvas = boardCanvasRef.value
+  if (!canvas) return null
+  const outlineSrc = layers.value.find(l => l.type === 'Outline')
+    ?? layers.value.find(l => l.type === 'Keep-Out')
+  if (!outlineSrc) return null
+  const tree = canvas.getImageTree(outlineSrc) as ImageTree | null
+  if (!tree || tree.children.length === 0) return null
+  const b = tree.bounds as number[] | undefined
+  if (!hasValidBounds(b)) return null
+  return tree
+})
+
+const pnpMinimapModel = computed<{
+  mapW: number
+  mapH: number
+  fit: number
+  minX: number
+  maxY: number
+  drawX: number
+  drawY: number
+  boardRect: { x: number; y: number; w: number; h: number }
+  viewportRect: { x: number; y: number; w: number; h: number }
+} | null>(() => {
+  const bounds = pnpMinimapBounds.value
+  if (!bounds) return null
+
+  const canvasEl = boardCanvasRef.value?.getCanvas?.() as HTMLCanvasElement | null | undefined
+  if (!canvasEl) return null
+
+  const vw = canvasEl.clientWidth || canvasEl.width
+  const vh = canvasEl.clientHeight || canvasEl.height
+  if (!vw || !vh) return null
+
+  const scale = canvasInteraction.transform.value.scale
+  if (!Number.isFinite(scale) || scale <= 0) return null
+  const offX = canvasInteraction.transform.value.offsetX
+  const offY = canvasInteraction.transform.value.offsetY
+
+  const viewLeft = (0 - offX) / scale
+  const viewRight = (vw - offX) / scale
+  const viewTop = offY / scale
+  const viewBottom = (offY - vh) / scale
+
+  const mapW = 176
+  const mapH = 112
+  const pad = 8
+  const availableW = mapW - pad * 2
+  const availableH = mapH - pad * 2
+  const boardW = Math.max(1e-9, bounds.maxX - bounds.minX)
+  const boardH = Math.max(1e-9, bounds.maxY - bounds.minY)
+  const fit = Math.min(availableW / boardW, availableH / boardH)
+  const drawW = boardW * fit
+  const drawH = boardH * fit
+  const drawX = (mapW - drawW) / 2
+  const drawY = (mapH - drawH) / 2
+
+  const nx = (x: number) => drawX + (x - bounds.minX) * fit
+  const ny = (y: number) => drawY + (bounds.maxY - y) * fit
+  const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v))
+
+  const vx0 = clamp(nx(Math.min(viewLeft, viewRight)), drawX, drawX + drawW)
+  const vx1 = clamp(nx(Math.max(viewLeft, viewRight)), drawX, drawX + drawW)
+  const vy0 = clamp(ny(Math.max(viewTop, viewBottom)), drawY, drawY + drawH)
+  const vy1 = clamp(ny(Math.min(viewTop, viewBottom)), drawY, drawY + drawH)
+
+  return {
+    mapW,
+    mapH,
+    fit,
+    minX: bounds.minX,
+    maxY: bounds.maxY,
+    drawX,
+    drawY,
+    boardRect: { x: drawX, y: drawY, w: drawW, h: drawH },
+    viewportRect: {
+      x: vx0,
+      y: vy0,
+      w: Math.max(2, vx1 - vx0),
+      h: Math.max(2, vy1 - vy0),
+    },
+  }
+})
+
+const pnpMinimapVisible = computed(() => {
+  if (sidebarTab.value !== 'smd' && sidebarTab.value !== 'tht') return false
+  if (!pnpShowMinimap.value || !pnpMinimapModel.value) return false
+  const board = pnpMinimapModel.value.boardRect
+  const viewport = pnpMinimapModel.value.viewportRect
+  const boardArea = Math.max(1, board.w * board.h)
+  const viewportArea = Math.max(0, viewport.w * viewport.h)
+  const coverage = viewportArea / boardArea
+  // Hide minimap when nearly fully zoomed out (whole PCB in view).
+  return coverage < 0.88
+})
+
+function sampleArcPoints(
+  start: [number, number],
+  end: [number, number],
+  center: [number, number],
+  radius: number,
+  startAngle: number,
+  endAngle: number,
+  counterclockwise: boolean,
+): Array<[number, number]> {
+  let delta = endAngle - startAngle
+  if (counterclockwise) {
+    while (delta < 0) delta += Math.PI * 2
+  } else {
+    while (delta > 0) delta -= Math.PI * 2
+  }
+  const steps = Math.max(8, Math.ceil(Math.abs(delta) / (Math.PI / 18)))
+  const pts: Array<[number, number]> = [start]
+  for (let i = 1; i < steps; i++) {
+    const t = i / steps
+    const a = startAngle + delta * t
+    pts.push([center[0] + Math.cos(a) * radius, center[1] + Math.sin(a) * radius])
+  }
+  pts.push(end)
+  return pts
+}
+
+const pnpMinimapOutlinePaths = computed<string[]>(() => {
+  const tree = pnpMinimapOutlineTree.value
+  const model = pnpMinimapModel.value
+  if (!tree || !model) return []
+
+  const nx = (x: number) => model.drawX + (x - model.minX) * model.fit
+  const ny = (y: number) => model.drawY + (model.maxY - y) * model.fit
+
+  const pathFromSegments = (segments: any[], closePath = false): string => {
+    if (!Array.isArray(segments) || segments.length === 0) return ''
+    let d = ''
+    let started = false
+    for (const seg of segments) {
+      if (seg?.type === 'line' && Array.isArray(seg.start) && Array.isArray(seg.end)) {
+        const sx = nx(seg.start[0]); const sy = ny(seg.start[1])
+        const ex = nx(seg.end[0]); const ey = ny(seg.end[1])
+        if (!started) { d += `M ${sx} ${sy} `; started = true }
+        d += `L ${ex} ${ey} `
+      } else if (
+        seg?.type === 'arc'
+        && Array.isArray(seg.start) && Array.isArray(seg.end) && Array.isArray(seg.center)
+        && Number.isFinite(seg.radius) && Number.isFinite(seg.startAngle) && Number.isFinite(seg.endAngle)
+      ) {
+        const sampled = sampleArcPoints(
+          seg.start, seg.end, seg.center, seg.radius, seg.startAngle, seg.endAngle, !!seg.counterclockwise,
+        )
+        if (!started) {
+          const [sx, sy] = sampled[0]!
+          d += `M ${nx(sx)} ${ny(sy)} `
+          started = true
+        }
+        for (let i = 1; i < sampled.length; i++) {
+          const [px, py] = sampled[i]!
+          d += `L ${nx(px)} ${ny(py)} `
+        }
+      }
+    }
+    if (closePath && d) d += 'Z'
+    return d.trim()
+  }
+
+  const out: string[] = []
+  for (const g of tree.children as any[]) {
+    if (g?.type === 'path') {
+      const d = pathFromSegments(g.segments, false)
+      if (d) out.push(d)
+    } else if (g?.type === 'region') {
+      const d = pathFromSegments(g.segments, true)
+      if (d) out.push(d)
+    } else if (g?.type === 'shape') {
+      const s = g.shape
+      if (!s) continue
+      if (s.type === 'outline' && Array.isArray(s.segments)) {
+        const d = pathFromSegments(s.segments, true)
+        if (d) out.push(d)
+      } else if (s.type === 'polygon' && Array.isArray(s.points) && s.points.length > 1) {
+        const first = s.points[0]!
+        let d = `M ${nx(first[0])} ${ny(first[1])} `
+        for (let i = 1; i < s.points.length; i++) {
+          const p = s.points[i]!
+          d += `L ${nx(p[0])} ${ny(p[1])} `
+        }
+        out.push((d + 'Z').trim())
+      } else if (s.type === 'rect') {
+        const x0 = nx(s.x)
+        const y0 = ny(s.y + s.h)
+        const x1 = nx(s.x + s.w)
+        const y1 = ny(s.y)
+        out.push(`M ${x0} ${y0} L ${x1} ${y0} L ${x1} ${y1} L ${x0} ${y1} Z`)
+      }
+    }
+  }
+  return out
+})
+
+function focusComponentOnCanvas(comp: { x: number; y: number }) {
+  const canvasEl = boardCanvasRef.value?.getCanvas?.() as HTMLCanvasElement | null | undefined
+  if (!canvasEl) return
+
+  const rect = canvasEl.getBoundingClientRect()
+  const cssWidth = rect.width || canvasEl.clientWidth || canvasEl.width
+  const cssHeight = rect.height || canvasEl.clientHeight || canvasEl.height
+  if (!cssWidth || !cssHeight) return
+
+  const units = detectGerberUnits()
+  const xInGerber = units === 'in' ? comp.x / 25.4 : comp.x
+  const yInGerber = units === 'in' ? comp.y / 25.4 : comp.y
+  const ox = pnp.originX.value ?? 0
+  const oy = pnp.originY.value ?? 0
+  const gx = ox + xInGerber
+  const gy = oy + yInGerber
+
+  // Use a fixed focus scale so selection zoom feels consistent.
+  // Relative scaling (based on current zoom) makes jumps unpredictable.
+  const targetScale = 18
+
+  canvasInteraction.transform.value = {
+    scale: targetScale,
+    offsetX: cssWidth / 2 - gx * targetScale,
+    offsetY: cssHeight / 2 + gy * targetScale,
+  }
+}
+
 function handleKeyUp(e: KeyboardEvent) {
   measureTool.handleKeyUp(e)
 }
 
 const layers = ref<LayerInfo[]>([])
+const layerOrder = ref<string[]>([])
+const documentOrder = ref<string[]>([])
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every(v => typeof v === 'string' && v.trim().length > 0)
+}
+
+function sortBySavedOrder<T>(items: T[], getKey: (item: T) => string, savedOrder: string[], fallbackSort: (items: T[]) => T[]): T[] {
+  const keyToItem = new Map<string, T>()
+  for (const item of items) keyToItem.set(getKey(item), item)
+
+  const ordered: T[] = []
+  const used = new Set<string>()
+  for (const key of savedOrder) {
+    const item = keyToItem.get(key)
+    if (!item || used.has(key)) continue
+    ordered.push(item)
+    used.add(key)
+  }
+
+  const remaining = items.filter((item) => !used.has(getKey(item)))
+  if (remaining.length === 0) return ordered
+  return [...ordered, ...fallbackSort(remaining)]
+}
+
+function applyLayerOrder(nextLayers: LayerInfo[]): LayerInfo[] {
+  const normalizedOrder = isStringArray(layerOrder.value) ? layerOrder.value : []
+  if (normalizedOrder.length === 0) return sortLayersByPcbOrder(nextLayers)
+  return sortBySavedOrder(
+    nextLayers,
+    layer => layer.file.fileName,
+    normalizedOrder,
+    sortLayersByPcbOrder,
+  )
+}
+
+function applyDocumentOrder(nextDocuments: ProjectDocument[]): ProjectDocument[] {
+  const normalizedOrder = isStringArray(documentOrder.value) ? documentOrder.value : []
+  if (normalizedOrder.length === 0) return [...nextDocuments]
+  return sortBySavedOrder(
+    nextDocuments,
+    doc => doc.name,
+    normalizedOrder,
+    (docs) => [...docs],
+  )
+}
+
+function syncLayerOrderFromLayers() {
+  const next = layers.value.map(layer => layer.file.fileName)
+  if (next.length === layerOrder.value.length && next.every((name, idx) => name === layerOrder.value[idx])) return
+  layerOrder.value = next
+}
+
+function syncDocumentOrderFromDocuments() {
+  const next = documents.value.map(doc => doc.name)
+  if (next.length === documentOrder.value.length && next.every((name, idx) => name === documentOrder.value[idx])) return
+  documentOrder.value = next
+}
 
 // ── PCB parameters for pricing ──
 const pcbData = ref<{
@@ -1374,11 +1826,31 @@ const panelData = ref<PanelConfig>(DEFAULT_PANEL_CONFIG())
 const panelDangerZone = ref<DangerZoneConfig>({ enabled: false, insetMm: 2 })
 const hasLoadedProjectData = ref(false)
 
-const panelShowComponents = computed<boolean>({
-  get: () => panelData.value.showComponents !== false,
+const panelShowSmdComponents = computed<boolean>({
+  get: () => panelData.value.showSmdComponents !== false,
   set: (v) => {
     // Viewing overlay toggle should remain usable even when Panel is locked.
-    panelData.value = normalizePanelConfig({ ...(panelData.value as any), showComponents: v } as PanelConfig)
+    const nextShowSmd = !!v
+    const nextShowTht = panelData.value.showThtComponents !== false
+    panelData.value = normalizePanelConfig({
+      ...(panelData.value as any),
+      showSmdComponents: nextShowSmd,
+      showComponents: nextShowSmd || nextShowTht,
+    } as PanelConfig)
+  },
+})
+
+const panelShowThtComponents = computed<boolean>({
+  get: () => panelData.value.showThtComponents !== false,
+  set: (v) => {
+    // Viewing overlay toggle should remain usable even when Panel is locked.
+    const nextShowTht = !!v
+    const nextShowSmd = panelData.value.showSmdComponents !== false
+    panelData.value = normalizePanelConfig({
+      ...(panelData.value as any),
+      showThtComponents: nextShowTht,
+      showComponents: nextShowSmd || nextShowTht,
+    } as PanelConfig)
   },
 })
 
@@ -1434,6 +1906,9 @@ const selectedPreset = computed(() =>
   getPresetForAppearance(pcbData.value?.surfaceFinish, pcbData.value?.solderMaskColor),
 )
 const isPanelizedMode = computed(() => pcbData.value?.panelizationMode !== 'single')
+const hasPasteLayers = computed(() =>
+  layers.value.some(l => l.type === 'Top Paste' || l.type === 'Bottom Paste'),
+)
 const boardCanvasRef = ref<any>(null)
 const panelCanvasRef = ref<any>(null)
 
@@ -1734,6 +2209,25 @@ const hasOutline = computed(() => layers.value.some(l => l.type === 'Outline'))
 
 // ── Pick & Place ──
 const pnp = usePickAndPlace(layers)
+watch(pnpUnitOverride, (next) => {
+  pnp.coordUnitOverride.value = next
+}, { immediate: true })
+watch(() => pnp.coordUnitOverride.value, (next) => {
+  pnpUnitOverride.value = next
+})
+watch(
+  () => pnp.selectedComponent.value?.key ?? null,
+  async () => {
+    if (sidebarTab.value !== 'smd' && sidebarTab.value !== 'tht') return
+    if (!pnpAutoFocusOnSelect.value) return
+    if (pnpSelectionSource.value !== 'table') return
+    const selected = pnp.selectedComponent.value
+    if (!selected) return
+    await nextTick()
+    focusComponentOnCanvas(selected)
+    pnpSelectionSource.value = 'other'
+  },
+)
 const pkgLib = usePackageLibrary()
 const thtPkgLib = useThtPackageLibrary()
 const panelEdgeConstraints = computed(() => {
@@ -1746,6 +2240,16 @@ const panelEdgeConstraints = computed(() => {
   })
 })
 const showPackages = ref(true)
+const pnpShowDnpHighlight = ref(true)
+const pnpShowSmd = ref(true)
+const pnpShowTht = ref(false)
+const pnpAutoFocusOnSelect = ref(true)
+const pnpShowMinimap = ref(false)
+const pnpSelectionSource = ref<'table' | 'canvas' | 'other'>('other')
+
+watch(pnpAutoFocusOnSelect, (enabled) => {
+  if (enabled) pnpShowMinimap.value = true
+}, { immediate: true })
 
 const previewPkgOverride = ref<{ componentKey: string; packageName: string } | null>(null)
 const pnpComponentsWithPreview = computed(() => {
@@ -1757,6 +2261,28 @@ const pnpComponentsWithPreview = computed(() => {
       ? { ...c, matchedPackage: override.packageName }
       : c,
   )
+})
+
+const pnpComponentsForCanvas = computed(() => {
+  const showSmd = pnpShowSmd.value
+  const showTht = pnpShowTht.value
+  const showDnp = pnpShowDnpHighlight.value
+  return pnpComponentsWithPreview.value.filter((c) => {
+    if (c.dnp && !showDnp) return false
+    if (c.componentType === 'smd') return showSmd
+    if (c.componentType === 'tht') return showTht
+    return true
+  })
+})
+
+const panelPnpComponentsForCanvas = computed(() => {
+  const showSmd = panelData.value.showSmdComponents !== false
+  const showTht = panelData.value.showThtComponents !== false
+  return pnpComponentsWithPreview.value.filter((c) => {
+    if (c.componentType === 'smd') return showSmd
+    if (c.componentType === 'tht') return showTht
+    return true
+  })
 })
 
 // Monotonic version counter — bumped whenever any package source changes.
@@ -2053,6 +2579,8 @@ async function handleDocumentsAdd(files: File[]) {
     documents.value.push(entry)
     if (!firstNewId) firstNewId = id
   }
+  documents.value = applyDocumentOrder(documents.value)
+  syncDocumentOrderFromDocuments()
   // Switch to Files and preview the first new document
   if (firstNewId) {
     selectedDocumentId.value = firstNewId
@@ -2080,6 +2608,7 @@ async function handleDocumentRemove(id: string) {
   if (documents.value.length === 0 && sidebarTab.value === 'docs') {
     sidebarTab.value = 'files'
   }
+  syncDocumentOrderFromDocuments()
   // Remove from storage
   if (isTeamProject && doc.dbId && doc.storagePath) {
     await deleteTeamDocument(doc.dbId, doc.storagePath)
@@ -2098,6 +2627,7 @@ function moveDocument(fromIndex: number, toIndex: number) {
   if (!moved) return
   arr.splice(toIndex, 0, moved)
   documents.value = arr
+  syncDocumentOrderFromDocuments()
 }
 
 function downloadDocument(id: string) {
@@ -2160,6 +2690,24 @@ watch(pricingQuantities, (list) => {
 const bomSplitEl = ref<HTMLElement | null>(null)
 const bomLeftPct = bomSplit.pct
 const bomDragging = bomSplit.dragging
+
+const bomCpLines = computed(() => (bom.bomLines.value as BomLine[]).filter(l => l.customerProvided && !l.dnp))
+const bomCpCopied = ref(false)
+let bomCpCopyTimeout: ReturnType<typeof setTimeout> | undefined
+
+function copyBomCpItems() {
+  if (bomCpLines.value.length === 0) return
+  const text = bomCpLines.value.map((line) => {
+    const refs = line.references || '—'
+    const parts = [line.description, line.package, line.type].filter(Boolean).join('/')
+    return `${refs} = ${parts}`
+  }).join('\n')
+  navigator.clipboard.writeText(text).then(() => {
+    bomCpCopied.value = true
+    if (bomCpCopyTimeout) clearTimeout(bomCpCopyTimeout)
+    bomCpCopyTimeout = setTimeout(() => { bomCpCopied.value = false }, 1500)
+  })
+}
 
 const selectedBomLineId = ref<string | null>(null)
 const selectedBomLine = computed(() => {
@@ -2227,6 +2775,12 @@ watch(isPanelizedMode, (enabled) => {
   }
 }, { immediate: true })
 
+watch(hasPasteLayers, (has) => {
+  if (!has && sidebarTab.value === 'paste') {
+    sidebarTab.value = 'pcb'
+  }
+}, { immediate: true })
+
 // Auto-switch to BOM tab when BOM data appears and no PnP
 watch(bom.hasBom, (has) => {
   if (has && sidebarTab.value === 'files' && !pnp.hasPnP.value && !hadExplicitTab) {
@@ -2239,6 +2793,7 @@ watch(bom.hasBom, (has) => {
 const effectiveShowPanel = computed(() =>
   hasLoadedProjectData.value ? isPanelizedMode.value : (cachedTabVisibility.value.panel || isPanelizedMode.value),
 )
+const effectiveShowPaste = computed(() => hasPasteLayers.value)
 const effectiveShowPnP = computed(() =>
   hasLoadedProjectData.value ? pnp.hasPnP.value : (cachedTabVisibility.value.pnp || pnp.hasPnP.value),
 )
@@ -2540,6 +3095,35 @@ watch(panelData, (data) => {
   }
 }, { deep: true })
 
+watch(pasteSettings, (settings) => {
+  if (!hasLoadedProjectData.value) return
+  if (isTeamProject) {
+    persistToProject({ pasteSettings: { ...settings } })
+  } else {
+    updateLocalPasteSettings(projectId, { ...settings })
+  }
+}, { deep: true })
+
+watch(layerOrder, (order) => {
+  if (!hasLoadedProjectData.value) return
+  const snapshot = [...order]
+  if (isTeamProject) {
+    persistToProject({ layerOrder: snapshot })
+  } else {
+    updateLocalLayerOrder(projectId, snapshot)
+  }
+}, { deep: true })
+
+watch(documentOrder, (order) => {
+  if (!hasLoadedProjectData.value) return
+  const snapshot = [...order]
+  if (isTeamProject) {
+    persistToProject({ documentOrder: snapshot })
+  } else {
+    updateLocalDocumentOrder(projectId, snapshot)
+  }
+}, { deep: true })
+
 // BOM pricing fetch handlers
 async function handleFetchAllPricing() {
   const updatedCache = await elexess.fetchAllPricing(
@@ -2834,11 +3418,16 @@ onMounted(async () => {
         pcbData: tp.pcb_data,
         panelData: tp.panel_data,
         pageLocks: tp.page_locks,
+        pasteSettings: tp.paste_settings,
+        layerOrder: tp.layer_order,
+        documentOrder: tp.document_order,
       }
     }
   } else {
     project.value = await getProject(projectId)
   }
+  layerOrder.value = isStringArray(project.value?.layerOrder) ? [...project.value.layerOrder] : []
+  documentOrder.value = isStringArray(project.value?.documentOrder) ? [...project.value.documentOrder] : []
   let loadedFiles: GerberFile[] = []
   if (isTeamProject && teamProjectId) {
     // Try loading files from Supabase for team projects
@@ -2856,7 +3445,7 @@ onMounted(async () => {
   } else {
     loadedFiles = await getFiles(projectId, 1)
   }
-  layers.value = sortLayersByPcbOrder(loadedFiles.map(f => {
+  layers.value = applyLayerOrder(loadedFiles.map(f => {
     const type = resolveLayerType(f.fileName, f.layerType)
     return {
       file: f,
@@ -2991,6 +3580,12 @@ onMounted(async () => {
   if (project.value?.panelData) {
     panelData.value = normalizePanelConfig(project.value.panelData)
   }
+
+  // Restore persisted paste settings (merge with defaults for forward-compat)
+  if (project.value?.pasteSettings) {
+    pasteSettings.value = { ...pasteSettings.value, ...project.value.pasteSettings }
+  }
+
   hasLoadedProjectData.value = true
 
   // Restore persisted documents (PDFs)
@@ -3013,6 +3608,10 @@ onMounted(async () => {
       documents.value.push({ id, name: doc.fileName, type: doc.docType, blobUrl })
     }
   }
+
+  documents.value = applyDocumentOrder(documents.value)
+  syncLayerOrderFromLayers()
+  syncDocumentOrderFromDocuments()
 
 })
 
@@ -3114,7 +3713,8 @@ async function doImport(newFiles: GerberFile[], sourceName: string) {
 
   // Merge: keep existing layers that aren't overwritten, then add/replace with incoming
   const keptLayers = layers.value.filter(l => !newFileNames.has(l.file.fileName))
-  layers.value = sortLayersByPcbOrder([...keptLayers, ...incomingLayers])
+  layers.value = applyLayerOrder([...keptLayers, ...incomingLayers])
+  syncLayerOrderFromLayers()
   applyFilterVisibility(activeFilter.value)
   applyDefaultCropToOutline()
 
@@ -3172,7 +3772,8 @@ async function changeLayerType(index: number, type: string) {
   layer.type = type
   layer.color = getColorForType(type)
   layer.file.layerType = type
-  layers.value = sortLayersByPcbOrder([...layers.value])
+  layers.value = applyLayerOrder([...layers.value])
+  syncLayerOrderFromLayers()
   if (isTeamProject && teamProjectId) {
     const teamId = currentTeamId.value || await waitForTeamId()
     await uploadTeamFile(teamProjectId, teamId, 1, layer.file.fileName, layer.file.content, type)
@@ -3188,6 +3789,7 @@ function reorderLayers(fromIndex: number, toIndex: number) {
   if (!moved) return
   arr.splice(toIndex, 0, moved)
   layers.value = arr
+  syncLayerOrderFromLayers()
 }
 
 // ── Reset layer to original content ──
@@ -3217,6 +3819,7 @@ async function resetLayer(index: number) {
 
   // Force re-render
   layers.value = [...layers.value]
+  syncLayerOrderFromLayers()
 }
 
 // ── Rename layer ──
@@ -3266,6 +3869,7 @@ async function renameLayer(index: number, newName: string) {
     canvas.invalidateCache(newName)
   }
   layers.value = [...layers.value]
+  syncLayerOrderFromLayers()
 }
 
 // ── Duplicate layer ──
@@ -3309,7 +3913,8 @@ async function duplicateLayer(index: number) {
     color: layer.color,
     type: layer.type,
   }
-  layers.value = sortLayersByPcbOrder([...layers.value, newLayer])
+  layers.value = applyLayerOrder([...layers.value, newLayer])
+  syncLayerOrderFromLayers()
   applyFilterVisibility(activeFilter.value)
 
   // Track the duplicate's content as its original
@@ -3340,6 +3945,7 @@ async function removeLayer(index: number) {
 
   // Remove from in-memory state + originals DB
   layers.value = layers.value.filter(l => l.file.fileName !== fileName)
+  syncLayerOrderFromLayers()
   originalContent.delete(fileName)
   if (!isTeamProject) {
     await removeOriginalFile(projectId, 1, fileName)

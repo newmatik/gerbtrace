@@ -17,7 +17,7 @@ export type PcbThicknessMm = 0.6 | 0.8 | 1.0 | 1.2 | 1.6 | 2.0
 export interface PcbParams {
   sizeX: number        // mm
   sizeY: number        // mm
-  layerCount: number   // 1, 2, 4, 6, 8, 10
+  layerCount: number   // 1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20
   surfaceFinish: SurfaceFinish
   copperWeight: CopperWeight
   /** Standard board thickness in mm (recommendation-only in v1). */
@@ -51,6 +51,11 @@ const LAYER_FACTORS: Record<number, number> = {
   6: 1.62,
   8: 2.46,
   10: 2.55,
+  12: 3.0,
+  14: 3.5,
+  16: 4.0,
+  18: 4.5,
+  20: 5.0,
 }
 
 /** Surface finish multipliers relative to ENIG baseline */
@@ -102,6 +107,11 @@ const NRE_BY_LAYERS: Record<number, number> = {
   6: 158,
   8: 209,
   10: 250,
+  12: 300,
+  14: 350,
+  16: 400,
+  18: 450,
+  20: 500,
 }
 
 // ─── Standard output tiers ──────────────────────────────────────────────
@@ -214,7 +224,7 @@ function round2(n: number): number { return Math.round(n * 100) / 100 }
 function round3(n: number): number { return Math.round(n * 1000) / 1000 }
 
 /** Available layer count options */
-export const LAYER_COUNT_OPTIONS = [1, 2, 4, 6, 8, 10] as const
+export const LAYER_COUNT_OPTIONS = [1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20] as const
 
 /** Available surface finish options with display labels */
 export const SURFACE_FINISH_OPTIONS: { value: SurfaceFinish; label: string }[] = [

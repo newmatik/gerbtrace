@@ -138,7 +138,11 @@ export interface PanelConfig {
   addedRoutings: AddedRoutingPath[]
   /** Rotation of individual PCBs within the panel (degrees) */
   pcbRotation: number
-  /** Whether to show component overlay on panel view */
+  /** Whether to show SMD component overlay on panel view */
+  showSmdComponents: boolean
+  /** Whether to show THT component overlay on panel view */
+  showThtComponents: boolean
+  /** Legacy global component overlay toggle (kept for backward compatibility) */
   showComponents: boolean
 }
 
@@ -213,6 +217,8 @@ export function DEFAULT_PANEL_CONFIG(): PanelConfig {
     },
     addedRoutings: [],
     pcbRotation: 0,
+    showSmdComponents: false,
+    showThtComponents: false,
     showComponents: false,
   }
 }
@@ -296,6 +302,10 @@ export function migratePanelConfig(raw: Record<string, any>): PanelConfig {
     }
   }
 
+  const legacyShowComponents = raw.showComponents ?? defaults.showComponents
+  const showSmdComponents = raw.showSmdComponents ?? legacyShowComponents
+  const showThtComponents = raw.showThtComponents ?? legacyShowComponents
+
   return {
     countX: raw.countX ?? defaults.countX,
     countY: raw.countY ?? defaults.countY,
@@ -309,6 +319,9 @@ export function migratePanelConfig(raw: Record<string, any>): PanelConfig {
     supports,
     addedRoutings: raw.addedRoutings ?? [],
     pcbRotation: raw.pcbRotation ?? defaults.pcbRotation,
-    showComponents: raw.showComponents ?? defaults.showComponents,
+    showSmdComponents,
+    showThtComponents,
+    // Keep writing the legacy flag so older code paths/data readers remain stable.
+    showComponents: showSmdComponents || showThtComponents,
   }
 }

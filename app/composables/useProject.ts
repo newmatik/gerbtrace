@@ -1,10 +1,27 @@
 import Dexie from 'dexie'
+import { toRaw } from 'vue'
 import type { GerberFile } from '~/utils/gerber-helpers'
 import type { PnPConvention } from '~/utils/pnp-conventions'
 import type { BomLine, BomPricingCache } from '~/utils/bom-types'
 import type { SurfaceFinish, CopperWeight } from '~/utils/pcb-pricing'
 import type { DocumentType } from '~/utils/document-types'
 import type { PanelConfig } from '~/utils/panel-types'
+import type { PasteSettings } from '~/composables/usePasteSettings'
+
+/**
+ * Recursively strip Vue reactivity proxies so objects can be stored in IndexedDB.
+ * IndexedDB uses the structured-clone algorithm which cannot handle Proxy objects.
+ */
+function deepToRaw<T>(val: T): T {
+  const raw = toRaw(val)
+  if (Array.isArray(raw)) return raw.map(deepToRaw) as T
+  if (raw !== null && typeof raw === 'object' && !(raw instanceof Date) && !(raw instanceof Blob)) {
+    return Object.fromEntries(
+      Object.entries(raw).map(([k, v]) => [k, deepToRaw(v)]),
+    ) as T
+  }
+  return raw
+}
 
 interface ProjectRecord {
   id?: number
@@ -68,6 +85,12 @@ interface ProjectRecord {
   } | null
   /** Panel configuration for panelization */
   panelData?: PanelConfig | null
+  /** Paste application settings (stencil vs jetprint) */
+  pasteSettings?: PasteSettings | null
+  /** Persisted layer ordering by file name */
+  layerOrder?: string[] | null
+  /** Persisted document ordering by file name */
+  documentOrder?: string[] | null
 }
 
 interface FileRecord {
@@ -212,6 +235,20 @@ class GerbtraceDB extends Dexie {
       fileOriginals: '++id, projectId, packet, fileName',
       documents: '++id, projectId, fileName',
     })
+    // v20: add paste settings (non-indexed, just stored)
+    this.version(20).stores({
+      projects: '++id, name, mode, createdAt, updatedAt',
+      files: '++id, projectId, packet, fileName',
+      fileOriginals: '++id, projectId, packet, fileName',
+      documents: '++id, projectId, fileName',
+    })
+    // v21: add persisted layer/document ordering
+    this.version(21).stores({
+      projects: '++id, name, mode, createdAt, updatedAt',
+      files: '++id, projectId, packet, fileName',
+      fileOriginals: '++id, projectId, packet, fileName',
+      documents: '++id, projectId, fileName',
+    })
   }
 }
 
@@ -334,67 +371,67 @@ export function useProject() {
   }
 
   async function updateProjectRotationOverrides(id: number, overrides: Record<string, number>) {
-    await db.projects.update(id, { pnpRotationOverrides: overrides, updatedAt: new Date() })
+    await db.projects.update(id, { pnpRotationOverrides: deepToRaw(overrides), updatedAt: new Date() })
   }
 
   async function updateProjectDnp(id: number, dnpKeys: string[]) {
-    await db.projects.update(id, { pnpDnpComponents: dnpKeys, updatedAt: new Date() })
+    await db.projects.update(id, { pnpDnpComponents: deepToRaw(dnpKeys), updatedAt: new Date() })
   }
 
   async function updateProjectCadPackageMap(id: number, map: Record<string, string>) {
-    await db.projects.update(id, { pnpCadPackageMap: map, updatedAt: new Date() })
+    await db.projects.update(id, { pnpCadPackageMap: deepToRaw(map), updatedAt: new Date() })
   }
 
   async function updateProjectPolarizedOverrides(id: number, overrides: Record<string, boolean>) {
-    await db.projects.update(id, { pnpPolarizedOverrides: overrides, updatedAt: new Date() })
+    await db.projects.update(id, { pnpPolarizedOverrides: deepToRaw(overrides), updatedAt: new Date() })
   }
 
   async function updateProjectComponentNotes(id: number, notes: Record<string, string>) {
-    await db.projects.update(id, { pnpComponentNotes: notes, updatedAt: new Date() })
+    await db.projects.update(id, { pnpComponentNotes: deepToRaw(notes), updatedAt: new Date() })
   }
 
   async function updateProjectFieldOverrides(id: number, overrides: Record<string, { designator?: string; value?: string; x?: number; y?: number }>) {
-    await db.projects.update(id, { pnpFieldOverrides: overrides, updatedAt: new Date() })
+    await db.projects.update(id, { pnpFieldOverrides: deepToRaw(overrides), updatedAt: new Date() })
   }
 
   async function updateProjectManualComponents(id: number, components: { id: string; designator: string; value: string; package: string; x: number; y: number; rotation: number; side: 'top' | 'bottom'; componentType?: 'smd' | 'tht' }[]) {
-    await db.projects.update(id, { pnpManualComponents: components, updatedAt: new Date() })
+    await db.projects.update(id, { pnpManualComponents: deepToRaw(components), updatedAt: new Date() })
   }
 
   async function updateProjectDeletedComponents(id: number, keys: string[]) {
-    await db.projects.update(id, { pnpDeletedComponents: keys, updatedAt: new Date() })
+    await db.projects.update(id, { pnpDeletedComponents: deepToRaw(keys), updatedAt: new Date() })
   }
 
   async function updateProjectSortSmd(id: number, sortState: { key: 'ref' | 'x' | 'y' | 'rot' | 'pol' | 'value' | 'cadPackage' | 'package' | null; asc: boolean }) {
-    await db.projects.update(id, { pnpSortSmd: sortState, updatedAt: new Date() })
+    await db.projects.update(id, { pnpSortSmd: deepToRaw(sortState), updatedAt: new Date() })
   }
 
   async function updateProjectSortTht(id: number, sortState: { key: 'ref' | 'x' | 'y' | 'rot' | 'pol' | 'value' | 'cadPackage' | 'package' | null; asc: boolean }) {
-    await db.projects.update(id, { pnpSortTht: sortState, updatedAt: new Date() })
+    await db.projects.update(id, { pnpSortTht: deepToRaw(sortState), updatedAt: new Date() })
   }
 
   async function updateProjectManualOrderSmd(id: number, keys: string[]) {
-    await db.projects.update(id, { pnpManualOrderSmd: keys, updatedAt: new Date() })
+    await db.projects.update(id, { pnpManualOrderSmd: deepToRaw(keys), updatedAt: new Date() })
   }
 
   async function updateProjectManualOrderTht(id: number, keys: string[]) {
-    await db.projects.update(id, { pnpManualOrderTht: keys, updatedAt: new Date() })
+    await db.projects.update(id, { pnpManualOrderTht: deepToRaw(keys), updatedAt: new Date() })
   }
 
   async function updateProjectComponentGroups(id: number, groups: { id: string; componentType: 'smd' | 'tht'; name: string; comment: string; hidden: boolean; collapsed: boolean }[]) {
-    await db.projects.update(id, { pnpComponentGroups: groups, updatedAt: new Date() })
+    await db.projects.update(id, { pnpComponentGroups: deepToRaw(groups), updatedAt: new Date() })
   }
 
   async function updateProjectGroupAssignments(id: number, assignments: Record<string, string>) {
-    await db.projects.update(id, { pnpGroupAssignments: assignments, updatedAt: new Date() })
+    await db.projects.update(id, { pnpGroupAssignments: deepToRaw(assignments), updatedAt: new Date() })
   }
 
   async function updateBomLines(id: number, lines: BomLine[]) {
-    await db.projects.update(id, { bomLines: lines, updatedAt: new Date() })
+    await db.projects.update(id, { bomLines: deepToRaw(lines), updatedAt: new Date() })
   }
 
   async function updateBomPricingCache(id: number, cache: BomPricingCache) {
-    await db.projects.update(id, { bomPricingCache: cache, updatedAt: new Date() })
+    await db.projects.update(id, { bomPricingCache: deepToRaw(cache), updatedAt: new Date() })
   }
 
   async function updateBomBoardQuantity(id: number, qty: number) {
@@ -402,11 +439,23 @@ export function useProject() {
   }
 
   async function updatePcbData(id: number, pcbData: ProjectRecord['pcbData']) {
-    await db.projects.update(id, { pcbData, updatedAt: new Date() })
+    await db.projects.update(id, { pcbData: deepToRaw(pcbData), updatedAt: new Date() })
   }
 
   async function updatePanelData(id: number, panelData: ProjectRecord['panelData']) {
-    await db.projects.update(id, { panelData, updatedAt: new Date() })
+    await db.projects.update(id, { panelData: deepToRaw(panelData), updatedAt: new Date() })
+  }
+
+  async function updatePasteSettings(id: number, pasteSettings: ProjectRecord['pasteSettings']) {
+    await db.projects.update(id, { pasteSettings: deepToRaw(pasteSettings), updatedAt: new Date() })
+  }
+
+  async function updateLayerOrder(id: number, layerOrder: string[]) {
+    await db.projects.update(id, { layerOrder: deepToRaw(layerOrder), updatedAt: new Date() })
+  }
+
+  async function updateDocumentOrder(id: number, documentOrder: string[]) {
+    await db.projects.update(id, { documentOrder: deepToRaw(documentOrder), updatedAt: new Date() })
   }
 
   // ── File originals (for edit detection and reset) ──
@@ -555,6 +604,9 @@ export function useProject() {
     updateBomBoardQuantity,
     updatePcbData,
     updatePanelData,
+    updatePasteSettings,
+    updateLayerOrder,
+    updateDocumentOrder,
     getDocuments,
     addDocument,
     removeDocument,

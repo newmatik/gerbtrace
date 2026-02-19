@@ -247,10 +247,12 @@ const LAYER_SORT_ORDER: Record<string, number> = {
   'Top Solder Mask': 5,
   'Top Copper': 6,
   'Inner Layer': 7,
-  'Bottom Copper': 8,
-  'Bottom Solder Mask': 9,
-  'Bottom Paste': 10,
-  'Bottom Silkscreen': 11,
+  // Bottom stack default (first-to-last in Layers view):
+  // Silkscreen -> Paste -> Solder Mask -> Copper.
+  'Bottom Silkscreen': 8,
+  'Bottom Paste': 9,
+  'Bottom Solder Mask': 10,
+  'Bottom Copper': 11,
   'PnP Bottom': 12,
   'PnP Bottom (THT)': 12.1,
   'Outline': 13,

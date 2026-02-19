@@ -235,7 +235,13 @@ export function parseBomCsv(content: string): BomParseResult {
  * Uses the first sheet.
  */
 export function parseBomExcel(buffer: ArrayBuffer): BomParseResult {
-  const wb = XLSX.read(buffer, { type: 'array' })
+  let wb
+  try {
+    wb = XLSX.read(buffer, { type: 'array' })
+  } catch (e) {
+    console.warn('[BOM] Failed to parse Excel file:', e)
+    return { headers: [], rows: [], mapping: null, lines: null }
+  }
   const sheetName = wb.SheetNames[0]
   if (!sheetName) return { headers: [], rows: [], mapping: null, lines: null }
 

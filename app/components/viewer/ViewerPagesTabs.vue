@@ -40,12 +40,13 @@
 </template>
 
 <script setup lang="ts">
-type ViewerPage = 'files' | 'pcb' | 'panel' | 'smd' | 'tht' | 'bom' | 'pricing' | 'docs'
+type ViewerPage = 'files' | 'pcb' | 'panel' | 'paste' | 'smd' | 'tht' | 'bom' | 'pricing' | 'docs'
 
 const page = defineModel<ViewerPage>({ required: true })
 
 const props = defineProps<{
   showPanel?: boolean
+  showPaste?: boolean
   showPnP?: boolean
   showBom?: boolean
   showDocs?: boolean
@@ -58,6 +59,7 @@ const allTabs = computed<TabDef[]>(() => [
   { label: 'Files', value: 'files', icon: 'i-lucide-folder-open', visible: true },
   { label: 'PCB', value: 'pcb', icon: 'i-lucide-circuit-board', visible: true },
   { label: 'Panel', value: 'panel', icon: 'i-lucide-layout-grid', visible: !!props.showPanel },
+  { label: 'Paste', value: 'paste', icon: 'i-lucide-droplets', visible: !!props.showPaste },
   { label: 'SMD', value: 'smd', icon: 'i-lucide-microchip', visible: !!props.showPnP },
   { label: 'THT', value: 'tht', icon: 'i-lucide-pin', visible: !!props.showPnP },
   { label: 'BOM', value: 'bom', icon: 'i-lucide-table', visible: !!props.showBom },
