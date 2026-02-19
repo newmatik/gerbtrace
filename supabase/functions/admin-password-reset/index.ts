@@ -126,6 +126,9 @@ serve(async (req: Request) => {
       })
     }
 
+    // Audit log: password reset performed
+    console.log('admin-password-reset success:', { adminId: user.id, targetUserId: user_id, teamId: team_id })
+
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: corsHeaders,

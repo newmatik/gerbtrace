@@ -126,13 +126,21 @@ export function useTeamPackages() {
   }
 
   // Subscribe to real-time changes on team_packages
+  let currentFetchToken: string | null = null
   watch(currentTeamId, async (teamId, _old, onCleanup) => {
     if (!teamId) {
       teamPackages.value = []
       return
     }
 
+    // Generate a new token for this fetch to prevent stale updates
+    const fetchToken = `${teamId}-${Date.now()}`
+    currentFetchToken = fetchToken
+
     await fetchTeamPackages()
+
+    // Only proceed if this is still the current fetch
+    if (currentFetchToken !== fetchToken) return
 
     const channel = supabase.channel(`team-packages:${teamId}`)
       .on('postgres_changes', {
@@ -141,6 +149,9 @@ export function useTeamPackages() {
         table: 'team_packages',
         filter: `team_id=eq.${teamId}`,
       }, (payload) => {
+        // Validate that this update is still for the current team
+        if (currentTeamId.value !== teamId) return
+
         if (payload.eventType === 'INSERT' && payload.new) {
           const rec = payload.new as TeamPackageRecord
           const normalized = {
@@ -171,6 +182,7 @@ export function useTeamPackages() {
     })
 
     onCleanup(() => {
+      currentFetchToken = null
       supabase.removeChannel(channel)
     })
   }, { immediate: true })
