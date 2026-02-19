@@ -27,17 +27,17 @@
             <UButton size="lg" icon="i-lucide-eye" class="w-full sm:w-auto px-6" @click="createProject('viewer')">
               New Viewer Project
             </UButton>
-            <UButton size="lg" icon="i-lucide-columns-2" color="gray" variant="solid" class="w-full sm:w-auto px-6" @click="createProject('compare')">
+            <UButton size="lg" icon="i-lucide-columns-2" color="neutral" variant="solid" class="w-full sm:w-auto px-6" @click="createProject('compare')">
               New Compare Project
             </UButton>
           </div>
 
           <div class="text-sm text-gray-500 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 pt-2">
             <span>Try an example:</span>
-            <UButton size="2xs" color="gray" variant="soft" @click="loadSample('viewer')">
+            <UButton size="xs" color="neutral" variant="soft" @click="loadSample('viewer')">
               Arduino UNO
             </UButton>
-            <UButton size="2xs" color="gray" variant="soft" @click="loadSample('compare')">
+            <UButton size="xs" color="neutral" variant="soft" @click="loadSample('compare')">
               Compare Revisions
             </UButton>
           </div>
@@ -60,7 +60,7 @@
           </div>
 
           <div class="flex items-center gap-3 w-full sm:w-auto">
-            <UButton to="/docs" icon="i-lucide-circle-help" color="gray" variant="solid">
+            <UButton to="/docs" icon="i-lucide-circle-help" color="neutral" variant="solid">
               Docs / Help
             </UButton>
           </div>
@@ -77,12 +77,11 @@
               placeholder="Search projects..."
               class="flex-1"
               size="sm"
-              :ui="{ icon: { trailing: { pointer: '' } } }"
             >
               <template #trailing>
                 <UButton
                   v-show="query !== ''"
-                  color="gray"
+                  color="neutral"
                   variant="link"
                   icon="i-lucide-x"
                   :padded="false"
@@ -123,7 +122,7 @@
               <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <UIcon name="i-lucide-users" class="text-primary-500" />
                 <span>{{ currentTeam?.name ?? 'Team' }} Projects</span>
-                <UBadge color="gray" variant="subtle" size="xs">{{ filteredTeamProjects.length }}</UBadge>
+                <UBadge color="neutral" variant="subtle" size="xs">{{ filteredTeamProjects.length }}</UBadge>
               </h2>
               <UButton v-if="isEditor" icon="i-lucide-plus" size="xs" class="px-3" @click="createTeamProject('viewer')">
                 New Team Project
@@ -166,10 +165,9 @@
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
                       <UBadge
-                        :color="project.status === 'approved' ? 'green' : 'orange'"
+                        :color="project.status === 'approved' ? 'success' : 'warning'"
                         size="xs"
                         variant="subtle"
-                        :ui="{ rounded: 'rounded' }"
                       >
                         <UIcon v-if="project.status === 'approved'" name="i-lucide-lock" class="w-3 h-3 mr-1" />
                         {{ project.status === 'approved' ? 'Approved' : 'Draft' }}
@@ -182,7 +180,7 @@
                       <USelectMenu
                         v-if="isEditor"
                         :model-value="project.assignee_user_id ?? ASSIGNEE_UNASSIGNED"
-                        size="2xs"
+                        size="xs"
                         :items="assigneeOptions"
                         variant="none"
                         :disabled="isAssigning(project.id)"
@@ -195,12 +193,6 @@
                         <template #leading>
                           <UIcon name="i-lucide-user" class="text-gray-400 w-3 h-3" />
                         </template>
-                        <template #label>
-                          <div class="flex items-center gap-1.5 truncate text-gray-500 dark:text-gray-400">
-                            <UIcon name="i-lucide-user" class="w-3 h-3 shrink-0" />
-                            <span class="truncate">{{ getAssigneeLabel(project.assignee_user_id) }}</span>
-                          </div>
-                        </template>
                       </USelectMenu>
                       <div v-else class="text-xs text-gray-500 flex items-center gap-1 px-2 py-1">
                         <UIcon name="i-lucide-user" class="w-3 h-3" />
@@ -210,8 +202,8 @@
 
                     <UButton
                       v-if="isAdmin"
-                      size="2xs"
-                      color="red"
+                      size="xs"
+                      color="error"
                       variant="ghost"
                       icon="i-lucide-trash-2"
                       class="opacity-0 group-hover:opacity-100 transition-opacity"
@@ -250,7 +242,7 @@
               <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <UIcon name="i-lucide-laptop" class="text-gray-400" />
                 <span>{{ isAuthenticated ? 'Personal Projects' : 'Your Projects' }}</span>
-                <UBadge color="gray" variant="subtle" size="xs">{{ filteredProjects.length }}</UBadge>
+                <UBadge color="neutral" variant="subtle" size="xs">{{ filteredProjects.length }}</UBadge>
               </h2>
               <div class="flex flex-wrap items-center gap-2 sm:flex-nowrap sm:justify-end">
                 <UButton
@@ -305,7 +297,7 @@
                         Updated {{ formatDate(project.updatedAt) }}
                       </div>
                     </div>
-                    <UBadge :color="project.mode === 'viewer' ? 'blue' : 'gray'" variant="subtle" size="xs" :ui="{ rounded: 'rounded' }">
+                    <UBadge :color="project.mode === 'viewer' ? 'info' : 'neutral'" variant="subtle" size="xs">
                       {{ project.mode === 'viewer' ? 'Viewer' : 'Compare' }}
                     </UBadge>
                   </div>
@@ -313,8 +305,8 @@
 
                 <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <UButton
-                    size="2xs"
-                    color="red"
+                    size="xs"
+                    color="error"
                     variant="ghost"
                     icon="i-lucide-trash-2"
                     @click.stop="confirmDelete(project)"
@@ -441,7 +433,7 @@
                 This will permanently remove the project and all its files for the entire team.
               </p>
             </div>
-            <UButton size="xs" variant="ghost" color="gray" icon="i-lucide-x" @click="teamDeleteModalOpen = false" />
+            <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-x" @click="teamDeleteModalOpen = false" />
           </div>
 
           <div v-if="teamProjectToDelete" class="rounded-md border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 p-3">
@@ -454,8 +446,8 @@
           </div>
 
           <div class="flex justify-end gap-2 pt-2">
-            <UButton size="sm" variant="outline" color="gray" @click="teamDeleteModalOpen = false">Cancel</UButton>
-            <UButton size="sm" color="red" icon="i-lucide-trash-2" :loading="teamDeleteLoading" @click="performDeleteTeamProject">
+            <UButton size="sm" variant="outline" color="neutral" @click="teamDeleteModalOpen = false">Cancel</UButton>
+            <UButton size="sm" color="error" icon="i-lucide-trash-2" :loading="teamDeleteLoading" @click="performDeleteTeamProject">
               Delete Project
             </UButton>
           </div>
@@ -473,7 +465,7 @@
                 This will permanently remove the project and its files.
               </p>
             </div>
-            <UButton size="xs" variant="ghost" color="gray" icon="i-lucide-x" @click="deleteModalOpen = false" />
+            <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-x" @click="deleteModalOpen = false" />
           </div>
 
           <div v-if="projectToDelete" class="rounded-md border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 p-3">
@@ -486,8 +478,8 @@
           </div>
 
           <div class="flex justify-end gap-2 pt-2">
-            <UButton size="sm" variant="outline" color="gray" @click="deleteModalOpen = false">Cancel</UButton>
-            <UButton size="sm" color="red" icon="i-lucide-trash-2" @click="performDelete">
+            <UButton size="sm" variant="outline" color="neutral" @click="deleteModalOpen = false">Cancel</UButton>
+            <UButton size="sm" color="error" icon="i-lucide-trash-2" @click="performDelete">
               Delete Project
             </UButton>
           </div>

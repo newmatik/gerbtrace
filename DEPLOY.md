@@ -71,10 +71,11 @@ Apple signing / notarization (macOS builds):
 - **`APPLE_SIGNING_IDENTITY`**
 - **`APPLE_API_ISSUER`**, **`APPLE_API_KEY`**, **`APPLE_API_KEY_CONTENT`**
 
-### Legacy droplet deploy
+### Legacy droplet deploy (disabled)
 
-- Legacy self-hosted deploy secrets are no longer part of the active production path.
-- Keep them only for emergency rollback operations.
+- The self-hosted Supabase droplet is no longer the production database.
+- Legacy deploy secrets are retained for emergency rollback only.
+- **Do not apply migrations to the droplet** — use Supabase Cloud MCP tools instead.
 
 ## Web deploy (DigitalOcean Spaces)
 
@@ -117,9 +118,9 @@ Source of truth remains in this repository:
 
 Operational model:
 
-- Apply schema/function changes to Supabase Cloud first.
-- Keep `api.gerbtrace.com` as the public endpoint via droplet nginx reverse proxy to `https://gqrnlnlfidighosujpdb.supabase.co`.
-- Keep the old self-hosted droplet stack as rollback standby; do not treat it as active production.
+- Apply schema/function changes to Supabase Cloud using the MCP tools (`apply_migration`, `execute_sql`) or the Supabase dashboard.
+- `api.gerbtrace.com` routes through the droplet's nginx reverse proxy to `https://gqrnlnlfidighosujpdb.supabase.co`.
+- The old self-hosted droplet database is **not** production. Do not apply migrations there.
 
 ## Operational safety
 

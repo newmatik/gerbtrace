@@ -1358,9 +1358,11 @@ watch(() => deleteTool.active.value, (isActive) => {
 
 // Panel view does not support info/delete tools; fall back to cursor.
 watch(sidebarTab, (tab) => {
-  // Leaving the docs tab should always close any open document preview.
   if (tab !== 'docs' && selectedDocumentId.value) {
     selectedDocumentId.value = null
+  }
+  if (tab === 'docs' && !selectedDocumentId.value && documents.value.length) {
+    selectedDocumentId.value = documents.value[0].id
   }
   if (tab === 'panel' && (activeMode.value === 'info' || activeMode.value === 'delete')) {
     setMode('cursor')

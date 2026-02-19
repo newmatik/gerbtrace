@@ -8,7 +8,7 @@
 import type { BomLine, BomPricingCache } from '~/utils/bom-types'
 import type { PanelConfig } from '~/utils/panel-types'
 import type { PasteSettings } from '~/composables/usePasteSettings'
-import type { BomColumnMapping } from '~/utils/bom-parser'
+import type { BomColumnMapping } from '~/utils/bom-types'
 import type { PnPColumnMapping, PnPCoordUnit } from '~/utils/pnp-parser'
 
 export type LockableViewerTab = 'files' | 'pcb' | 'panel' | 'smd' | 'tht' | 'bom'
@@ -171,7 +171,7 @@ export function useTeamProjects() {
         return hasCached ? cached : []
       }
 
-      const nextProjects = (data ?? []) as TeamProject[]
+      const nextProjects = (data ?? []) as unknown as TeamProject[]
       setProjectsForTeam(teamId, nextProjects)
       return nextProjects
     })()
@@ -204,7 +204,7 @@ export function useTeamProjects() {
       .single()
 
     if (error) return null
-    const project = data as TeamProject
+    const project = data as unknown as TeamProject
     projectByIdCache.set(projectId, project)
     return project
   }
@@ -229,12 +229,12 @@ export function useTeamProjects() {
       .single()
 
     if (!error && data) {
-      projectByIdCache.set((data as TeamProject).id, data as TeamProject)
-      const nextProjects = [data as TeamProject, ...projects.value]
+      projectByIdCache.set((data as unknown as TeamProject).id, data as unknown as TeamProject)
+      const nextProjects = [data as unknown as TeamProject, ...projects.value]
       setProjectsForTeam(teamId, nextProjects)
     }
 
-    return { project: data as TeamProject | null, error }
+    return { project: (data as unknown as TeamProject) ?? null, error }
   }
 
   /** Update project metadata */
@@ -250,16 +250,16 @@ export function useTeamProjects() {
       .maybeSingle()
 
     if (!error && data) {
-      projectByIdCache.set(projectId, data as TeamProject)
+      projectByIdCache.set(projectId, data as unknown as TeamProject)
       const idx = projects.value.findIndex(p => p.id === projectId)
       if (idx >= 0) {
         const nextProjects = [...projects.value]
-        nextProjects[idx] = data as TeamProject
+        nextProjects[idx] = data as unknown as TeamProject
         setProjectsForTeam(teamId, nextProjects)
       }
     }
 
-    return { data: data as TeamProject | null, error }
+    return { data: (data as unknown as TeamProject) ?? null, error }
   }
 
   /** Delete a project (admin only) */
@@ -570,7 +570,7 @@ export function useTeamProjects() {
     return { error: null }
   }
 
-  async function getPreviewUrl(project: TeamProject): Promise<string | null> {
+  async function getPreviewUrl(project: Pick<TeamProject, 'id' | 'preview_image_path'>): Promise<string | null> {
     if (!project.preview_image_path) return null
 
     const cached = previewUrlCache.get(project.id)

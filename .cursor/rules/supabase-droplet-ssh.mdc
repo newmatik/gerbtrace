@@ -1,51 +1,54 @@
 ---
-description: SSH access to the self-hosted Supabase droplet for migrations and admin tasks
+description: Supabase Cloud project details and how to apply migrations
 globs: supabase/migrations/**/*.sql
 alwaysApply: true
 ---
 
-# Supabase Droplet SSH Access
+# Supabase Cloud Access
 
-The production Supabase runs on a self-hosted DigitalOcean droplet. You have direct SSH access.
+Production Supabase runs on **Supabase Cloud**, NOT on a self-hosted droplet.
 
-## Connection details
+## Project details
 
-- **Host:** `root@gerbtrace.com`
-- **SSH flags:** `-o StrictHostKeyChecking=no` (host key already trusted)
-- **Supabase docker dir:** `/opt/supabase/docker`
+- **Project ID:** `gqrnlnlfidighosujpdb`
+- **Region:** `eu-central-1`
+- **Public endpoint:** `api.gerbtrace.com` (nginx reverse proxy to Supabase Cloud)
 
 ## Applying migrations
 
-After creating a new migration file, **always apply it immediately** to the production droplet. Do not wait for CI — the local dev server connects to production Supabase.
+After creating a new migration file, **always apply it immediately** using the Supabase MCP tools. Do not wait for CI — the local dev server connects to production Supabase.
 
-```bash
-# 1. Apply the migration as supabase_admin
-ssh -o StrictHostKeyChecking=no root@gerbtrace.com \
-  "cd /opt/supabase/docker && docker compose exec -T db psql -U supabase_admin -d postgres" \
-  < supabase/migrations/<migration_file>.sql
+Use the `apply_migration` MCP tool:
 
-# 2. Record it so the deploy workflow skips it
-ssh -o StrictHostKeyChecking=no root@gerbtrace.com \
-  "cd /opt/supabase/docker && docker compose exec -T db psql -U postgres -d postgres \
-   -c \"INSERT INTO public.schema_migrations(name) VALUES ('<migration_file>.sql') ON CONFLICT (name) DO NOTHING;\""
+```
+apply_migration(
+  project_id: "gqrnlnlfidighosujpdb",
+  name: "descriptive_snake_case_name",
+  query: "<SQL>"
+)
 ```
 
-## Other useful commands
+Or for ad-hoc queries, use `execute_sql`:
 
-```bash
-# Check which migrations have been applied
-ssh root@gerbtrace.com "cd /opt/supabase/docker && docker compose exec -T db psql -U postgres -d postgres -c 'SELECT * FROM public.schema_migrations ORDER BY applied_at;'"
+```
+execute_sql(
+  project_id: "gqrnlnlfidighosujpdb",
+  query: "<SQL>"
+)
+```
 
-# Run an ad-hoc query
-ssh root@gerbtrace.com "cd /opt/supabase/docker && docker compose exec -T db psql -U supabase_admin -d postgres -c 'SELECT count(*) FROM public.team_tht_packages;'"
+## Verifying migrations
 
-# Flush CDN cache
-doctl compute cdn list
-doctl compute cdn flush <cdn-id> --files '*'
+```
+execute_sql(
+  project_id: "gqrnlnlfidighosujpdb",
+  query: "SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='<table>' AND column_name='<column>';"
+)
 ```
 
 ## Important
 
-- Always use `supabase_admin` for DDL (CREATE TABLE, ALTER, etc.)
-- Use `postgres` for bookkeeping (`schema_migrations` inserts)
-- Follow the idempotency rules in `supabase-migration-safety.mdc`
+- **NEVER use SSH to the old droplet for database operations** — the droplet database is no longer production.
+- Supabase Cloud auto-reloads the PostgREST schema cache after `apply_migration`.
+- Follow the idempotency rules in `supabase-migration-safety.mdc`.
+- The old droplet nginx at `api.gerbtrace.com` reverse-proxies to Supabase Cloud.

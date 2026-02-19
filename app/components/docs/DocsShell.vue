@@ -105,12 +105,12 @@ async function loadDoc(path: string) {
     stemWithDocs,
   ]))
 
-  const collections = ['docs', 'content']
+  const collections = ['docs', 'content'] as const
   for (const collection of collections) {
     for (const candidate of candidates) {
-      const byPath = await queryCollection(collection).path(candidate).first()
+      const byPath = await queryCollection(collection as 'docs').path(candidate).first()
       if (byPath) return byPath
-      const byStem = await queryCollection(collection).where('stem', '=', candidate).first()
+      const byStem = await queryCollection(collection as 'docs').where('stem', '=', candidate).first()
       if (byStem) return byStem
     }
   }
@@ -118,9 +118,9 @@ async function loadDoc(path: string) {
 }
 
 async function loadDocsIndex(): Promise<DocSearchItem[]> {
-  const collections = ['docs', 'content']
+  const collections = ['docs', 'content'] as const
   for (const collection of collections) {
-    const list = await queryCollection(collection)
+    const list = await queryCollection(collection as 'docs')
       .select('title', 'description', 'path', 'stem')
       .all() as DocSearchItem[]
     if (Array.isArray(list) && list.length > 0) {
