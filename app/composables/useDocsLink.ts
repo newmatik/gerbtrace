@@ -13,6 +13,14 @@ export function useDocsLink() {
 
     if (!import.meta.client) return
 
+    // Keep browser popup opening in the same click task.
+    const isLikelyTauri = typeof window !== 'undefined'
+      && ('__TAURI_INTERNALS__' in window || '__TAURI__' in window)
+    if (!isLikelyTauri) {
+      window.open(url, '_blank', 'noopener,noreferrer')
+      return
+    }
+
     try {
       const { isTauri } = await import('@tauri-apps/api/core')
       if (await isTauri()) {

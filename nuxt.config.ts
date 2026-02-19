@@ -4,7 +4,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      appVersion: '1.1.1',
+      appVersion: '1.1.2',
       supabaseUrl: process.env.SUPABASE_URL || 'https://gqrnlnlfidighosujpdb.supabase.co',
       supabaseAnonKey: process.env.SUPABASE_ANON_KEY || '',
       elexessUrl: process.env.ELEXESS_URL || 'https://api.dev.elexess.com/api',
