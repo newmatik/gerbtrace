@@ -589,7 +589,7 @@ const unitSelectItems = [
   { value: 'mm', label: 'Unit: mm' },
   { value: 'mils', label: 'Unit: mils' },
   { value: 'inches', label: 'Unit: in' },
-] as const
+]
 const PKG_DROPDOWN_LIMIT = 80
 
 const allPackageSelectItems = computed(() =>

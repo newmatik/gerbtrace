@@ -53,7 +53,7 @@
             <div class="text-[10px] text-neutral-400 mb-1">Type</div>
             <USelect
               :model-value="line.type"
-              :items="BOM_LINE_TYPES"
+              :items="bomLineTypeItems"
               size="sm"
               @update:model-value="(v: any) => emitUpdate({ type: v })"
             />
@@ -370,6 +370,8 @@ const emit = defineEmits<{
   fetchSinglePricing: [partNumber: string]
   fetchAllPricing: []
 }>()
+
+const bomLineTypeItems = [...BOM_LINE_TYPES]
 
 const expandedPriceTables = ref(new Set<string>())
 function togglePriceTable(mpn: string) {
