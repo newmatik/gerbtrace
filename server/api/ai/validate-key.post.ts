@@ -7,32 +7,37 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    const response = await $fetch<{ type: string }>('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
+    const response = await $fetch<{ data: Array<{ id: string, display_name: string }> }>(
+      'https://api.anthropic.com/v1/models?limit=100',
+      {
+        headers: {
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+        },
       },
-      body: {
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1,
-        messages: [{ role: 'user', content: 'Hi' }],
-      },
-    })
+    )
 
-    return {
-      valid: true,
-      models: [
-        'claude-sonnet-4-20250514',
-        'claude-haiku-4-20250414',
-      ],
-    }
+    const allModels = response.data ?? []
+
+    const chatModels = allModels
+      .filter((m) => {
+        if (!/^claude-/i.test(m.id)) return false
+        if (/embed|legacy/i.test(m.id)) return false
+        // Skip dated snapshots (e.g. claude-sonnet-4-5-20250514) -- keep only aliases
+        if (/\d{8}$/.test(m.id)) return false
+        return true
+      })
+      .map(m => ({ id: m.id, name: m.display_name }))
+      .sort((a, b) => a.name.localeCompare(b.name))
+
+    return { valid: true, models: chatModels }
   } catch (err: any) {
-    const status = err?.statusCode ?? err?.response?.status ?? 0
+    const status = err?.statusCode ?? err?.response?.status ?? err?.status ?? 0
+
     if (status === 401 || status === 403) {
       return { valid: false, models: [], error: 'Invalid API key' }
     }
+
     return { valid: false, models: [], error: err?.message ?? 'Connection failed' }
   }
 })

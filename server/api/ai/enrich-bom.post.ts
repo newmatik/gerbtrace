@@ -1,3 +1,60 @@
+import type { BomLineType, SmdClassification, BomManufacturer, AiSuggestion, BomAiSuggestions } from '~~/app/utils/bom-types'
+import { BOM_LINE_TYPES, SMD_CLASSIFICATIONS } from '~~/app/utils/bom-types'
+
+const MAX_BOM_LINES = 500
+const MAX_PNP_COMPONENTS = 1000
+
+/**
+ * Validate and sanitize AI-returned suggestions against the expected schema.
+ * Drops unknown keys and coerces values to the correct types so malformed
+ * model output never propagates to the client.
+ */
+function sanitizeSuggestions(raw: unknown): BomAiSuggestions {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {}
+
+  const result: BomAiSuggestions = {}
+
+  for (const [lineId, entry] of Object.entries(raw as Record<string, unknown>)) {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue
+    const src = entry as Record<string, unknown>
+    const suggestion: AiSuggestion = {}
+
+    if (typeof src.description === 'string' && src.description.trim()) {
+      suggestion.description = src.description.trim()
+    }
+
+    if (typeof src.type === 'string' && BOM_LINE_TYPES.includes(src.type as BomLineType)) {
+      suggestion.type = src.type as BomLineType
+    }
+
+    if (typeof src.pinCount === 'number' && Number.isInteger(src.pinCount) && src.pinCount > 0) {
+      suggestion.pinCount = src.pinCount
+    }
+
+    if (typeof src.smdClassification === 'string' && SMD_CLASSIFICATIONS.includes(src.smdClassification as SmdClassification)) {
+      suggestion.smdClassification = src.smdClassification as SmdClassification
+    }
+
+    if (Array.isArray(src.manufacturers)) {
+      const mfrs: BomManufacturer[] = []
+      for (const m of src.manufacturers) {
+        if (m && typeof m === 'object' && typeof m.manufacturer === 'string' && typeof m.manufacturerPart === 'string') {
+          const mfr = m.manufacturer.trim()
+          const part = m.manufacturerPart.trim()
+          if (mfr && part) mfrs.push({ manufacturer: mfr, manufacturerPart: part })
+        }
+      }
+      if (mfrs.length > 0) suggestion.manufacturers = mfrs
+    }
+
+    if (Object.keys(suggestion).length > 0) {
+      result[lineId] = suggestion
+    }
+  }
+
+  return result
+}
+
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const { apiKey, model, bomLines, smdPnpComponents, thtPnpComponents } = body ?? {}
@@ -5,11 +62,14 @@ export default defineEventHandler(async (event) => {
   if (!apiKey || typeof apiKey !== 'string') {
     throw createError({ statusCode: 400, statusMessage: 'Missing apiKey' })
   }
-  if (!model || typeof model !== 'string') {
-    throw createError({ statusCode: 400, statusMessage: 'Missing model' })
+  if (!model || typeof model !== 'string' || !model.startsWith('claude-')) {
+    throw createError({ statusCode: 400, statusMessage: 'Invalid model' })
   }
   if (!Array.isArray(bomLines) || bomLines.length === 0) {
     throw createError({ statusCode: 400, statusMessage: 'Missing or empty bomLines' })
+  }
+  if (bomLines.length > MAX_BOM_LINES) {
+    throw createError({ statusCode: 400, statusMessage: `BOM exceeds ${MAX_BOM_LINES} line limit` })
   }
 
   const systemPrompt = `You are Spark, an expert electronics manufacturing AI assistant specializing in BOM (Bill of Materials) enrichment for PCB assembly.
@@ -18,10 +78,33 @@ Your task is to analyze BOM lines and improve them. You receive BOM data along w
 
 For each BOM line, suggest improvements where applicable:
 
-1. **Description**: Improve the description to be professional and standardized. Include value, voltage rating, tolerance, and package size where inferable from context (references, package, existing description, additional data fields). Examples:
-   - "100nF 50V X7R Ceramic Capacitor 0402" instead of "Cap 100n"
-   - "10kΩ 1% 0.1W Thick Film Resistor 0603" instead of "RES 10K"
+1. **Description**: Improve the description to be professional and standardized. Follow these naming conventions strictly:
+
+   **MLCC / Ceramic Capacitors** — format: "Capacitor MLCC {value} {voltage} {dielectric} ±{tolerance} {package}"
+   - "Capacitor MLCC 4.7µF 16V X5R ±10% 0603" instead of "Cap 4u7"
+   - "Capacitor MLCC 100nF 50V X7R ±10% 0402" instead of "Cap 100n"
+   - "Capacitor MLCC 10µF 25V X5R ±20% 0805" instead of "CAP 10UF"
+
+   **Electrolytic Capacitors** — format: "Capacitor Electrolytic {value} {voltage} ±{tolerance} {dimensions/package}"
+   - "Capacitor Electrolytic 100µF 25V ±20% 6.3x7.7mm" instead of "ECAP 100u"
+
+   **Thick Film Resistors** — format: "Resistor Thick Film {value} {tolerance} {power} {TCR} {package}"
+   - "Resistor Thick Film 27kΩ 1% 0.063W 100ppm/°C 0402" instead of "RES 27K"
+   - "Resistor Thick Film 10kΩ 1% 0.1W 100ppm/°C 0603" instead of "R 10K 1%"
+   - "Resistor Thick Film 0Ω (Jumper) 0.063W 0402" instead of "0R"
+
+   **Thin Film Resistors** — format: "Resistor Thin Film {value} {tolerance} {power} {TCR} {package}"
+   - "Resistor Thin Film 4.99kΩ 0.1% 0.1W 25ppm/°C 0603"
+
+   **ICs / Semiconductors** — format: "{Part Number} {brief function} {package}"
    - "STM32F407VGT6 ARM Cortex-M4 Microcontroller LQFP-100" instead of "MCU"
+   - "LM1117-3.3 3.3V LDO Regulator SOT-223" instead of "REG 3V3"
+
+   **Other components** — use a clear, descriptive format: "{Type} {key specs} {package}"
+   - "LED Green 520nm 20mA 0603" instead of "LED GRN"
+   - "Inductor 10µH 1.5A ±20% 4x4mm" instead of "IND 10u"
+
+   Use µ (micro sign U+00B5) for micro, Ω (U+03A9) for ohm. Omit fields you cannot infer — never guess voltage, tolerance, TCR, or power ratings.
 
 2. **Type**: Suggest SMD, THT, Mounting, or Other based on the component data and PnP cross-reference.
 
@@ -60,22 +143,22 @@ Only output the JSON object, nothing else.`
   }
 
   if (Array.isArray(smdPnpComponents) && smdPnpComponents.length > 0) {
-    userPayload.smdPnpComponents = smdPnpComponents.map((c: any) => ({
+    userPayload.smdPnpComponents = smdPnpComponents.slice(0, MAX_PNP_COMPONENTS).map((c: any) => ({
       designator: c.designator,
       value: c.value,
       package: c.package ?? c.cadPackage ?? c.matchedPackage,
-      description: c.description,
     }))
   }
 
   if (Array.isArray(thtPnpComponents) && thtPnpComponents.length > 0) {
-    userPayload.thtPnpComponents = thtPnpComponents.map((c: any) => ({
+    userPayload.thtPnpComponents = thtPnpComponents.slice(0, MAX_PNP_COMPONENTS).map((c: any) => ({
       designator: c.designator,
       value: c.value,
       package: c.package ?? c.cadPackage ?? c.matchedPackage,
-      description: c.description,
     }))
   }
+
+  const userContent = `Analyze and enrich this BOM data:\n\n${JSON.stringify(userPayload)}`
 
   try {
     const response = await $fetch<any>('https://api.anthropic.com/v1/messages', {
@@ -87,13 +170,11 @@ Only output the JSON object, nothing else.`
       },
       body: {
         model,
-        max_tokens: 8192,
-        system: systemPrompt,
+        max_tokens: 16384,
+        temperature: 0,
+        system: [{ type: 'text', text: systemPrompt }],
         messages: [
-          {
-            role: 'user',
-            content: `Analyze and enrich this BOM data:\n\n${JSON.stringify(userPayload, null, 2)}`,
-          },
+          { role: 'user', content: userContent },
         ],
       },
     })
@@ -110,14 +191,31 @@ Only output the JSON object, nothing else.`
       throw createError({ statusCode: 502, statusMessage: 'AI response is not valid JSON' })
     }
 
-    const suggestions = JSON.parse(raw.slice(jsonStart, jsonEnd + 1))
+    let parsed: unknown
+    try {
+      parsed = JSON.parse(raw.slice(jsonStart, jsonEnd + 1))
+    } catch {
+      throw createError({ statusCode: 502, statusMessage: 'AI response contains malformed JSON' })
+    }
+
+    const suggestions = sanitizeSuggestions(parsed)
     return { suggestions }
   } catch (err: any) {
     if (err.statusCode) throw err
+
+    const anthropicError = err?.data?.error?.message ?? err?.data?.message ?? null
+    const status = err?.statusCode ?? err?.status ?? 502
+
+    console.error('[Spark] Anthropic API error:', {
+      status,
+      anthropicError,
+      message: err?.message,
+    })
+
     throw createError({
-      statusCode: 502,
-      statusMessage: 'AI enrichment failed',
-      data: { message: err?.message ?? 'Unknown error' },
+      statusCode: status === 401 || status === 403 ? status : 502,
+      statusMessage: status === 401 || status === 403 ? 'Invalid API key' : 'AI enrichment failed',
+      data: { message: anthropicError ?? err?.message ?? 'Unknown error' },
     })
   }
 })

@@ -10,8 +10,12 @@ import {
   injectGerberCommands,
   mmToFileUnits,
   fileUnitsToMm,
-  type GerberFormatSpec,
 } from '@lib/gerber/generator'
+import {
+  parseDrillFormat,
+  generateDrillHit,
+  injectDrillCommands,
+} from '@lib/gerber/drill-generator'
 import {
   extractSnapPoints,
   findBestDrawSnap,
@@ -19,7 +23,7 @@ import {
   type DrawSnapResult,
 } from '~/utils/snap-points'
 
-export type DrawShapeTool = 'line' | 'rect' | 'circle' | 'text'
+export type DrawShapeTool = 'line' | 'rect' | 'circle' | 'text' | 'drill'
 
 export interface DrawPreviewShape {
   tool: DrawShapeTool
@@ -33,6 +37,8 @@ export interface DrawPreviewShape {
   /** For text */
   text?: string
   textHeight?: number
+  /** For drill: diameter in file units */
+  drillDiameter?: number
   filled: boolean
   strokeWidth: number
 }
@@ -66,6 +72,7 @@ export function useDrawTool() {
   const preciseRadiusMm = ref(1)
   const preciseText = ref('LABEL')
   const preciseTextHeightMm = ref(1.5)
+  const drillDiameterMm = ref(0.8)
 
   // Drawing state
   const isDrawing = ref(false)
@@ -180,8 +187,8 @@ export function useDrawTool() {
     }
   }
 
-  function handleMouseDown(e: MouseEvent, canvasEl: HTMLCanvasElement, transform: CanvasTransform) {
-    if (!active.value || e.button !== 0) return
+  function handleMouseDown(e: MouseEvent, canvasEl: HTMLCanvasElement, transform: CanvasTransform): DrawCommitRequest | null {
+    if (!active.value || e.button !== 0) return null
 
     const rect = canvasEl.getBoundingClientRect()
     const sx = e.clientX - rect.left
@@ -190,18 +197,22 @@ export function useDrawTool() {
     gerber = applySnap(gerber, transform)
 
     if (preciseMode.value) {
-      handlePrecisePlacement(gerber)
-      return
+      return handlePrecisePlacement(gerber)
     }
 
     if (activeTool.value === 'text') {
-      handlePrecisePlacement(gerber)
-      return
+      return handlePrecisePlacement(gerber)
+    }
+
+    // Drill is always click-to-place (no drag)
+    if (activeTool.value === 'drill') {
+      return handlePrecisePlacement(gerber)
     }
 
     drawStart.value = gerber
     isDrawing.value = true
     updatePreview(gerber, gerber)
+    return null
   }
 
   function handleMouseUp(
@@ -281,6 +292,20 @@ export function useDrawTool() {
           textHeight: h,
           filled: false,
           strokeWidth: toUnits(strokeWidthMm.value),
+        }
+        break
+      }
+      case 'drill': {
+        const dia = toUnits(drillDiameterMm.value)
+        shape = {
+          tool: 'drill',
+          startX: gerber.x,
+          startY: gerber.y,
+          endX: gerber.x,
+          endY: gerber.y,
+          drillDiameter: dia,
+          filled: true,
+          strokeWidth: 0,
         }
         break
       }
@@ -394,13 +419,28 @@ export function useDrawTool() {
   }
 
   /**
-   * Generate Gerber source and inject it into the layer content.
+   * Generate source commands and inject them into the layer content.
+   * Handles both Gerber and Excellon drill files.
    * Returns the new content string, or null if generation fails.
    */
   function generateAndInject(
     shape: DrawPreviewShape,
     layerContent: string,
   ): string | null {
+    // Drill tool → Excellon injection
+    if (shape.tool === 'drill') {
+      const diameter = shape.drillDiameter ?? 0
+      if (!(diameter > 0)) return null
+      const spec = parseDrillFormat(layerContent)
+      const { toolDef, toolSelect, hitCommand } = generateDrillHit(
+        { x: shape.startX, y: shape.startY, diameter },
+        spec,
+        layerContent,
+      )
+      return injectDrillCommands(layerContent, toolDef, toolSelect, hitCommand)
+    }
+
+    // Gerber shapes
     const spec = parseFormatFromSource(layerContent)
     const nextCode = findNextApertureCode(layerContent)
 
@@ -480,6 +520,8 @@ export function useDrawTool() {
         const dy = shape.endY - shape.startY
         return { length: toMm(Math.sqrt(dx * dx + dy * dy)) }
       }
+      case 'drill':
+        return { diameter: toMm(shape.drillDiameter ?? 0) }
       default:
         return null
     }
@@ -499,6 +541,7 @@ export function useDrawTool() {
     preciseRadiusMm,
     preciseText,
     preciseTextHeightMm,
+    drillDiameterMm,
     isDrawing,
     drawStart,
     cursorGerber,

@@ -32,8 +32,8 @@
         </text>
       </template>
 
-      <!-- Crosshair cursor when not drawing -->
-      <template v-if="!draw.isDrawing.value && cursorScreen">
+      <!-- Crosshair cursor when not drawing (non-drill tools) -->
+      <template v-if="!draw.isDrawing.value && draw.activeTool.value !== 'drill' && cursorScreen">
         <line
           :x1="cursorScreen.sx - 12" :y1="cursorScreen.sy"
           :x2="cursorScreen.sx + 12" :y2="cursorScreen.sy"
@@ -170,8 +170,43 @@
         </template>
       </template>
 
+      <!-- Drill ghost preview at cursor -->
+      <template v-if="draw.activeTool.value === 'drill' && !draw.isDrawing.value && cursorScreen">
+        <circle
+          :cx="cursorScreen.sx"
+          :cy="cursorScreen.sy"
+          :r="drillScreenRadius"
+          fill="rgba(96, 165, 250, 0.2)"
+          stroke="#60a5fa"
+          stroke-width="1.5"
+        />
+        <line
+          :x1="cursorScreen.sx - drillScreenRadius - 4" :y1="cursorScreen.sy"
+          :x2="cursorScreen.sx + drillScreenRadius + 4" :y2="cursorScreen.sy"
+          stroke="#60a5fa" stroke-width="0.5" opacity="0.5"
+        />
+        <line
+          :x1="cursorScreen.sx" :y1="cursorScreen.sy - drillScreenRadius - 4"
+          :x2="cursorScreen.sx" :y2="cursorScreen.sy + drillScreenRadius + 4"
+          stroke="#60a5fa" stroke-width="0.5" opacity="0.5"
+        />
+        <text
+          :x="cursorScreen.sx + drillScreenRadius + 6"
+          :y="cursorScreen.sy - 4"
+          fill="#60a5fa"
+          font-size="10"
+          font-family="ui-monospace, monospace"
+          font-weight="600"
+          paint-order="stroke"
+          stroke="rgba(0,0,0,0.75)"
+          stroke-width="3"
+        >
+          ⌀{{ formatDim(draw.drillDiameterMm.value) }}
+        </text>
+      </template>
+
       <!-- Precise mode placement crosshair (larger) -->
-      <template v-if="draw.preciseMode.value && !draw.isDrawing.value && cursorScreen">
+      <template v-if="draw.preciseMode.value && draw.activeTool.value !== 'drill' && !draw.isDrawing.value && cursorScreen">
         <!-- Ghost preview of precise shape at cursor -->
         <template v-if="draw.activeTool.value === 'rect'">
           <rect
@@ -339,6 +374,11 @@ const preciseRectScreen = computed(() => {
 const preciseCircleScreenR = computed(() => {
   const units = props.draw.fileUnits.value
   return mmToFileUnits(props.draw.preciseRadiusMm.value, units) * props.transform.scale
+})
+
+const drillScreenRadius = computed(() => {
+  const units = props.draw.fileUnits.value
+  return mmToFileUnits(props.draw.drillDiameterMm.value / 2, units) * props.transform.scale
 })
 
 function formatDim(v: number): string {

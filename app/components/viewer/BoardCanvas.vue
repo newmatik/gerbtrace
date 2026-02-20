@@ -390,7 +390,8 @@ function onMouseDown(e: MouseEvent) {
       return
     }
     if (props.drawTool?.active.value) {
-      props.drawTool.handleMouseDown(e, canvasEl.value, props.interaction.transform.value)
+      const commitReq = props.drawTool.handleMouseDown(e, canvasEl.value, props.interaction.transform.value)
+      if (commitReq) emit('drawCommit', commitReq)
       return
     }
     if (props.deleteTool?.active.value) {

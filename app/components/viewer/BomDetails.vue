@@ -15,6 +15,18 @@
         <UButton size="xs" color="error" variant="ghost" icon="i-lucide-trash-2" title="Delete BOM line" :disabled="props.locked" @click="emit('removeLine', line.id)" />
       </div>
 
+      <!-- Spark: Accept/Dismiss all -->
+      <div v-if="hasAnySuggestion" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border-l-2 border-violet-500 bg-violet-50 dark:bg-violet-900/10 border border-violet-200 dark:border-violet-800">
+        <UIcon name="i-lucide-sparkles" class="text-sm text-violet-500 shrink-0" />
+        <span class="text-[11px] font-medium text-violet-700 dark:text-violet-300 flex-1">Spark has suggestions for this line</span>
+        <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" title="Accept all suggestions" @click="emit('acceptAllAi', line.id)">
+          Accept All
+        </UButton>
+        <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" title="Dismiss all suggestions" @click="emit('dismissAllAi', line.id)">
+          Dismiss
+        </UButton>
+      </div>
+
       <div v-if="missingInPnP.length > 0" class="flex items-start gap-1.5 px-2 py-1.5 text-[10px] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded border border-amber-200 dark:border-amber-800">
         <UIcon name="i-lucide-triangle-alert" class="text-xs shrink-0 mt-0.5" />
         <div>
@@ -34,6 +46,20 @@
             :class="fieldClass('description')"
             @update:model-value="(v) => emitUpdate({ description: String(v ?? '') })"
           />
+          <!-- Spark: Description suggestion -->
+          <div v-if="aiSuggestion?.description" class="mt-1.5 rounded-md border-l-2 border-violet-500 bg-violet-50/60 dark:bg-violet-900/15 border border-violet-200 dark:border-violet-800 px-2.5 py-1.5">
+            <div class="flex items-start gap-1.5">
+              <UIcon name="i-lucide-sparkles" class="text-[10px] text-violet-500 shrink-0 mt-0.5" />
+              <div class="flex-1 min-w-0">
+                <div class="text-[9px] font-medium text-violet-600 dark:text-violet-400 uppercase tracking-wider mb-0.5">Spark suggestion</div>
+                <div class="text-xs text-violet-900 dark:text-violet-200">{{ aiSuggestion.description }}</div>
+              </div>
+              <div class="flex items-center gap-0.5 shrink-0">
+                <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" @click="emit('acceptAiSuggestion', line.id, 'description')" />
+                <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" @click="emit('dismissAiSuggestion', line.id, 'description')" />
+              </div>
+            </div>
+          </div>
         </div>
         <div>
           <div class="text-[10px] text-neutral-400 mb-1">Comment</div>
@@ -58,6 +84,13 @@
               class="min-w-[12rem]"
               @update:model-value="(v: any) => emitUpdate({ type: v })"
             />
+            <!-- Spark: Type suggestion -->
+            <div v-if="aiSuggestion?.type && aiSuggestion.type !== line.type" class="mt-1 flex items-center gap-1.5 px-2 py-1 rounded border-l-2 border-violet-500 bg-violet-50/60 dark:bg-violet-900/15 border border-violet-200 dark:border-violet-800">
+              <UIcon name="i-lucide-sparkles" class="text-[9px] text-violet-500 shrink-0" />
+              <span class="text-[10px] text-violet-800 dark:text-violet-200 flex-1">{{ aiSuggestion.type }}</span>
+              <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" @click="emit('acceptAiSuggestion', line.id, 'type')" />
+              <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" @click="emit('dismissAiSuggestion', line.id, 'type')" />
+            </div>
           </div>
           <label class="flex items-center gap-1.5 text-xs text-neutral-600 dark:text-neutral-300 pb-1">
             <USwitch
@@ -108,6 +141,44 @@
               :class="fieldClass('quantity')"
               @update:model-value="(v) => emitUpdate({ quantity: Math.max(0, Number(v ?? 0) || 0) })"
             />
+          </div>
+        </div>
+
+        <!-- Pin Count (THT) / SMD Classification -->
+        <div v-if="line.type === 'THT' || line.type === 'SMD' || aiSuggestion?.pinCount != null || aiSuggestion?.smdClassification != null" class="grid grid-cols-2 gap-2">
+          <div v-if="line.type === 'THT' || aiSuggestion?.pinCount != null">
+            <div class="text-[10px] text-neutral-400 mb-1">Pin Count</div>
+            <UInput
+              :model-value="line.pinCount != null ? String(line.pinCount) : ''"
+              size="sm"
+              type="number"
+              min="1"
+              placeholder="e.g. 8"
+              @update:model-value="(v) => emitUpdate({ pinCount: v ? Number(v) : null })"
+            />
+            <!-- Spark: Pin count suggestion -->
+            <div v-if="aiSuggestion?.pinCount != null && aiSuggestion.pinCount !== line.pinCount" class="mt-1 flex items-center gap-1.5 px-2 py-1 rounded border-l-2 border-violet-500 bg-violet-50/60 dark:bg-violet-900/15 border border-violet-200 dark:border-violet-800">
+              <UIcon name="i-lucide-sparkles" class="text-[9px] text-violet-500 shrink-0" />
+              <span class="text-[10px] text-violet-800 dark:text-violet-200 flex-1">{{ aiSuggestion.pinCount }} pins</span>
+              <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" @click="emit('acceptAiSuggestion', line.id, 'pinCount')" />
+              <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" @click="emit('dismissAiSuggestion', line.id, 'pinCount')" />
+            </div>
+          </div>
+          <div v-if="line.type === 'SMD' || aiSuggestion?.smdClassification != null">
+            <div class="text-[10px] text-neutral-400 mb-1">SMD Classification</div>
+            <USelect
+              :model-value="line.smdClassification ?? ''"
+              :items="smdClassItems"
+              size="sm"
+              @update:model-value="(v: any) => emitUpdate({ smdClassification: v || null })"
+            />
+            <!-- Spark: SMD classification suggestion -->
+            <div v-if="aiSuggestion?.smdClassification && aiSuggestion.smdClassification !== line.smdClassification" class="mt-1 flex items-center gap-1.5 px-2 py-1 rounded border-l-2 border-violet-500 bg-violet-50/60 dark:bg-violet-900/15 border border-violet-200 dark:border-violet-800">
+              <UIcon name="i-lucide-sparkles" class="text-[9px] text-violet-500 shrink-0" />
+              <span class="text-[10px] text-violet-800 dark:text-violet-200 flex-1">{{ aiSuggestion.smdClassification }}</span>
+              <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" @click="emit('acceptAiSuggestion', line.id, 'smdClassification')" />
+              <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" @click="emit('dismissAiSuggestion', line.id, 'smdClassification')" />
+            </div>
           </div>
         </div>
 
@@ -192,7 +263,7 @@
           </UButton>
         </div>
 
-        <div v-if="line.manufacturers.length === 0" class="text-xs text-neutral-400 py-3 text-center">
+        <div v-if="line.manufacturers.length === 0 && !(aiSuggestion?.manufacturers?.length)" class="text-xs text-neutral-400 py-3 text-center">
           No manufacturers added.
         </div>
 
@@ -324,6 +395,30 @@
           </div>
         </div>
 
+        <!-- Spark: Suggested manufacturers -->
+        <div v-if="aiSuggestion?.manufacturers?.length" class="space-y-2">
+          <div
+            v-for="(mfr, idx) in aiSuggestion.manufacturers"
+            :key="`ai-${idx}`"
+            class="rounded border-l-2 border-violet-500 bg-violet-50/60 dark:bg-violet-900/15 border border-violet-200 dark:border-violet-800 p-2"
+          >
+            <div class="flex items-start gap-2">
+              <UIcon name="i-lucide-sparkles" class="text-[10px] text-violet-500 shrink-0 mt-1.5" />
+              <div class="flex-1 min-w-0">
+                <div class="text-[9px] font-medium text-violet-600 dark:text-violet-400 uppercase tracking-wider mb-1">Suggested manufacturer</div>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                  <span class="text-violet-900 dark:text-violet-200 font-medium">{{ mfr.manufacturer }}</span>
+                  <span class="text-violet-900 dark:text-violet-200 font-mono">{{ mfr.manufacturerPart }}</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-0.5 shrink-0">
+                <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" @click="emit('acceptAiManufacturer', line.id, mfr)" />
+                <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" @click="emit('dismissAiSuggestion', line.id, 'manufacturers')" />
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div
           v-if="inlineAddOpen"
           class="rounded border border-neutral-100 dark:border-neutral-800 p-2 space-y-1.5"
@@ -362,8 +457,8 @@
 </template>
 
 <script setup lang="ts">
-import type { BomLine, BomPricingCache, BomManufacturer } from '~/utils/bom-types'
-import { BOM_LINE_TYPES } from '~/utils/bom-types'
+import type { BomLine, BomPricingCache, BomManufacturer, AiSuggestion } from '~/utils/bom-types'
+import { BOM_LINE_TYPES, SMD_CLASSIFICATIONS } from '~/utils/bom-types'
 import type { ExchangeRateSnapshot, PricingQueueItem } from '~/composables/useElexessApi'
 import { formatCurrency, normalizeCurrencyCode } from '~/utils/currency'
 
@@ -379,6 +474,7 @@ const props = defineProps<{
   exchangeRate: ExchangeRateSnapshot | null
   pnpDesignators: Set<string>
   locked?: boolean
+  aiSuggestion?: AiSuggestion | null
 }>()
 
 const emit = defineEmits<{
@@ -388,9 +484,30 @@ const emit = defineEmits<{
   addManufacturer: [lineId: string, mfr: { manufacturer: string; manufacturerPart: string }]
   fetchSinglePricing: [partNumber: string]
   fetchAllPricing: []
+  acceptAiSuggestion: [lineId: string, field: string]
+  dismissAiSuggestion: [lineId: string, field: string]
+  acceptAllAi: [lineId: string]
+  dismissAllAi: [lineId: string]
+  acceptAiManufacturer: [lineId: string, mfr: { manufacturer: string; manufacturerPart: string }]
 }>()
 
 const bomLineTypeItems = [...BOM_LINE_TYPES]
+const smdClassItems = [
+  { label: '(none)', value: '' },
+  ...SMD_CLASSIFICATIONS.map(c => ({ label: c, value: c })),
+]
+
+const hasAnySuggestion = computed(() => {
+  const s = props.aiSuggestion
+  if (!s) return false
+  return !!(
+    s.description
+    || (s.type && s.type !== props.line?.type)
+    || (s.pinCount != null && s.pinCount !== props.line?.pinCount)
+    || (s.smdClassification && s.smdClassification !== props.line?.smdClassification)
+    || (s.manufacturers && s.manufacturers.length > 0)
+  )
+})
 
 const extraExpanded = ref(true)
 const extraEntries = computed<[string, string][]>(() => {
@@ -463,8 +580,6 @@ const isLineChanged = computed(() => {
   if (!line) return false
   if (!base) return true
 
-  // When the source BOM has no type column the parser defaults to 'Other'.
-  // Changing from that default is enrichment, not a user edit.
   const typeMatches = base.type === 'Other' || line.type === base.type
 
   const fieldsEqual =
@@ -769,4 +884,3 @@ function confirmInlineAdd() {
   cancelInlineAdd()
 }
 </script>
-
