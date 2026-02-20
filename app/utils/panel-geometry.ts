@@ -426,7 +426,7 @@ export function computePanelLayout(
   }
 
   // Frame-to-PCB routing channels (all four sides)
-  if (config.frame.enabled && config.separationType === 'routed') {
+  if (config.frame.enabled && hasAnyRoutedSeparation) {
     const innerLeft = frameLeft + frameGapLeft / 2
     const innerRight = totalWidth - frameRight - frameGapRight / 2
     const innerTop = frameTop + frameGapTop / 2
