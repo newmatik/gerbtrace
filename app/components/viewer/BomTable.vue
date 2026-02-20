@@ -480,6 +480,7 @@ interface SupplierOffer {
   country: string
   stock: number
   moq: number
+  breakQty: number
   leadtime: number | null
   unitPrice: number
   currency: string
@@ -498,16 +499,24 @@ interface PriceBreak {
   currency?: string
 }
 
-function pickTierPrice(pricebreaks: PriceBreak[], totalQty: number): { price: number; currency: string } | null {
+function pickTierPrice(pricebreaks: PriceBreak[], totalQty: number): { price: number; currency: string; quantity: number } | null {
   if (!pricebreaks || pricebreaks.length === 0) return null
-  const sorted = [...pricebreaks].sort((a, b) => (a.quantity ?? 0) - (b.quantity ?? 0))
-  let best = sorted[0]
-  for (const tier of sorted) {
-    if ((tier.quantity ?? 0) <= totalQty) best = tier
-    else break
-  }
-  if (best?.price === undefined) return null
-  return { price: Number(best.price), currency: best.currency || 'EUR' }
+  const eligible = pricebreaks
+    .map(tier => ({
+      quantity: Number(tier.quantity),
+      price: Number(tier.price),
+      currency: tier.currency || 'EUR',
+    }))
+    .filter(tier =>
+      Number.isFinite(tier.quantity)
+      && tier.quantity > 0
+      && tier.quantity <= totalQty
+      && Number.isFinite(tier.price)
+      && tier.price >= 0,
+    )
+  if (!eligible.length) return null
+  const best = eligible.sort((a, b) => a.quantity - b.quantity)[eligible.length - 1]
+  return { price: best.price, currency: best.currency, quantity: best.quantity }
 }
 
 function conversionRate(from: string, to: string): number | null {
@@ -548,13 +557,16 @@ function getSupplierOffers(mpn: string, totalQty: number): SupplierOffer[] {
   const seenSuppliers = new Set<string>()
   for (const r of results) {
     if (!r.pricebreaks || r.pricebreaks.length === 0) continue
+    const moq = Math.max(0, Number(r.moq ?? 0) || 0)
+    if (moq > totalQty) continue
     const tier = pickTierPrice(r.pricebreaks, totalQty)
     if (!tier) continue
     candidates.push({
       supplier: r.supplier || 'Unknown',
       country: r.country || '',
       stock: r.current_stock ?? 0,
-      moq: r.moq ?? 0,
+      moq,
+      breakQty: tier.quantity,
       leadtime: r.current_leadtime ?? null,
       unitPrice: tier.price,
       currency: tier.currency,

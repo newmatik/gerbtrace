@@ -100,17 +100,18 @@
         <!-- Supplier offers table -->
         <template v-if="getSupplierOffers(mfr.manufacturerPart).length > 0">
           <div class="rounded border border-neutral-100 dark:border-neutral-800 overflow-hidden">
-            <div class="grid grid-cols-[1fr_70px_60px_80px_80px] gap-1 px-3 py-1.5 bg-neutral-50 dark:bg-neutral-800/80 text-[10px] text-neutral-400 uppercase tracking-wide font-medium">
+            <div class="grid grid-cols-[1fr_70px_60px_60px_80px_80px] gap-1 px-3 py-1.5 bg-neutral-50 dark:bg-neutral-800/80 text-[10px] text-neutral-400 uppercase tracking-wide font-medium">
               <span>Supplier</span>
               <span class="text-right">Stock</span>
               <span class="text-right">MOQ</span>
+              <span class="text-right">Break</span>
               <span class="text-right">Unit</span>
               <span class="text-right">Total</span>
             </div>
             <div
               v-for="(offer, oi) in getSupplierOffers(mfr.manufacturerPart)"
               :key="oi"
-              class="grid grid-cols-[1fr_70px_60px_80px_80px] gap-1 px-3 py-1.5 text-xs border-t border-neutral-50 dark:border-neutral-800/50"
+              class="grid grid-cols-[1fr_70px_60px_60px_80px_80px] gap-1 px-3 py-1.5 text-xs border-t border-neutral-50 dark:border-neutral-800/50"
               :class="{
                 'bg-green-50/30 dark:bg-green-900/5': offer.stock >= totalQty && oi === 0,
                 'opacity-40': offer.stock < totalQty,
@@ -124,6 +125,9 @@
               </span>
               <span class="text-right tabular-nums text-neutral-500">
                 {{ offer.moq.toLocaleString() }}
+              </span>
+              <span class="text-right tabular-nums text-neutral-500">
+                {{ offer.breakQty.toLocaleString() }}
               </span>
               <span
                 class="text-right tabular-nums font-medium"
@@ -185,6 +189,7 @@ interface SupplierOffer {
   country: string
   stock: number
   moq: number
+  breakQty: number
   leadtime: number | null
   unitPrice: number
   currency: string
@@ -234,16 +239,24 @@ function getQueueStatus(partNumber: string): string | null {
 
 interface PriceBreak { quantity?: number; price?: number; currency?: string }
 
-function pickTierPrice(pricebreaks: PriceBreak[], qty: number): { price: number; currency: string } | null {
+function pickTierPrice(pricebreaks: PriceBreak[], qty: number): { price: number; currency: string; quantity: number } | null {
   if (!pricebreaks?.length) return null
-  const sorted = [...pricebreaks].sort((a, b) => (a.quantity ?? 0) - (b.quantity ?? 0))
-  let best = sorted[0]
-  for (const tier of sorted) {
-    if ((tier.quantity ?? 0) <= qty) best = tier
-    else break
-  }
-  if (best?.price === undefined) return null
-  return { price: Number(best.price), currency: best.currency || 'EUR' }
+  const eligible = pricebreaks
+    .map(tier => ({
+      quantity: Number(tier.quantity),
+      price: Number(tier.price),
+      currency: tier.currency || 'EUR',
+    }))
+    .filter(tier =>
+      Number.isFinite(tier.quantity)
+      && tier.quantity > 0
+      && tier.quantity <= qty
+      && Number.isFinite(tier.price)
+      && tier.price >= 0,
+    )
+  if (!eligible.length) return null
+  const best = eligible.sort((a, b) => a.quantity - b.quantity)[eligible.length - 1]
+  return { price: best.price, currency: best.currency, quantity: best.quantity }
 }
 
 function getSupplierOffers(mpn: string): SupplierOffer[] {
@@ -256,13 +269,16 @@ function getSupplierOffers(mpn: string): SupplierOffer[] {
   const seen = new Set<string>()
   for (const r of results) {
     if (!r.pricebreaks?.length) continue
+    const moq = Math.max(0, Number(r.moq ?? 0) || 0)
+    if (moq > qty) continue
     const tier = pickTierPrice(r.pricebreaks, qty)
     if (!tier) continue
     candidates.push({
       supplier: r.supplier || 'Unknown',
       country: r.country || '',
       stock: r.current_stock ?? 0,
-      moq: r.moq ?? 0,
+      moq,
+      breakQty: tier.quantity,
       leadtime: r.current_leadtime ?? null,
       unitPrice: tier.price,
       currency: tier.currency,

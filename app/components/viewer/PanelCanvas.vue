@@ -1664,6 +1664,60 @@ function drawPanelSilkscreenLabels(oc: OverlayContext, panelLayout: PanelLayout)
   ctx.restore()
 }
 
+// ─── V-Cut hole punch helper ───
+// In V-Cut mode the continuous substrate background hides transparent areas
+// in the PCB tile (drills, outline cutouts). This builds a canvas that marks
+// exactly those "hole" pixels so they can be stamped over the background.
+
+function buildVCutHolesCanvas(
+  tileCanvas: HTMLCanvasElement,
+  tileW: number,
+  tileH: number,
+  tileTransform: { offsetX: number; offsetY: number; scale: number },
+  dpr: number,
+  isRealistic: boolean,
+  forExport = false,
+): HTMLCanvasElement | null {
+  const outlineLayer = findOutlineLayer()
+  const outlineTree = outlineLayer ? getImageTree(outlineLayer) : null
+  const hasOutline = outlineTree && outlineTree.children.length > 0
+
+  const holesCanvas = acquireCanvas(tileW, tileH)
+  const holesCtx = holesCanvas.getContext('2d')!
+
+  if (hasOutline) {
+    renderOuterBoundaryOnly(outlineTree!, holesCanvas, {
+      color: '#ffffff',
+      transform: tileTransform,
+      dpr,
+    })
+  } else {
+    holesCtx.fillStyle = '#fff'
+    holesCtx.fillRect(0, 0, tileW, tileH)
+  }
+
+  // Erase opaque tile pixels → only transparent areas (drills + cutouts) remain
+  holesCtx.globalCompositeOperation = 'destination-out'
+  holesCtx.drawImage(tileCanvas, 0, 0)
+  holesCtx.globalCompositeOperation = 'source-over'
+
+  if (forExport) {
+    // Export uses destination-out on the main canvas; keep white mask as-is
+    return holesCanvas
+  }
+
+  // Tint holes to canvas background color
+  const bgColor = isRealistic
+    ? (isLight.value ? '#e8e8ec' : '#1a1a1e')
+    : (isLight.value ? '#f5f5f5' : '#111111')
+  holesCtx.globalCompositeOperation = 'source-in'
+  holesCtx.fillStyle = bgColor
+  holesCtx.fillRect(0, 0, tileW, tileH)
+  holesCtx.globalCompositeOperation = 'source-over'
+
+  return holesCanvas
+}
+
 // ─── Panel background (drawn BEFORE PCB tiles) ───
 
 function drawPanelBackground(oc: OverlayContext, panelLayout: PanelLayout) {
@@ -2824,6 +2878,39 @@ function draw() {
         ctx.restore()
       }
 
+      // V-Cut mode: the continuous background fill hides drill holes and
+      // outline cutouts because they are transparent in the tile but the
+      // substrate background beneath looks identical. Punch those areas
+      // through so they show the canvas background instead.
+      if (!hasAnyRoutedSeparation(props.panelConfig)) {
+        const holesCanvas = buildVCutHolesCanvas(
+          tileCanvas, pcbPixW, pcbPixH, tileTransform, dpr, isRealistic,
+        )
+        if (holesCanvas) {
+          for (const pcb of panelLayout.pcbs) {
+            const gerberX = mmToGerber(pcb.x)
+            const gerberY = panelHeightGerber - mmToGerber(pcb.y)
+            const screenX = (gerberX * transform.scale + transform.offsetX) * dpr
+            const screenY = (-gerberY * transform.scale + transform.offsetY) * dpr
+            const { dx, dy } = rotationAnchorOffsetPx(pcb.rotation, pcbPixW, pcbPixH)
+            const drawX = screenX + dx
+            const drawY = screenY + dy
+
+            ctx.save()
+            if (pcb.rotation !== 0) {
+              const pcbCenterX = drawX + pcbPixW / 2
+              const pcbCenterY = drawY + pcbPixH / 2
+              ctx.translate(pcbCenterX, pcbCenterY)
+              ctx.rotate((pcb.rotation * Math.PI) / 180)
+              ctx.translate(-pcbCenterX, -pcbCenterY)
+            }
+            ctx.drawImage(holesCanvas, drawX, drawY)
+            ctx.restore()
+          }
+          releaseCanvas(holesCanvas)
+        }
+      }
+
     }
   }
 
@@ -3326,6 +3413,35 @@ function exportPng(
       }
       exportCtx.drawImage(tileCanvas, drawX, drawY)
       exportCtx.restore()
+    }
+
+    // V-Cut export: punch through drill holes and outline cutouts
+    if (!hasAnyRoutedSeparation(props.panelConfig)) {
+      const holesCanvas = buildVCutHolesCanvas(
+        tileCanvas, tileW, tileH, tileTransform, 1, isRealistic, true,
+      )
+      if (holesCanvas) {
+        exportCtx.globalCompositeOperation = 'destination-out'
+        for (const pcb of panelLayout.pcbs) {
+          const screenX = (pcb.x / toMm) * scaleFactor
+          const screenY = (pcb.y / toMm) * scaleFactor
+          const { dx, dy } = rotationAnchorOffsetPx(pcb.rotation, tileW, tileH)
+          const drawX = screenX + dx
+          const drawY = screenY + dy
+          exportCtx.save()
+          if (pcb.rotation !== 0) {
+            const cx = drawX + tileW / 2
+            const cy = drawY + tileH / 2
+            exportCtx.translate(cx, cy)
+            exportCtx.rotate((pcb.rotation * Math.PI) / 180)
+            exportCtx.translate(-cx, -cy)
+          }
+          exportCtx.drawImage(holesCanvas, drawX, drawY)
+          exportCtx.restore()
+        }
+        exportCtx.globalCompositeOperation = 'source-over'
+        releaseCanvas(holesCanvas)
+      }
     }
 
     releaseCanvas(tileCanvas)

@@ -276,17 +276,18 @@
                     {{ offers.length }} suppliers
                   </button>
                   <div v-if="expandedPriceTables.has(mfr.manufacturerPart)" class="rounded border border-neutral-100 dark:border-neutral-800 overflow-hidden">
-                    <div class="grid grid-cols-[1fr_60px_60px_70px_70px] gap-1 px-2 py-0.5 bg-neutral-50 dark:bg-neutral-800/80 text-[9px] text-neutral-400 uppercase tracking-wide font-medium">
+                    <div class="grid grid-cols-[1fr_60px_60px_60px_70px_70px] gap-1 px-2 py-0.5 bg-neutral-50 dark:bg-neutral-800/80 text-[9px] text-neutral-400 uppercase tracking-wide font-medium">
                       <span>Supplier</span>
                       <span class="text-right">Stock</span>
                       <span class="text-right">MOQ</span>
+                      <span class="text-right">Break</span>
                       <span class="text-right">Unit</span>
                       <span class="text-right">Total</span>
                     </div>
                     <div
                       v-for="(offer, oi) in offers"
                       :key="oi"
-                      class="grid grid-cols-[1fr_60px_60px_70px_70px] gap-1 px-2 py-0.5 text-[10px] border-t border-neutral-50 dark:border-neutral-800/50"
+                      class="grid grid-cols-[1fr_60px_60px_60px_70px_70px] gap-1 px-2 py-0.5 text-[10px] border-t border-neutral-50 dark:border-neutral-800/50"
                       :class="{
                         'bg-green-50/30 dark:bg-green-900/5': offer.stock >= line.quantity * boardQuantity && oi === 0,
                         'opacity-40': offer.stock < line.quantity * boardQuantity,
@@ -300,6 +301,9 @@
                       </span>
                       <span class="text-right tabular-nums text-neutral-500">
                         {{ formatNumber(offer.moq) }}
+                      </span>
+                      <span class="text-right tabular-nums text-neutral-500">
+                        {{ formatNumber(offer.breakQty) }}
                       </span>
                       <template v-for="display in [getDisplayOffer(offer)]" :key="`${offer.supplier}-${oi}-${display.currency}`">
                         <span class="text-right tabular-nums font-medium" :class="offer.stock >= line.quantity * boardQuantity && oi === 0 ? 'text-green-600 dark:text-green-400' : 'text-neutral-600 dark:text-neutral-300'">
@@ -554,6 +558,7 @@ interface SupplierOffer {
   country: string
   stock: number
   moq: number
+  breakQty: number
   leadtime: number | null
   unitPrice: number
   currency: string
@@ -572,16 +577,24 @@ interface PriceBreak {
   currency?: string
 }
 
-function pickTierPrice(pricebreaks: PriceBreak[], totalQty: number): { price: number; currency: string } | null {
+function pickTierPrice(pricebreaks: PriceBreak[], totalQty: number): { price: number; currency: string; quantity: number } | null {
   if (!pricebreaks || pricebreaks.length === 0) return null
-  const sorted = [...pricebreaks].sort((a, b) => (a.quantity ?? 0) - (b.quantity ?? 0))
-  let best = sorted[0]
-  for (const tier of sorted) {
-    if ((tier.quantity ?? 0) <= totalQty) best = tier
-    else break
-  }
-  if (best?.price === undefined) return null
-  return { price: Number(best.price), currency: best.currency || 'EUR' }
+  const eligible = pricebreaks
+    .map(tier => ({
+      quantity: Number(tier.quantity),
+      price: Number(tier.price),
+      currency: tier.currency || 'EUR',
+    }))
+    .filter(tier =>
+      Number.isFinite(tier.quantity)
+      && tier.quantity > 0
+      && tier.quantity <= totalQty
+      && Number.isFinite(tier.price)
+      && tier.price >= 0,
+    )
+  if (!eligible.length) return null
+  const best = eligible.sort((a, b) => a.quantity - b.quantity)[eligible.length - 1]
+  return { price: best.price, currency: best.currency, quantity: best.quantity }
 }
 
 function conversionRate(from: string, to: string): number | null {
@@ -622,13 +635,16 @@ function getSupplierOffers(mpn: string, totalQty: number): SupplierOffer[] {
   const seenSuppliers = new Set<string>()
   for (const r of results) {
     if (!r.pricebreaks || r.pricebreaks.length === 0) continue
+    const moq = Math.max(0, Number(r.moq ?? 0) || 0)
+    if (moq > totalQty) continue
     const tier = pickTierPrice(r.pricebreaks, totalQty)
     if (!tier) continue
     candidates.push({
       supplier: r.supplier || 'Unknown',
       country: r.country || '',
       stock: r.current_stock ?? 0,
-      moq: r.moq ?? 0,
+      moq,
+      breakQty: tier.quantity,
       leadtime: r.current_leadtime ?? null,
       unitPrice: tier.price,
       currency: tier.currency,

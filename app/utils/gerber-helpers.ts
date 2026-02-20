@@ -134,6 +134,19 @@ export const ALL_LAYER_TYPES: string[] = [
   'Unmatched',
 ]
 
+/** Layer types that may only be assigned to one file at a time. */
+export const SINGLETON_LAYER_TYPES: ReadonlySet<string> = new Set([
+  'Top Silkscreen',
+  'Top Paste',
+  'Top Solder Mask',
+  'Top Copper',
+  'Bottom Copper',
+  'Bottom Solder Mask',
+  'Bottom Paste',
+  'Bottom Silkscreen',
+  'Outline',
+])
+
 const VALID_LAYER_TYPES = new Set(ALL_LAYER_TYPES)
 
 /**
