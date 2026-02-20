@@ -300,6 +300,7 @@
             :paste-settings="pasteSettings"
             :locked="!canEditTab('paste')"
             @update:paste-settings="pasteSettings = $event"
+            @export-jpsys="showJpsysExport = true"
           />
         </aside>
 
@@ -495,6 +496,7 @@
             v-model:selected-doc-id="filesSelectedDocId"
             :layers="layers"
             :documents="documents"
+            :edited-layers="editedLayers"
             :locked="!canEditTab('files')"
             @select-layer="handleFilesLayerSelect"
             @select-doc="handleFilesDocSelect"
@@ -526,8 +528,18 @@
                 <UIcon name="i-lucide-file" class="text-sm text-blue-500 shrink-0" />
                 <span class="text-xs font-medium text-neutral-700 dark:text-neutral-200 truncate">{{ filesSelectedLayer.file.fileName }}</span>
                 <UBadge size="xs" variant="subtle" color="neutral" class="shrink-0">{{ filesSelectedLayer.type }}</UBadge>
+                <UBadge
+                  v-if="editedLayers.has(filesSelectedLayer.file.fileName)"
+                  size="xs"
+                  variant="subtle"
+                  color="warning"
+                  class="shrink-0"
+                >
+                  Edited
+                </UBadge>
                 <template v-if="isSelectedLayerImportConfigurable">
                   <div class="flex items-center gap-1.5 ml-1">
+                    <span v-if="isSelectedLayerPnp" class="text-[11px] text-neutral-500 dark:text-neutral-400">Unit</span>
                     <USelect
                       v-if="isSelectedLayerPnp"
                       :model-value="selectedLayerPnpUnit"
@@ -535,11 +547,38 @@
                       value-key="value"
                       label-key="label"
                       size="xs"
-                      class="w-28"
+                      class="w-24"
                       @update:model-value="updateSelectedLayerPnpUnit($event)"
                     />
                   </div>
                 </template>
+                <div v-if="filesSelectedLayer" class="flex items-center gap-1 ml-1">
+                  <UButton
+                    v-if="canSelectedLayerUseTablePreview"
+                    size="xs"
+                    color="neutral"
+                    :variant="filesPreviewMode === 'table' ? 'soft' : 'ghost'"
+                    @click="filesPreviewMode = 'table'"
+                  >
+                    Table
+                  </UButton>
+                  <UButton
+                    size="xs"
+                    color="neutral"
+                    :variant="filesPreviewMode === 'text' ? 'soft' : 'ghost'"
+                    @click="filesPreviewMode = 'text'"
+                  >
+                    Text
+                  </UButton>
+                  <UButton
+                    size="xs"
+                    color="neutral"
+                    :variant="filesPreviewMode === 'diff' ? 'soft' : 'ghost'"
+                    @click="filesPreviewMode = 'diff'"
+                  >
+                    Diff
+                  </UButton>
+                </div>
                 <div class="flex-1" />
                 <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-download" @click="downloadSelectedLayer">
                   Download
@@ -591,19 +630,35 @@
             <div class="flex-1 min-h-0 overflow-hidden">
               <div v-if="filesSelectedLayer" class="h-full">
                 <FileTablePreview
-                  v-if="isTabularPreviewFileName(filesSelectedLayer.file.fileName)"
+                  v-if="canSelectedLayerUseTablePreview && filesPreviewMode === 'table'"
                   :key="`layer-${filesPreviewSelectionNonce}-${filesSelectedLayerIndex ?? 'na'}-${filesSelectedLayer.file.fileName}`"
                   :file-name="filesSelectedLayer.file.fileName"
                   :text-content="filesSelectedLayer.file.content"
                   :skip-rows="selectedLayerSkipRows"
+                  :skip-bottom-rows="selectedLayerSkipBottomRows"
                   :mapping="selectedLayerMappingByField"
                   :mapping-fields="selectedLayerMappingFields"
+                  :fixed-columns="selectedLayerFixedColumns"
+                  :delimiter="selectedLayerDelimiter"
+                  :decimal="selectedLayerDecimal"
+                  :extra-columns="selectedLayerExtraColumns"
                   @update:skip-rows="updateSelectedLayerSkipRows"
+                  @update:skip-bottom-rows="updateSelectedLayerSkipBottomRows"
                   @update:mapping="updateSelectedLayerMappingByField"
+                  @update:fixed-columns="updateSelectedLayerFixedColumns"
+                  @update:delimiter="updateSelectedLayerDelimiter"
+                  @update:decimal="updateSelectedLayerDecimal"
+                  @update:extra-columns="updateSelectedLayerExtraColumns"
                 />
-                <div v-else class="h-full overflow-auto p-4">
-                  <pre class="text-[11px] leading-relaxed font-mono whitespace-pre-wrap break-words text-neutral-700 dark:text-neutral-200">{{ filesSelectedLayer.file.content }}</pre>
-                </div>
+                <FileTextEditorPreview
+                  v-else
+                  :key="`layer-text-${filesPreviewSelectionNonce}-${filesSelectedLayer.file.fileName}`"
+                  :model-value="filesSelectedLayer.file.content"
+                  :original-text="selectedLayerOriginalText"
+                  :editable="canEditTab('files')"
+                  :mode="filesPreviewMode === 'diff' ? 'diff' : 'text'"
+                  @update:model-value="updateSelectedLayerText"
+                />
               </div>
               <div v-else-if="filesSelectedDoc" class="h-full">
                 <FileTablePreview
@@ -908,6 +963,16 @@
       :has-smd="pnp.hasSmdPnP.value || pnp.smdActiveComponents.value.length > 0"
       :has-tht="pnp.hasThtPnP.value || pnp.thtActiveComponents.value.length > 0"
       @export="handleExportPnP"
+    />
+
+    <!-- JPSys export modal -->
+    <LazyJetprintExportModal
+      v-model:open="showJpsysExport"
+      :paste-tree="activePasteTree ?? null"
+      :board-width-mm="boardSizeMm?.width ?? 100"
+      :board-height-mm="boardSizeMm?.height ?? 100"
+      :board-rotation="boardRotation"
+      :project-name="project?.name"
     />
 
     <!-- Image export modal -->
@@ -1226,6 +1291,7 @@ watch(() => projectSync?.project.value?.document_order, (next) => {
 
 watch(() => projectSync?.project.value?.pnp_file_import_options, (next) => {
   const remoteSnapshot = toPnpImportOptionsSnapshot(next)
+  if (hasImportOptions(remoteSnapshot)) saveTeamImportOptionsBackup('pnp', remoteSnapshot)
   if (pendingLocalPnpFileImportOptions && !arePnpImportOptionsEqual(remoteSnapshot, pendingLocalPnpFileImportOptions)) {
     // Ignore stale realtime rows while a local write is still in flight.
     return
@@ -1233,18 +1299,27 @@ watch(() => projectSync?.project.value?.pnp_file_import_options, (next) => {
   if (pendingLocalPnpFileImportOptions && arePnpImportOptionsEqual(remoteSnapshot, pendingLocalPnpFileImportOptions)) {
     pendingLocalPnpFileImportOptions = null
   }
+  if (!hasImportOptions(remoteSnapshot) && hasImportOptions(toPnpImportOptionsSnapshot(pnp.fileImportOptions.value))) {
+    // Defensive guard: never wipe in-memory mappings from an empty realtime payload.
+    return
+  }
   if (arePnpImportOptionsEqual(remoteSnapshot, toPnpImportOptionsSnapshot(pnp.fileImportOptions.value))) return
   pnp.setFileImportOptionsMap(remoteSnapshot)
 }, { deep: true })
 
 watch(() => projectSync?.project.value?.bom_file_import_options, (next) => {
   const remoteSnapshot = toBomImportOptionsSnapshot(next)
+  if (hasImportOptions(remoteSnapshot)) saveTeamImportOptionsBackup('bom', remoteSnapshot)
   if (pendingLocalBomFileImportOptions && !areBomImportOptionsEqual(remoteSnapshot, pendingLocalBomFileImportOptions)) {
     // Ignore stale realtime rows while a local write is still in flight.
     return
   }
   if (pendingLocalBomFileImportOptions && areBomImportOptionsEqual(remoteSnapshot, pendingLocalBomFileImportOptions)) {
     pendingLocalBomFileImportOptions = null
+  }
+  if (!hasImportOptions(remoteSnapshot) && hasImportOptions(toBomImportOptionsSnapshot(bom.fileImportOptions.value))) {
+    // Defensive guard: never wipe in-memory mappings from an empty realtime payload.
+    return
   }
   if (areBomImportOptionsEqual(remoteSnapshot, toBomImportOptionsSnapshot(bom.fileImportOptions.value))) return
   bom.setFileImportOptionsMap(remoteSnapshot)
@@ -1271,7 +1346,7 @@ onMounted(() => {
   }
 })
 
-// Sync sidebar tab to URL query parameter
+// Sync sidebar tab and selected file to URL query parameters
 watch(sidebarTab, (tab) => {
   const query = { ...route.query }
   // Keep URLs clean for first-load defaults, but persist an explicit "layers" tab
@@ -1279,7 +1354,12 @@ watch(sidebarTab, (tab) => {
   if (tab === 'files') {
     if (route.query.tab) query.tab = 'files'
     else delete query.tab
-  } else query.tab = tab
+    if (filesSelectedLayerFileName.value) query.file = filesSelectedLayerFileName.value
+    else delete query.file
+  } else {
+    query.tab = tab
+    delete query.file
+  }
   router.replace({ query })
 })
 
@@ -1363,6 +1443,7 @@ function toPasteSettingsSnapshot(settings: typeof pasteSettings.value) {
     pattern: settings.pattern,
     dynamicDots: settings.dynamicDots,
     highlightDots: settings.highlightDots,
+    showJetPath: settings.showJetPath,
   }
 }
 
@@ -1452,8 +1533,64 @@ function arePcbDataEqual(a: PcbDataSnapshot | null, b: PcbDataSnapshot | null): 
   return JSON.stringify(a ?? null) === JSON.stringify(b ?? null)
 }
 
-type BomImportOptionsSnapshot = Record<string, { skipRows?: number; mapping?: BomColumnMapping }>
-type PnpImportOptionsSnapshot = Record<string, { skipRows?: number; mapping?: PnPColumnMapping; unitOverride?: 'auto' | PnPCoordUnit }>
+type BomImportOptionsSnapshot = Record<string, { skipRows?: number; skipBottomRows?: number; mapping?: BomColumnMapping; fixedColumns?: number[]; delimiter?: ',' | ';' | '\t' | 'fixed'; decimal?: '.' | ','; extraColumns?: string[] }>
+type PnpImportOptionsSnapshot = Record<string, { skipRows?: number; skipBottomRows?: number; mapping?: PnPColumnMapping; unitOverride?: 'auto' | PnPCoordUnit; fixedColumns?: number[]; delimiter?: ',' | ';' | '\t' | 'fixed'; decimal?: '.' | ',' }>
+
+function hasImportOptions(snapshot: Record<string, unknown>): boolean {
+  return Object.keys(snapshot).length > 0
+}
+
+function teamImportOptionsBackupKey(kind: 'bom' | 'pnp'): string | null {
+  if (!import.meta.client || !isTeamProject || !teamProjectId) return null
+  return `viewer:${teamProjectId}:import-options:${kind}`
+}
+
+function loadTeamImportOptionsBackup(kind: 'bom' | 'pnp'): unknown {
+  const key = teamImportOptionsBackupKey(kind)
+  if (!key) return null
+  try {
+    const raw = localStorage.getItem(key)
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
+function saveTeamImportOptionsBackup(kind: 'bom' | 'pnp', snapshot: Record<string, unknown>) {
+  const key = teamImportOptionsBackupKey(kind)
+  if (!key || !hasImportOptions(snapshot)) return
+  try {
+    localStorage.setItem(key, JSON.stringify(snapshot))
+  } catch {
+    // Ignore quota/serialization failures; remote DB is still the source of truth.
+  }
+}
+
+function sanitizeFixedColumns(value: unknown): number[] | undefined {
+  if (!Array.isArray(value)) return undefined
+  const next = [...new Set(value
+    .map(v => Number(v))
+    .filter(v => Number.isFinite(v))
+    .map(v => Math.max(1, Math.floor(v))))]
+    .sort((a, b) => a - b)
+  return next.length ? next : undefined
+}
+
+function sanitizeDelimiter(value: unknown): ',' | ';' | '\t' | 'fixed' | undefined {
+  if (value === ',' || value === ';' || value === '\t' || value === 'fixed') return value
+  return undefined
+}
+
+function sanitizeDecimal(value: unknown): '.' | ',' | undefined {
+  if (value === '.' || value === ',') return value
+  return undefined
+}
+
+function sanitizeExtraColumns(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined
+  const out = value.filter((v): v is string => typeof v === 'string' && v.trim().length > 0)
+  return out.length > 0 ? out : undefined
+}
 
 function toBomImportOptionsSnapshot(input: unknown): BomImportOptionsSnapshot {
   if (!input || typeof input !== 'object') return {}
@@ -1462,6 +1599,7 @@ function toBomImportOptionsSnapshot(input: unknown): BomImportOptionsSnapshot {
     if (!opts || typeof opts !== 'object') continue
     const rawOpts = toRaw(opts) as Record<string, unknown>
     const skipRows = Number(rawOpts.skipRows)
+    const skipBottomRows = Number(rawOpts.skipBottomRows)
     const mappingRaw = rawOpts.mapping
     let mapping: BomColumnMapping | undefined
     if (mappingRaw && typeof mappingRaw === 'object') {
@@ -1474,7 +1612,12 @@ function toBomImportOptionsSnapshot(input: unknown): BomImportOptionsSnapshot {
     }
     out[fileName] = {
       skipRows: Number.isFinite(skipRows) ? Math.max(0, Math.floor(skipRows)) : undefined,
+      skipBottomRows: Number.isFinite(skipBottomRows) ? Math.max(0, Math.floor(skipBottomRows)) : undefined,
       mapping,
+      fixedColumns: sanitizeFixedColumns(rawOpts.fixedColumns),
+      delimiter: sanitizeDelimiter(rawOpts.delimiter),
+      decimal: sanitizeDecimal(rawOpts.decimal),
+      extraColumns: sanitizeExtraColumns(rawOpts.extraColumns),
     }
   }
   return out
@@ -1487,6 +1630,7 @@ function toPnpImportOptionsSnapshot(input: unknown): PnpImportOptionsSnapshot {
     if (!opts || typeof opts !== 'object') continue
     const rawOpts = toRaw(opts) as Record<string, unknown>
     const skipRows = Number(rawOpts.skipRows)
+    const skipBottomRows = Number(rawOpts.skipBottomRows)
     const mappingRaw = rawOpts.mapping
     let mapping: PnPColumnMapping | undefined
     if (mappingRaw && typeof mappingRaw === 'object') {
@@ -1502,8 +1646,12 @@ function toPnpImportOptionsSnapshot(input: unknown): PnpImportOptionsSnapshot {
       : undefined
     out[fileName] = {
       skipRows: Number.isFinite(skipRows) ? Math.max(0, Math.floor(skipRows)) : undefined,
+      skipBottomRows: Number.isFinite(skipBottomRows) ? Math.max(0, Math.floor(skipBottomRows)) : undefined,
       mapping,
       unitOverride,
+      fixedColumns: sanitizeFixedColumns(rawOpts.fixedColumns),
+      delimiter: sanitizeDelimiter(rawOpts.delimiter),
+      decimal: sanitizeDecimal(rawOpts.decimal),
     }
   }
   return out
@@ -1643,6 +1791,7 @@ function startAddComponent(componentType: import('~/composables/usePickAndPlace'
     id,
     designator,
     value: '',
+    description: '',
     package: '',
     x: 0,
     y: 0,
@@ -1728,7 +1877,7 @@ function handleAssemblyTypeUpdate(payload: { key: string; type: string | undefin
   pnp.setAssemblyType(payload.key, payload.type as any)
 }
 
-function handleComponentFieldsUpdate(payload: { key: string; designator?: string; value?: string; x?: number; y?: number }) {
+function handleComponentFieldsUpdate(payload: { key: string; designator?: string; value?: string; description?: string; x?: number; y?: number }) {
   if (!ensureTabEditable(sidebarTab.value === 'tht' ? 'tht' : 'smd')) return
   pnp.setFieldOverride(payload.key, payload)
 }
@@ -2273,6 +2422,13 @@ const isPanelizedMode = computed(() => pcbData.value?.panelizationMode !== 'sing
 const hasPasteLayers = computed(() =>
   layers.value.some(l => l.type === 'Top Paste' || l.type === 'Bottom Paste'),
 )
+const activePasteTree = computed(() => {
+  const canvas = boardCanvasRef.value
+  if (!canvas) return null
+  const pasteLayer = layers.value.find(l => l.type === 'Top Paste' || l.type === 'Bottom Paste')
+  if (!pasteLayer) return null
+  return canvas.getImageTree(pasteLayer) as import('@lib/gerber/types').ImageTree | null
+})
 const boardCanvasRef = ref<any>(null)
 const panelCanvasRef = ref<any>(null)
 
@@ -2291,6 +2447,7 @@ const showSettings = ref(false)
 const showPerformanceMonitor = ref(false)
 const showPnPExport = ref(false)
 const showImageExport = ref(false)
+const showJpsysExport = ref(false)
 const imageExportTarget = ref<'board' | 'panel'>('board')
 const filesLockPopoverOpen = ref(false)
 const bomLockPopoverOpen = ref(false)
@@ -3002,10 +3159,13 @@ const hasDocuments = computed(() => documents.value.length > 0)
 const selectedDocument = computed(() => documents.value.find(d => d.id === selectedDocumentId.value) ?? null)
 
 // Files page selection (raw file/doc preview)
+const initialFileQuery = (route.query.file as string) || null
 const filesSelectedLayerFileName = ref<string | null>(null)
 const filesSelectedLayerIndex = ref<number | null>(null)
 const filesSelectedDocId = ref<string | null>(null)
 const filesPreviewSelectionNonce = ref(0)
+const filesPreviewMode = ref<'table' | 'text' | 'diff'>('text')
+const filesSaveTimers = new Map<string, ReturnType<typeof setTimeout>>()
 const filesSelectedLayer = computed(() => {
   const selectedIndex = filesSelectedLayerIndex.value
   if (typeof selectedIndex === 'number' && selectedIndex >= 0 && selectedIndex < layers.value.length) {
@@ -3017,6 +3177,17 @@ const filesSelectedLayer = computed(() => {
   return layers.value.find(l => l.file.fileName === filesSelectedLayerFileName.value) ?? null
 })
 const filesSelectedDoc = computed(() => documents.value.find(d => d.id === filesSelectedDocId.value) ?? null)
+const selectedLayerOriginalText = computed(() => {
+  const layer = filesSelectedLayer.value
+  if (!layer) return ''
+  return originalContent.get(layer.file.fileName) ?? layer.file.content
+})
+const canSelectedLayerUseTablePreview = computed(() => {
+  const layer = filesSelectedLayer.value
+  if (!layer) return false
+  if (layer.type === 'Drill') return false
+  return isTabularPreviewFileName(layer.file.fileName)
+})
 const isSelectedLayerBom = computed(() => !!filesSelectedLayer.value && filesSelectedLayer.value.type === 'BOM')
 const isSelectedLayerPnp = computed(() => !!filesSelectedLayer.value && isPnPLayer(filesSelectedLayer.value.type))
 const isSelectedLayerImportConfigurable = computed(() => isSelectedLayerBom.value || isSelectedLayerPnp.value)
@@ -3040,43 +3211,84 @@ const pnpMappingFields: { key: keyof PnPColumnMapping; label: string }[] = [
   { key: 'value', label: 'Value' },
   { key: 'package', label: 'Package' },
   { key: 'side', label: 'Side' },
+  { key: 'description', label: 'Description' },
 ]
 const pnpUnitItems = [
-  { label: 'Unit: Auto', value: 'auto' as const },
-  { label: 'Unit: mm', value: 'mm' as const },
-  { label: 'Unit: mils', value: 'mils' as const },
-  { label: 'Unit: inches', value: 'inches' as const },
+  { label: 'Auto', value: 'auto' as const },
+  { label: 'mm', value: 'mm' as const },
+  { label: 'mils', value: 'mils' as const },
+  { label: 'inches', value: 'inches' as const },
 ]
 const selectedLayerSkipRows = computed(() => {
   const layer = filesSelectedLayer.value
   if (!layer) return 0
-  if (isSelectedLayerBom.value) return bom.fileImportOptions.value[layer.file.fileName]?.skipRows ?? 0
-  if (isSelectedLayerPnp.value) return pnp.fileImportOptions.value[layer.file.fileName]?.skipRows ?? 0
+  if (isSelectedLayerBom.value) return bom.resolveFileImportOptions(layer.file.fileName)?.skipRows ?? 0
+  if (isSelectedLayerPnp.value) return pnp.resolveFileImportOptions(layer.file.fileName)?.skipRows ?? 0
   return 0
+})
+const selectedLayerSkipBottomRows = computed(() => {
+  const layer = filesSelectedLayer.value
+  if (!layer) return 0
+  if (isSelectedLayerBom.value) return bom.resolveFileImportOptions(layer.file.fileName)?.skipBottomRows ?? 0
+  if (isSelectedLayerPnp.value) return pnp.resolveFileImportOptions(layer.file.fileName)?.skipBottomRows ?? 0
+  return 0
+})
+const selectedLayerFixedColumns = computed<readonly number[] | undefined>(() => {
+  const layer = filesSelectedLayer.value
+  if (!layer) return undefined
+  if (isSelectedLayerBom.value) return bom.resolveFileImportOptions(layer.file.fileName)?.fixedColumns
+  if (isSelectedLayerPnp.value) return pnp.resolveFileImportOptions(layer.file.fileName)?.fixedColumns
+  return undefined
+})
+const selectedLayerDelimiter = computed<',' | ';' | '\t' | 'fixed' | undefined>(() => {
+  const layer = filesSelectedLayer.value
+  if (!layer) return undefined
+  if (isSelectedLayerBom.value) return bom.resolveFileImportOptions(layer.file.fileName)?.delimiter
+  if (isSelectedLayerPnp.value) return pnp.resolveFileImportOptions(layer.file.fileName)?.delimiter
+  return undefined
+})
+const selectedLayerDecimal = computed<'.' | ',' | undefined>(() => {
+  const layer = filesSelectedLayer.value
+  if (!layer) return undefined
+  if (isSelectedLayerBom.value) return bom.resolveFileImportOptions(layer.file.fileName)?.decimal
+  if (isSelectedLayerPnp.value) return pnp.resolveFileImportOptions(layer.file.fileName)?.decimal
+  return undefined
+})
+const selectedLayerExtraColumns = computed(() => {
+  const layer = filesSelectedLayer.value
+  if (!layer || !isSelectedLayerBom.value) return undefined
+  const cols = bom.resolveFileImportOptions(layer.file.fileName)?.extraColumns
+  return cols ? [...cols] : undefined
 })
 const selectedLayerPnpUnit = computed<'auto' | PnPCoordUnit>(() => {
   const layer = filesSelectedLayer.value
   if (!layer || !isSelectedLayerPnp.value) return 'auto'
-  return pnp.fileImportOptions.value[layer.file.fileName]?.unitOverride ?? 'auto'
+  return pnp.resolveFileImportOptions(layer.file.fileName)?.unitOverride ?? 'auto'
 })
 const selectedLayerBomMapping = computed<BomColumnMapping>(() => {
   const layer = filesSelectedLayer.value
   if (!layer || !isSelectedLayerBom.value) return {}
   const fileName = layer.file.fileName
-  const opts = bom.fileImportOptions.value[fileName]
+  const opts = bom.resolveFileImportOptions(fileName)
   if (opts?.mapping) return opts.mapping
-  const auto = parseBomFile(fileName, layer.file.content, { skipRows: opts?.skipRows }).mapping
+  const auto = parseBomFile(fileName, layer.file.content, {
+    skipRows: opts?.skipRows,
+    skipBottomRows: opts?.skipBottomRows,
+    fixedColumns: opts?.fixedColumns,
+  }).mapping
   return auto ?? {}
 })
 const selectedLayerPnpMapping = computed<PnPColumnMapping>(() => {
   const layer = filesSelectedLayer.value
   if (!layer || !isSelectedLayerPnp.value) return {}
   const fileName = layer.file.fileName
-  const opts = pnp.fileImportOptions.value[fileName]
+  const opts = pnp.resolveFileImportOptions(fileName)
   if (opts?.mapping) return opts.mapping
   const auto = parsePnPPreview(layer.file.content, {
     skipRows: opts?.skipRows,
+    skipBottomRows: opts?.skipBottomRows,
     unitOverride: resolveSelectedPnpUnitOverride(fileName),
+    fixedColumns: opts?.fixedColumns,
   }, fileName).mapping
   return auto ?? {}
 })
@@ -3108,6 +3320,44 @@ function isTabularPreviewFileName(fileName: string): boolean {
   return /\.(csv|tsv|txt|xlsx|xls)$/i.test(fileName)
 }
 
+async function persistLayerTextContent(fileName: string) {
+  const layer = layers.value.find(l => l.file.fileName === fileName)
+  if (!layer) return
+  const nextContent = layer.file.content
+  try {
+    if (isTeamProject && teamProjectId) {
+      const teamId = currentTeamId.value || await waitForTeamId()
+      await uploadTeamFile(teamProjectId, teamId, 1, layer.file.fileName, nextContent, layer.type)
+    } else {
+      await updateFileContent(projectId, 1, layer.file.fileName, nextContent)
+    }
+    const canvas = boardCanvasRef.value
+    if (canvas) canvas.invalidateCache(layer.file.fileName)
+  } catch (err) {
+    console.warn('[files] failed to persist edited layer content', err)
+  }
+}
+
+function queueLayerTextPersist(fileName: string) {
+  const existing = filesSaveTimers.get(fileName)
+  if (existing) clearTimeout(existing)
+  const timer = setTimeout(() => {
+    filesSaveTimers.delete(fileName)
+    void persistLayerTextContent(fileName)
+  }, 350)
+  filesSaveTimers.set(fileName, timer)
+}
+
+function updateSelectedLayerText(nextContent: string) {
+  if (!ensureTabEditable('files')) return
+  const layer = filesSelectedLayer.value
+  if (!layer || layer.file.content === nextContent) return
+  layer.file.content = nextContent
+  // PnP parser caches by file name/options; invalidate so edits are reflected.
+  pnp.invalidateCache(layer.file.fileName)
+  queueLayerTextPersist(layer.file.fileName)
+}
+
 function updateSelectedLayerPnpUnit(value: unknown) {
   const layer = filesSelectedLayer.value
   if (!layer || !isSelectedLayerPnp.value) return
@@ -3133,6 +3383,21 @@ function updateSelectedLayerSkipRows(value: number) {
   }
 }
 
+function updateSelectedLayerSkipBottomRows(value: number) {
+  const layer = filesSelectedLayer.value
+  if (!layer) return
+  const skipBottomRows = Math.max(0, Number(value) || 0)
+  if (isSelectedLayerBom.value) {
+    const prev = bom.fileImportOptions.value[layer.file.fileName] ?? {}
+    bom.setFileImportOptions(layer.file.fileName, { ...prev, skipBottomRows })
+    return
+  }
+  if (isSelectedLayerPnp.value) {
+    const prev = pnp.fileImportOptions.value[layer.file.fileName] ?? {}
+    pnp.setFileImportOptions(layer.file.fileName, { ...prev, skipBottomRows })
+  }
+}
+
 function updateSelectedLayerMappingByField(next: Record<string, number | undefined>) {
   const layer = filesSelectedLayer.value
   if (!layer) return
@@ -3147,13 +3412,80 @@ function updateSelectedLayerMappingByField(next: Record<string, number | undefin
   }
 }
 
+function updateSelectedLayerFixedColumns(next: number[]) {
+  const layer = filesSelectedLayer.value
+  if (!layer) return
+  const fixedColumns = sanitizeFixedColumns(next)
+
+  const arraysEqual = (a?: readonly number[], b?: readonly number[]) => {
+    const aa = a ?? []
+    const bb = b ?? []
+    if (aa.length !== bb.length) return false
+    for (let i = 0; i < aa.length; i++) {
+      if (aa[i] !== bb[i]) return false
+    }
+    return true
+  }
+
+  if (isSelectedLayerBom.value) {
+    const prev = bom.fileImportOptions.value[layer.file.fileName] ?? {}
+    if (arraysEqual(prev.fixedColumns, fixedColumns)) return
+    bom.setFileImportOptions(layer.file.fileName, { ...prev, fixedColumns })
+    return
+  }
+  if (isSelectedLayerPnp.value) {
+    const prev = pnp.fileImportOptions.value[layer.file.fileName] ?? {}
+    if (arraysEqual(prev.fixedColumns, fixedColumns)) return
+    pnp.setFileImportOptions(layer.file.fileName, { ...prev, fixedColumns })
+  }
+}
+
+function updateSelectedLayerDelimiter(next: ',' | ';' | '\t' | 'fixed') {
+  const layer = filesSelectedLayer.value
+  if (!layer) return
+  if (isSelectedLayerBom.value) {
+    const prev = bom.fileImportOptions.value[layer.file.fileName] ?? {}
+    if (prev.delimiter === next) return
+    bom.setFileImportOptions(layer.file.fileName, { ...prev, delimiter: next })
+    return
+  }
+  if (isSelectedLayerPnp.value) {
+    const prev = pnp.fileImportOptions.value[layer.file.fileName] ?? {}
+    if (prev.delimiter === next) return
+    pnp.setFileImportOptions(layer.file.fileName, { ...prev, delimiter: next })
+  }
+}
+
+function updateSelectedLayerDecimal(next: '.' | ',') {
+  const layer = filesSelectedLayer.value
+  if (!layer) return
+  if (isSelectedLayerBom.value) {
+    const prev = bom.fileImportOptions.value[layer.file.fileName] ?? {}
+    if (prev.decimal === next) return
+    bom.setFileImportOptions(layer.file.fileName, { ...prev, decimal: next })
+    return
+  }
+  if (isSelectedLayerPnp.value) {
+    const prev = pnp.fileImportOptions.value[layer.file.fileName] ?? {}
+    if (prev.decimal === next) return
+    pnp.setFileImportOptions(layer.file.fileName, { ...prev, decimal: next })
+  }
+}
+
+function updateSelectedLayerExtraColumns(next: string[]) {
+  const layer = filesSelectedLayer.value
+  if (!layer || !isSelectedLayerBom.value) return
+  const prev = bom.fileImportOptions.value[layer.file.fileName] ?? {}
+  bom.setFileImportOptions(layer.file.fileName, { ...prev, extraColumns: next.length > 0 ? next : undefined })
+}
+
 function resolveSelectedPnpUnitOverride(layerFileName: string): PnPCoordUnit | undefined {
   const fileOverride = pnp.fileImportOptions.value[layerFileName]?.unitOverride
   if (fileOverride && fileOverride !== 'auto') return fileOverride
   return pnp.coordUnitOverride.value === 'auto' ? undefined : pnp.coordUnitOverride.value
 }
 
-watch(sidebarTab, (tab) => {
+watch([sidebarTab, () => layers.value.length], ([tab]) => {
   if (tab !== 'files') return
   if (filesSelectedLayerFileName.value || filesSelectedDocId.value) return
   if (layers.value.length > 0) {
@@ -3166,6 +3498,42 @@ watch(sidebarTab, (tab) => {
     filesSelectedLayerFileName.value = null
   }
 }, { immediate: true })
+
+// Restore file selection from URL query param — uses a one-time watcher that
+// waits until the requested file appears in the layers array (files load
+// incrementally, so BOM/PnP layers may arrive after gerber layers).
+if (initialFileQuery) {
+  const stopInitialFileWatch = watch(
+    () => layers.value.map(l => l.file.fileName),
+    (fileNames) => {
+      const idx = fileNames.indexOf(initialFileQuery!)
+      if (idx < 0) return
+      filesSelectedLayerIndex.value = idx
+      filesSelectedLayerFileName.value = initialFileQuery!
+      filesSelectedDocId.value = null
+      filesPreviewSelectionNonce.value++
+      stopInitialFileWatch()
+    },
+    { immediate: true },
+  )
+}
+
+watch(
+  () => filesSelectedLayer.value?.file.fileName,
+  () => {
+    filesPreviewMode.value = canSelectedLayerUseTablePreview.value ? 'table' : 'text'
+  },
+  { immediate: true },
+)
+
+// Sync selected file name to URL so reload/share restores the same file
+watch(filesSelectedLayerFileName, (fileName) => {
+  if (sidebarTab.value !== 'files') return
+  const query = { ...route.query }
+  if (fileName) query.file = fileName
+  else delete query.file
+  router.replace({ query })
+})
 
 /** Try to guess document type from filename. */
 function guessDocumentType(fileName: string): DocumentType {
@@ -3303,6 +3671,8 @@ function handleDocumentTypeUpdate(id: string, type: DocumentType) {
 
 // Clean up all blob URLs on unmount
 onUnmounted(() => {
+  for (const timer of filesSaveTimers.values()) clearTimeout(timer)
+  filesSaveTimers.clear()
   for (const doc of documents.value) URL.revokeObjectURL(doc.blobUrl)
   if (perfRefreshTimer) clearInterval(perfRefreshTimer)
   if (gerberPrewarmTimer) clearTimeout(gerberPrewarmTimer)
@@ -3367,6 +3737,36 @@ function onBomDragStart(e: MouseEvent) {
 
 // ── BOM ↔ PnP cross-reference designator sets ──
 
+function normalizeDesignator(value: string): string {
+  return String(value ?? '').trim().toUpperCase()
+}
+
+function parseBomRefs(refs: string): string[] {
+  if (!refs) return []
+  return refs
+    .split(/[,;\s]+/)
+    .map(normalizeDesignator)
+    .filter(Boolean)
+}
+
+/** Designators present in SMD PnP, excluding DNP components */
+const pnpSmdDesignators = computed(() => {
+  const s = new Set<string>()
+  for (const c of pnp.smdActiveComponents.value) {
+    if (!c.dnp) s.add(normalizeDesignator(c.designator))
+  }
+  return s
+})
+
+/** Designators present in THT PnP, excluding DNP components */
+const pnpThtDesignators = computed(() => {
+  const s = new Set<string>()
+  for (const c of pnp.thtActiveComponents.value) {
+    if (!c.dnp) s.add(normalizeDesignator(c.designator))
+  }
+  return s
+})
+
 /** Designators present in PnP (SMD + THT), excluding DNP components */
 const pnpDesignators = computed(() => {
   const s = new Set<string>()
@@ -3379,16 +3779,34 @@ const pnpDesignators = computed(() => {
   return s
 })
 
+function inferBomLineTypeFromReferences(references: string): BomLine['type'] | null {
+  const refs = parseBomRefs(references)
+  if (refs.length === 0) return null
+  const hasSmd = refs.some(ref => pnpSmdDesignators.value.has(ref))
+  const hasTht = refs.some(ref => pnpThtDesignators.value.has(ref))
+  if (hasSmd && !hasTht) return 'SMD'
+  if (hasTht && !hasSmd) return 'THT'
+  return null
+}
+
 /** Designators present in BOM (all non-DNP lines, split from comma-separated refs) */
 const bomDesignators = computed(() => {
   const s = new Set<string>()
   for (const line of bom.bomLines.value) {
     if (line.dnp) continue
-    const refs = (line.references || '').split(/[,;\s]+/).map(r => r.trim()).filter(Boolean)
+    const refs = parseBomRefs(line.references || '')
     for (const r of refs) s.add(r)
   }
   return s
 })
+
+watch([() => bom.bomLines.value, pnpSmdDesignators, pnpThtDesignators], () => {
+  for (const line of bom.bomLines.value) {
+    const inferred = inferBomLineTypeFromReferences(line.references)
+    if (!inferred || inferred === line.type) continue
+    bom.updateLine(line.id, { type: inferred })
+  }
+}, { deep: false })
 
 
 // Auto-switch to SMD tab when PnP layers appear for the first time
@@ -3767,6 +4185,7 @@ watch(() => bom.boardQuantity.value, (qty) => {
 watch(bom.fileImportOptionsRecord, (options) => {
   if (!hasLoadedProjectData.value) return
   const snapshot = toBomImportOptionsSnapshot(options)
+  if (hasImportOptions(snapshot)) saveTeamImportOptionsBackup('bom', snapshot)
   if (isTeamProject) {
     pendingLocalBomFileImportOptions = snapshot
     void persistToProject({ bomFileImportOptions: snapshot }).finally(() => {
@@ -3782,6 +4201,7 @@ watch(bom.fileImportOptionsRecord, (options) => {
 watch(pnp.fileImportOptionsRecord, (options) => {
   if (!hasLoadedProjectData.value) return
   const snapshot = toPnpImportOptionsSnapshot(options)
+  if (hasImportOptions(snapshot)) saveTeamImportOptionsBackup('pnp', snapshot)
   if (isTeamProject) {
     pendingLocalPnpFileImportOptions = snapshot
     void persistToProject({ pnpFileImportOptions: snapshot }).finally(() => {
@@ -3883,16 +4303,23 @@ async function handleFetchSinglePricing(partNumber: string) {
 
 function handleBomAddLine(line?: Partial<BomLine>) {
   if (!ensureTabEditable('bom')) return
+  const baseLine: Partial<BomLine> = line ?? {}
+  const inferredType = inferBomLineTypeFromReferences(String(baseLine.references ?? ''))
+  const nextLine: Partial<BomLine> = inferredType ? { ...baseLine, type: inferredType } : baseLine
   if (line?.id) {
-    bom.updateLine(line.id, line)
+    bom.updateLine(line.id, nextLine)
   } else {
-    bom.addLine(line)
+    bom.addLine(Object.keys(nextLine).length > 0 ? nextLine : undefined)
   }
 }
 
 function handleBomUpdateLine(id: string, updates: Partial<BomLine>) {
   if (!ensureTabEditable('bom')) return
-  bom.updateLine(id, updates)
+  const current = bom.bomLines.value.find(l => l.id === id)
+  const nextRefs = updates.references ?? current?.references ?? ''
+  const inferredType = inferBomLineTypeFromReferences(String(nextRefs))
+  const nextUpdates = inferredType ? { ...updates, type: inferredType } : updates
+  bom.updateLine(id, nextUpdates)
 }
 
 function handleBomRemoveLine(id: string) {
@@ -4307,8 +4734,26 @@ onMounted(async () => {
   }
   bom.setPricingCache(restoredCache)
   bom.setBoardQuantity(project.value?.bomBoardQuantity)
-  bom.setFileImportOptionsMap(project.value?.bomFileImportOptions)
-  pnp.setFileImportOptionsMap(project.value?.pnpFileImportOptions)
+  const restoredBomImportOptions = toBomImportOptionsSnapshot(project.value?.bomFileImportOptions)
+  const restoredPnpImportOptions = toPnpImportOptionsSnapshot(project.value?.pnpFileImportOptions)
+  const backupBomImportOptions = toBomImportOptionsSnapshot(loadTeamImportOptionsBackup('bom'))
+  const backupPnpImportOptions = toPnpImportOptionsSnapshot(loadTeamImportOptionsBackup('pnp'))
+  const effectiveBomImportOptions = hasImportOptions(restoredBomImportOptions)
+    ? restoredBomImportOptions
+    : backupBomImportOptions
+  const effectivePnpImportOptions = hasImportOptions(restoredPnpImportOptions)
+    ? restoredPnpImportOptions
+    : backupPnpImportOptions
+  bom.setFileImportOptionsMap(effectiveBomImportOptions)
+  pnp.setFileImportOptionsMap(effectivePnpImportOptions)
+  if (isTeamProject && teamProjectId) {
+    if (!hasImportOptions(restoredBomImportOptions) && hasImportOptions(effectiveBomImportOptions)) {
+      persistToProject({ bomFileImportOptions: effectiveBomImportOptions })
+    }
+    if (!hasImportOptions(restoredPnpImportOptions) && hasImportOptions(effectivePnpImportOptions)) {
+      persistToProject({ pnpFileImportOptions: effectivePnpImportOptions })
+    }
+  }
 
   // Restore persisted PCB data
   pcbData.value = project.value?.pcbData ?? null
@@ -4606,6 +5051,20 @@ async function renameLayer(index: number, newName: string) {
   // Avoid no-op or name collision
   if (oldName === newName) return
   if (layers.value.some(l => l.file.fileName === newName)) return
+
+  // Migrate per-file import options so mapping/markers survive renames.
+  const bomOptions = { ...bom.fileImportOptions.value }
+  if (bomOptions[oldName] && !bomOptions[newName]) {
+    bomOptions[newName] = bomOptions[oldName]
+    delete bomOptions[oldName]
+    bom.setFileImportOptionsMap(bomOptions)
+  }
+  const pnpOptions = { ...pnp.fileImportOptions.value }
+  if (pnpOptions[oldName] && !pnpOptions[newName]) {
+    pnpOptions[newName] = pnpOptions[oldName]
+    delete pnpOptions[oldName]
+    pnp.setFileImportOptionsMap(pnpOptions)
+  }
 
   // Update in-memory
   layer.file.fileName = newName

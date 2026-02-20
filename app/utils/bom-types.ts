@@ -36,6 +36,8 @@ export interface BomLine {
   dnp: boolean
   /** One or more manufacturer + part number entries */
   manufacturers: BomManufacturer[]
+  /** Values from unmapped columns selected by the user (header name → cell value) */
+  extra?: Record<string, string>
 }
 
 /** Cached Elexess pricing data for a single manufacturer part */

@@ -209,6 +209,8 @@ export interface ImageShape {
 export interface ImagePath {
   type: 'path'
   width: number
+  /** Line-cap style: 'round' for circular apertures, 'square' for rectangular */
+  cap?: 'round' | 'square'
   segments: PathSegment[]
   erase?: boolean
   /** Character ranges in the original source text that produced this graphic */

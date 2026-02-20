@@ -1,0 +1,72 @@
+{
+  "name": "VQFN-32-4x4-P0.40",
+  "aliases": [
+    "VQFN-32-22"
+  ],
+  "body": {
+    "length": 4.0,
+    "width": 4.0
+  },
+  "type": "PT_GENERIC",
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "FLAT",
+        "numLeads": 8,
+        "distFromCenter": -1.84,
+        "ccHalf": 1.4,
+        "angleMilliDeg": 180000,
+        "padLength": 0.32,
+        "padWidth": 0.2
+      },
+      {
+        "shape": "FLAT",
+        "numLeads": 8,
+        "distFromCenter": 1.84,
+        "ccHalf": -1.4,
+        "angleMilliDeg": 0,
+        "padLength": 0.32,
+        "padWidth": 0.2
+      },
+      {
+        "shape": "FLAT",
+        "numLeads": 8,
+        "distFromCenter": 1.4,
+        "ccHalf": -1.84,
+        "angleMilliDeg": 90000,
+        "padLength": 0.32,
+        "padWidth": 0.2
+      },
+      {
+        "shape": "FLAT",
+        "numLeads": 8,
+        "distFromCenter": -1.4,
+        "ccHalf": 1.84,
+        "angleMilliDeg": 270000,
+        "padLength": 0.32,
+        "padWidth": 0.2
+      },
+      {
+        "shape": "FLAT",
+        "numLeads": 1,
+        "distFromCenter": 0,
+        "ccHalf": 0,
+        "angleMilliDeg": 0,
+        "padLength": 2.64,
+        "padWidth": 2.64
+      }
+    ]
+  },
+  "height": {
+    "nominal": 0.85,
+    "max": 0.85,
+    "min": 0.85
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/VQFN-32-4x4-P0.40.json",
+    "sourceFootprint": "VQFN-32-4x4-P0.40"
+  }
+}

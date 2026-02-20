@@ -1,14 +1,31 @@
 {
   "name": "DO-213AA",
-  "type": "PT_TWO_POLE",
+  "type": "PT_GENERIC",
   "body": {
-    "length": 4.3,
-    "width": 2
+    "length": 2,
+    "width": 4.3
   },
-  "chip": {
-    "chipLength": 4.3,
-    "leadWidth": 2,
-    "leadLength": 0.3
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "J_LEAD",
+        "numLeads": 1,
+        "distFromCenter": -2,
+        "ccHalf": 0,
+        "angleMilliDeg": 180000,
+        "padLength": 0.6,
+        "padWidth": 1
+      },
+      {
+        "shape": "J_LEAD",
+        "numLeads": 1,
+        "distFromCenter": 2,
+        "ccHalf": 0,
+        "angleMilliDeg": 0,
+        "padLength": 0.6,
+        "padWidth": 1
+      }
+    ]
   },
   "aliases": [
     "DO213AA"

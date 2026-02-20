@@ -48,13 +48,14 @@
           />
         </div>
 
-        <div class="grid grid-cols-3 gap-2 items-end">
-          <div>
+        <div class="grid grid-cols-1 sm:grid-cols-[minmax(12rem,1.4fr)_auto_auto] gap-2 items-end">
+          <div class="min-w-0">
             <div class="text-[10px] text-neutral-400 mb-1">Type</div>
             <USelect
               :model-value="line.type"
               :items="bomLineTypeItems"
               size="sm"
+              class="min-w-[12rem]"
               @update:model-value="(v: any) => emitUpdate({ type: v })"
             />
           </div>
@@ -161,6 +162,20 @@
         </div>
       </fieldset>
 
+      <div v-if="extraEntries.length > 0" class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-2.5 space-y-1.5">
+        <button class="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors" @click="extraExpanded = !extraExpanded">
+          <UIcon :name="extraExpanded ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right'" class="text-[10px]" />
+          Additional Data
+          <UBadge size="xs" color="neutral" variant="subtle" class="ml-1">{{ extraEntries.length }}</UBadge>
+        </button>
+        <div v-if="extraExpanded" class="space-y-1">
+          <div v-for="[key, value] in extraEntries" :key="key" class="flex items-baseline gap-2">
+            <span class="text-[10px] text-neutral-400 shrink-0">{{ key }}</span>
+            <span class="text-xs text-neutral-700 dark:text-neutral-200 break-words min-w-0">{{ value }}</span>
+          </div>
+        </div>
+      </div>
+
       <fieldset class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-2.5 space-y-2 border-0 m-0 min-w-0" :class="manufacturersClass" :disabled="props.locked">
         <div class="flex items-center justify-between">
           <div class="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">Manufacturers</div>
@@ -205,7 +220,7 @@
                 <UInput
                   :model-value="mfr.manufacturerPart"
                   size="sm"
-                  placeholder="Manufacturer part number"
+                  placeholder="Manufacturer Part"
                   class="min-w-0 font-mono text-sm"
                   @update:model-value="(v) => updateManufacturer(idx, { manufacturerPart: String(v ?? '') })"
                 />
@@ -322,7 +337,7 @@
               <UInput
                 v-model="inlineAddMpn"
                 size="sm"
-                placeholder="MPN"
+                placeholder="Manufacturer Part"
                 class="min-w-0 font-mono text-sm"
                 @keydown.enter="confirmInlineAdd"
               />
@@ -373,6 +388,13 @@ const emit = defineEmits<{
 
 const bomLineTypeItems = [...BOM_LINE_TYPES]
 
+const extraExpanded = ref(true)
+const extraEntries = computed<[string, string][]>(() => {
+  const extra = props.line?.extra
+  if (!extra) return []
+  return Object.entries(extra).filter(([, v]) => !!v)
+})
+
 const expandedPriceTables = ref(new Set<string>())
 function togglePriceTable(mpn: string) {
   const next = new Set(expandedPriceTables.value)
@@ -404,26 +426,25 @@ function manufacturerKey(m: BomManufacturer): string {
   return `${String(m.manufacturer ?? '').trim().toLowerCase()}|${String(m.manufacturerPart ?? '').trim().toLowerCase()}`
 }
 
-const customerBaselineByLineId = shallowRef(new Map<string, BomLine | null>())
-watchEffect(() => {
-  const line = props.line
-  if (!line) return
-  const map = customerBaselineByLineId.value
-  if (map.has(line.id)) return
-
-  const direct = props.customerBomLines.find(l => l.id === line.id)
-  if (direct) {
-    map.set(line.id, direct)
-    return
-  }
-
+const customerBaselineByLineId = computed(() => {
+  const byId = new Map(props.customerBomLines.map(l => [l.id, l]))
   const byRefs = new Map<string, BomLine>()
   for (const l of props.customerBomLines) {
     const k = refsKey(l.references)
     if (k && !byRefs.has(k)) byRefs.set(k, l)
   }
+
+  const map = new Map<string, BomLine | null>()
+  const line = props.line
+  if (!line) return map
+  const direct = byId.get(line.id)
+  if (direct) {
+    map.set(line.id, direct)
+    return map
+  }
   const rk = refsKey(line.references)
   map.set(line.id, rk ? (byRefs.get(rk) ?? null) : null)
+  return map
 })
 
 const baselineLine = computed(() => {
@@ -438,12 +459,16 @@ const isLineChanged = computed(() => {
   if (!line) return false
   if (!base) return true
 
+  // When the source BOM has no type column the parser defaults to 'Other'.
+  // Changing from that default is enrichment, not a user edit.
+  const typeMatches = base.type === 'Other' || line.type === base.type
+
   const fieldsEqual =
     String(line.description ?? '').trim() === String(base.description ?? '').trim()
     && String(line.comment ?? '').trim() === String(base.comment ?? '').trim()
     && String(line.package ?? '').trim() === String(base.package ?? '').trim()
     && refsKey(line.references) === refsKey(base.references)
-    && line.type === base.type
+    && typeMatches
     && line.quantity === base.quantity
     && !!line.dnp === !!base.dnp
     && !!line.customerProvided === !!base.customerProvided
@@ -497,16 +522,6 @@ function isManufacturerNew(mfr: BomManufacturer): boolean {
 }
 
 const manufacturersClass = computed(() => {
-  const line = props.line
-  const base = baselineLine.value
-  if (!line) return ''
-  if (!base) return 'ring-1 ring-amber-400/40'
-  const a = (line.manufacturers ?? []).map(manufacturerKey).sort()
-  const b = (base.manufacturers ?? []).map(manufacturerKey).sort()
-  if (a.length !== b.length) return 'ring-1 ring-amber-400/40 bg-amber-50/20 dark:bg-amber-900/10'
-  for (let i = 0; i < a.length; i++) {
-    if (a[i] !== b[i]) return 'ring-1 ring-amber-400/40 bg-amber-50/20 dark:bg-amber-900/10'
-  }
   return ''
 })
 

@@ -1,19 +1,36 @@
 {
-  "name": "SMA",
-  "type": "PT_TWO_POLE",
-  "body": {
-    "length": 4.6,
-    "width": 2.6
-  },
-  "chip": {
-    "chipLength": 4.6,
-    "leadWidth": 2.6,
-    "leadLength": 0.6
-  },
+  "name": "DO-214AC",
+  "type": "PT_GENERIC",
   "aliases": [
-    "DO-214AC",
-    "DO214AC"
+    "DO214AC",
+    "SMA"
   ],
+  "body": {
+    "length": 2.6,
+    "width": 4.6
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "J_LEAD",
+        "numLeads": 1,
+        "distFromCenter": -2,
+        "ccHalf": 0,
+        "angleMilliDeg": 180000,
+        "padLength": 1.14,
+        "padWidth": 1.45
+      },
+      {
+        "shape": "J_LEAD",
+        "numLeads": 1,
+        "distFromCenter": 2,
+        "ccHalf": 0,
+        "angleMilliDeg": 0,
+        "padLength": 1.14,
+        "padWidth": 1.45
+      }
+    ]
+  },
   "height": {
     "nominal": 2.1,
     "max": 2.205,
@@ -89,7 +106,7 @@
     "owner": "newmatik",
     "sourceLibrary": "newmatik",
     "sourceType": "TPSys",
-    "sourceFile": "public/packages/SMA.json",
-    "sourceFootprint": "SMA"
+    "sourceFile": "public/packages/DO-214AC.json",
+    "sourceFootprint": "DO-214AC"
   }
 }

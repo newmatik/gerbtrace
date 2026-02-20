@@ -472,7 +472,6 @@
                 :search-input="{ placeholder: 'Search package or library...' }"
                 :ui="{ content: 'min-w-[28rem] max-w-[40rem]', itemLabel: 'whitespace-normal leading-tight' }"
                 @mousedown.stop
-                @highlight="onPkgHighlight(groupedRows[vRow.index].component.key, $event as any)"
                 @update:open="!$event && emit('preview:package', null)"
                 @update:model-value="onPackageMappingSelect(groupedRows[vRow.index].component, $event)"
               >
@@ -654,9 +653,6 @@ const packageSelectItems = computed(() => {
   }
   return out
 })
-function onPkgHighlight(componentKey: string, payload: { value: string } | undefined) {
-  emit('preview:package', payload?.value ? { componentKey, packageName: payload.value } : null)
-}
 const packageOptionsByValue = computed(() => {
   const map = new Map<string, (typeof props.packageOptions)[number]>()
   for (const opt of props.packageOptions) map.set(opt.value, opt)

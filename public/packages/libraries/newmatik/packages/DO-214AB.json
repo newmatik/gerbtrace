@@ -1,19 +1,36 @@
 {
-  "name": "SMC",
-  "type": "PT_TWO_POLE",
-  "body": {
-    "length": 7.2,
-    "width": 6.2
-  },
-  "chip": {
-    "chipLength": 7.2,
-    "leadWidth": 6.2,
-    "leadLength": 0.8
-  },
+  "name": "DO-214AB",
+  "type": "PT_GENERIC",
   "aliases": [
-    "DO-214AB",
-    "DO214AB"
+    "DO214AB",
+    "SMC"
   ],
+  "body": {
+    "length": 6.2,
+    "width": 7.2
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "J_LEAD",
+        "numLeads": 1,
+        "distFromCenter": -3.2,
+        "ccHalf": 0,
+        "angleMilliDeg": 180000,
+        "padLength": 1.14,
+        "padWidth": 3.05
+      },
+      {
+        "shape": "J_LEAD",
+        "numLeads": 1,
+        "distFromCenter": 3.2,
+        "ccHalf": 0,
+        "angleMilliDeg": 0,
+        "padLength": 1.14,
+        "padWidth": 3.05
+      }
+    ]
+  },
   "height": {
     "nominal": 2.33,
     "max": 2.446,
@@ -72,7 +89,7 @@
     "owner": "newmatik",
     "sourceLibrary": "newmatik",
     "sourceType": "TPSys",
-    "sourceFile": "public/packages/SMC.json",
-    "sourceFootprint": "SMC"
+    "sourceFile": "public/packages/DO-214AB.json",
+    "sourceFootprint": "DO-214AB"
   }
 }

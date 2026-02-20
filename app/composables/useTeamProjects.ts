@@ -69,8 +69,8 @@ export interface TeamProject {
   paste_settings: PasteSettings | null
   layer_order: string[] | null
   document_order: string[] | null
-  bom_file_import_options: Record<string, { skipRows?: number; mapping?: BomColumnMapping }> | null
-  pnp_file_import_options: Record<string, { skipRows?: number; mapping?: PnPColumnMapping; unitOverride?: 'auto' | PnPCoordUnit }> | null
+  bom_file_import_options: Record<string, { skipRows?: number; skipBottomRows?: number; mapping?: BomColumnMapping; fixedColumns?: readonly number[] }> | null
+  pnp_file_import_options: Record<string, { skipRows?: number; skipBottomRows?: number; mapping?: PnPColumnMapping; unitOverride?: 'auto' | PnPCoordUnit; fixedColumns?: readonly number[] }> | null
   preview_image_path: string | null
   created_at: string
   updated_at: string

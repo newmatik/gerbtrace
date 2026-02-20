@@ -8,8 +8,9 @@
 import * as XLSX from 'xlsx'
 import type { BomLine, BomManufacturer, BomColumnMapping, BomLineType } from './bom-types'
 import { BOM_LINE_TYPES } from './bom-types'
+import { detectFixedWidthMarkers, splitFixedWidthLine } from './fixed-width'
 
-type Delimiter = '\t' | ',' | ';'
+type Delimiter = '\t' | ',' | ';' | 'fixed'
 
 /**
  * Detect delimiter from content: tab first, then semicolon, then comma.
@@ -23,6 +24,11 @@ function detectDelimiter(content: string): Delimiter {
   for (const line of firstLines) {
     if (line.includes(';')) return ';'
   }
+  for (const line of firstLines) {
+    if (line.includes(',')) return ','
+  }
+  const fixed = detectFixedWidthMarkers(content)
+  if (fixed.markers.length >= 2 && fixed.confidence >= 0.45) return 'fixed'
   return ','
 }
 
@@ -148,36 +154,63 @@ function isDnpRow(row: string[], mapping: BomColumnMapping): boolean {
   return row.some(cell => cell.trim().toUpperCase() === 'DNP')
 }
 
+interface BuildBomLinesOptions {
+  headers?: string[]
+  extraColumns?: readonly string[]
+}
+
 /**
  * Build a BomLine array from tabular rows + column mapping.
  * Each row is a string[] of cell values.
  */
-export function buildBomLines(rows: string[][], mapping: BomColumnMapping): BomLine[] {
+export function buildBomLines(rows: string[][], mapping: BomColumnMapping, opts?: BuildBomLinesOptions): BomLine[] {
   const lines: BomLine[] = []
 
-  // Group rows by references to merge multiple manufacturer rows for the same line
+  const mappedIndices = new Set<number>(
+    Object.values(mapping).filter((v): v is number => v !== undefined),
+  )
+  const extraIndices: Array<{ index: number; header: string }> = []
+  if (opts?.headers && opts.extraColumns && opts.extraColumns.length > 0) {
+    const selected = new Set(opts.extraColumns)
+    for (let i = 0; i < opts.headers.length; i++) {
+      const h = opts.headers[i]?.trim()
+      if (h && !mappedIndices.has(i) && selected.has(h)) {
+        extraIndices.push({ index: i, header: h })
+      }
+    }
+  }
+
   const linesByRef = new Map<string, BomLine>()
 
   for (const row of rows) {
-    // Skip empty rows
     if (row.every(c => !c.trim())) continue
 
     const refs = mapping.references !== undefined ? (row[mapping.references] ?? '').trim() : ''
+    if (isSummaryFooterRow(row, refs)) continue
     const mfrName = mapping.manufacturer !== undefined ? (row[mapping.manufacturer] ?? '').trim() : ''
     const mfrPart = mapping.manufacturerPart !== undefined ? (row[mapping.manufacturerPart] ?? '').trim() : ''
 
     const manufacturer: BomManufacturer | null =
       mfrName || mfrPart ? { manufacturer: mfrName, manufacturerPart: mfrPart } : null
 
-    // Check if we already have a line with these references (multi-manufacturer rows)
     const existing = refs ? linesByRef.get(refs) : undefined
     if (existing && manufacturer) {
-      // Avoid duplicate manufacturers
       const isDup = existing.manufacturers.some(
         m => m.manufacturer === manufacturer.manufacturer && m.manufacturerPart === manufacturer.manufacturerPart,
       )
       if (!isDup) existing.manufacturers.push(manufacturer)
       continue
+    }
+
+    let extra: Record<string, string> | undefined
+    if (extraIndices.length > 0) {
+      const bag: Record<string, string> = {}
+      let count = 0
+      for (const { index, header } of extraIndices) {
+        const val = (row[index] ?? '').trim()
+        if (val) { bag[header] = val; count++ }
+      }
+      if (count > 0) extra = bag
     }
 
     const line: BomLine = {
@@ -192,6 +225,7 @@ export function buildBomLines(rows: string[][], mapping: BomColumnMapping): BomL
       comment: mapping.comment !== undefined ? (row[mapping.comment] ?? '').trim() : '',
       dnp: isDnpRow(row, mapping),
       manufacturers: manufacturer ? [manufacturer] : [],
+      ...(extra ? { extra } : {}),
     }
 
     lines.push(line)
@@ -199,6 +233,12 @@ export function buildBomLines(rows: string[][], mapping: BomColumnMapping): BomL
   }
 
   return lines
+}
+
+function isSummaryFooterRow(row: string[], refs: string): boolean {
+  if (refs) return false
+  // Common BOM report footer markers (e.g. "total"/"summe") should not become BOM lines.
+  return row.some((cell) => /^(total|sum|summe|gesamt)$/i.test(cell.trim()))
 }
 
 /** Result from the parsing pipeline before final BomLine[] assembly. */
@@ -219,7 +259,10 @@ export interface BomParseResult {
 
 export interface BomParseOptions {
   skipRows?: number
+  skipBottomRows?: number
   mapping?: BomColumnMapping
+  fixedColumns?: readonly number[]
+  extraColumns?: readonly string[]
 }
 
 function countMappedColumns(mapping: BomColumnMapping | null): number {
@@ -235,18 +278,29 @@ function countMappedColumns(mapping: BomColumnMapping | null): number {
  * Parse a CSV/TSV string into headers + rows.
  */
 export function parseBomCsv(content: string, options?: BomParseOptions): BomParseResult {
-  const delimiter = detectDelimiter(content)
+  const autoDelimiter = detectDelimiter(content)
+  const hasManualFixedColumns = (options?.fixedColumns?.length ?? 0) > 0
+  const delimiter = hasManualFixedColumns ? 'fixed' : autoDelimiter
+  const fixedColumns = delimiter === 'fixed'
+    ? (hasManualFixedColumns ? options?.fixedColumns : detectFixedWidthMarkers(content).markers)
+    : undefined
   const rawLines = content.split(/\r?\n/).filter(l => l.trim() !== '')
   if (rawLines.length === 0) return { headers: [], rows: [], mapping: null, lines: null }
 
   const skipRows = Math.max(0, options?.skipRows ?? 0)
-  const linesToScan = rawLines.slice(skipRows)
+  const skipBottomRows = Math.max(0, options?.skipBottomRows ?? 0)
+  const scanEnd = Math.max(skipRows, rawLines.length - skipBottomRows)
+  const linesToScan = rawLines.slice(skipRows, scanEnd)
   if (linesToScan.length === 0) return { headers: [], rows: [], mapping: null, lines: null, delimiter, headerRowIndex: 0 }
 
   if (options?.mapping) {
-    const headers = splitLine(linesToScan[0]!, delimiter)
-    const rows = linesToScan.slice(1).map(l => splitLine(l, delimiter))
-    const lines = buildBomLines(rows, options.mapping)
+    const headers = delimiter === 'fixed'
+      ? splitFixedWidthLine(linesToScan[0]!, fixedColumns ?? [])
+      : splitLine(linesToScan[0]!, delimiter)
+    const rows = delimiter === 'fixed'
+      ? linesToScan.slice(1).map(l => splitFixedWidthLine(l, fixedColumns ?? []))
+      : linesToScan.slice(1).map(l => splitLine(l, delimiter))
+    const lines = buildBomLines(rows, options.mapping, { headers, extraColumns: options.extraColumns })
     return { headers, rows, mapping: options.mapping, lines, delimiter, headerRowIndex: 0 }
   }
 
@@ -256,7 +310,9 @@ export function parseBomCsv(content: string, options?: BomParseOptions): BomPars
   const scanLimit = Math.min(linesToScan.length, 30)
 
   for (let i = 0; i < scanLimit; i++) {
-    const candidateHeaders = splitLine(linesToScan[i]!, delimiter)
+    const candidateHeaders = delimiter === 'fixed'
+      ? splitFixedWidthLine(linesToScan[i]!, fixedColumns ?? [])
+      : splitLine(linesToScan[i]!, delimiter)
     const candidateMapping = autoMapBomColumns(candidateHeaders)
     const score = countMappedColumns(candidateMapping)
     if (score > bestScore) {
@@ -266,10 +322,14 @@ export function parseBomCsv(content: string, options?: BomParseOptions): BomPars
     }
   }
 
-  const headers = splitLine(linesToScan[bestHeaderIndex]!, delimiter)
-  const rows = linesToScan.slice(bestHeaderIndex + 1).map(l => splitLine(l, delimiter))
+  const headers = delimiter === 'fixed'
+    ? splitFixedWidthLine(linesToScan[bestHeaderIndex]!, fixedColumns ?? [])
+    : splitLine(linesToScan[bestHeaderIndex]!, delimiter)
+  const rows = delimiter === 'fixed'
+    ? linesToScan.slice(bestHeaderIndex + 1).map(l => splitFixedWidthLine(l, fixedColumns ?? []))
+    : linesToScan.slice(bestHeaderIndex + 1).map(l => splitLine(l, delimiter))
   const mapping = bestMapping
-  const lines = mapping ? buildBomLines(rows, mapping) : null
+  const lines = mapping ? buildBomLines(rows, mapping, { headers, extraColumns: options?.extraColumns }) : null
 
   return { headers, rows, mapping, lines, delimiter, headerRowIndex: bestHeaderIndex }
 }
@@ -299,13 +359,15 @@ function parseBomWorkbook(wb: XLSX.WorkBook, options?: BomParseOptions): BomPars
   if (data.length === 0) return { headers: [], rows: [], mapping: null, lines: null }
 
   const skipRows = Math.max(0, options?.skipRows ?? 0)
-  const rowsToScan = data.slice(skipRows).map(row => row.map(String))
+  const skipBottomRows = Math.max(0, options?.skipBottomRows ?? 0)
+  const scanEnd = Math.max(skipRows, data.length - skipBottomRows)
+  const rowsToScan = data.slice(skipRows, scanEnd).map(row => row.map(String))
   if (rowsToScan.length === 0) return { headers: [], rows: [], mapping: null, lines: null, headerRowIndex: 0 }
 
   if (options?.mapping) {
     const headers = rowsToScan[0] ?? []
     const rows = rowsToScan.slice(1)
-    const lines = buildBomLines(rows, options.mapping)
+    const lines = buildBomLines(rows, options.mapping, { headers, extraColumns: options.extraColumns })
     return { headers, rows, mapping: options.mapping, lines, headerRowIndex: 0 }
   }
 
@@ -328,7 +390,7 @@ function parseBomWorkbook(wb: XLSX.WorkBook, options?: BomParseOptions): BomPars
   const headers = rowsToScan[bestHeaderIndex] ?? []
   const rows = rowsToScan.slice(bestHeaderIndex + 1)
   const mapping = bestMapping
-  const lines = mapping ? buildBomLines(rows, mapping) : null
+  const lines = mapping ? buildBomLines(rows, mapping, { headers, extraColumns: options?.extraColumns }) : null
 
   return { headers, rows, mapping, lines, headerRowIndex: bestHeaderIndex }
 }

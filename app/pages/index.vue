@@ -141,12 +141,12 @@
                 class="group relative flex rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:border-primary-500/50 hover:ring-1 hover:ring-primary-500/50 transition-all cursor-pointer shadow-sm overflow-hidden"
                 @click="openTeamProject(project)"
               >
-                <div class="w-28 shrink-0 bg-gray-100 dark:bg-gray-800 flex items-center justify-center p-1.5">
+                <div class="w-28 h-24 shrink-0 bg-gray-100 dark:bg-gray-800 flex items-center justify-center p-1.5">
                   <img
                     v-if="teamPreviewUrls[project.id]"
                     :src="teamPreviewUrls[project.id]"
                     alt=""
-                    class="w-full h-full object-contain"
+                    class="max-w-full max-h-full object-contain"
                   >
                   <UIcon
                     v-else
@@ -275,12 +275,12 @@
                 class="group relative flex rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-600 transition-all cursor-pointer shadow-sm overflow-hidden"
                 @click="openProject(project)"
               >
-                <div class="w-28 shrink-0 bg-gray-100 dark:bg-gray-800 flex items-center justify-center p-1.5">
+                <div class="w-28 h-24 shrink-0 bg-gray-100 dark:bg-gray-800 flex items-center justify-center p-1.5">
                   <img
                     v-if="project.id && localPreviewUrls[project.id]"
                     :src="localPreviewUrls[project.id]"
                     alt=""
-                    class="w-full h-full object-contain"
+                    class="max-w-full max-h-full object-contain"
                   >
                   <UIcon
                     v-else
@@ -303,13 +303,13 @@
                   </div>
                 </div>
 
-                <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div class="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity" @click.stop>
                   <UButton
                     size="xs"
                     color="error"
                     variant="ghost"
                     icon="i-lucide-trash-2"
-                    @click.stop="confirmDelete(project)"
+                    @click="confirmDelete(project)"
                   />
                 </div>
               </div>

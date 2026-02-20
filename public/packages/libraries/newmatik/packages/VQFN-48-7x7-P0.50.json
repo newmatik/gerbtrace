@@ -1,0 +1,97 @@
+{
+  "name": "VQFN-48-7x7-P0.50",
+  "aliases": [
+    "VQFN-48-29",
+    "VQFN-48-31",
+    "VQFN-48-34",
+    "VQFN-48-35",
+    "VQFN-48-36",
+    "VQFN-48-37",
+    "VQFN-48-38",
+    "VQFN-48-39",
+    "VQFN-48-54",
+    "VQFN-48-70",
+    "VQFN-48-71",
+    "VQFN-48-73",
+    "VQFN-48-78",
+    "VQFN-48-79",
+    "VQFN-48-801",
+    "VQFN-48-803",
+    "VQFN-48-804",
+    "VQFN-48-806",
+    "VQFN-48-807",
+    "VQFN-48-808",
+    "VQFN-48-809",
+    "VQFN-48-811",
+    "VQFN-48-812",
+    "VQFN-48-814",
+    "VQFN-48-901",
+    "VQFN-48-903"
+  ],
+  "body": {
+    "length": 7.0,
+    "width": 7.0
+  },
+  "type": "PT_GENERIC",
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "FLAT",
+        "numLeads": 12,
+        "distFromCenter": -3.3,
+        "ccHalf": 2.75,
+        "angleMilliDeg": 180000,
+        "padLength": 0.4,
+        "padWidth": 0.25
+      },
+      {
+        "shape": "FLAT",
+        "numLeads": 12,
+        "distFromCenter": 3.3,
+        "ccHalf": -2.75,
+        "angleMilliDeg": 0,
+        "padLength": 0.4,
+        "padWidth": 0.25
+      },
+      {
+        "shape": "FLAT",
+        "numLeads": 12,
+        "distFromCenter": 2.75,
+        "ccHalf": -3.3,
+        "angleMilliDeg": 90000,
+        "padLength": 0.4,
+        "padWidth": 0.25
+      },
+      {
+        "shape": "FLAT",
+        "numLeads": 12,
+        "distFromCenter": -2.75,
+        "ccHalf": 3.3,
+        "angleMilliDeg": 270000,
+        "padLength": 0.4,
+        "padWidth": 0.25
+      },
+      {
+        "shape": "FLAT",
+        "numLeads": 1,
+        "distFromCenter": 0,
+        "ccHalf": 0,
+        "angleMilliDeg": 0,
+        "padLength": 5.18,
+        "padWidth": 5.18
+      }
+    ]
+  },
+  "height": {
+    "nominal": 0.88,
+    "max": 1,
+    "min": 0.8
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/VQFN-48-7x7-P0.50.json",
+    "sourceFootprint": "VQFN-48-7x7-P0.50"
+  }
+}
