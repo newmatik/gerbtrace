@@ -358,6 +358,7 @@
               :measure="measureTool"
               :info="infoTool"
               :delete-tool="deleteTool"
+              :draw-tool="drawTool"
               :view-mode="viewMode"
               :preset="viewMode === 'realistic' ? selectedPreset : undefined"
               :paste-settings="pasteSettings"
@@ -377,8 +378,10 @@
               @pnp-click="handleCanvasComponentClick($event)"
               @pnp-dblclick="handlePnPDblClick"
               @align-click="handleAlignClick"
+              @draw-commit="handleDrawCommit"
             />
             <MeasureOverlay :measure="measureTool" :transform="canvasInteraction.transform.value" />
+            <DrawPreviewOverlay :draw="drawTool" :transform="canvasInteraction.transform.value" />
             <InfoOverlay v-if="sidebarTab !== 'panel'" :info="infoTool" />
             <DeleteOverlay v-if="sidebarTab !== 'panel'" :delete-tool="deleteTool" @confirm-delete="handleConfirmDelete" />
 
@@ -1144,6 +1147,7 @@ const canvasInteraction = useCanvasInteraction()
 const measureTool = useMeasureTool()
 const infoTool = useInfoTool()
 const deleteTool = useDeleteTool()
+const drawTool = useDrawTool()
 const editHistory = useEditHistory()
 const isMac = computed(() => typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.userAgent))
 const { backgroundColor, isLight: isBgLight } = useBackgroundColor()
@@ -1667,7 +1671,7 @@ function arePnpImportOptionsEqual(a: PnpImportOptionsSnapshot, b: PnpImportOptio
 
 // ── Interaction mode management ──
 
-type InteractionMode = 'cursor' | 'measure' | 'info' | 'delete'
+type InteractionMode = 'cursor' | 'measure' | 'info' | 'delete' | 'draw'
 
 const activeMode = prefs.activeMode
 
@@ -1693,11 +1697,16 @@ function setMode(mode: InteractionMode) {
     deleteTool.active.value = false
     deleteTool.clear()
   }
+  if (activeMode.value === 'draw') {
+    drawTool.active.value = false
+    drawTool.clear()
+  }
   activeMode.value = mode
   // Activate new tool
   if (mode === 'measure') measureTool.active.value = true
   if (mode === 'info') infoTool.active.value = true
   if (mode === 'delete') deleteTool.active.value = true
+  if (mode === 'draw') drawTool.active.value = true
 }
 
 // Sync back when tools deactivate themselves (e.g. via Escape handler)
@@ -1711,6 +1720,11 @@ watch(() => deleteTool.active.value, (isActive) => {
     activeMode.value = 'cursor'
   }
 })
+watch(() => drawTool.active.value, (isActive) => {
+  if (!isActive && activeMode.value === 'draw') {
+    activeMode.value = 'cursor'
+  }
+})
 
 // Panel view does not support info/delete tools; fall back to cursor.
 watch(sidebarTab, (tab) => {
@@ -1720,7 +1734,7 @@ watch(sidebarTab, (tab) => {
   if (tab === 'docs' && !selectedDocumentId.value && documents.value.length) {
     selectedDocumentId.value = documents.value[0].id
   }
-  if (tab === 'panel' && (activeMode.value === 'info' || activeMode.value === 'delete')) {
+  if (tab === 'panel' && (activeMode.value === 'info' || activeMode.value === 'delete' || activeMode.value === 'draw')) {
     setMode('cursor')
   }
 })
@@ -1756,6 +1770,8 @@ function handleKeyDown(e: KeyboardEvent) {
     }
   } else if (activeMode.value === 'delete') {
     deleteTool.handleKeyDown(e)
+  } else if (activeMode.value === 'draw') {
+    drawTool.handleKeyDown(e)
   }
 }
 
@@ -4650,6 +4666,7 @@ onMounted(async () => {
   if (activeMode.value === 'measure') measureTool.active.value = true
   if (activeMode.value === 'info') infoTool.active.value = true
   if (activeMode.value === 'delete') deleteTool.active.value = true
+  if (activeMode.value === 'draw') drawTool.active.value = true
 
   // Restore persisted PnP origin
   if (project.value?.pnpOriginX != null && project.value?.pnpOriginY != null) {

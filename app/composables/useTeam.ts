@@ -17,6 +17,9 @@ export interface Team {
   preferred_panel_height_mm: number | null
   max_panel_width_mm: number | null
   max_panel_height_mm: number | null
+  ai_enabled: boolean
+  ai_api_key: string | null
+  ai_model: string
   created_at: string
   updated_at: string
 }
@@ -176,6 +179,9 @@ export function useTeam() {
     preferred_panel_height_mm?: number | null
     max_panel_width_mm?: number | null
     max_panel_height_mm?: number | null
+    ai_enabled?: boolean
+    ai_api_key?: string | null
+    ai_model?: string
   }) {
     if (!currentTeamId.value) return { error: new Error('No team selected') }
 

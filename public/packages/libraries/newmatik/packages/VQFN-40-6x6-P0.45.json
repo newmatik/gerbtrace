@@ -22,18 +22,18 @@
       {
         "shape": "FLAT",
         "numLeads": 10,
-        "distFromCenter": 2.82,
-        "ccHalf": -2.025,
-        "angleMilliDeg": 0,
+        "distFromCenter": 2.025,
+        "ccHalf": -2.82,
+        "angleMilliDeg": 90000,
         "padLength": 0.36,
         "padWidth": 0.225
       },
       {
         "shape": "FLAT",
         "numLeads": 10,
-        "distFromCenter": 2.025,
-        "ccHalf": -2.82,
-        "angleMilliDeg": 90000,
+        "distFromCenter": 2.82,
+        "ccHalf": -2.025,
+        "angleMilliDeg": 0,
         "padLength": 0.36,
         "padWidth": 0.225
       },
