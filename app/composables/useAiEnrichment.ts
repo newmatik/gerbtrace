@@ -7,15 +7,14 @@
 
 import type { BomLine, BomManufacturer, AiSuggestion, BomAiSuggestions } from '~/utils/bom-types'
 
-const aiSuggestions = ref<BomAiSuggestions>({})
-const isEnriching = ref(false)
-const enrichError = ref<string | null>(null)
-
 export function useAiEnrichment() {
+  const aiSuggestions = useState<BomAiSuggestions>('spark-ai-suggestions', () => ({}))
+  const isEnriching = useState<boolean>('spark-is-enriching', () => false)
+  const enrichError = useState<string | null>('spark-enrich-error', () => null)
   const { currentTeam } = useTeam()
 
   const isAiEnabled = computed(() => {
-    return !!(currentTeam.value?.ai_enabled && currentTeam.value?.ai_api_key)
+    return !!(currentTeam.value?.ai_enabled && currentTeam.value?.ai_api_key && currentTeam.value?.ai_model)
   })
 
   async function enrichBom(
@@ -45,7 +44,7 @@ export function useAiEnrichment() {
       aiSuggestions.value = result.suggestions ?? {}
       return aiSuggestions.value
     } catch (err: any) {
-      enrichError.value = err?.data?.message ?? err?.message ?? 'AI enrichment failed'
+      enrichError.value = err?.data?.data?.message ?? err?.data?.statusMessage ?? err?.message ?? 'AI enrichment failed'
       throw err
     } finally {
       isEnriching.value = false

@@ -111,6 +111,7 @@ export function findNearestSnap(
  * Snap a coordinate to the nearest grid point.
  */
 export function snapToGrid(x: number, y: number, spacing: number): { x: number; y: number } {
+  if (spacing <= 0) return { x, y }
   return {
     x: Math.round(x / spacing) * spacing,
     y: Math.round(y / spacing) * spacing,

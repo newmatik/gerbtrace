@@ -57,12 +57,34 @@
                 </template>
               </UFormField>
 
+              <div class="flex justify-end gap-3 pt-4">
+                <UButton
+                  type="submit"
+                  :loading="saving"
+                  :disabled="!hasChanges"
+                >
+                  Save Changes
+                </UButton>
+              </div>
+
+              <p v-if="successMessage" class="text-sm text-green-600 dark:text-green-400">
+                {{ successMessage }}
+              </p>
+              <p v-if="errorMessage" class="text-sm text-red-600 dark:text-red-400">
+                {{ errorMessage }}
+              </p>
+            </form>
+          </template>
+
+          <!-- Defaults tab -->
+          <template #defaults>
+            <form @submit.prevent="handleSaveDefaults" class="space-y-5 pt-6">
               <UFormField label="Default Currency">
                 <USelect
                   v-model="defaultCurrency"
                   :items="currencyOptions"
                   size="lg"
-                  :disabled="saving"
+                  :disabled="savingDefaults"
                 />
                 <template #help>
                   <span class="text-xs text-neutral-400">
@@ -83,7 +105,7 @@
                       step="1"
                       size="lg"
                       placeholder="300"
-                      :disabled="saving"
+                      :disabled="savingDefaults"
                     />
                   </UFormField>
                   <UFormField label="Preferred Height (mm)" hint="Optional">
@@ -95,7 +117,7 @@
                       step="1"
                       size="lg"
                       placeholder="250"
-                      :disabled="saving"
+                      :disabled="savingDefaults"
                     />
                   </UFormField>
                 </div>
@@ -109,7 +131,7 @@
                       step="1"
                       size="lg"
                       placeholder="450"
-                      :disabled="saving"
+                      :disabled="savingDefaults"
                     />
                   </UFormField>
                   <UFormField label="Maximum Height (mm)" hint="Optional">
@@ -121,7 +143,7 @@
                       step="1"
                       size="lg"
                       placeholder="400"
-                      :disabled="saving"
+                      :disabled="savingDefaults"
                     />
                   </UFormField>
                 </div>
@@ -133,18 +155,18 @@
               <div class="flex justify-end gap-3 pt-4">
                 <UButton
                   type="submit"
-                  :loading="saving"
-                  :disabled="!hasChanges"
+                  :loading="savingDefaults"
+                  :disabled="!hasDefaultsChanges"
                 >
-                  Save Changes
+                  Save Defaults
                 </UButton>
               </div>
 
-              <p v-if="successMessage" class="text-sm text-green-600 dark:text-green-400">
-                {{ successMessage }}
+              <p v-if="defaultsSuccessMessage" class="text-sm text-green-600 dark:text-green-400">
+                {{ defaultsSuccessMessage }}
               </p>
-              <p v-if="errorMessage" class="text-sm text-red-600 dark:text-red-400">
-                {{ errorMessage }}
+              <p v-if="defaultsErrorMessage" class="text-sm text-red-600 dark:text-red-400">
+                {{ defaultsErrorMessage }}
               </p>
             </form>
           </template>
@@ -201,7 +223,7 @@
                 <div class="flex items-center gap-2">
                   <UIcon name="i-lucide-sparkles" class="text-lg text-violet-500" />
                   <h2 class="text-lg font-semibold">Spark</h2>
-                  <UBadge size="xs" variant="subtle" color="violet">AI</UBadge>
+                  <UBadge size="xs" variant="subtle" color="secondary">AI</UBadge>
                 </div>
                 <p class="text-sm text-neutral-500 dark:text-neutral-400">
                   AI-powered BOM enrichment using Anthropic Claude. Spark improves descriptions, suggests component types, pin counts, and manufacturer part numbers.
@@ -253,12 +275,16 @@
                     </span>
                   </div>
 
-                  <UFormField v-if="keyValidationResult === 'valid'" label="Model">
-                    <USelect
+                  <UFormField v-if="keyValidationResult === 'valid' && sparkModelOptions.length > 0" label="Model">
+                    <USelectMenu
                       v-model="sparkModel"
                       :items="sparkModelOptions"
+                      value-key="value"
+                      label-key="label"
                       size="lg"
                       :disabled="savingSpark"
+                      placeholder="Select a model"
+                      class="w-full"
                     />
                     <template #help>
                       <span class="text-xs text-neutral-400">
@@ -266,6 +292,9 @@
                       </span>
                     </template>
                   </UFormField>
+                  <p v-else-if="keyValidationResult === 'valid' && sparkModelOptions.length === 0" class="text-sm text-neutral-500 dark:text-neutral-400">
+                    Click "Test Connection" to load available models.
+                  </p>
                 </template>
 
                 <div class="flex justify-end gap-3 pt-4">
@@ -304,6 +333,7 @@ watch(isAuthenticated, (authed) => {
 
 const settingsTabs = [
   { label: 'General', slot: 'general' as const },
+  { label: 'Defaults', slot: 'defaults' as const },
   { label: 'Integrations', slot: 'integrations' as const },
 ]
 
@@ -318,6 +348,11 @@ const saving = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 
+// Defaults tab state
+const savingDefaults = ref(false)
+const defaultsErrorMessage = ref('')
+const defaultsSuccessMessage = ref('')
+
 // Elexess credentials state
 const elexessUsername = ref('')
 const elexessPassword = ref('')
@@ -328,7 +363,7 @@ const elexessSuccessMessage = ref('')
 // Spark AI state
 const sparkEnabled = ref(false)
 const sparkApiKey = ref('')
-const sparkModel = ref('claude-sonnet-4-20250514')
+const sparkModel = ref('')
 const savingSpark = ref(false)
 const sparkErrorMessage = ref('')
 const sparkSuccessMessage = ref('')
@@ -341,10 +376,8 @@ const currencyOptions = [
   { label: 'USD', value: 'USD' as const },
 ]
 
-const sparkModelOptions = [
-  { label: 'Claude Sonnet 4', value: 'claude-sonnet-4-20250514' },
-  { label: 'Claude Haiku 4', value: 'claude-haiku-4-20250414' },
-]
+const sparkModelOptions = ref<Array<{ label: string, value: string }>>([])
+
 
 // Init from current team
 watch(currentTeam, (team) => {
@@ -360,22 +393,31 @@ watch(currentTeam, (team) => {
     maxPanelHeightInput.value = toInputValue(team.max_panel_height_mm)
     sparkEnabled.value = team.ai_enabled
     sparkApiKey.value = team.ai_api_key ?? ''
-    sparkModel.value = team.ai_model ?? 'claude-sonnet-4-20250514'
+    sparkModel.value = team.ai_model || ''
     if (team.ai_api_key) {
       keyValidationResult.value = 'valid'
+      if (sparkModel.value) {
+        sparkModelOptions.value = [{ label: sparkModel.value, value: sparkModel.value }]
+      } else {
+        sparkModelOptions.value = []
+      }
     }
   }
 }, { immediate: true })
 
 const hasChanges = computed(() => {
   if (!currentTeam.value) return false
+  return teamName.value !== currentTeam.value.name
+    || autoJoinDomain.value !== (currentTeam.value.auto_join_domain ?? '')
+})
+
+const hasDefaultsChanges = computed(() => {
+  if (!currentTeam.value) return false
   const preferredPanelWidth = parseOptionalMm(preferredPanelWidthInput.value)
   const preferredPanelHeight = parseOptionalMm(preferredPanelHeightInput.value)
   const maxPanelWidth = parseOptionalMm(maxPanelWidthInput.value)
   const maxPanelHeight = parseOptionalMm(maxPanelHeightInput.value)
-  return teamName.value !== currentTeam.value.name
-    || autoJoinDomain.value !== (currentTeam.value.auto_join_domain ?? '')
-    || defaultCurrency.value !== (currentTeam.value.default_currency ?? 'EUR')
+  return defaultCurrency.value !== (currentTeam.value.default_currency ?? 'EUR')
     || preferredPanelWidth !== currentTeam.value.preferred_panel_width_mm
     || preferredPanelHeight !== currentTeam.value.preferred_panel_height_mm
     || maxPanelWidth !== currentTeam.value.max_panel_width_mm
@@ -392,13 +434,35 @@ const hasSparkChanges = computed(() => {
   if (!currentTeam.value) return false
   return sparkEnabled.value !== currentTeam.value.ai_enabled
     || sparkApiKey.value !== (currentTeam.value.ai_api_key ?? '')
-    || sparkModel.value !== (currentTeam.value.ai_model ?? 'claude-sonnet-4-20250514')
+    || sparkModel.value !== (currentTeam.value.ai_model ?? '')
 })
 
 async function handleSave() {
   errorMessage.value = ''
   successMessage.value = ''
   saving.value = true
+
+  try {
+    const { error } = await updateTeam({
+      name: teamName.value.trim(),
+      auto_join_domain: autoJoinDomain.value.trim() || null,
+    })
+
+    if (error) {
+      errorMessage.value = (error as any).message ?? 'Failed to save'
+    } else {
+      successMessage.value = 'Settings saved!'
+      setTimeout(() => { successMessage.value = '' }, 3000)
+    }
+  } finally {
+    saving.value = false
+  }
+}
+
+async function handleSaveDefaults() {
+  defaultsErrorMessage.value = ''
+  defaultsSuccessMessage.value = ''
+  savingDefaults.value = true
 
   try {
     const preferredPanelWidth = parseOptionalMm(preferredPanelWidthInput.value)
@@ -410,13 +474,11 @@ async function handleSave() {
       preferredPanelWidth != null && maxPanelWidth != null && preferredPanelWidth > maxPanelWidth
       || preferredPanelHeight != null && maxPanelHeight != null && preferredPanelHeight > maxPanelHeight
     ) {
-      errorMessage.value = 'Preferred panel size cannot exceed maximum panel size.'
+      defaultsErrorMessage.value = 'Preferred panel size cannot exceed maximum panel size.'
       return
     }
 
     const { error } = await updateTeam({
-      name: teamName.value.trim(),
-      auto_join_domain: autoJoinDomain.value.trim() || null,
       default_currency: defaultCurrency.value,
       preferred_panel_width_mm: preferredPanelWidth,
       preferred_panel_height_mm: preferredPanelHeight,
@@ -425,13 +487,13 @@ async function handleSave() {
     })
 
     if (error) {
-      errorMessage.value = (error as any).message ?? 'Failed to save'
+      defaultsErrorMessage.value = (error as any).message ?? 'Failed to save defaults'
     } else {
-      successMessage.value = 'Settings saved!'
-      setTimeout(() => { successMessage.value = '' }, 3000)
+      defaultsSuccessMessage.value = 'Defaults saved!'
+      setTimeout(() => { defaultsSuccessMessage.value = '' }, 3000)
     }
   } finally {
-    saving.value = false
+    savingDefaults.value = false
   }
 }
 
@@ -483,13 +545,24 @@ async function validateApiKey() {
   validatingKey.value = true
 
   try {
-    const result = await $fetch<{ valid: boolean; models: string[]; error?: string }>('/api/ai/validate-key', {
+    const result = await $fetch<{
+      valid: boolean
+      models: Array<{ id: string, name: string }>
+      error?: string
+    }>('/api/ai/validate-key', {
       method: 'POST',
       body: { apiKey: sparkApiKey.value },
     })
 
     if (result.valid) {
       keyValidationResult.value = 'valid'
+      sparkModelOptions.value = result.models.map(m => ({
+        label: m.name,
+        value: m.id,
+      }))
+      if (sparkModelOptions.value.length > 0 && !sparkModelOptions.value.some(o => o.value === sparkModel.value)) {
+        sparkModel.value = sparkModelOptions.value[0].value
+      }
     } else {
       keyValidationResult.value = 'invalid'
       keyValidationError.value = result.error ?? 'Invalid key'

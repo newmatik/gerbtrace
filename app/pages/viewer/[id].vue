@@ -155,6 +155,11 @@
       :rotate-c-c-w="rotateCCW"
       :set-board-rotation="setBoardRotation"
     />
+    <DrawEditorBar
+      v-if="activeMode === 'draw'"
+      :draw="drawTool"
+      :layers="layers.map(l => ({ fileName: l.file.fileName, type: l.type, color: l.color }))"
+    />
 
     <div class="flex-1 flex overflow-hidden">
       <!-- Canvas pages: sidebar panels + canvas -->
@@ -397,8 +402,12 @@
                 v-if="undoToastVisible"
                 class="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3.5 py-2 rounded-lg bg-neutral-800/90 dark:bg-neutral-700/95 backdrop-blur-sm shadow-lg text-white text-xs"
               >
-                <UIcon name="i-lucide-trash-2" class="text-red-400 text-sm shrink-0" />
-                <span>Deletion applied</span>
+                <UIcon
+                  :name="editHistory.lastDescription.value.startsWith('Deleted') ? 'i-lucide-trash-2' : 'i-lucide-pen-tool'"
+                  :class="editHistory.lastDescription.value.startsWith('Deleted') ? 'text-red-400' : 'text-emerald-400'"
+                  class="text-sm shrink-0"
+                />
+                <span>{{ editHistory.lastDescription.value }}</span>
                 <button class="ml-1 px-2 py-0.5 rounded font-medium bg-white/15 hover:bg-white/25 transition-colors" @click="handleUndo">
                   Undo
                 </button>
@@ -575,8 +584,8 @@
                   </UButton>
                   <UButton
                     size="xs"
-                    color="neutral"
-                    :variant="filesPreviewMode === 'diff' ? 'soft' : 'ghost'"
+                    :color="filesPreviewMode !== 'diff' && editedLayers.has(filesSelectedLayer.file.fileName) ? 'warning' : 'neutral'"
+                    :variant="filesPreviewMode === 'diff' ? 'soft' : (editedLayers.has(filesSelectedLayer.file.fileName) ? 'soft' : 'ghost')"
                     @click="filesPreviewMode = 'diff'"
                   >
                     Diff
@@ -711,6 +720,23 @@
             </div>
             <div class="flex-1" />
             <UButton
+              v-if="spark.isAiEnabled.value"
+              size="xs"
+              color="secondary"
+              :variant="spark.isEnriching.value ? 'soft' : 'outline'"
+              :icon="spark.isEnriching.value ? 'i-lucide-loader-2' : 'i-lucide-sparkles'"
+              :disabled="(bom.bomLines.value as BomLine[]).length === 0 || spark.isEnriching.value || !canEditTab('bom')"
+              title="Enrich BOM with AI suggestions"
+              :class="{ 'animate-pulse': spark.isEnriching.value }"
+              @click="handleSparkEnrich"
+            >
+              <template v-if="spark.isEnriching.value">Enriching...</template>
+              <template v-else>
+                Spark
+                <UBadge v-if="spark.pendingSuggestionCount.value > 0" size="xs" color="secondary" variant="solid" class="ml-1">{{ spark.pendingSuggestionCount.value }}</UBadge>
+              </template>
+            </UButton>
+            <UButton
               v-if="bomCpLines.length > 0"
               size="xs"
               :color="bomCpCopied ? 'success' : 'neutral'"
@@ -783,6 +809,7 @@
               :pnp-designators="pnpDesignators"
               :selected-line-id="selectedBomLineId"
               :locked="!canEditTab('bom')"
+              :ai-suggestions="(spark.aiSuggestions.value as BomAiSuggestions)"
               @select-line="selectedBomLineId = $event"
               @update:search-query="bom.searchQuery.value = $event"
               @add-line="handleBomAddLine"
@@ -813,12 +840,18 @@
               :exchange-rate="elexess.exchangeRate.value"
               :pnp-designators="pnpDesignators"
               :locked="!canEditTab('bom')"
+              :ai-suggestion="selectedBomLine ? spark.getSuggestion(selectedBomLine.id) : null"
               @update-line="handleBomUpdateLine"
               @remove-line="handleBomRemoveLine"
               @remove-manufacturer="handleBomRemoveManufacturer"
               @add-manufacturer="handleBomAddManufacturer"
               @fetch-all-pricing="handleFetchAllPricing"
               @fetch-single-pricing="handleFetchSinglePricing"
+              @accept-ai-suggestion="handleAcceptAiSuggestion"
+              @dismiss-ai-suggestion="handleDismissAiSuggestion"
+              @accept-all-ai="handleAcceptAllAi"
+              @dismiss-all-ai="handleDismissAllAi"
+              @accept-ai-manufacturer="handleAcceptAiManufacturer"
             />
           </section>
           </div>
@@ -1033,7 +1066,7 @@ import type { GerberFile, LayerInfo, LayerFilter } from '~/utils/gerber-helpers'
 import type { SourceRange, ImageTree, BoundingBox } from '@lib/gerber/types'
 import { mergeBounds, emptyBounds, isEmpty } from '@lib/gerber/bounding-box'
 import { sortLayersByPcbOrder, isTopLayer, isBottomLayer, isSharedLayer, getColorForType, isPnPLayer } from '~/utils/gerber-helpers'
-import type { BomLine, BomColumnMapping } from '~/utils/bom-types'
+import type { BomLine, BomColumnMapping, BomAiSuggestions, AiSuggestion } from '~/utils/bom-types'
 import type { PricingQueueItem } from '~/composables/useElexessApi'
 import type { ViewMode } from '~/components/viewer/BoardCanvas.vue'
 import { getPresetForAppearance } from '~/utils/pcb-presets'
@@ -1680,6 +1713,7 @@ const modeOptions: { label: string; value: InteractionMode; icon: string; title:
   { label: 'Measure', value: 'measure', icon: 'i-lucide-ruler', title: 'Measure distance between points' },
   { label: 'Info', value: 'info', icon: 'i-lucide-info', title: 'Inspect objects at click position' },
   { label: 'Delete', value: 'delete', icon: 'i-lucide-eraser', title: 'Select and delete objects from Gerber files' },
+  { label: 'Draw', value: 'draw', icon: 'i-lucide-pen-tool', title: 'Draw shapes on a Gerber layer' },
 ]
 
 function setMode(mode: InteractionMode) {
@@ -2412,7 +2446,7 @@ function handlePanelDataUpdate(data: PanelConfig) {
 }
 
 // ── Original content tracking (for edit detection + reset) ──
-const originalContent = new Map<string, string>()
+const originalContent = reactive(new Map<string, string>())
 
 const editedLayers = computed(() => {
   const edited = new Set<string>()
@@ -3699,6 +3733,8 @@ onUnmounted(() => {
 // ── BOM ──
 const bom = useBom(layers)
 const elexess = useElexessApi()
+const spark = useAiEnrichment()
+const toast = useToast()
 
 watch(pricingQuantities, (list) => {
   if (!list.includes(bom.boardQuantity.value)) {
@@ -4198,6 +4234,13 @@ watch(() => bom.boardQuantity.value, (qty) => {
   }
 })
 
+watch(() => spark.aiSuggestions.value, (suggestions) => {
+  if (!hasLoadedProjectData.value) return
+  if (isTeamProject) {
+    persistToProject({ bomAiSuggestions: suggestions })
+  }
+}, { deep: true })
+
 watch(bom.fileImportOptionsRecord, (options) => {
   if (!hasLoadedProjectData.value) return
   const snapshot = toBomImportOptionsSnapshot(options)
@@ -4365,6 +4408,69 @@ function handlePricingQuantitiesFromBom(next: number[]) {
 
 function handlePricingQuantitiesFromPricing(next: number[]) {
   handlePricingQuantitiesUpdate(next)
+}
+
+// ── Spark AI handlers ──
+
+async function handleSparkEnrich() {
+  if (!canEditTab('bom')) return
+  try {
+    const result = await spark.enrichBom(
+      bom.bomLines.value as BomLine[],
+      pnp.smdActiveComponents.value,
+      pnp.thtActiveComponents.value,
+    )
+    const count = Object.keys(result).length
+    toast.add({
+      title: count > 0 ? `Spark returned suggestions for ${count} BOM line${count === 1 ? '' : 's'}` : 'Spark found no suggestions to make',
+      color: count > 0 ? 'success' : 'neutral',
+    })
+  } catch (err: any) {
+    console.error('[Spark] Enrichment failed:', err)
+    toast.add({
+      title: 'Spark enrichment failed',
+      description: spark.enrichError.value ?? undefined,
+      color: 'error',
+    })
+  }
+}
+
+function handleAcceptAiSuggestion(lineId: string, field: string) {
+  if (!ensureTabEditable('bom')) return
+  spark.acceptSuggestion(lineId, field as keyof AiSuggestion, (id, updates) => {
+    handleBomUpdateLine(id, updates)
+  })
+}
+
+function handleDismissAiSuggestion(lineId: string, field: string) {
+  spark.dismissSuggestion(lineId, field as keyof AiSuggestion)
+}
+
+function handleAcceptAllAi(lineId: string) {
+  if (!ensureTabEditable('bom')) return
+  spark.acceptAll(lineId, (id, updates) => {
+    handleBomUpdateLine(id, updates)
+  }, (id, mfr) => {
+    handleBomAddManufacturer(id, mfr)
+  })
+}
+
+function handleDismissAllAi(lineId: string) {
+  spark.dismissAll(lineId)
+}
+
+function handleAcceptAiManufacturer(lineId: string, mfr: { manufacturer: string; manufacturerPart: string }) {
+  if (!ensureTabEditable('bom')) return
+  handleBomAddManufacturer(lineId, mfr)
+  const suggestion = spark.getSuggestion(lineId)
+  if (suggestion?.manufacturers) {
+    const remaining = suggestion.manufacturers.filter(
+      m => m.manufacturer !== mfr.manufacturer || m.manufacturerPart !== mfr.manufacturerPart,
+    )
+    if (remaining.length === 0) {
+      spark.dismissSuggestion(lineId, 'manufacturers')
+    }
+  }
 }
 
 function handleManualOrderUpdate(type: 'smd' | 'tht', value: string[]) {
@@ -4588,6 +4694,7 @@ onMounted(async () => {
         bomLines: tp.bom_lines,
         bomPricingCache: tp.bom_pricing_cache,
         bomBoardQuantity: tp.bom_board_quantity,
+        bomAiSuggestions: tp.bom_ai_suggestions,
         pcbData: tp.pcb_data,
         panelData: tp.panel_data,
         pageLocks: tp.page_locks,
@@ -4751,6 +4858,10 @@ onMounted(async () => {
   }
   bom.setPricingCache(restoredCache)
   bom.setBoardQuantity(project.value?.bomBoardQuantity)
+  const restoredAiSuggestions = project.value?.bomAiSuggestions
+  if (restoredAiSuggestions && typeof restoredAiSuggestions === 'object') {
+    spark.setSuggestions(restoredAiSuggestions as Record<string, any>)
+  }
   const restoredBomImportOptions = toBomImportOptionsSnapshot(project.value?.bomFileImportOptions)
   const restoredPnpImportOptions = toPnpImportOptionsSnapshot(project.value?.pnpFileImportOptions)
   const backupBomImportOptions = toBomImportOptionsSnapshot(loadTeamImportOptionsBackup('bom'))
@@ -5274,6 +5385,49 @@ async function handleConfirmDelete() {
   deleteTool.cancelDeletion()
 
   // Force re-render by triggering reactivity
+  layers.value = [...layers.value]
+}
+
+// ── Draw handler ──
+
+async function handleDrawCommit(request: import('~/composables/useDrawTool').DrawCommitRequest) {
+  if (isCurrentTabLocked.value) return
+
+  const canvas = boardCanvasRef.value
+  if (!canvas) return
+
+  const layerName = request.targetLayerName
+  const layer = layers.value.find(l => l.file.fileName === layerName)
+  if (!layer) return
+
+  const previousContent = layer.file.content
+  const newContent = drawTool.generateAndInject(request.shape, previousContent)
+  if (!newContent) return
+
+  // Update in-memory content
+  layer.file.content = newContent
+
+  // Persist to storage
+  if (isTeamProject && teamProjectId) {
+    const teamId = currentTeamId.value || await waitForTeamId()
+    await uploadTeamFile(teamProjectId, teamId, 1, layer.file.fileName, newContent, layer.type)
+  } else {
+    await updateFileContent(projectId, 1, layer.file.fileName, newContent)
+  }
+
+  // Invalidate the parsed tree cache so it gets re-parsed
+  canvas.invalidateCache(layer.file.fileName)
+
+  // Push undo entry
+  const snapshots = new Map<string, string>()
+  snapshots.set(layer.file.fileName, previousContent)
+  const toolLabel = request.shape.tool === 'drill' ? 'drill hit' : request.shape.tool
+  editHistory.pushEntry(snapshots, `Added ${toolLabel} to ${layer.type}`)
+  undoToastVisible.value = true
+  if (undoToastTimer) clearTimeout(undoToastTimer)
+  undoToastTimer = setTimeout(() => { undoToastVisible.value = false }, 5000)
+
+  // Force re-render
   layers.value = [...layers.value]
 }
 

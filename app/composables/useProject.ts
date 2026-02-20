@@ -83,6 +83,8 @@ interface ProjectRecord {
   bomPricingCache?: BomPricingCache | null
   /** Board quantity for BOM pricing calculation */
   bomBoardQuantity?: number | null
+  /** AI (Spark) suggestions keyed by BOM line ID */
+  bomAiSuggestions?: Record<string, any> | null
   /** PCB board parameters for pricing estimation */
   pcbData?: {
     sizeX?: number            // mm

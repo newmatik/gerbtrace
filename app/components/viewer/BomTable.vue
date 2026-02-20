@@ -249,6 +249,12 @@
             >
               {{ line.type }}
             </button>
+            <UIcon
+              v-if="props.aiSuggestions?.[line.id]"
+              name="i-lucide-sparkles"
+              class="text-[10px] text-violet-500 shrink-0"
+              title="Spark has suggestions for this line"
+            />
             <div class="shrink-0 text-right" @click.stop>
               <input
                 v-if="editingQtyId === line.id"
@@ -295,7 +301,7 @@
 </template>
 
 <script setup lang="ts">
-import type { BomLine, BomPricingCache } from '~/utils/bom-types'
+import type { BomLine, BomPricingCache, BomAiSuggestions } from '~/utils/bom-types'
 import { BOM_LINE_TYPES } from '~/utils/bom-types'
 import type { ExchangeRateSnapshot, PricingQueueItem } from '~/composables/useElexessApi'
 import { formatCurrency, normalizeCurrencyCode } from '~/utils/currency'
@@ -315,6 +321,7 @@ const props = defineProps<{
   pnpDesignators: Set<string>
   selectedLineId: string | null
   locked?: boolean
+  aiSuggestions?: BomAiSuggestions
 }>()
 
 const emit = defineEmits<{

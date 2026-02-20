@@ -18,6 +18,7 @@ export function useEditHistory(maxEntries = 50) {
 
   const canUndo = computed(() => stack.value.length > 0)
   const undoCount = computed(() => stack.value.length)
+  const lastDescription = computed(() => stack.value.length > 0 ? stack.value[stack.value.length - 1].description : '')
 
   /** Record a snapshot of layer contents before a destructive operation. */
   function pushEntry(snapshots: Map<string, string>, description: string) {
@@ -42,6 +43,7 @@ export function useEditHistory(maxEntries = 50) {
   return {
     canUndo,
     undoCount,
+    lastDescription,
     pushEntry,
     popEntry,
     clear,

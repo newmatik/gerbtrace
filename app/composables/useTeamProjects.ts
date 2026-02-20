@@ -50,6 +50,7 @@ export interface TeamProject {
   bom_lines: BomLine[] | null
   bom_pricing_cache: BomPricingCache | null
   bom_board_quantity: number | null
+  bom_ai_suggestions: Record<string, any> | null
   pcb_data: {
     sizeX?: number
     sizeY?: number

@@ -27,10 +27,17 @@ export function parseFormatFromSource(source: string): GerberFormatSpec {
     units = moMatch[1] === 'IN' ? 'in' : 'mm'
   }
 
-  const fsMatch = source.match(/%FS([LT]?)A?X(\d)(\d)Y\d\d\*%/)
+  const fsMatch = source.match(/%FS([LT]?)A?X(\d)(\d)Y(\d)(\d)\*%/)
   if (fsMatch) {
     zeroSuppression = fsMatch[1] === 'T' ? 'trailing' : 'leading'
-    format = [parseInt(fsMatch[2]!, 10), parseInt(fsMatch[3]!, 10)]
+    const xInt = parseInt(fsMatch[2]!, 10)
+    const xDec = parseInt(fsMatch[3]!, 10)
+    const yInt = parseInt(fsMatch[4]!, 10)
+    const yDec = parseInt(fsMatch[5]!, 10)
+    if (xInt !== yInt || xDec !== yDec) {
+      throw new Error(`Unsupported mixed X/Y format: X${xInt}${xDec} Y${yInt}${yDec}`)
+    }
+    format = [xInt, xDec]
   }
 
   return { units, format, zeroSuppression }
@@ -50,7 +57,11 @@ export function formatCoordinate(
   const absVal = Math.abs(value)
 
   const scaled = Math.round(absVal * Math.pow(10, decPlaces))
-  let digits = scaled.toString().padStart(totalDigits, '0')
+  const scaledStr = scaled.toString()
+  if (scaledStr.length > totalDigits) {
+    throw new RangeError(`Coordinate ${value} exceeds format ${intPlaces}.${decPlaces}`)
+  }
+  let digits = scaledStr.padStart(totalDigits, '0')
 
   if (zeroSuppression === 'leading') {
     digits = digits.replace(/^0+/, '') || '0'
@@ -108,6 +119,11 @@ function findApertureInsertionPoint(source: string): number {
   const fsMatch = source.match(/%FS[^%]*\*%/)
   if (fsMatch?.index !== undefined) {
     return fsMatch.index + fsMatch[0].length
+  }
+
+  const moMatch = source.match(/%MO(MM|IN)\*%/)
+  if (moMatch?.index !== undefined) {
+    return moMatch.index + moMatch[0].length
   }
 
   return 0
