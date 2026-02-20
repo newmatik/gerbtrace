@@ -109,14 +109,15 @@
               </div>
               <div class="flex items-center gap-1.5">
                 <UButton
-                  v-if="selectedItem?.source === 'builtin'"
+                  v-if="selectedItem && (selectedItem.source === 'builtin' || selectedItem.source === 'team')"
                   size="xs"
                   variant="outline"
                   color="neutral"
                   icon="i-lucide-copy"
-                  @click="duplicateBuiltin"
+                  :disabled="!isEditor || !hasTeam"
+                  @click="copySelectedSmdToTeam"
                 >
-                  Duplicate
+                  {{ selectedItem?.source === 'team' ? 'Duplicate' : 'Copy to Team' }}
                 </UButton>
                 <UButton
                   size="xs"
@@ -229,7 +230,10 @@
         </div>
       </div>
       <div class="flex-1 flex flex-col overflow-hidden">
-        <div class="h-72 shrink-0 border-b border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-950">
+        <div
+          v-if="!isEditableThtPackage"
+          class="h-72 shrink-0 border-b border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-950"
+        >
           <THTPackagePreview v-if="currentThtPkg" :package="currentThtPkg" />
           <div v-else class="h-full flex items-center justify-center text-sm text-neutral-400">Select or create a THT package</div>
         </div>
@@ -268,15 +272,15 @@
             </UTabs>
             <div class="flex justify-end gap-2">
               <UButton
-                v-if="selectedThtItem?.source === 'builtin'"
+                v-if="selectedThtItem && (selectedThtItem.source === 'builtin' || selectedThtItem.source === 'team')"
                 size="sm"
                 variant="outline"
                 color="neutral"
                 icon="i-lucide-copy"
                 :disabled="!isEditor || !hasTeam"
-                @click="copyBuiltinThtToTeam"
+                @click="copySelectedThtToTeam"
               >
-                Copy to Team
+                {{ selectedThtItem?.source === 'team' ? 'Duplicate' : 'Copy to Team' }}
               </UButton>
               <UButton
                 v-if="selectedThtItem?.source === 'team' && isAdmin"
@@ -462,8 +466,10 @@ async function saveChanges() {
   isDirty.value = false
 }
 
-// Duplicate built-in
-async function duplicateBuiltin() {
+// Copy selected SMD package into team library (builtin or team duplicate)
+async function copySelectedSmdToTeam() {
+  if (!isEditor.value || !hasTeam.value) return
+  if (!selectedItem.value || (selectedItem.value.source !== 'builtin' && selectedItem.value.source !== 'team')) return
   if (!currentPkg.value) return
   const clone: PackageDefinition = JSON.parse(JSON.stringify(currentPkg.value))
   clone.name = `${clone.name} (copy)`
@@ -598,6 +604,7 @@ const filteredThtItems = computed(() => {
 })
 const selectedThtItem = computed(() => thtItems.value.find((i) => i.key === selectedThtKey.value) ?? null)
 const currentThtPkg = computed(() => thtEditPkg.value ?? selectedThtItem.value?.pkg ?? null)
+const isEditableThtPackage = computed(() => selectedThtItem.value?.source === 'team')
 
 const thtEditorTabs = [
   { label: 'Editor', icon: 'i-lucide-pen-tool', slot: 'editor' },
@@ -641,8 +648,9 @@ async function deleteTeamTht() {
   thtEditPkg.value = null
 }
 
-async function copyBuiltinThtToTeam() {
-  if (!selectedThtItem.value || selectedThtItem.value.source !== 'builtin') return
+async function copySelectedThtToTeam() {
+  if (!isEditor.value || !hasTeam.value) return
+  if (!selectedThtItem.value || (selectedThtItem.value.source !== 'builtin' && selectedThtItem.value.source !== 'team')) return
   const clone = JSON.parse(JSON.stringify(selectedThtItem.value.pkg)) as THTPackageDefinition
   clone.name = `${clone.name} (copy)`
   const { data } = await addTeamThtPackage(clone)

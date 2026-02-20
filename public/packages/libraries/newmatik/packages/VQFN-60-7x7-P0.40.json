@@ -1,0 +1,73 @@
+{
+  "name": "VQFN-60-7x7-P0.40",
+  "aliases": [
+    "VQFN-60-1",
+    "VQFN-60-800"
+  ],
+  "body": {
+    "length": 7.0,
+    "width": 7.0
+  },
+  "type": "PT_GENERIC",
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "FLAT",
+        "numLeads": 15,
+        "distFromCenter": -3.34,
+        "ccHalf": 2.8,
+        "angleMilliDeg": 180000,
+        "padLength": 0.32,
+        "padWidth": 0.2
+      },
+      {
+        "shape": "FLAT",
+        "numLeads": 15,
+        "distFromCenter": 3.34,
+        "ccHalf": -2.8,
+        "angleMilliDeg": 0,
+        "padLength": 0.32,
+        "padWidth": 0.2
+      },
+      {
+        "shape": "FLAT",
+        "numLeads": 15,
+        "distFromCenter": 2.8,
+        "ccHalf": -3.34,
+        "angleMilliDeg": 90000,
+        "padLength": 0.32,
+        "padWidth": 0.2
+      },
+      {
+        "shape": "FLAT",
+        "numLeads": 15,
+        "distFromCenter": -2.8,
+        "ccHalf": 3.34,
+        "angleMilliDeg": 270000,
+        "padLength": 0.32,
+        "padWidth": 0.2
+      },
+      {
+        "shape": "FLAT",
+        "numLeads": 1,
+        "distFromCenter": 0,
+        "ccHalf": 0,
+        "angleMilliDeg": 0,
+        "padLength": 5.25,
+        "padWidth": 5.25
+      }
+    ]
+  },
+  "height": {
+    "nominal": 0.9,
+    "max": 0.9,
+    "min": 0.9
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/VQFN-60-7x7-P0.40.json",
+    "sourceFootprint": "VQFN-60-7x7-P0.40"
+  }
+}

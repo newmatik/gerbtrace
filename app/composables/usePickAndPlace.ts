@@ -39,6 +39,8 @@ export interface EditablePnPComponent extends PnPComponent {
   originalDesignator: string
   /** Original value before field overrides. */
   originalValue: string
+  /** Original description before field overrides. */
+  originalDescription: string
   /** Original X before field overrides. */
   originalX: number
   /** Original Y before field overrides. */
@@ -53,6 +55,7 @@ export interface EditablePnPComponent extends PnPComponent {
 export interface PnPFieldOverride {
   designator?: string
   value?: string
+  description?: string
   x?: number
   y?: number
 }
@@ -62,6 +65,7 @@ export interface ManualPnPComponent {
   id: string
   designator: string
   value: string
+  description?: string
   package: string
   x: number
   y: number
@@ -73,8 +77,16 @@ export interface ManualPnPComponent {
 
 interface PnPFileImportOptions {
   skipRows?: number
+  skipBottomRows?: number
   mapping?: PnPColumnMapping
   unitOverride?: 'auto' | PnPCoordUnit
+  fixedColumns?: readonly number[]
+  delimiter?: ',' | ';' | '\t' | 'fixed'
+  decimal?: '.' | ','
+}
+
+function normalizeImportKey(name: string): string {
+  return name.toLowerCase().replace(/\.[^.]+$/, '').replace(/[^a-z0-9]/g, '')
 }
 
 export type PnPRotationOverrides = Record<string, number>
@@ -173,14 +185,16 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
     const fo = fieldOverrides.value.get(key)
     const designator = fo?.designator ?? comp.designator
     const value = fo?.value ?? comp.value
+    const description = fo?.description ?? comp.description
     const x = fo?.x ?? comp.x
     const y = fo?.y ?? comp.y
-    const fieldsOverridden = fo != null && (fo.designator != null || fo.value != null || fo.x != null || fo.y != null)
+    const fieldsOverridden = fo != null && (fo.designator != null || fo.value != null || fo.description != null || fo.x != null || fo.y != null)
 
     return {
       ...comp,
       designator,
       value,
+      description,
       x,
       y,
       key,
@@ -197,6 +211,7 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
       manual: isManual,
       originalDesignator: comp.designator,
       originalValue: comp.value,
+      originalDescription: comp.description,
       originalX: comp.x,
       originalY: comp.y,
       fieldsOverridden,
@@ -205,7 +220,7 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
   }
 
   function parseLayer(layer: LayerInfo): PnPComponent[] {
-    const fileOpts = fileImportOptions.value[layer.file.fileName]
+    const fileOpts = resolveFileImportOptions(layer.file.fileName)
     const effectiveUnitOverride = fileOpts?.unitOverride && fileOpts.unitOverride !== 'auto'
       ? fileOpts.unitOverride
       : (coordUnitOverride.value === 'auto' ? undefined : coordUnitOverride.value)
@@ -216,7 +231,9 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
     const allComponents = parsePnPFile(layer.file.content, side, {
       unitOverride: effectiveUnitOverride,
       skipRows: fileOpts?.skipRows,
+      skipBottomRows: fileOpts?.skipBottomRows,
       mapping: fileOpts?.mapping,
+      fixedColumns: fileOpts?.fixedColumns,
     }, layer.file.fileName)
     // Combined layers return all components; single-side layers filter by side
     const isCombined = layer.type === 'PnP Top + Bot' || layer.type === 'PnP Top + Bot (THT)'
@@ -257,6 +274,26 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
   function setFileImportOptionsMap(optionsMap: Record<string, PnPFileImportOptions> | null | undefined) {
     fileImportOptions.value = optionsMap ? { ...optionsMap } : {}
     invalidateCache()
+  }
+
+  function resolveFileImportOptions(fileName: string): PnPFileImportOptions | undefined {
+    const map = fileImportOptions.value
+    const exact = map[fileName]
+    if (exact) return exact
+
+    const entries = Object.entries(map)
+    if (entries.length === 0) return undefined
+
+    const caseInsensitive = entries.find(([key]) => key.toLowerCase() === fileName.toLowerCase())
+    if (caseInsensitive) return caseInsensitive[1]
+
+    const target = normalizeImportKey(fileName)
+    const normalizedMatches = entries.filter(([key]) => normalizeImportKey(key) === target)
+    if (normalizedMatches.length === 1) return normalizedMatches[0]![1]
+
+    // Last-resort fallback: preserve user settings when one PnP file exists.
+    if (entries.length === 1) return entries[0]![1]
+    return undefined
   }
 
   // ── PnP layers ──
@@ -308,6 +345,7 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
       id: mc.id,
       designator: mc.designator,
       value: mc.value,
+      description: mc.description ?? '',
       package: mc.package,
       x: mc.x,
       y: mc.y,
@@ -432,6 +470,7 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
         [
           comp.designator,
           comp.value,
+          comp.description,
           comp.cadPackage,
           comp.matchedPackage,
           comp.note,
@@ -655,6 +694,7 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
     const clean: PnPFieldOverride = {}
     if (override.designator != null && override.designator !== '') clean.designator = override.designator
     if (override.value != null) clean.value = override.value
+    if (override.description != null) clean.description = override.description
     if (override.x != null && Number.isFinite(override.x)) clean.x = override.x
     if (override.y != null && Number.isFinite(override.y)) clean.y = override.y
     if (Object.keys(clean).length === 0) {
@@ -1009,6 +1049,7 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
     fileImportOptionsRecord,
     setFileImportOptions,
     setFileImportOptionsMap,
+    resolveFileImportOptions,
     // DNP
     toggleDnp,
     setDnpKeys,

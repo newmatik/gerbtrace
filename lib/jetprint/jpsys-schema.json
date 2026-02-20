@@ -1,0 +1,398 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gerbtrace.com/schemas/jpsys-program.schema.json",
+  "title": "MyCenter / JPSys Jetprint Program",
+  "description": "Mycronic JPSys JSON program format for MY600 jet printers. Coordinates in µm, rotations in millidegrees, volumes in nL.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "createTime", "lifeCycleStatus", "__modifiedTime", "lifeCycleStatusEditor",
+    "modifiedBy", "clampForce", "lowerLeftCornerY", "batchSize", "barcode",
+    "boardPosList", "batchSizeType", "lowerLeftCornerX", "id", "overlapwarning",
+    "name", "length", "heightZoneList", "normalizedUcName", "comment",
+    "__modifiedCount", "conveyorWidth"
+  ],
+  "properties": {
+    "createTime": { "type": "number", "description": "Creation timestamp (epoch ms)" },
+    "lifeCycleStatus": { "type": "string", "enum": ["PRELIMINARY", "RELEASED", "DISCONTINUED"] },
+    "__modifiedTime": { "type": "number", "description": "Last modification timestamp (epoch ms)" },
+    "lifeCycleStatusEditor": { "type": ["null", "string"] },
+    "modifiedBy": { "type": "string" },
+    "clampForce": { "type": "string", "enum": ["NORMAL", "LOW", "HIGH"], "description": "Conveyor clamp force for the board" },
+    "lowerLeftCornerY": { "type": "number", "description": "Machine-coordinate Y origin (µm)" },
+    "batchSize": { "type": "number" },
+    "barcode": { "type": ["null", "string"] },
+    "boardPosList": { "type": "array", "items": { "$ref": "#/$defs/boardPos" } },
+    "batchSizeType": { "type": "string", "enum": ["LAYOUTS"] },
+    "lowerLeftCornerX": { "type": "number", "description": "Machine-coordinate X origin (µm)" },
+    "id": { "type": "number" },
+    "overlapwarning": { "type": "boolean" },
+    "name": { "type": "string" },
+    "length": { "type": "number", "description": "Board length along conveyor (µm)" },
+    "heightZoneList": { "type": "array" },
+    "normalizedUcName": { "type": "string", "description": "Upper-case normalized name" },
+    "comment": { "type": "string" },
+    "__modifiedCount": { "type": "number" },
+    "conveyorWidth": { "type": "number", "description": "Conveyor rail width (µm)" }
+  },
+  "$defs": {
+    "fiducialFull": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "searchContrast", "__modifiedTime", "ambientRed", "taught", "type",
+        "id", "illuminationType", "ambientBlue", "searchMethod", "frontLight",
+        "searchAreaWidth", "color", "name", "searchAreaLength", "comment",
+        "__modifiedCount"
+      ],
+      "properties": {
+        "searchContrast": { "type": ["null", "number"] },
+        "__modifiedTime": { "type": "number" },
+        "ambientRed": { "type": ["null", "number"] },
+        "taught": { "type": ["null", "boolean"] },
+        "type": { "type": "string", "enum": ["CIRCULAR", "RECTANGULAR"] },
+        "id": { "type": "number" },
+        "phs_nom_dia": { "type": "number", "description": "Nominal fiducial diameter (µm) – CIRCULAR only" },
+        "phs_min_dia": { "type": "number", "description": "Minimum fiducial diameter (µm) – CIRCULAR only" },
+        "phs_max_dia": { "type": "number", "description": "Maximum fiducial diameter (µm) – CIRCULAR only" },
+        "phs_nom_width": { "type": "number", "description": "Nominal width (µm) – RECTANGULAR only" },
+        "phs_min_width": { "type": "number", "description": "Minimum width (µm) – RECTANGULAR only" },
+        "phs_max_width": { "type": "number", "description": "Maximum width (µm) – RECTANGULAR only" },
+        "phs_nom_length": { "type": "number", "description": "Nominal length (µm) – RECTANGULAR only" },
+        "phs_min_length": { "type": "number", "description": "Minimum length (µm) – RECTANGULAR only" },
+        "phs_max_length": { "type": "number", "description": "Maximum length (µm) – RECTANGULAR only" },
+        "illuminationType": { "type": ["null", "string"] },
+        "ambientBlue": { "type": ["null", "number"] },
+        "searchMethod": { "type": ["null", "string"] },
+        "frontLight": { "type": ["null", "number"] },
+        "searchAreaWidth": { "type": "number", "description": "Vision search area width (µm)" },
+        "color": { "type": "string", "enum": ["BRIGHT", "DARK"] },
+        "name": { "type": "string" },
+        "searchAreaLength": { "type": "number", "description": "Vision search area length (µm)" },
+        "normalizedUcName": { "type": "string" },
+        "comment": { "type": "string" },
+        "__modifiedCount": { "type": "number" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "CIRCULAR" } } },
+          "then": { "required": ["phs_nom_dia", "phs_min_dia", "phs_max_dia"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "RECTANGULAR" } } },
+          "then": { "required": ["phs_nom_width", "phs_min_width", "phs_max_width", "phs_nom_length", "phs_min_length", "phs_max_length"] }
+        }
+      ]
+    },
+    "fiducialRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "#ref", "type", "normalizedUcName"],
+      "properties": {
+        "id": { "type": "number" },
+        "#ref": { "const": true },
+        "type": { "type": "string", "enum": ["CIRCULAR", "RECTANGULAR"] },
+        "normalizedUcName": { "type": "string" }
+      }
+    },
+    "fiducial": {
+      "oneOf": [
+        { "$ref": "#/$defs/fiducialRef" },
+        { "$ref": "#/$defs/fiducialFull" }
+      ]
+    },
+    "segmentOrder": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "One segment of the optimized jetting path.",
+      "required": [
+        "id", "arcSegmentRadius", "diameter", "vy", "vx",
+        "orderNumber", "pcb", "dotPeriod", "dotCount", "z", "y", "x"
+      ],
+      "properties": {
+        "id": { "type": "number" },
+        "arcSegmentRadius": { "type": ["null", "number"], "description": "Arc radius (µm), null for straight segments" },
+        "diameter": { "type": "number", "description": "Dot diameter (µm)" },
+        "vy": { "type": "number", "description": "Velocity Y (m/s)" },
+        "vx": { "type": "number", "description": "Velocity X (m/s)" },
+        "orderNumber": { "type": "number", "description": "Execution sequence index (ascending)" },
+        "pcb": { "type": "number", "description": "Reference to parent PCB.id" },
+        "dotPeriod": { "type": "number", "description": "Time between dots (seconds)" },
+        "dotCount": { "type": "number", "description": "Number of dots in this segment. Has a minimum based on segment length and diameter." },
+        "z": { "type": "number", "description": "Segment Z height (µm). The Z-servo interpolates from height measurement points for each strip." },
+        "y": { "type": "number", "description": "Segment start Y (µm)" },
+        "x": { "type": "number", "description": "Segment start X (µm)" }
+      }
+    },
+    "pad": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "A copper pad footprint, position relative to component center.",
+      "required": ["jetComponent", "id", "sizeY", "rotation", "sizeX", "shape", "padId", "y", "x"],
+      "properties": {
+        "jetComponent": { "type": "number", "description": "Reference to parent JetComponent.id" },
+        "id": { "type": "number" },
+        "sizeY": { "type": "number", "description": "Pad height (µm)" },
+        "rotation": { "type": "number", "description": "Pad rotation (millidegrees)" },
+        "sizeX": { "type": "number", "description": "Pad width (µm)" },
+        "shape": { "type": "number", "enum": [1, 2], "description": "1=circular, 2=rectangular" },
+        "padId": { "type": "number" },
+        "y": { "type": "number", "description": "Pad center Y relative to component (µm)" },
+        "x": { "type": "number", "description": "Pad center X relative to component (µm)" }
+      }
+    },
+    "deposit": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "A solder-paste deposit with volume and geometry.",
+      "required": [
+        "selectedForInspection", "id", "jetComponent", "sizeY", "maxVolume",
+        "rotation", "nominalVolume", "sizeX", "minVolume", "depositId",
+        "shape", "padId", "z", "y", "x"
+      ],
+      "properties": {
+        "selectedForInspection": { "type": "boolean" },
+        "id": { "type": "number" },
+        "jetComponent": { "type": "number", "description": "Reference to parent JetComponent.id" },
+        "sizeY": { "type": "number", "description": "Deposit height (µm)" },
+        "maxVolume": { "type": "number", "description": "Maximum volume (nL)" },
+        "rotation": { "type": "number", "description": "Deposit rotation (millidegrees)" },
+        "nominalVolume": { "type": "number", "description": "Target volume (nL)" },
+        "sizeX": { "type": "number", "description": "Deposit width (µm)" },
+        "minVolume": { "type": "number", "description": "Minimum volume (nL)" },
+        "depositId": { "type": "number" },
+        "shape": { "type": "number", "enum": [1, 2], "description": "1=circular, 2=rectangular" },
+        "padId": { "type": "number", "description": "Corresponding pad identifier" },
+        "z": { "type": "number", "description": "Deposit Z height (µm)" },
+        "y": { "type": "number", "description": "Deposit center Y relative to component (µm)" },
+        "x": { "type": "number", "description": "Deposit center X relative to component (µm)" }
+      }
+    },
+    "jetComponent": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "A component placement with deposits and pads.",
+      "required": [
+        "id", "componentNumber", "shapeName", "rotation",
+        "depositsList", "name", "pcb", "padsList", "y", "x"
+      ],
+      "properties": {
+        "id": { "type": "number" },
+        "componentNumber": { "type": "number" },
+        "shapeName": { "type": "string", "description": "Package name, e.g. '0402', 'QFN48'" },
+        "rotation": { "type": "number", "description": "Component rotation (millidegrees)" },
+        "depositsList": { "type": "array", "items": { "$ref": "#/$defs/deposit" } },
+        "name": { "type": "string", "description": "Reference designator, e.g. 'R1', 'U3'" },
+        "pcb": { "type": "number", "description": "Reference to parent PCB.id" },
+        "padsList": { "type": "array", "items": { "$ref": "#/$defs/pad" } },
+        "y": { "type": "number", "description": "Component center Y in PCB coords (µm)" },
+        "x": { "type": "number", "description": "Component center X in PCB coords (µm)" }
+      }
+    },
+    "pcbFull": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Full PCB definition with components, deposits, and jetting path.",
+      "required": [
+        "fiducial_1_x", "badmark_x", "fiducial_1_y", "barCodeAmbientBlue",
+        "__modifiedTime", "executionTime", "lifeCycleStatusEditor", "badmark_y",
+        "barCodeSize", "fiducial_3_x", "fiducial_3_y", "barCodeAmbientRed",
+        "maxObstacleHeight", "fiducial_2_y", "fiducial_2_x", "maxAngleError",
+        "totalVolume", "id", "name", "maxRelScaleError", "mediaCategory",
+        "cassetteModelId", "jetComponentsList", "dotCount", "lifeCycleStatus",
+        "segmentOrdersList", "inspectionThreshold", "mountPosList",
+        "barCodeElementsPerLine", "barcodePos_x", "barcodePos_y",
+        "fiducial_1", "fiducial_2", "barCodeFrontLight", "fiducial_3",
+        "effectiveTime", "normalizedUcName", "comment", "media", "__modifiedCount"
+      ],
+      "properties": {
+        "fiducial_1_x": { "type": "number", "description": "Fiducial 1 X (µm)" },
+        "badmark_x": { "type": ["null", "number"] },
+        "fiducial_1_y": { "type": "number", "description": "Fiducial 1 Y (µm)" },
+        "barCodeAmbientBlue": { "type": ["null", "number"] },
+        "__modifiedTime": { "type": "number" },
+        "executionTime": { "type": "number", "description": "Estimated execution time (seconds)" },
+        "lifeCycleStatusEditor": { "type": ["null", "string"] },
+        "badmark_y": { "type": ["null", "number"] },
+        "barCodeSize": { "type": ["null", "number"] },
+        "fiducial_3_x": { "type": ["null", "number"], "description": "Fiducial 3 X (µm), null for 2-point alignment" },
+        "fiducial_3_y": { "type": ["null", "number"], "description": "Fiducial 3 Y (µm), null for 2-point alignment" },
+        "barCodeAmbientRed": { "type": ["null", "number"] },
+        "maxObstacleHeight": { "type": "number", "description": "Max obstacle height (µm)" },
+        "fiducial_2_y": { "type": "number", "description": "Fiducial 2 Y (µm)" },
+        "fiducial_2_x": { "type": "number", "description": "Fiducial 2 X (µm)" },
+        "maxAngleError": { "type": "number", "description": "Max angle error (millidegrees)" },
+        "totalVolume": { "type": "number", "description": "Total paste volume for this PCB (nL)" },
+        "id": { "type": "number" },
+        "name": { "type": "string" },
+        "maxRelScaleError": { "type": "number" },
+        "mediaCategory": { "type": "string", "description": "e.g. 'Paste, LeadFree'" },
+        "cassetteModelId": { "type": "number", "description": "2130714632=AG04, 2130808852=AR02" },
+        "jetComponentsList": { "type": "array", "items": { "$ref": "#/$defs/jetComponent" } },
+        "dotCount": { "type": "number", "description": "Total dots across all segments" },
+        "lifeCycleStatus": { "type": "string", "enum": ["PRELIMINARY", "RELEASED", "DISCONTINUED"] },
+        "segmentOrdersList": { "type": "array", "items": { "$ref": "#/$defs/segmentOrder" } },
+        "inspectionThreshold": { "type": "number", "description": "Inspection threshold (%)" },
+        "mountPosList": { "type": "array" },
+        "barCodeElementsPerLine": { "type": ["null", "number"] },
+        "barcodePos_x": { "type": ["null", "number"] },
+        "barcodePos_y": { "type": ["null", "number"] },
+        "fiducial_1": { "$ref": "#/$defs/fiducial" },
+        "fiducial_2": { "$ref": "#/$defs/fiducial" },
+        "barCodeFrontLight": { "type": ["null", "number"] },
+        "fiducial_3": {
+          "oneOf": [
+            { "$ref": "#/$defs/fiducialFull" },
+            { "$ref": "#/$defs/fiducialRef" },
+            { "type": "null" }
+          ]
+        },
+        "effectiveTime": { "type": "number", "description": "Actual execution time (seconds)" },
+        "normalizedUcName": { "type": "string" },
+        "comment": { "type": "string" },
+        "media": { "type": "string", "description": "Paste media, e.g. 'MY600 Senju M705-LFAC19'" },
+        "__modifiedCount": { "type": "number" }
+      }
+    },
+    "pcbRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Back-reference to a previously defined PCB.",
+      "required": ["id", "#ref", "normalizedUcName"],
+      "properties": {
+        "id": { "type": "number" },
+        "#ref": { "const": true },
+        "normalizedUcName": { "type": "string" }
+      }
+    },
+    "pcb": {
+      "oneOf": [
+        { "$ref": "#/$defs/pcbFull" },
+        { "$ref": "#/$defs/pcbRef" }
+      ]
+    },
+    "panelPcbPos": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Placement of a PCB within a panel with fiducial mapping.",
+      "required": [
+        "panel", "id", "location", "name", "normalizedUcLocation",
+        "pcb", "y1", "y2", "y3", "x2", "x3", "x1"
+      ],
+      "properties": {
+        "panel": { "type": "number", "description": "Reference to parent Panel.id" },
+        "id": { "type": "number" },
+        "location": { "type": "string" },
+        "name": { "type": "string" },
+        "normalizedUcLocation": { "type": "string" },
+        "pcb": { "$ref": "#/$defs/pcb" },
+        "y1": { "type": "number", "description": "Fiducial 1 Y in panel coords (µm)" },
+        "y2": { "type": "number", "description": "Fiducial 2 Y in panel coords (µm)" },
+        "y3": { "type": "number", "description": "Fiducial 3 Y in panel coords (µm)" },
+        "x2": { "type": "number", "description": "Fiducial 2 X in panel coords (µm)" },
+        "x3": { "type": "number", "description": "Fiducial 3 X in panel coords (µm)" },
+        "x1": { "type": "number", "description": "Fiducial 1 X in panel coords (µm)" }
+      }
+    },
+    "panel": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Panel containing one or more PCB placements.",
+      "required": [
+        "fiducial_1_x", "badmark_x", "fiducial_1_y", "barCodeAmbientBlue",
+        "__modifiedTime", "lifeCycleStatusEditor", "badmark_y", "barCodeSize",
+        "fiducial_3_x", "fiducial_3_y", "barCodeAmbientRed", "fiducial_2_y",
+        "bbt_type", "fiducial_2_x", "maxAngleError", "id", "bbt_contrastOk",
+        "name", "maxRelScaleError", "bbt_size_x", "panelPcbPosList",
+        "lifeCycleStatus", "bbt_size_y", "bbt_useMarkOnPanel",
+        "barCodeElementsPerLine", "trimAllPcbs", "bbt_contrastLevel",
+        "barcodePos_x", "barcodePos_y", "fiducial_1", "fiducial_2",
+        "barCodeFrontLight", "fiducial_3", "normalizedUcName", "comment",
+        "__modifiedCount"
+      ],
+      "properties": {
+        "fiducial_1_x": { "type": "number" },
+        "badmark_x": { "type": ["null", "number"] },
+        "fiducial_1_y": { "type": "number" },
+        "barCodeAmbientBlue": { "type": ["null", "number"] },
+        "__modifiedTime": { "type": "number" },
+        "lifeCycleStatusEditor": { "type": ["null", "string"] },
+        "badmark_y": { "type": ["null", "number"] },
+        "barCodeSize": { "type": ["null", "number"] },
+        "fiducial_3_x": { "type": ["null", "number"] },
+        "fiducial_3_y": { "type": ["null", "number"] },
+        "barCodeAmbientRed": { "type": ["null", "number"] },
+        "fiducial_2_y": { "type": "number" },
+        "bbt_type": { "type": ["null", "string"] },
+        "fiducial_2_x": { "type": "number" },
+        "maxAngleError": { "type": "number" },
+        "id": { "type": "number" },
+        "bbt_contrastOk": { "type": ["null", "number", "boolean"] },
+        "name": { "type": "string" },
+        "maxRelScaleError": { "type": "number" },
+        "bbt_size_x": { "type": ["null", "number"] },
+        "panelPcbPosList": { "type": "array", "items": { "$ref": "#/$defs/panelPcbPos" } },
+        "lifeCycleStatus": { "type": "string", "enum": ["PRELIMINARY", "RELEASED", "DISCONTINUED"] },
+        "bbt_size_y": { "type": ["null", "number"] },
+        "bbt_useMarkOnPanel": { "type": ["null", "boolean"] },
+        "barCodeElementsPerLine": { "type": ["null", "number"] },
+        "trimAllPcbs": { "type": "boolean" },
+        "bbt_contrastLevel": { "type": ["null", "number"] },
+        "barcodePos_x": { "type": ["null", "number"] },
+        "barcodePos_y": { "type": ["null", "number"] },
+        "fiducial_1": { "$ref": "#/$defs/fiducial" },
+        "fiducial_2": { "$ref": "#/$defs/fiducial" },
+        "barCodeFrontLight": { "type": ["null", "number"] },
+        "fiducial_3": {
+          "oneOf": [
+            { "$ref": "#/$defs/fiducialFull" },
+            { "$ref": "#/$defs/fiducialRef" },
+            { "type": "null" }
+          ]
+        },
+        "normalizedUcName": { "type": "string" },
+        "comment": { "type": "string" },
+        "__modifiedCount": { "type": "number" }
+      }
+    },
+    "boardPosTrimPoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Trim alignment data for a board position.",
+      "required": ["id", "boardposition", "y1", "y2", "y3", "x2", "machine", "x3", "x1"],
+      "properties": {
+        "id": { "type": "number" },
+        "boardposition": { "type": "number" },
+        "y1": { "type": "number" },
+        "y2": { "type": "number" },
+        "y3": { "type": ["null", "number"] },
+        "x2": { "type": "number" },
+        "machine": { "type": "number" },
+        "x3": { "type": ["null", "number"] },
+        "x1": { "type": "number" }
+      }
+    },
+    "boardPos": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "A board placement within the layout.",
+      "required": [
+        "panel", "id", "heightZoneMeasurementPointList",
+        "boardPosTrimPointsList", "location", "normalizedUcLocation",
+        "layout", "pcb", "heightZonePointList", "isPcb"
+      ],
+      "properties": {
+        "panel": { "$ref": "#/$defs/panel" },
+        "id": { "type": "number" },
+        "heightZoneMeasurementPointList": { "type": "array" },
+        "boardPosTrimPointsList": { "type": "array", "items": { "$ref": "#/$defs/boardPosTrimPoint" } },
+        "location": { "type": "string" },
+        "normalizedUcLocation": { "type": "string" },
+        "layout": { "type": "number", "description": "Reference to parent Layout.id" },
+        "pcb": { "type": ["null", "object"] },
+        "heightZonePointList": { "type": "array" },
+        "isPcb": { "type": "boolean" }
+      }
+    }
+  }
+}

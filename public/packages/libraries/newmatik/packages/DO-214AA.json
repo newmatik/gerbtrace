@@ -1,19 +1,36 @@
 {
-  "name": "SMB",
-  "type": "PT_TWO_POLE",
-  "body": {
-    "length": 5.9,
-    "width": 3.2
-  },
-  "chip": {
-    "chipLength": 5.9,
-    "leadWidth": 3.2,
-    "leadLength": 0.7
-  },
+  "name": "DO-214AA",
+  "type": "PT_GENERIC",
   "aliases": [
-    "DO-214AA",
-    "DO214AA"
+    "DO214AA",
+    "SMB"
   ],
+  "body": {
+    "length": 3.2,
+    "width": 5.9
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "J_LEAD",
+        "numLeads": 1,
+        "distFromCenter": -2.6,
+        "ccHalf": 0,
+        "angleMilliDeg": 180000,
+        "padLength": 1.14,
+        "padWidth": 2.01
+      },
+      {
+        "shape": "J_LEAD",
+        "numLeads": 1,
+        "distFromCenter": 2.6,
+        "ccHalf": 0,
+        "angleMilliDeg": 0,
+        "padLength": 1.14,
+        "padWidth": 2.01
+      }
+    ]
+  },
   "height": {
     "nominal": 2.35,
     "max": 2.467,
@@ -89,7 +106,7 @@
     "owner": "newmatik",
     "sourceLibrary": "newmatik",
     "sourceType": "TPSys",
-    "sourceFile": "public/packages/SMB.json",
-    "sourceFootprint": "SMB"
+    "sourceFile": "public/packages/DO-214AA.json",
+    "sourceFootprint": "DO-214AA"
   }
 }

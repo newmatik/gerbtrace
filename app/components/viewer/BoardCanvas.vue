@@ -25,6 +25,11 @@ import { renderToCanvas, renderOutlineMask, computeAutoFitTransform, renderGraph
 import { renderRealisticView } from '@lib/renderer/realistic-renderer'
 import type { RealisticLayers } from '@lib/renderer/realistic-renderer'
 import { generateJetprintDots } from '@lib/renderer/jetprint-dots'
+import { renderJetPath } from '@lib/jetprint/path-renderer'
+import { extractPastePads } from '@lib/jetprint/paste-extractor'
+import { groupPadsIntoComponents, buildJetComponents } from '@lib/jetprint/component-builder'
+import { planPath } from '@lib/jetprint/path-planner'
+import { JPSYS_EXPORT_DEFAULTS } from '@lib/jetprint/jpsys-types'
 import type { PasteSettings } from '~/composables/usePasteSettings'
 import { mergeBounds, emptyBounds, isEmpty } from '@lib/gerber/bounding-box'
 import type { EditablePnPComponent } from '~/composables/usePickAndPlace'
@@ -152,6 +157,10 @@ function computeSceneCacheKey(): string {
   if (props.viewMode === 'realistic') {
     const al = props.allLayers ?? props.layers
     for (const l of al) parts.push(l.file.fileName, l.color)
+  }
+  const ps = props.pasteSettings
+  if (ps) {
+    parts.push(ps.mode, String(ps.dotDiameter), String(ps.dotSpacing), ps.pattern, ps.dynamicDots ? 'D' : '')
   }
   return parts.join('|')
 }
@@ -1419,6 +1428,88 @@ function drawAlignOverlay(
 const DELETE_HIGHLIGHT_COLOR = '#ffffff'
 const DELETE_HIGHLIGHT_ALPHA = 0.55
 
+let jetPathSegmentCache: { key: string; segments: import('@lib/jetprint/jpsys-types').SegmentOrder[] } | null = null
+
+/**
+ * Draw the simulated jetting path as a screen-space overlay.
+ * Called INSIDE the board-rotation context.  Converts segment µm
+ * coordinates to CSS screen pixels using the same formula as
+ * getProjectedPnPComponents: screenX = offsetX + gerberX * scale,
+ * screenY = offsetY - gerberY * scale.
+ */
+function drawJetPathOverlay(
+  ctx: CanvasRenderingContext2D,
+  cssWidth: number,
+  _cssHeight: number,
+  dpr: number,
+  transform: { offsetX: number; offsetY: number; scale: number },
+  mirrored: boolean,
+) {
+  const pasteLayer = props.allLayers?.find(
+    (l: any) => l.type === 'Top Paste' || l.type === 'Bottom Paste',
+  )
+  if (!pasteLayer) return
+  const pasteTree = getImageTree(pasteLayer) as import('@lib/gerber/types').ImageTree | null
+  if (!pasteTree || pasteTree.children.length === 0) return
+
+  const cacheKey = `${pasteTree.children.length}-${pasteTree.units}`
+  if (!jetPathSegmentCache || jetPathSegmentCache.key !== cacheKey) {
+    const pads = extractPastePads(pasteTree)
+    if (pads.length === 0) return
+    const groups = groupPadsIntoComponents(pads)
+    const pcbId = 1
+    const { components } = buildJetComponents(groups, pcbId, JPSYS_EXPORT_DEFAULTS, 100)
+    const { segments } = planPath(components, pcbId, 'AG04', 10000)
+    jetPathSegmentCache = { key: cacheKey, segments }
+  }
+
+  const segments = jetPathSegmentCache.segments
+  if (segments.length === 0) return
+
+  const umPerUnit = pasteTree.units === 'in' ? 25400 : 1000
+
+  function toScreen(umX: number, umY: number): [number, number] {
+    const gx = umX / umPerUnit
+    const gy = umY / umPerUnit
+    let sx = transform.offsetX + gx * transform.scale
+    const sy = transform.offsetY - gy * transform.scale
+    if (mirrored) sx = cssWidth - sx
+    return [sx, sy]
+  }
+
+  ctx.save()
+  if (dpr !== 1) ctx.scale(dpr, dpr)
+
+  const sorted = [...segments].sort((a, b) => a.orderNumber - b.orderNumber)
+
+  // Draw the entire path as one continuous polyline (travel + jetting)
+  // so the oscillating serpentine pattern is clearly visible.
+  ctx.beginPath()
+  ctx.strokeStyle = '#a855f7'
+  ctx.lineWidth = 1.5
+  ctx.lineJoin = 'round'
+  ctx.lineCap = 'round'
+
+  let isFirst = true
+  for (const seg of sorted) {
+    const [sx, sy] = toScreen(seg.x, seg.y)
+    const endUmX = seg.x + seg.vx * seg.dotPeriod * 1e6 * (seg.dotCount - 1)
+    const endUmY = seg.y + seg.vy * seg.dotPeriod * 1e6 * (seg.dotCount - 1)
+    const [ex, ey] = toScreen(endUmX, endUmY)
+
+    if (isFirst) {
+      ctx.moveTo(sx, sy)
+    } else {
+      ctx.lineTo(sx, sy)
+    }
+    ctx.lineTo(ex, ey)
+    isFirst = false
+  }
+  ctx.stroke()
+
+  ctx.restore()
+}
+
 /**
  * Draw a translucent white overlay on graphics that are pending deletion.
  * This gives the user a clear visual indicator of which objects are selected
@@ -1490,9 +1581,23 @@ function draw() {
   const layerTrees: { layer: LayerInfo; tree: ImageTree }[] = []
   let unifiedBounds: BoundingBox = emptyBounds()
 
+  const pasteLayerTypes = ['Top Paste', 'Bottom Paste']
+  const jetprintPs = props.pasteSettings
+  const jetprintActive = jetprintPs && jetprintPs.mode === 'jetprint'
+
   for (const layer of boundsSource) {
-    const tree = getImageTree(layer)
+    let tree = getImageTree(layer)
     if (!tree || tree.children.length === 0) continue
+
+    if (jetprintActive && pasteLayerTypes.includes(layer.type)) {
+      tree = generateJetprintDots(tree, {
+        dotDiameter: jetprintPs.dotDiameter,
+        dotSpacing: jetprintPs.dotSpacing,
+        pattern: jetprintPs.pattern,
+        dynamicDots: jetprintPs.dynamicDots,
+      })
+    }
+
     layerTrees.push({ layer, tree })
     unifiedBounds = mergeBounds(unifiedBounds, tree.bounds as BoundingBox)
   }
@@ -1588,9 +1693,11 @@ function draw() {
     })
   }
 
-  // ── Overscan: render 10 % extra on each side so panning doesn't
-  //    immediately expose bare background at the edges. ──
-  const OVERSCAN = 0.10
+  // ── Overscan: render extra on each side so panning doesn't immediately
+  //    expose bare background at the edges.
+  // Rotated scenes are more prone to edge exposure during interaction, so
+  // they need a larger overscan window.
+  const OVERSCAN = rotDeg === 0 ? 0.10 : 0.30
   const overscanW = Math.ceil(canvas.width * (1 + 2 * OVERSCAN))
   const overscanH = Math.ceil(canvas.height * (1 + 2 * OVERSCAN))
   const marginCssX = cssWidth * OVERSCAN
@@ -1618,7 +1725,11 @@ function draw() {
 
   // ── Layer composite with caching ──
   const cacheKey = computeSceneCacheKey()
+  // Reprojecting an interaction-time cache is fast, but with board rotation it
+  // can produce visible edge popping/flicker while zooming and panning.
+  // Prefer correctness over speed for rotated views.
   const canUseCache = isInteracting.value
+    && rotDeg === 0
     && sceneCache
     && sceneCache.key === cacheKey
     && sceneCache.width === canvas.width
@@ -1729,6 +1840,12 @@ function draw() {
       key: cacheKey,
     }
     boardPerf.sceneCacheBuilds++
+  }
+
+  // Jet path overlay (when enabled in paste settings)
+  const ps = props.pasteSettings
+  if (ps?.mode === 'jetprint' && ps.showJetPath) {
+    drawJetPathOverlay(ctx, cssWidth, cssHeight, dpr, transform, !!props.mirrored)
   }
 
   // Highlight selected objects (delete tool pending selection)

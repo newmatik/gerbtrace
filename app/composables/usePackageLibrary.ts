@@ -195,10 +195,9 @@ export function usePackageLibrary() {
         packageCount: l.packageCount ?? (Array.isArray(l.packages) ? l.packages.length : 0),
       }))
 
-      const defaultSelection = libraries.value.some((l) => l.id === 'newmatik')
-        ? ['newmatik']
-        : libraries.value.slice(0, 1).map((l) => l.id)
-      await setSelectedLibraries(defaultSelection)
+      // Keep SMD behavior aligned with THT: empty selection means "all libraries".
+      // This ensures package selectors can pick from any available SMD package.
+      await setSelectedLibraries([])
       loaded.value = true
     } catch (err) {
       console.warn('[PackageLibrary] Failed to load package manifest', err)

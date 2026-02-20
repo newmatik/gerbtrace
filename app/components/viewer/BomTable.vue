@@ -26,6 +26,16 @@
     <!-- Filter chips + sort -->
     <div class="flex items-center gap-1.5 px-3 pb-1.5 flex-wrap">
       <button
+        class="text-[10px] px-1.5 py-0.5 rounded-full border transition-colors flex items-center gap-0.5"
+        :class="hideDnp
+          ? 'border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20'
+          : 'border-neutral-200 dark:border-neutral-700 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200'"
+        @click="hideDnp = !hideDnp"
+      >
+        Hide DNP
+        <span class="tabular-nums opacity-60">{{ dnpCount }}</span>
+      </button>
+      <button
         v-for="f in filterDefs"
         :key="f.key"
         class="text-[10px] px-1.5 py-0.5 rounded-full border transition-colors flex items-center gap-0.5"
@@ -330,6 +340,7 @@ const searchQuery = computed({
 
 type FilterKey = 'smd' | 'tht' | 'dnp' | 'cp' | 'no-mfr' | 'no-price' | 'missing-pnp'
 const activeFilters = ref(new Set<FilterKey>())
+const hideDnp = ref(true)
 const sortBy = ref<'designator' | 'price'>('designator')
 
 function toggleFilter(key: FilterKey) {
@@ -407,10 +418,7 @@ function manufacturerKey(m: { manufacturer: string; manufacturerPart: string }):
   return `${String(m.manufacturer ?? '').trim().toLowerCase()}|${String(m.manufacturerPart ?? '').trim().toLowerCase()}`
 }
 
-const customerBaselineByLineId = shallowRef(new Map<string, BomLine | null>())
-
-watchEffect(() => {
-  // Ensure baseline mapping exists and remains stable per line.id once assigned.
+const customerBaselineByLineId = computed(() => {
   const byId = new Map(props.customerBomLines.map(l => [l.id, l]))
   const byRefs = new Map<string, BomLine>()
   for (const l of props.customerBomLines) {
@@ -418,9 +426,8 @@ watchEffect(() => {
     if (key && !byRefs.has(key)) byRefs.set(key, l)
   }
 
-  const map = customerBaselineByLineId.value
+  const map = new Map<string, BomLine | null>()
   for (const line of props.bomLines) {
-    if (map.has(line.id)) continue
     const direct = byId.get(line.id)
     if (direct) {
       map.set(line.id, direct)
@@ -429,18 +436,23 @@ watchEffect(() => {
     const rk = refsKey(line.references)
     map.set(line.id, rk ? (byRefs.get(rk) ?? null) : null)
   }
+  return map
 })
 
 function isLineChanged(line: BomLine): boolean {
   const base = customerBaselineByLineId.value.get(line.id)
   if (!base) return true
 
+  // When the source BOM has no type column the parser defaults to 'Other'.
+  // Changing from that default is enrichment, not a user edit.
+  const typeMatches = base.type === 'Other' || line.type === base.type
+
   const fieldsEqual =
     String(line.description ?? '').trim() === String(base.description ?? '').trim()
     && String(line.comment ?? '').trim() === String(base.comment ?? '').trim()
     && String(line.package ?? '').trim() === String(base.package ?? '').trim()
     && refsKey(line.references) === refsKey(base.references)
-    && line.type === base.type
+    && typeMatches
     && line.quantity === base.quantity
     && !!line.dnp === !!base.dnp
     && !!line.customerProvided === !!base.customerProvided
@@ -612,9 +624,14 @@ const filterDefs = computed(() => {
   ]
 })
 
+const dnpCount = computed(() => props.filteredLines.filter(l => l.dnp).length)
+
 const displayLines = computed(() => {
   let lines = props.filteredLines
   const filters = activeFilters.value
+  if (hideDnp.value && !filters.has('dnp')) {
+    lines = lines.filter(line => !line.dnp)
+  }
   if (filters.size > 0) {
     lines = lines.filter(line => {
       if (filters.has('smd') && line.type === 'SMD') return true

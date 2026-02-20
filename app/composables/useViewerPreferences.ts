@@ -62,6 +62,7 @@ function loadPasteSettings(raw: unknown): PasteSettings {
     pattern: VALID_DOT_PATTERNS.includes(p.pattern as DotPattern) ? p.pattern as DotPattern : PASTE_DEFAULTS.pattern,
     highlightDots: typeof p.highlightDots === 'boolean' ? p.highlightDots : PASTE_DEFAULTS.highlightDots,
     dynamicDots: typeof p.dynamicDots === 'boolean' ? p.dynamicDots : PASTE_DEFAULTS.dynamicDots,
+    showJetPath: typeof p.showJetPath === 'boolean' ? p.showJetPath : PASTE_DEFAULTS.showJetPath,
   }
 }
 

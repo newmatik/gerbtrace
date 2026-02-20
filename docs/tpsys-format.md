@@ -111,7 +111,7 @@ Defines the structural classification. See [Package Type Details](#package-type-
 
 | Type | Count¹ | Description |
 |------|--------|-------------|
-| `PT_TWO_POLE` | 1230 | Two-terminal passives (chip resistors/caps, diodes) |
+| `PT_TWO_POLE` | 1230 | Two-terminal chip-style passives (resistors/caps and chip-style diodes) |
 | `PT_GENERIC` | 1040 | Generic packages (no specific lead model) |
 | `PT_TWO_SYM` | 1029 | Two symmetric lead groups (SOIC, SSOP, etc.) |
 | `PT_FOUR_SYM` | 221 | Four symmetric lead groups (QFP, QFN, etc.) |
@@ -451,7 +451,7 @@ which follows CCW pin numbering.*
 | `CHIP` | Chip resistors, capacitors | Flat rectangular terminations |
 | `FLAT` | Flat-lead or J-lead passives | Flat contact pads |
 | `GULLWING` | SOT, SOIC, QFP | Gullwing (outward-bent) leads |
-| `J_LEAD` | PLCC, SOJ | J-shaped (under-body) leads |
+| `J_LEAD` | PLCC, SOJ, molded diode packages | J-shaped (under-body) leads |
 | `BGAB` | BGA | Solder ball (Ball Grid Array) |
 | `OUTLINE` | Generic | No lead geometry, outline only |
 
@@ -636,7 +636,7 @@ Used for odd-shaped components or components with unusual lead layouts.
 
 ### PT_FOUR_ON_TWO — 4 Leads on 2 Sides
 
-Four leads distributed across two sides (non-symmetric), such as DO-214AA diode packages.
+Four leads distributed across two sides (non-symmetric).
 
 ```
 P00 DO-214AA
@@ -746,8 +746,11 @@ P055 ... 190 380 → leadWidth=190µm, leadLength ≈ from P055 pad dimensions
 
 - **Duplicate entries**: Many packages have multiple variants (e.g., `0603`, `0603 2x1.4x1.2`,
   `0603 Langsam`). The base name without suffix is usually the standard version.
-- **PT_GENERIC entries**: These may use FLAT leads with the same P051 format as CHIP.
-  The lead shape doesn't change the position calculation.
+- **PT_GENERIC entries**: These may use FLAT/GULLWING/J_LEAD with the same P051 position model.
+  Lead shape changes semantic meaning even when position math is similar.
+- **Molded diode families** (DO-214/DO-213/DO-219/DO-221): avoid defaulting to PT_TWO_POLE chip
+  geometry when terminals are formed/narrow. Prefer PT_GENERIC with explicit lead groups and
+  dimensions derived from datasheet terminal values (`b`, `L`, `D`, `E`, `HE`) or trusted TPSys data.
 - **Measured P11 values**: P11 reference points are actual measured positions from the
   vision system, so they may not be perfectly symmetric. Use P051 for theoretical positions.
 - **Non-standard packages**: Some entries have unusual configurations (custom tooling,

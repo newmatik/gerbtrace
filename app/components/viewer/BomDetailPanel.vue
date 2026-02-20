@@ -154,7 +154,7 @@
         <UInput
           v-model="inlineAddMpn"
           size="xs"
-          placeholder="MPN"
+          placeholder="Manufacturer Part"
           class="flex-1"
           @keydown.enter="confirmInlineAdd"
         />

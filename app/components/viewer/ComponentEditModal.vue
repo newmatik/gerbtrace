@@ -60,6 +60,15 @@
               :class="{ 'text-amber-600 dark:text-amber-300': localValue !== (component?.originalValue ?? '') }"
             />
           </div>
+          <div class="col-span-2">
+            <label class="text-neutral-400 dark:text-neutral-500 uppercase tracking-wide text-[10px] font-medium">Description</label>
+            <input
+              v-model="localDescription"
+              type="text"
+              class="mt-0.5 w-full text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md px-2 py-1 outline-none focus:border-primary transition-colors"
+              :class="{ 'text-amber-600 dark:text-amber-300': localDescription !== (component?.originalDescription ?? '') }"
+            />
+          </div>
           <div>
             <label class="text-neutral-400 dark:text-neutral-500 uppercase tracking-wide text-[10px] font-medium">X (mm)</label>
             <input
@@ -179,7 +188,6 @@
                 :search-input="{ placeholder: 'Search package or library...' }"
                 :ui="{ content: 'min-w-[28rem] max-w-[40rem]', itemLabel: 'whitespace-normal leading-tight' }"
                 placeholder="—"
-                @highlight="onPkgHighlight($event as any)"
                 @update:open="!$event && emit('preview:package', null)"
               >
                 <template #item="{ item }">
@@ -273,8 +281,8 @@ const emit = defineEmits<{
   'update:polarized': [payload: { key: string; polarized: boolean }]
   'update:packageMapping': [payload: { cadPackage: string; packageName: string | null; componentKey?: string; isManual?: boolean }]
   'update:note': [payload: { key: string; note: string }]
-  'update:fields': [payload: { key: string; designator?: string; value?: string; x?: number; y?: number }]
-  'update:manualComponent': [payload: { id: string; designator?: string; value?: string; package?: string; x?: number; y?: number; rotation?: number; side?: 'top' | 'bottom' }]
+  'update:fields': [payload: { key: string; designator?: string; value?: string; description?: string; x?: number; y?: number }]
+  'update:manualComponent': [payload: { id: string; designator?: string; value?: string; description?: string; package?: string; x?: number; y?: number; rotation?: number; side?: 'top' | 'bottom' }]
   'delete:manualComponent': [id: string]
   'delete:component': [key: string]
   'assign:group': [payload: { key: string; groupId: string | null }]
@@ -291,6 +299,7 @@ const notInBom = computed(() => {
 
 const localDesignator = ref('')
 const localValue = ref('')
+const localDescription = ref('')
 const localX = ref('')
 const localY = ref('')
 const localRotation = ref('')
@@ -322,10 +331,6 @@ const packageSelectItems = computed(() => {
   }
   return out
 })
-function onPkgHighlight(payload: { value: string } | undefined) {
-  if (!props.component) return
-  emit('preview:package', payload?.value ? { componentKey: props.component.key, packageName: payload.value } : null)
-}
 const packageOptionsByValue = computed(() => {
   const map = new Map<string, (typeof props.packageOptions)[number]>()
   for (const opt of props.packageOptions) map.set(opt.value, opt)
@@ -386,6 +391,7 @@ watch([open, () => props.component], ([isOpen, comp]) => {
   if (isOpen && comp) {
     localDesignator.value = comp.designator
     localValue.value = comp.value
+    localDescription.value = comp.description
     localX.value = comp.x.toFixed(4).replace(/\.?0+$/, '')
     localY.value = comp.y.toFixed(4).replace(/\.?0+$/, '')
     localRotation.value = formatRotation(comp.rotation)
@@ -421,6 +427,7 @@ function save() {
     const updates: Record<string, any> = {}
     if (localDesignator.value !== comp.designator) updates.designator = localDesignator.value
     if (localValue.value !== comp.value) updates.value = localValue.value
+    if (localDescription.value !== comp.description) updates.description = localDescription.value
     const parsedX = Number(localX.value)
     const parsedY = Number(localY.value)
     if (Number.isFinite(parsedX) && Math.abs(parsedX - comp.x) > 1e-6) updates.x = parsedX
@@ -458,6 +465,10 @@ function save() {
       fieldChanges.value = localValue.value
       hasFieldChanges = true
     }
+    if (localDescription.value !== comp.originalDescription) {
+      fieldChanges.description = localDescription.value
+      hasFieldChanges = true
+    }
     const parsedX = Number(localX.value)
     if (Number.isFinite(parsedX) && Math.abs(parsedX - comp.originalX) > 1e-6) {
       fieldChanges.x = parsedX
@@ -468,7 +479,7 @@ function save() {
       fieldChanges.y = parsedY
       hasFieldChanges = true
     }
-    emit('update:fields', fieldChanges as any)
+    if (hasFieldChanges) emit('update:fields', fieldChanges as any)
 
     // Rotation
     const parsedRot = Number(localRotation.value)
