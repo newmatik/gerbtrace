@@ -3,7 +3,7 @@
     ref="canvasEl"
     class="w-full h-full"
     :class="{
-      'cursor-crosshair': measure?.active.value || info?.active.value || deleteTool?.active.value || (alignMode && alignMode !== 'idle'),
+      'cursor-crosshair': measure?.active.value || info?.active.value || deleteTool?.active.value || drawTool?.active.value || (alignMode && alignMode !== 'idle'),
     }"
     @wheel.prevent="onWheel"
     @mousedown="onMouseDown"
@@ -25,7 +25,6 @@ import { renderToCanvas, renderOutlineMask, computeAutoFitTransform, renderGraph
 import { renderRealisticView } from '@lib/renderer/realistic-renderer'
 import type { RealisticLayers } from '@lib/renderer/realistic-renderer'
 import { generateJetprintDots } from '@lib/renderer/jetprint-dots'
-import { renderJetPath } from '@lib/jetprint/path-renderer'
 import { extractPastePads } from '@lib/jetprint/paste-extractor'
 import { groupPadsIntoComponents, buildJetComponents } from '@lib/jetprint/component-builder'
 import { planPath } from '@lib/jetprint/path-planner'
@@ -54,6 +53,7 @@ const props = defineProps<{
   measure?: ReturnType<typeof useMeasureTool>
   info?: ReturnType<typeof useInfoTool>
   deleteTool?: ReturnType<typeof useDeleteTool>
+  drawTool?: ReturnType<typeof useDrawTool>
   /** View mode: 'layers' (default flat colors) or 'realistic' (photo-realistic compositing) */
   viewMode?: ViewMode
   /** PCB appearance preset (used when viewMode is 'realistic') */
@@ -93,6 +93,7 @@ const emit = defineEmits<{
   pnpClick: [designator: string | null]
   pnpDblclick: [designator: string]
   alignClick: [gerberX: number, gerberY: number]
+  drawCommit: [request: import('~/composables/useDrawTool').DrawCommitRequest]
 }>()
 
 const canvasEl = ref<HTMLCanvasElement | null>(null)
@@ -388,6 +389,10 @@ function onMouseDown(e: MouseEvent) {
       emit('alignClick', gerber.x, gerber.y)
       return
     }
+    if (props.drawTool?.active.value) {
+      props.drawTool.handleMouseDown(e, canvasEl.value, props.interaction.transform.value)
+      return
+    }
     if (props.deleteTool?.active.value) {
       props.deleteTool.handleMouseDown(e, canvasEl.value)
     } else if (props.measure?.active.value) {
@@ -419,7 +424,7 @@ function onMouseDown(e: MouseEvent) {
 function onDblClick(e: MouseEvent) {
   if (e.button !== 0 || !canvasEl.value) return
   if (props.alignMode && props.alignMode !== 'idle') return
-  if (props.measure?.active.value || props.info?.active.value || props.deleteTool?.active.value) return
+  if (props.measure?.active.value || props.info?.active.value || props.deleteTool?.active.value || props.drawTool?.active.value) return
   if (!props.pnpComponents || props.pnpComponents.length === 0) return
 
   const rect = canvasEl.value.getBoundingClientRect()
@@ -453,6 +458,9 @@ function onMouseMove(e: MouseEvent) {
   }
 
   // Route to active tool
+  if (props.drawTool?.active.value && canvasEl.value) {
+    props.drawTool.handleMouseMove(e, canvasEl.value, props.interaction.transform.value)
+  }
   if (props.deleteTool?.active.value && canvasEl.value) {
     props.deleteTool.handleMouseMove(e, canvasEl.value)
   }
@@ -463,6 +471,10 @@ function onMouseMove(e: MouseEvent) {
 
 function onMouseUp(e: MouseEvent) {
   props.interaction.handleMouseUp()
+  if (props.drawTool?.active.value && canvasEl.value) {
+    const commitReq = props.drawTool.handleMouseUp(e, canvasEl.value, props.interaction.transform.value)
+    if (commitReq) emit('drawCommit', commitReq)
+  }
   if (props.deleteTool?.active.value && canvasEl.value) {
     const layerData = buildLayerData()
     props.deleteTool.handleMouseUp(e, canvasEl.value, props.interaction.transform.value, layerData)
@@ -482,13 +494,13 @@ function onMouseLeave(e: MouseEvent) {
 watch(
   () => props.layers,
   () => {
-    if (!props.measure) return
     const trees: ImageTree[] = []
     for (const layer of props.layers) {
       const tree = getImageTree(layer)
       if (tree) trees.push(tree)
     }
-    props.measure.collectSnapPoints(trees)
+    if (props.measure) props.measure.collectSnapPoints(trees)
+    if (props.drawTool) props.drawTool.collectSnapTargets(trees)
   },
   { deep: true, immediate: true },
 )
@@ -1428,7 +1440,56 @@ function drawAlignOverlay(
 const DELETE_HIGHLIGHT_COLOR = '#ffffff'
 const DELETE_HIGHLIGHT_ALPHA = 0.55
 
-let jetPathSegmentCache: { key: string; segments: import('@lib/jetprint/jpsys-types').SegmentOrder[] } | null = null
+interface JetPathSegmentPrepared {
+  startUmX: number
+  startUmY: number
+  endUmX: number
+  endUmY: number
+}
+
+const jetPathSegmentCache = new WeakMap<ImageTree, JetPathSegmentPrepared[]>()
+
+function prepareJetSegments(
+  segments: import('@lib/jetprint/jpsys-types').SegmentOrder[],
+): JetPathSegmentPrepared[] {
+  return segments.map((seg) => {
+    const endUmX = seg.x + seg.vx * seg.dotPeriod * 1e6 * (seg.dotCount - 1)
+    const endUmY = seg.y + seg.vy * seg.dotPeriod * 1e6 * (seg.dotCount - 1)
+    return {
+      startUmX: seg.x,
+      startUmY: seg.y,
+      endUmX,
+      endUmY,
+    }
+  })
+}
+
+function getJetPathForPasteTree(pasteTree: ImageTree): JetPathSegmentPrepared[] {
+  const cached = jetPathSegmentCache.get(pasteTree)
+  if (cached) return cached
+
+  const pads = extractPastePads(pasteTree)
+  if (pads.length === 0) {
+    jetPathSegmentCache.set(pasteTree, [])
+    return []
+  }
+  const groups = groupPadsIntoComponents(pads)
+  const pcbId = 1
+  const { components } = buildJetComponents(groups, pcbId, JPSYS_EXPORT_DEFAULTS, 100)
+  const { segments } = planPath(components, pcbId, 'AG04', 10000)
+  const prepared = prepareJetSegments(segments)
+  jetPathSegmentCache.set(pasteTree, prepared)
+  return prepared
+}
+
+function getActivePasteLayersForPath(): LayerInfo[] {
+  const source = props.allLayers ?? props.layers
+  const side = props.activeFilter ?? 'all'
+  const types = side === 'all'
+    ? new Set(['Top Paste', 'Bottom Paste'])
+    : new Set([side === 'bot' ? 'Bottom Paste' : 'Top Paste'])
+  return source.filter(layer => layer.visible && types.has(layer.type))
+}
 
 /**
  * Draw the simulated jetting path as a screen-space overlay.
@@ -1445,67 +1506,53 @@ function drawJetPathOverlay(
   transform: { offsetX: number; offsetY: number; scale: number },
   mirrored: boolean,
 ) {
-  const pasteLayer = props.allLayers?.find(
-    (l: any) => l.type === 'Top Paste' || l.type === 'Bottom Paste',
-  )
-  if (!pasteLayer) return
-  const pasteTree = getImageTree(pasteLayer) as import('@lib/gerber/types').ImageTree | null
-  if (!pasteTree || pasteTree.children.length === 0) return
+  const pasteLayers = getActivePasteLayersForPath()
+  if (!pasteLayers.length) return
 
-  const cacheKey = `${pasteTree.children.length}-${pasteTree.units}`
-  if (!jetPathSegmentCache || jetPathSegmentCache.key !== cacheKey) {
-    const pads = extractPastePads(pasteTree)
-    if (pads.length === 0) return
-    const groups = groupPadsIntoComponents(pads)
-    const pcbId = 1
-    const { components } = buildJetComponents(groups, pcbId, JPSYS_EXPORT_DEFAULTS, 100)
-    const { segments } = planPath(components, pcbId, 'AG04', 10000)
-    jetPathSegmentCache = { key: cacheKey, segments }
+  const preparedLayers: { segments: JetPathSegmentPrepared[]; umPerUnit: number }[] = []
+  for (const layer of pasteLayers) {
+    const tree = getImageTree(layer) as ImageTree | null
+    if (!tree || tree.children.length === 0) continue
+    const segments = getJetPathForPasteTree(tree)
+    if (!segments.length) continue
+    preparedLayers.push({
+      segments,
+      umPerUnit: tree.units === 'in' ? 25400 : 1000,
+    })
   }
-
-  const segments = jetPathSegmentCache.segments
-  if (segments.length === 0) return
-
-  const umPerUnit = pasteTree.units === 'in' ? 25400 : 1000
-
-  function toScreen(umX: number, umY: number): [number, number] {
-    const gx = umX / umPerUnit
-    const gy = umY / umPerUnit
-    let sx = transform.offsetX + gx * transform.scale
-    const sy = transform.offsetY - gy * transform.scale
-    if (mirrored) sx = cssWidth - sx
-    return [sx, sy]
-  }
+  if (!preparedLayers.length) return
 
   ctx.save()
   if (dpr !== 1) ctx.scale(dpr, dpr)
 
-  const sorted = [...segments].sort((a, b) => a.orderNumber - b.orderNumber)
-
-  // Draw the entire path as one continuous polyline (travel + jetting)
-  // so the oscillating serpentine pattern is clearly visible.
-  ctx.beginPath()
-  ctx.strokeStyle = '#a855f7'
-  ctx.lineWidth = 1.5
-  ctx.lineJoin = 'round'
-  ctx.lineCap = 'round'
-
-  let isFirst = true
-  for (const seg of sorted) {
-    const [sx, sy] = toScreen(seg.x, seg.y)
-    const endUmX = seg.x + seg.vx * seg.dotPeriod * 1e6 * (seg.dotCount - 1)
-    const endUmY = seg.y + seg.vy * seg.dotPeriod * 1e6 * (seg.dotCount - 1)
-    const [ex, ey] = toScreen(endUmX, endUmY)
-
-    if (isFirst) {
-      ctx.moveTo(sx, sy)
-    } else {
-      ctx.lineTo(sx, sy)
+  // Draw one polyline per visible paste side (top, bottom, or both in "all").
+  for (const prepared of preparedLayers) {
+    const toScreen = (umX: number, umY: number): [number, number] => {
+      const gx = umX / prepared.umPerUnit
+      const gy = umY / prepared.umPerUnit
+      let sx = transform.offsetX + gx * transform.scale
+      const sy = transform.offsetY - gy * transform.scale
+      if (mirrored) sx = cssWidth - sx
+      return [sx, sy]
     }
-    ctx.lineTo(ex, ey)
-    isFirst = false
+
+    ctx.beginPath()
+    ctx.strokeStyle = '#a855f7'
+    ctx.lineWidth = 1.5
+    ctx.lineJoin = 'round'
+    ctx.lineCap = 'round'
+
+    let isFirst = true
+    for (const seg of prepared.segments) {
+      const [sx, sy] = toScreen(seg.startUmX, seg.startUmY)
+      const [ex, ey] = toScreen(seg.endUmX, seg.endUmY)
+      if (isFirst) ctx.moveTo(sx, sy)
+      else ctx.lineTo(sx, sy)
+      ctx.lineTo(ex, ey)
+      isFirst = false
+    }
+    ctx.stroke()
   }
-  ctx.stroke()
 
   ctx.restore()
 }
@@ -1844,7 +1891,7 @@ function draw() {
 
   // Jet path overlay (when enabled in paste settings)
   const ps = props.pasteSettings
-  if (ps?.mode === 'jetprint' && ps.showJetPath) {
+  if (ps?.mode === 'jetprint' && ps.showJetPath && !isInteracting.value) {
     drawJetPathOverlay(ctx, cssWidth, cssHeight, dpr, transform, !!props.mirrored)
   }
 

@@ -50,7 +50,7 @@
         color="neutral"
         variant="ghost"
         :icon="m.icon"
-        :disabled="isLocked && m.value === 'delete'"
+        :disabled="isLocked && (m.value === 'delete' || m.value === 'draw')"
         :class="[tbBtnBase, activeMode === m.value ? tbBtnActive : tbBtnIdle]"
         :title="m.title"
         @click="setMode(m.value)"
@@ -409,7 +409,7 @@
 type ViewerPage = 'files' | 'pcb' | 'panel' | 'paste' | 'smd' | 'tht' | 'bom' | 'pricing' | 'docs' | 'summary'
 type ViewMode = 'layers' | 'realistic'
 type LayerFilter = 'all' | 'top' | 'bot'
-type InteractionMode = 'cursor' | 'measure' | 'info' | 'delete'
+type InteractionMode = 'cursor' | 'measure' | 'info' | 'delete' | 'draw'
 type PanelTabEditMode = 'off' | 'move' | 'add' | 'delete'
 type PanelAddedRoutingEditMode = 'off' | 'add' | 'move' | 'delete'
 
@@ -477,11 +477,12 @@ const modeOptions: { label: string; value: InteractionMode; icon: string; title:
   { label: 'Measure', value: 'measure', icon: 'i-lucide-ruler', title: 'Measure distance between points' },
   { label: 'Info', value: 'info', icon: 'i-lucide-info', title: 'Inspect objects at click position' },
   { label: 'Delete', value: 'delete', icon: 'i-lucide-eraser', title: 'Select and delete objects from Gerber files' },
+  { label: 'Draw', value: 'draw', icon: 'i-lucide-pen-tool', title: 'Draw shapes on a Gerber layer' },
 ]
 
 const visibleModeOptions = computed(() => {
-  if (props.page === 'panel') return modeOptions.filter(m => m.value !== 'info' && m.value !== 'delete')
-  if (props.page === 'smd' || props.page === 'tht') return modeOptions.filter(m => m.value !== 'info' && m.value !== 'delete')
+  if (props.page === 'panel') return modeOptions.filter(m => m.value !== 'info' && m.value !== 'delete' && m.value !== 'draw')
+  if (props.page === 'smd' || props.page === 'tht') return modeOptions.filter(m => m.value !== 'info' && m.value !== 'delete' && m.value !== 'draw')
   return modeOptions
 })
 

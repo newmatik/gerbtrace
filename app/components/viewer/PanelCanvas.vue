@@ -1678,6 +1678,8 @@ function buildVCutHolesCanvas(
   isRealistic: boolean,
   forExport = false,
 ): HTMLCanvasElement | null {
+  if (!isRealistic && !forExport) return null
+
   const outlineLayer = findOutlineLayer()
   const outlineTree = outlineLayer ? getImageTree(outlineLayer) : null
   const hasOutline = outlineTree && outlineTree.children.length > 0
