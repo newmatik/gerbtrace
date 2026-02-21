@@ -139,8 +139,8 @@
       <span class="text-[10px] text-neutral-500 dark:text-neutral-400">mm</span>
     </div>
 
-    <!-- Precise mode (Gerber shapes only, not drill) -->
-    <template v-if="draw.activeTool.value !== 'drill'">
+    <!-- Precise mode (geometry tools only) -->
+    <template v-if="draw.activeTool.value !== 'drill' && draw.activeTool.value !== 'text'">
       <!-- Separator -->
       <div class="w-px h-5 bg-neutral-300 dark:bg-neutral-600 mx-0.5 shrink-0" />
 
@@ -159,7 +159,7 @@
     </template>
 
     <!-- Precise dimension inputs -->
-    <template v-if="draw.preciseMode.value && draw.activeTool.value !== 'drill'">
+    <template v-if="draw.preciseMode.value && draw.activeTool.value !== 'drill' && draw.activeTool.value !== 'text'">
       <!-- Rect: width x height -->
       <template v-if="draw.activeTool.value === 'rect'">
         <div class="flex items-center gap-1 shrink-0">
@@ -218,29 +218,31 @@
         </div>
       </template>
 
-      <!-- Text: content + height -->
-      <template v-if="draw.activeTool.value === 'text'">
-        <div class="flex items-center gap-1 shrink-0">
-          <span class="text-[10px] text-neutral-500 dark:text-neutral-400">Text</span>
-          <UInput
-            v-model="draw.preciseText.value"
-            type="text"
-            size="xs"
-            class="w-28"
-            placeholder="LABEL"
-          />
-          <span class="text-[10px] text-neutral-500 dark:text-neutral-400 ml-1">H</span>
-          <UInput
-            v-model.number="draw.preciseTextHeightMm.value"
-            type="number"
-            size="xs"
-            class="w-14"
-            :min="0.3"
-            :step="0.25"
-          />
-          <span class="text-[10px] text-neutral-500 dark:text-neutral-400">mm</span>
-        </div>
-      </template>
+    </template>
+
+    <!-- Text controls (always visible for text tool) -->
+    <template v-if="draw.activeTool.value === 'text'">
+      <div class="w-px h-5 bg-neutral-300 dark:bg-neutral-600 mx-0.5 shrink-0" />
+      <div class="flex items-center gap-1 shrink-0">
+        <span class="text-[10px] text-neutral-500 dark:text-neutral-400">Text</span>
+        <UInput
+          v-model="draw.preciseText.value"
+          type="text"
+          size="xs"
+          class="w-28"
+          placeholder="LABEL"
+        />
+        <span class="text-[10px] text-neutral-500 dark:text-neutral-400 ml-1">H</span>
+        <UInput
+          v-model.number="draw.preciseTextHeightMm.value"
+          type="number"
+          size="xs"
+          class="w-14"
+          :min="0.3"
+          :step="0.25"
+        />
+        <span class="text-[10px] text-neutral-500 dark:text-neutral-400">mm</span>
+      </div>
     </template>
 
     <!-- Live dimensions display -->

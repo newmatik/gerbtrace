@@ -378,7 +378,6 @@ const currencyOptions = [
 
 const sparkModelOptions = ref<Array<{ label: string, value: string }>>([])
 
-
 // Init from current team
 watch(currentTeam, (team) => {
   if (team) {
@@ -578,13 +577,19 @@ async function validateApiKey() {
 async function handleSaveSpark() {
   sparkErrorMessage.value = ''
   sparkSuccessMessage.value = ''
+
+  if (sparkEnabled.value && sparkApiKey.value.trim() && !sparkModel.value) {
+    sparkErrorMessage.value = 'Please select a model before saving. Click "Test Connection" to load available models.'
+    return
+  }
+
   savingSpark.value = true
 
   try {
     const { error } = await updateTeam({
       ai_enabled: sparkEnabled.value,
       ai_api_key: sparkApiKey.value.trim() || null,
-      ai_model: sparkModel.value,
+      ai_model: sparkModel.value || '',
     })
 
     if (error) {

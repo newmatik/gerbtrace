@@ -156,7 +156,7 @@
       :set-board-rotation="setBoardRotation"
     />
     <DrawEditorBar
-      v-if="activeMode === 'draw'"
+      v-if="activeMode === 'draw' && isCanvasPage"
       :draw="drawTool"
       :layers="layers.map(l => ({ fileName: l.file.fileName, type: l.type, color: l.color }))"
     />
@@ -723,19 +723,42 @@
               v-if="spark.isAiEnabled.value"
               size="xs"
               color="secondary"
-              :variant="spark.isEnriching.value ? 'soft' : 'outline'"
-              :icon="spark.isEnriching.value ? 'i-lucide-loader-2' : 'i-lucide-sparkles'"
-              :disabled="(bom.bomLines.value as BomLine[]).length === 0 || spark.isEnriching.value || !canEditTab('bom')"
-              title="Enrich BOM with AI suggestions"
-              :class="{ 'animate-pulse': spark.isEnriching.value }"
+              :variant="spark.isEnriching.value ? 'solid' : spark.pendingSuggestionCount.value > 0 ? 'soft' : 'outline'"
+              icon="i-lucide-sparkles"
+              :loading="spark.isEnriching.value"
+              :disabled="(bom.bomLines.value as BomLine[]).length === 0 || spark.isEnriching.value || spark.pendingSuggestionCount.value > 0 || !canEditTab('bom')"
+              :title="spark.pendingSuggestionCount.value > 0 ? `Review ${spark.pendingSuggestionCount.value} pending suggestion${spark.pendingSuggestionCount.value === 1 ? '' : 's'} before running Spark again` : 'Enrich BOM with AI suggestions'"
               @click="handleSparkEnrich"
             >
-              <template v-if="spark.isEnriching.value">Enriching...</template>
+              <template v-if="spark.isEnriching.value">Analyzing {{ (bom.bomLines.value as BomLine[]).length }} lines...</template>
               <template v-else>
                 Spark
                 <UBadge v-if="spark.pendingSuggestionCount.value > 0" size="xs" color="secondary" variant="solid" class="ml-1">{{ spark.pendingSuggestionCount.value }}</UBadge>
               </template>
             </UButton>
+            <div v-if="spark.pendingSuggestionCount.value > 0" class="flex items-center gap-0.5">
+              <span class="text-[10px] text-secondary-600 dark:text-secondary-400 tabular-nums px-1">{{ sparkReviewPosition }} / {{ spark.pendingSuggestionCount.value }}</span>
+              <UButton
+                size="xs"
+                color="secondary"
+                variant="ghost"
+                icon="i-lucide-chevron-up"
+                :disabled="spark.pendingSuggestionCount.value === 0"
+                title="Previous suggestion"
+                class="!p-0.5"
+                @click="sparkReviewNav(-1)"
+              />
+              <UButton
+                size="xs"
+                color="secondary"
+                variant="ghost"
+                icon="i-lucide-chevron-down"
+                :disabled="spark.pendingSuggestionCount.value === 0"
+                title="Next suggestion"
+                class="!p-0.5"
+                @click="sparkReviewNav(1)"
+              />
+            </div>
             <UButton
               v-if="bomCpLines.length > 0"
               size="xs"
@@ -852,6 +875,7 @@
               @accept-all-ai="handleAcceptAllAi"
               @dismiss-all-ai="handleDismissAllAi"
               @accept-ai-manufacturer="handleAcceptAiManufacturer"
+              @dismiss-ai-manufacturer="handleDismissAiManufacturer"
             />
           </section>
           </div>
@@ -1771,6 +1795,9 @@ watch(sidebarTab, (tab) => {
   if (tab === 'panel' && (activeMode.value === 'info' || activeMode.value === 'delete' || activeMode.value === 'draw')) {
     setMode('cursor')
   }
+  if (tab === 'paste' && activeMode.value === 'draw') {
+    setMode('cursor')
+  }
 })
 
 function handleKeyDown(e: KeyboardEvent) {
@@ -2447,6 +2474,33 @@ function handlePanelDataUpdate(data: PanelConfig) {
 
 // ── Original content tracking (for edit detection + reset) ──
 const originalContent = reactive(new Map<string, string>())
+const TEAM_ORIGINALS_STORAGE_PREFIX = 'gerbtrace:team:file-originals:'
+
+function teamOriginalsStorageKey(): string | null {
+  if (!import.meta.client || !isTeamProject || !teamProjectId) return null
+  return `${TEAM_ORIGINALS_STORAGE_PREFIX}${teamProjectId}:1`
+}
+
+function loadTeamOriginalsFromStorage(): Map<string, string> {
+  const key = teamOriginalsStorageKey()
+  if (!key) return new Map<string, string>()
+  try {
+    const raw = localStorage.getItem(key)
+    if (!raw) return new Map<string, string>()
+    const parsed = JSON.parse(raw) as Record<string, string>
+    return new Map<string, string>(Object.entries(parsed))
+  } catch {
+    return new Map<string, string>()
+  }
+}
+
+function saveTeamOriginalsToStorage() {
+  const key = teamOriginalsStorageKey()
+  if (!key) return
+  const payload: Record<string, string> = {}
+  for (const [fileName, content] of originalContent.entries()) payload[fileName] = content
+  localStorage.setItem(key, JSON.stringify(payload))
+}
 
 const editedLayers = computed(() => {
   const edited = new Set<string>()
@@ -3198,6 +3252,29 @@ watch(
   { immediate: true },
 )
 
+// Prefetch full package geometry for packages actually referenced in PnP data
+watch(
+  () => ({
+    smd: pnp.smdActiveComponents.value.map(c => c.matchedPackage),
+    tht: pnp.thtActiveComponents.value.map(c => c.matchedPackage),
+    smdReady: pkgLib.loaded.value,
+    thtReady: thtPkgLib.loaded.value,
+  }),
+  async ({ smd, tht, smdReady, thtReady }) => {
+    const smdNames = [...new Set(smd.filter(Boolean))]
+    const thtNames = [...new Set(tht.filter(Boolean))]
+    if (smdReady && smdNames.length) {
+      await pkgLib.prefetchPackagesForBoard(smdNames)
+      _pkgLibVersion.value++
+    }
+    if (thtReady && thtNames.length) {
+      await thtPkgLib.prefetchPackagesForBoard(thtNames)
+      _pkgLibVersion.value++
+    }
+  },
+  { immediate: true },
+)
+
 // ── Documents (PDF) ──
 import type { DocumentType, ProjectDocument } from '~/utils/document-types'
 
@@ -3377,7 +3454,8 @@ async function persistLayerTextContent(fileName: string) {
   try {
     if (isTeamProject && teamProjectId) {
       const teamId = currentTeamId.value || await waitForTeamId()
-      await uploadTeamFile(teamProjectId, teamId, 1, layer.file.fileName, nextContent, layer.type)
+      const { error } = await uploadTeamFile(teamProjectId, teamId, 1, layer.file.fileName, nextContent, layer.type)
+      if (error) throw error
     } else {
       await updateFileContent(projectId, 1, layer.file.fileName, nextContent)
     }
@@ -3385,6 +3463,11 @@ async function persistLayerTextContent(fileName: string) {
     if (canvas) canvas.invalidateCache(layer.file.fileName)
   } catch (err) {
     console.warn('[files] failed to persist edited layer content', err)
+    toast.add({
+      title: 'Save failed',
+      description: `Could not save ${layer.file.fileName}.`,
+      color: 'error',
+    })
   }
 }
 
@@ -3728,6 +3811,7 @@ onUnmounted(() => {
   if (gerberPrewarmTimer) clearTimeout(gerberPrewarmTimer)
   stopPerfFrameLoop()
   stopLongTaskObserver()
+  gerberTreeCache.clearAll()
 })
 
 // ── BOM ──
@@ -4453,24 +4537,71 @@ function handleAcceptAllAi(lineId: string) {
   }, (id, mfr) => {
     handleBomAddManufacturer(id, mfr)
   })
+  sparkAdvanceAfterReview(lineId)
 }
 
 function handleDismissAllAi(lineId: string) {
   spark.dismissAll(lineId)
+  sparkAdvanceAfterReview(lineId)
 }
 
 function handleAcceptAiManufacturer(lineId: string, mfr: { manufacturer: string; manufacturerPart: string }) {
   if (!ensureTabEditable('bom')) return
   handleBomAddManufacturer(lineId, mfr)
-  const suggestion = spark.getSuggestion(lineId)
-  if (suggestion?.manufacturers) {
-    const remaining = suggestion.manufacturers.filter(
-      m => m.manufacturer !== mfr.manufacturer || m.manufacturerPart !== mfr.manufacturerPart,
-    )
-    if (remaining.length === 0) {
-      spark.dismissSuggestion(lineId, 'manufacturers')
-    }
+  spark.removeSuggestedManufacturer(lineId, mfr)
+}
+
+function handleDismissAiManufacturer(lineId: string, mfr: { manufacturer: string; manufacturerPart: string }) {
+  spark.removeSuggestedManufacturer(lineId, mfr)
+}
+
+// ── Spark review navigation ──
+
+const sparkReviewLineIds = computed(() => {
+  const pending = spark.pendingLineIds.value
+  if (pending.length === 0) return []
+  const bomOrder = (bom.bomLines.value as BomLine[]).map(l => l.id)
+  const pendingSet = new Set(pending)
+  return bomOrder.filter(id => pendingSet.has(id))
+})
+
+const sparkReviewPosition = computed(() => {
+  const ids = sparkReviewLineIds.value
+  if (ids.length === 0) return 0
+  const idx = ids.indexOf(selectedBomLineId.value ?? '')
+  return idx >= 0 ? idx + 1 : 0
+})
+
+function sparkReviewNav(direction: 1 | -1) {
+  const ids = sparkReviewLineIds.value
+  if (ids.length === 0) return
+  const currentIdx = ids.indexOf(selectedBomLineId.value ?? '')
+  let nextIdx: number
+  if (currentIdx < 0) {
+    nextIdx = direction === 1 ? 0 : ids.length - 1
+  } else {
+    nextIdx = currentIdx + direction
+    if (nextIdx < 0) nextIdx = ids.length - 1
+    else if (nextIdx >= ids.length) nextIdx = 0
   }
+  selectedBomLineId.value = ids[nextIdx]!
+}
+
+function sparkAdvanceAfterReview(reviewedLineId: string) {
+  nextTick(() => {
+    const ids = sparkReviewLineIds.value
+    if (ids.length === 0) return
+    if (ids.includes(reviewedLineId)) return
+    const bomOrder = (bom.bomLines.value as BomLine[]).map(l => l.id)
+    const reviewedBomIdx = bomOrder.indexOf(reviewedLineId)
+    let best: string | null = null
+    let bestDist = Infinity
+    for (const id of ids) {
+      const dist = bomOrder.indexOf(id) - reviewedBomIdx
+      if (dist > 0 && dist < bestDist) { best = id; bestDist = dist }
+    }
+    selectedBomLineId.value = best ?? ids[0]!
+  })
 }
 
 function handleManualOrderUpdate(type: 'smd' | 'tht', value: string[]) {
@@ -4737,6 +4868,8 @@ onMounted(async () => {
     }
   }))
 
+  originalContent.clear()
+
   // Load persisted original content from DB (survives page reloads)
   if (!isTeamProject) {
     const storedOriginals = await getOriginalFiles(projectId, 1)
@@ -4759,10 +4892,20 @@ onMounted(async () => {
       await storeOriginalFiles(projectId, 1, layers.value.map(l => ({ fileName: l.file.fileName, content: l.file.content })))
     }
   } else {
-    // Team projects: in-memory only (team sync handles version tracking)
+    // Team projects: persist "original baseline" in browser storage so
+    // edit markers + diff survive route reloads.
+    const storedOriginals = loadTeamOriginalsFromStorage()
+    let updatedStorage = false
     for (const layer of layers.value) {
-      originalContent.set(layer.file.fileName, layer.file.content)
+      const stored = storedOriginals.get(layer.file.fileName)
+      if (stored !== undefined) {
+        originalContent.set(layer.file.fileName, stored)
+      } else {
+        originalContent.set(layer.file.fileName, layer.file.content)
+        updatedStorage = true
+      }
     }
+    if (updatedStorage || storedOriginals.size === 0) saveTeamOriginalsToStorage()
   }
 
   // Restore persisted layer visibility (filter) without overriding persisted mirrored
@@ -5067,6 +5210,7 @@ async function doImport(newFiles: GerberFile[], sourceName: string) {
   for (const f of newFiles) {
     originalContent.set(f.fileName, f.content)
   }
+  saveTeamOriginalsToStorage()
   if (!isTeamProject) {
     await storeOriginalFiles(projectId, 1, newFiles.map(f => ({ fileName: f.fileName, content: f.content })))
   }
@@ -5202,6 +5346,7 @@ async function renameLayer(index: number, newName: string) {
   if (orig !== undefined) {
     originalContent.delete(oldName)
     originalContent.set(newName, orig)
+    saveTeamOriginalsToStorage()
   }
   if (!isTeamProject) {
     await renameOriginalFile(projectId, 1, oldName, newName)
@@ -5278,6 +5423,7 @@ async function duplicateLayer(index: number) {
 
   // Track the duplicate's content as its original
   originalContent.set(copyName, newFile.content)
+  saveTeamOriginalsToStorage()
   if (!isTeamProject) {
     await storeOriginalFiles(projectId, 1, [{ fileName: copyName, content: newFile.content }])
   }
@@ -5306,6 +5452,7 @@ async function removeLayer(index: number) {
   layers.value = layers.value.filter(l => l.file.fileName !== fileName)
   syncLayerOrderFromLayers()
   originalContent.delete(fileName)
+  saveTeamOriginalsToStorage()
   if (!isTeamProject) {
     await removeOriginalFile(projectId, 1, fileName)
   }
@@ -5407,12 +5554,26 @@ async function handleDrawCommit(request: import('~/composables/useDrawTool').Dra
   // Update in-memory content
   layer.file.content = newContent
 
-  // Persist to storage
-  if (isTeamProject && teamProjectId) {
-    const teamId = currentTeamId.value || await waitForTeamId()
-    await uploadTeamFile(teamProjectId, teamId, 1, layer.file.fileName, newContent, layer.type)
-  } else {
-    await updateFileContent(projectId, 1, layer.file.fileName, newContent)
+  try {
+    // Persist to storage
+    if (isTeamProject && teamProjectId) {
+      const teamId = currentTeamId.value || await waitForTeamId()
+      const { error } = await uploadTeamFile(teamProjectId, teamId, 1, layer.file.fileName, newContent, layer.type)
+      if (error) throw error
+    } else {
+      await updateFileContent(projectId, 1, layer.file.fileName, newContent)
+    }
+  } catch (err) {
+    // Revert in-memory state when persistence fails.
+    layer.file.content = previousContent
+    layers.value = [...layers.value]
+    toast.add({
+      title: 'Save failed',
+      description: `Could not save ${layer.file.fileName}.`,
+      color: 'error',
+    })
+    console.warn('[draw] failed to persist edit', err)
+    return
   }
 
   // Invalidate the parsed tree cache so it gets re-parsed

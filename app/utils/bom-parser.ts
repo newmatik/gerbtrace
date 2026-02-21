@@ -135,6 +135,21 @@ function parseBool(raw: string): boolean {
 }
 
 /**
+ * Convert scientific notation strings back to full numbers.
+ * Handles both English ("3.31212E+11") and European ("3,31212E+11") formats.
+ * Returns the original string if not scientific notation or if precision would be lost.
+ */
+function normalizePartNumber(raw: string): string {
+  const s = raw.trim()
+  if (!s) return s
+  if (!/^-?\d+[.,]\d+[eE][+-]?\d+$/.test(s)) return s
+  const num = Number(s.replace(',', '.'))
+  if (!Number.isFinite(num) || !Number.isInteger(num)) return s
+  if (Math.abs(num) > Number.MAX_SAFE_INTEGER) return s
+  return num.toFixed(0)
+}
+
+/**
  * Parse a quantity value, handling potential comma decimals.
  */
 function parseQuantity(raw: string): number {
@@ -188,7 +203,7 @@ export function buildBomLines(rows: string[][], mapping: BomColumnMapping, opts?
     const refs = mapping.references !== undefined ? (row[mapping.references] ?? '').trim() : ''
     if (isSummaryFooterRow(row, refs)) continue
     const mfrName = mapping.manufacturer !== undefined ? (row[mapping.manufacturer] ?? '').trim() : ''
-    const mfrPart = mapping.manufacturerPart !== undefined ? (row[mapping.manufacturerPart] ?? '').trim() : ''
+    const mfrPart = mapping.manufacturerPart !== undefined ? normalizePartNumber(row[mapping.manufacturerPart] ?? '') : ''
 
     const manufacturer: BomManufacturer | null =
       mfrName || mfrPart ? { manufacturer: mfrName, manufacturerPart: mfrPart } : null
@@ -218,7 +233,7 @@ export function buildBomLines(rows: string[][], mapping: BomColumnMapping, opts?
       description: mapping.description !== undefined ? (row[mapping.description] ?? '').trim() : '',
       type: mapping.type !== undefined ? parseBomLineType(row[mapping.type] ?? '') : 'Other',
       customerProvided: mapping.customerProvided !== undefined ? parseBool(row[mapping.customerProvided] ?? '') : false,
-      customerItemNo: mapping.customerItemNo !== undefined ? (row[mapping.customerItemNo] ?? '').trim() : '',
+      customerItemNo: mapping.customerItemNo !== undefined ? normalizePartNumber(row[mapping.customerItemNo] ?? '') : '',
       quantity: mapping.quantity !== undefined ? parseQuantity(row[mapping.quantity] ?? '') : 0,
       package: mapping.package !== undefined ? (row[mapping.package] ?? '').trim() : '',
       references: refs,
@@ -349,12 +364,30 @@ export function parseBomExcel(buffer: ArrayBuffer, options?: BomParseOptions): B
   return parseBomWorkbook(wb, options)
 }
 
+/**
+ * Convert a raw Excel cell to a string, avoiding scientific notation for large integers.
+ * Excel stores long numeric part numbers (e.g. 331211503040) as IEEE 754 doubles;
+ * with `raw: false` they surface as "3.31212E+11". Using `raw: true` + this helper
+ * preserves the full value.
+ */
+function cellToString(cell: unknown): string {
+  if (cell == null) return ''
+  if (typeof cell === 'number') {
+    if (Number.isFinite(cell) && Number.isInteger(cell) && Math.abs(cell) <= Number.MAX_SAFE_INTEGER) {
+      return cell.toFixed(0)
+    }
+    return String(cell)
+  }
+  return String(cell)
+}
+
 function parseBomWorkbook(wb: XLSX.WorkBook, options?: BomParseOptions): BomParseResult {
   const sheetName = wb.SheetNames[0]
   if (!sheetName) return { headers: [], rows: [], mapping: null, lines: null }
 
   const sheet = wb.Sheets[sheetName]!
-  const data: string[][] = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: '' })
+  const rawData: unknown[][] = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, defval: '' })
+  const data: string[][] = rawData.map(row => (row as unknown[]).map(cellToString))
 
   if (data.length === 0) return { headers: [], rows: [], mapping: null, lines: null }
 

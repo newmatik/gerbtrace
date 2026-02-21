@@ -196,6 +196,7 @@
         <div
           v-for="line in displayLines"
           :key="line.id"
+          :ref="(el) => { if (el) lineRefs[line.id] = el as HTMLElement }"
           class="rounded-lg border transition-colors cursor-pointer"
           :class="selectedLineId === line.id
             ? 'border-blue-400/40 bg-blue-50/70 dark:border-blue-500/30 dark:bg-blue-500/10'
@@ -334,6 +335,16 @@ const emit = defineEmits<{
   'fetchSinglePricing': [partNumber: string]
   'selectLine': [id: string]
 }>()
+
+const lineRefs = reactive<Record<string, HTMLElement>>({})
+
+watch(() => props.selectedLineId, (id) => {
+  if (!id) return
+  nextTick(() => {
+    const el = lineRefs[id]
+    if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  })
+})
 
 function handleFetchAllPricing() {
   if (props.locked) return

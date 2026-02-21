@@ -257,6 +257,17 @@ type DelimiterMode = ',' | ';' | '\t' | 'fixed'
 type DecimalMode = '.' | ','
 const UNMAPPED_VALUE = '__unmapped__'
 
+function cellToString(cell: unknown): string {
+  if (cell == null) return ''
+  if (typeof cell === 'number') {
+    if (Number.isFinite(cell) && Number.isInteger(cell) && Math.abs(cell) <= Number.MAX_SAFE_INTEGER) {
+      return cell.toFixed(0)
+    }
+    return String(cell)
+  }
+  return String(cell)
+}
+
 const props = defineProps<{
   fileName: string
   textContent?: string | null
@@ -337,8 +348,8 @@ const baseRows = computed<string[][]>(() => {
     if (!sheetName) return []
     const sheet = workbook.value.Sheets[sheetName]
     if (!sheet) return []
-    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: '' }) as unknown[][]
-    return rows.map(row => row.map(v => String(v ?? '')))
+    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, defval: '' }) as unknown[][]
+    return rows.map(row => row.map(v => cellToString(v)))
   }
 
   const text = csvText.value

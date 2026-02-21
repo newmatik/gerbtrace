@@ -42,6 +42,8 @@ export function useDeleteTool() {
   // Internal state for tracking mousedown
   let mouseDownPos: { x: number; y: number } | null = null
   let dragStarted = false
+  let moveRafId = 0
+  let queuedMove: { x: number; y: number; canvasEl: HTMLCanvasElement } | null = null
 
   function toggle() {
     active.value = !active.value
@@ -54,6 +56,11 @@ export function useDeleteTool() {
     isDragging.value = false
     mouseDownPos = null
     dragStarted = false
+    if (moveRafId) {
+      cancelAnimationFrame(moveRafId)
+      moveRafId = 0
+    }
+    queuedMove = null
   }
 
   function handleMouseDown(e: MouseEvent, canvasEl: HTMLCanvasElement) {
@@ -67,12 +74,12 @@ export function useDeleteTool() {
     dragStarted = false
   }
 
-  function handleMouseMove(e: MouseEvent, canvasEl: HTMLCanvasElement) {
+  function processMouseMove(x: number, y: number, canvasEl: HTMLCanvasElement) {
     if (!active.value || !mouseDownPos || pendingDeletion.value) return
 
     const rect = canvasEl.getBoundingClientRect()
-    const sx = e.clientX - rect.left
-    const sy = e.clientY - rect.top
+    const sx = x - rect.left
+    const sy = y - rect.top
 
     const dx = sx - mouseDownPos.x
     const dy = sy - mouseDownPos.y
@@ -90,6 +97,18 @@ export function useDeleteTool() {
         endY: sy,
       }
     }
+  }
+
+  function handleMouseMove(e: MouseEvent, canvasEl: HTMLCanvasElement) {
+    queuedMove = { x: e.clientX, y: e.clientY, canvasEl }
+    if (moveRafId) return
+    moveRafId = requestAnimationFrame(() => {
+      moveRafId = 0
+      const move = queuedMove
+      queuedMove = null
+      if (!move) return
+      processMouseMove(move.x, move.y, move.canvasEl)
+    })
   }
 
   function handleMouseUp(
