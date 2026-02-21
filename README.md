@@ -1,12 +1,10 @@
 <h1><img src="public/icon-blue.png" alt="" width="28" height="28" style="vertical-align: middle; margin-right: 6px;"> Gerbtrace</h1>
 
-A source-available PCB NPI and manufacturing data preparation platform by **[Newmatik GmbH](https://www.newmatik.com)**.
+**Drop a Gerber file. See your board.** That's it — no sign-up, no upload, nothing to install. Gerbtrace is a free Gerber viewer and comparison tool that runs entirely in your browser.
 
-Gerbtrace takes your design files and turns them into production-ready manufacturing data. Import Gerber files, manage your Bill of Materials, configure Pick and Place, set up panelization and paste, estimate pricing, compare revisions, and collaborate with your team — all from one tool.
+Need more? Gerbtrace is also a complete New Product Introduction (NPI) platform for electronics manufacturing — BOM management, Pick and Place, panelization, paste configuration, pricing estimation, and team collaboration. Use as much or as little as you need.
 
-Runs in the browser or as a native desktop app. No uploads, no server — everything stays local.
-
-[Web App](https://gerbtrace.com) · [Desktop Downloads](https://github.com/newmatik/gerbtrace/releases) · [Documentation](https://gerbtrace.com/docs)
+[Web App](https://www.www.gerbtrace.com) · [Desktop Downloads](https://github.com/newmatik/gerbtrace/releases) · [Documentation](https://www.gerbtrace.com/docs)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="public/images/docs/pcb-realistic-dark.png">
@@ -14,7 +12,13 @@ Runs in the browser or as a native desktop app. No uploads, no server — everyt
   <img alt="Gerbtrace PCB viewer with realistic rendering" src="public/images/docs/pcb-realistic-light.png">
 </picture>
 
-## Features
+## Built by a PCBA Company
+
+Gerbtrace is built and maintained by **[Newmatik](https://www.newmatik.com)**, a Swiss PCBA company specialized in rapid prototyping and small-series electronics manufacturing. We use Gerbtrace every day to prepare production data for our customers' boards. The tool exists because we needed it — and we think you might too.
+
+## View and Compare — No Setup Required
+
+Open [www.gerbtrace.com](https://www.gerbtrace.com), drag in a `.zip` of Gerber files, and you're looking at your PCB. That workflow is the heart of Gerbtrace and it will always be free.
 
 ### Gerber Viewer
 
@@ -35,6 +39,10 @@ Compare two Gerber packages across four modes: side-by-side with synchronized pa
   <source media="(prefers-color-scheme: light)" srcset="public/images/docs/compare-side-by-side-light.png">
   <img alt="Side-by-side Gerber comparison with synchronized canvases" src="public/images/docs/compare-side-by-side-light.png">
 </picture>
+
+## Full NPI Suite — When You're Ready
+
+When a quick look isn't enough, Gerbtrace scales into a production data preparation platform that covers the entire journey from design handoff to factory floor.
 
 ### Bill of Materials
 
@@ -108,18 +116,14 @@ Download production-ready data: Gerber ZIP packages, PNG/SVG board images, PnP p
 
 ## Quick Start
 
-### Web
+**Just want to view a board?** Open [www.gerbtrace.com](https://www.gerbtrace.com) and drop your Gerber ZIP. Done.
 
-Visit [gerbtrace.com](https://gerbtrace.com) — no installation required.
-
-### Desktop
-
-Download the latest installer from [GitHub Releases](https://github.com/newmatik/gerbtrace/releases):
+**Want the desktop app?** Download from [GitHub Releases](https://github.com/newmatik/gerbtrace/releases):
 
 - **macOS** — `.dmg` (universal binary, Intel + Apple Silicon)
 - **Windows** — `.msi` / `.exe`
 
-The desktop app checks for updates automatically on launch.
+The desktop app checks for updates automatically on launch. No uploads, no server — all processing stays on your machine.
 
 ## Development
 
@@ -171,7 +175,7 @@ SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=your-anon-key
 ```
 
-See the [Development Setup](https://gerbtrace.com/docs/development/setup) guide for full details.
+See the [Development Setup](https://www.gerbtrace.com/docs/development/setup) guide for full details.
 
 ## Project Structure
 
@@ -197,12 +201,12 @@ gerbtrace/
 ## Contributing
 
 1. Fork the repository and clone your fork.
-2. Follow the [Development Setup](https://gerbtrace.com/docs/development/setup) guide.
+2. Follow the [Development Setup](https://www.gerbtrace.com/docs/development/setup) guide.
 3. Create a feature branch from `main`.
 4. Make your changes and verify they work in both web and desktop modes.
 5. Submit a pull request.
 
-See the [Contributing](https://gerbtrace.com/docs/development/contributing) guide for coding conventions, the sidebar design system, and PR guidelines.
+See the [Contributing](https://www.gerbtrace.com/docs/development/contributing) guide for coding conventions, the sidebar design system, and PR guidelines.
 
 ## Acknowledgments
 
