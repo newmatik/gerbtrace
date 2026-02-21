@@ -119,10 +119,12 @@ export function useElexessApi() {
   const config = useRuntimeConfig()
   const supabase = useSupabase()
   const { currentTeam } = useTeam()
+  const { canUseElexess, isAtElexessLimit, elexessSearchesRemaining, logUsageEvent, maxElexessSearches, elexessSearchesUsed } = useTeamPlan()
 
   const baseUrl = computed(() => (config.public as any).elexessUrl as string || 'https://api.dev.elexess.com/api')
 
   const isEnabled = computed(() => {
+    if (!canUseElexess.value) return false
     const team = currentTeam.value
     if (!team) return false
     if (typeof team.elexess_enabled === 'boolean') return team.elexess_enabled
@@ -353,6 +355,13 @@ export function useElexessApi() {
     if (!hasCredentials.value) return null
 
     return enqueue(async () => {
+      // Check usage limit before each search
+      const allowed = await logUsageEvent('elexess_search', { mpn: partNumber })
+      if (!allowed) {
+        console.warn(`[Elexess] Monthly search limit reached (${elexessSearchesUsed.value}/${maxElexessSearches.value})`)
+        return null
+      }
+
       try {
         const url = `${baseUrl.value}/search?searchterm=${encodeURIComponent(partNumber)}`
         const response = await fetch(url, {
@@ -529,6 +538,8 @@ export function useElexessApi() {
     isFetching: readonly(isFetching),
     pricingQueue: readonly(pricingQueue),
     exchangeRate: readonly(exchangeRate),
+    isAtElexessLimit,
+    elexessSearchesRemaining,
     searchPart,
     fetchAllPricing,
     fetchSinglePricing,

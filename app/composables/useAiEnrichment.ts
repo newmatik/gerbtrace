@@ -39,8 +39,10 @@ export function useAiEnrichment() {
   const enrichError = useState<string | null>('spark-enrich-error', () => null)
   const { currentTeam } = useTeam()
 
+  const { canUseSparkAi, logUsageEvent } = useTeamPlan()
+
   const isAiEnabled = computed(() => {
-    return !!(currentTeam.value?.ai_enabled && currentTeam.value?.ai_api_key && currentTeam.value?.ai_model)
+    return !!(canUseSparkAi.value && currentTeam.value?.ai_enabled && currentTeam.value?.ai_api_key && currentTeam.value?.ai_model)
   })
 
   async function enrichBom(
@@ -58,12 +60,17 @@ export function useAiEnrichment() {
 
     const activeLines = bomLines.filter(l => !l.dnp)
 
+    if (!canUseSparkAi.value) {
+      throw new Error('Spark AI requires a Pro plan or higher')
+    }
+
     try {
       const result = await $fetch<{ suggestions: BomAiSuggestions }>('/api/ai/enrich-bom', {
         method: 'POST',
         body: {
           apiKey: currentTeam.value.ai_api_key,
           model: currentTeam.value.ai_model,
+          teamPlan: currentTeam.value.plan ?? 'free',
           bomLines: activeLines,
           smdPnpComponents,
           thtPnpComponents,
@@ -83,6 +90,9 @@ export function useAiEnrichment() {
       }
 
       aiSuggestions.value = cleaned
+
+      logUsageEvent('spark_ai_run', { bom_line_count: activeLines.length }).catch(() => {})
+
       return cleaned
     } catch (err: any) {
       enrichError.value = err?.data?.data?.message ?? err?.data?.statusMessage ?? err?.message ?? 'AI enrichment failed'
@@ -123,7 +133,7 @@ export function useAiEnrichment() {
     return aiSuggestions.value[lineId] ?? null
   }
 
-  type SuggestionField = 'description' | 'type' | 'pinCount' | 'smdClassification'
+  type SuggestionField = 'description' | 'type' | 'pinCount' | 'smdClassification' | 'manufacturers' | 'group'
 
   function acceptSuggestion(
     lineId: string,

@@ -170,6 +170,7 @@ const navItems = [
   { label: 'General', icon: 'i-lucide-settings-2', to: '/team/settings' },
   { label: 'Defaults', icon: 'i-lucide-sliders-horizontal', to: '/team/settings?section=defaults' },
   { label: 'Integrations', icon: 'i-lucide-plug-zap', to: '/team/settings?section=integrations' },
+  { label: 'Billing', icon: 'i-lucide-credit-card', to: '/team/settings?section=billing' },
   { label: 'Members', icon: 'i-lucide-users', to: '/team/members' },
 ]
 

@@ -530,6 +530,7 @@
     </footer>
 
     <AppAboutModal v-model:open="aboutOpen" />
+    <UpgradeModal v-model:open="upgradeModalOpen" :feature="upgradeModalFeature" :plan="upgradeModalPlan" />
 
     <!-- Modals -->
     <UModal v-model:open="teamDeleteModalOpen">
@@ -619,6 +620,10 @@ const { currentTeam, hasTeam, isEditor, isAdmin, teamsLoaded } = useTeam()
 const { members } = useTeamMembers()
 const { spaces, fetchSpaces } = useSpaces()
 const { projects: teamProjects, projectsLoading: teamProjectsLoading, createProject: createTeamProjectFn, updateProject: updateTeamProjectFn, deleteProject: deleteTeamProjectFn, getPreviewUrl: getTeamPreviewUrl } = useTeamProjects()
+const { isAtProjectLimit, suggestedUpgrade } = useTeamPlan()
+const upgradeModalOpen = ref(false)
+const upgradeModalFeature = ref('')
+const upgradeModalPlan = ref<'Pro' | 'Team' | undefined>(undefined)
 
 const query = ref('')
 const modeFilter = ref<'all' | 'viewer' | 'compare'>('all')
@@ -754,6 +759,12 @@ async function createProject(mode: 'viewer' | 'compare') {
 }
 
 async function createTeamProject(mode: 'viewer' | 'compare') {
+  if (isAtProjectLimit.value && suggestedUpgrade.value) {
+    upgradeModalFeature.value = 'more projects'
+    upgradeModalPlan.value = suggestedUpgrade.value
+    upgradeModalOpen.value = true
+    return
+  }
   const spaceId = newProjectSpaceId.value === SPACE_UNASSIGNED ? null : newProjectSpaceId.value
   const { project } = await createTeamProjectFn(mode, undefined, spaceId)
   if (project) {

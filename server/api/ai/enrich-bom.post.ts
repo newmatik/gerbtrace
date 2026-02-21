@@ -74,7 +74,11 @@ function sanitizeSuggestions(raw: unknown): SanitizedSuggestions {
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
-  const { apiKey, model, bomLines, smdPnpComponents, thtPnpComponents, existingGroups } = body ?? {}
+  const { apiKey, model, bomLines, smdPnpComponents, thtPnpComponents, existingGroups, teamPlan } = body ?? {}
+
+  if (teamPlan === 'free') {
+    throw createError({ statusCode: 403, statusMessage: 'Spark AI requires a Pro plan or higher' })
+  }
 
   if (!apiKey || typeof apiKey !== 'string') {
     throw createError({ statusCode: 400, statusMessage: 'Missing apiKey' })

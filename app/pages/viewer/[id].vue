@@ -772,13 +772,30 @@
                 size="xs"
                 :color="elexess.isFetching.value ? 'warning' : 'neutral'"
                 :variant="elexess.isFetching.value ? 'soft' : 'outline'"
-                :icon="elexess.isFetching.value ? 'i-lucide-x' : 'i-lucide-refresh-cw'"
+                :icon="elexess.isFetching.value ? 'i-lucide-x' : undefined"
                 :disabled="!canEditTab('bom') || (bom.bomLines.value as BomLine[]).length === 0"
                 :title="elexess.isFetching.value ? 'Cancel pricing fetch' : 'Fetch pricing for all manufacturer parts'"
                 @click="elexess.isFetching.value ? handleCancelPricing() : handleFetchAllPricing()"
               >
+                <template v-if="!elexess.isFetching.value" #leading>
+                  <ElexessIcon class="size-4" />
+                </template>
                 <template v-if="elexess.isFetching.value">Cancel</template>
                 <template v-else>Fetch Prices</template>
+              </UButton>
+              <UButton
+                v-else
+                size="xs"
+                color="neutral"
+                variant="outline"
+                :disabled="(bom.bomLines.value as BomLine[]).length === 0"
+                title="Fetch live component pricing via Elexess"
+                @click="handleFetchPricesUpsell"
+              >
+                <template #leading>
+                  <ElexessIcon class="size-4" />
+                </template>
+                Fetch Prices
               </UButton>
               <UButton
                 v-if="spark.isAiEnabled.value"
@@ -796,6 +813,18 @@
                   Spark
                   <UBadge v-if="spark.pendingSuggestionCount.value > 0" size="xs" color="secondary" variant="solid" class="ml-1">{{ spark.pendingSuggestionCount.value }}</UBadge>
                 </template>
+              </UButton>
+              <UButton
+                v-else-if="!canUseSparkAi"
+                size="xs"
+                color="secondary"
+                variant="outline"
+                icon="i-lucide-sparkles"
+                :disabled="(bom.bomLines.value as BomLine[]).length === 0"
+                title="Spark AI enriches your BOM automatically"
+                @click="showUpgradeModal('Spark AI', 'Pro')"
+              >
+                Spark
               </UButton>
               <div v-if="spark.pendingSuggestionCount.value > 0" class="flex items-center gap-0.5">
                 <span class="text-[10px] text-secondary-600 dark:text-secondary-400 tabular-nums px-1">{{ sparkReviewPosition }} / {{ spark.pendingSuggestionCount.value }}</span>
@@ -1090,6 +1119,9 @@
         </main>
       </template>
     </div>
+
+    <!-- Upgrade modal (freemium upsell) -->
+    <UpgradeModal v-model:open="upgradeModalOpen" :feature="upgradeModalFeature" :plan="upgradeModalPlan" />
 
     <!-- Settings modal -->
     <AppSettingsModal v-model:open="showSettings" />
@@ -4231,6 +4263,16 @@ const bom = useBom(layers)
 const elexess = useElexessApi()
 const spark = useAiEnrichment()
 const toast = useToast()
+const { canUseSparkAi, canUseElexess, isAtElexessLimit, suggestedUpgrade } = useTeamPlan()
+const upgradeModalOpen = ref(false)
+const upgradeModalFeature = ref('')
+const upgradeModalPlan = ref<'Pro' | 'Team' | undefined>(undefined)
+
+function showUpgradeModal(feature: string, plan?: 'Pro' | 'Team') {
+  upgradeModalFeature.value = feature
+  upgradeModalPlan.value = plan
+  upgradeModalOpen.value = true
+}
 
 watch(pricingQuantities, (list) => {
   if (!list.includes(bom.boardQuantity.value)) {
@@ -4981,10 +5023,22 @@ async function handleFetchAllPricing() {
   if (isTeamProject) {
     await persistToProject({ bomPricingCache: updatedCache })
   }
+  if (isAtElexessLimit.value && suggestedUpgrade.value) {
+    showUpgradeModal('Elexess Price Search', suggestedUpgrade.value)
+  }
 }
 
 function handleCancelPricing() {
   elexess.cancelFetching()
+}
+
+function handleFetchPricesUpsell() {
+  if (!canUseElexess.value) {
+    showUpgradeModal('Elexess Price Search', 'Pro')
+  } else {
+    toast.add({ title: 'Configure Elexess credentials in Team Settings to fetch pricing', color: 'warning' })
+    navigateTo('/team/settings?section=integrations')
+  }
 }
 
 async function handleFetchSinglePricing(partNumber: string) {

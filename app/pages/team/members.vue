@@ -38,7 +38,7 @@
                 v-if="isAdmin"
                 size="sm"
                 icon="i-lucide-user-plus"
-                @click="inviteModalOpen = true"
+                @click="handleInviteClick"
               >
                 Invite
               </UButton>
@@ -269,6 +269,8 @@
         </div>
       </template>
     </UModal>
+
+    <UpgradeModal v-model:open="upgradeModalOpen" :feature="upgradeFeature" :plan="upgradePlan" />
   </div>
 </template>
 
@@ -279,6 +281,7 @@ const router = useRouter()
 const route = useRoute()
 const { isAuthenticated, user: currentUser } = useAuth()
 const { isAdmin, currentTeamRole } = useTeam()
+const { isAtMemberLimit, canInviteGuests, suggestedUpgrade } = useTeamPlan()
 const {
   members,
   invitations,
@@ -305,6 +308,7 @@ const navItems = [
   { label: 'General', icon: 'i-lucide-settings-2', to: '/team/settings' },
   { label: 'Defaults', icon: 'i-lucide-sliders-horizontal', to: '/team/settings?section=defaults' },
   { label: 'Integrations', icon: 'i-lucide-plug-zap', to: '/team/settings?section=integrations' },
+  { label: 'Billing', icon: 'i-lucide-credit-card', to: '/team/settings?section=billing' },
   { label: 'Members', icon: 'i-lucide-users', to: '/team/members' },
 ]
 
@@ -336,6 +340,11 @@ const filteredInvitations = computed(() => {
   )
 })
 
+// ── Upgrade modal ────────────────────────────────────────────────────
+const upgradeModalOpen = ref(false)
+const upgradeFeature = ref('')
+const upgradePlan = ref<'Pro' | 'Team' | undefined>(undefined)
+
 // ── Invite ──────────────────────────────────────────────────────────
 const inviteModalOpen = ref(false)
 const inviteEmail = ref('')
@@ -348,6 +357,16 @@ const roleOptions = [
   { label: 'Editor', value: 'editor' },
   { label: 'Admin', value: 'admin' },
 ]
+
+function handleInviteClick() {
+  if (isAtMemberLimit.value && suggestedUpgrade.value) {
+    upgradeFeature.value = 'more team members'
+    upgradePlan.value = suggestedUpgrade.value
+    upgradeModalOpen.value = true
+    return
+  }
+  inviteModalOpen.value = true
+}
 
 // ── Edit Name ───────────────────────────────────────────────────────
 const editNameModalOpen = ref(false)

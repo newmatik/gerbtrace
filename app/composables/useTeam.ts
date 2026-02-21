@@ -5,11 +5,20 @@
  * Provides reactive list of user's teams, team switching, and team creation.
  */
 
+export type TeamPlan = 'free' | 'pro' | 'team' | 'enterprise'
+
 export interface Team {
   id: string
   name: string
   slug: string
   auto_join_domain: string | null
+  plan: TeamPlan
+  stripe_customer_id: string | null
+  billing_name: string | null
+  billing_email: string | null
+  billing_address: { line1?: string; line2?: string; city?: string; state?: string; postal_code?: string; country?: string } | null
+  billing_vat_id: string | null
+  billing_tax_exempt: string | null
   default_currency: 'USD' | 'EUR'
   time_format: '24h' | '12h'
   elexess_enabled: boolean

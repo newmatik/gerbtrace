@@ -32,7 +32,7 @@
           <section class="space-y-4">
             <div class="flex items-center justify-between">
               <h2 class="text-lg font-semibold">Spaces</h2>
-              <UButton v-if="isAdmin" size="sm" icon="i-lucide-plus" @click="createModalOpen = true">
+              <UButton v-if="isAdmin" size="sm" icon="i-lucide-plus" @click="handleNewSpaceClick">
                 New Space
               </UButton>
             </div>
@@ -86,6 +86,8 @@
         </div>
       </template>
     </UModal>
+
+    <UpgradeModal v-model:open="upgradeModalOpen" feature="more Spaces" :plan="upgradePlan" />
   </div>
 </template>
 
@@ -94,12 +96,16 @@ const router = useRouter()
 const { isAuthenticated } = useAuth()
 const { currentTeamRole, isAdmin } = useTeam()
 const { reportError } = useErrorReporting()
+const { maxSpaces, suggestedUpgrade } = useTeamPlan()
 const {
   spaces,
   spacesLoading,
   fetchSpaces,
   createSpace,
 } = useSpaces()
+
+const upgradeModalOpen = ref(false)
+const upgradePlan = ref<'Pro' | 'Team' | undefined>(undefined)
 
 watch(isAuthenticated, (authed) => {
   if (!authed) router.replace('/auth/login')
@@ -116,11 +122,21 @@ const navItems = [
   { label: 'General', icon: 'i-lucide-settings-2', to: '/team/settings' },
   { label: 'Defaults', icon: 'i-lucide-sliders-horizontal', to: '/team/settings?section=defaults' },
   { label: 'Integrations', icon: 'i-lucide-plug-zap', to: '/team/settings?section=integrations' },
+  { label: 'Billing', icon: 'i-lucide-credit-card', to: '/team/settings?section=billing' },
   { label: 'Members', icon: 'i-lucide-users', to: '/team/members' },
 ]
 
 const createModalOpen = ref(false)
 const newSpaceName = ref('')
+
+function handleNewSpaceClick() {
+  if (maxSpaces.value !== Infinity && spaces.value.length >= maxSpaces.value && suggestedUpgrade.value) {
+    upgradePlan.value = suggestedUpgrade.value
+    upgradeModalOpen.value = true
+    return
+  }
+  createModalOpen.value = true
+}
 
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString()

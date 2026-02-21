@@ -10,6 +10,9 @@ export default defineNuxtConfig({
       // Keep in sync with Supabase Auth -> Email OTP length.
       supabaseEmailOtpLength: Number(process.env.SUPABASE_EMAIL_OTP_LENGTH || 8),
       elexessUrl: process.env.ELEXESS_URL || 'https://api.dev.elexess.com/api',
+      stripePriceIdPro: process.env.STRIPE_PRICE_ID_PRO || '',
+      stripePriceIdTeam: process.env.STRIPE_PRICE_ID_TEAM || '',
+      platformAdminIds: process.env.PLATFORM_ADMIN_IDS || '',
       sentry: {
         dsn: process.env.SENTRY_DSN || '',
         environment: process.env.SENTRY_ENVIRONMENT || (process.env.NODE_ENV === 'production' ? 'production' : 'development'),

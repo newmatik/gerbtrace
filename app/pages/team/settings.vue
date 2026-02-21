@@ -32,7 +32,7 @@
           </aside>
 
           <section>
-            <div v-if="!isAdmin" class="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-4 text-sm text-amber-700 dark:text-amber-400 mb-5">
+            <div v-if="teamsLoaded && !isAdmin" class="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-4 text-sm text-amber-700 dark:text-amber-400 mb-5">
               Only team administrators can modify these settings.
             </div>
 
@@ -206,7 +206,19 @@
             <div v-else-if="activeSection === 'integrations'" class="space-y-3">
               <h2 class="text-lg font-semibold">Integrations</h2>
               <!-- Elexess -->
+              <div v-if="!canUseElexess" class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-4 space-y-2">
+                <div class="flex items-center gap-2">
+                  <UIcon name="i-lucide-plug-zap" class="text-lg text-sky-500" />
+                  <h2 class="text-lg font-semibold">Elexess</h2>
+                  <PlanBadge plan="pro" />
+                </div>
+                <p class="text-sm text-neutral-500 dark:text-neutral-400">
+                  Elexess Price Search is available on the Pro plan.
+                  <NuxtLink to="/team/settings?section=billing" class="text-primary underline">Upgrade</NuxtLink>
+                </p>
+              </div>
               <form
+                v-else
                 @submit.prevent="handleSaveElexess"
                 class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-4 space-y-3"
               >
@@ -291,7 +303,20 @@
               </form>
 
               <!-- Spark AI -->
+              <div v-if="!canUseSparkAi" class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-4 space-y-2">
+                <div class="flex items-center gap-2">
+                  <UIcon name="i-lucide-sparkles" class="text-lg text-violet-500" />
+                  <h2 class="text-lg font-semibold">Spark</h2>
+                  <UBadge size="xs" variant="subtle" color="secondary">AI</UBadge>
+                  <PlanBadge plan="pro" />
+                </div>
+                <p class="text-sm text-neutral-500 dark:text-neutral-400">
+                  Spark AI is available on the Pro plan.
+                  <NuxtLink to="/team/settings?section=billing" class="text-primary underline">Upgrade</NuxtLink>
+                </p>
+              </div>
               <form
+                v-else
                 @submit.prevent="handleSaveSpark"
                 class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-4 space-y-3"
               >
@@ -395,6 +420,99 @@
               </form>
             </div>
 
+            <!-- Billing -->
+            <div v-else-if="activeSection === 'billing'" class="space-y-6">
+              <div class="flex items-center gap-3">
+                <h2 class="text-lg font-semibold">Billing</h2>
+                <PlanBadge :plan="plan" />
+              </div>
+
+              <!-- Usage overview -->
+              <div class="grid gap-4 sm:grid-cols-2">
+                <div class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-4 space-y-2">
+                  <div class="text-xs font-medium text-neutral-500 dark:text-neutral-400">Members</div>
+                  <div class="text-sm">{{ memberCount }} <span class="text-neutral-400">of {{ formatLimit(maxMembers) }}</span></div>
+                  <div v-if="Number.isFinite(maxMembers)" class="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-1.5">
+                    <div class="bg-primary rounded-full h-1.5 transition-all" :style="{ width: `${Math.min(100, (memberCount / maxMembers) * 100)}%` }" />
+                  </div>
+                </div>
+                <div class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-4 space-y-2">
+                  <div class="text-xs font-medium text-neutral-500 dark:text-neutral-400">Projects</div>
+                  <div class="text-sm">{{ projectCount }} <span class="text-neutral-400">of {{ formatLimit(maxProjects) }}</span></div>
+                  <div v-if="Number.isFinite(maxProjects)" class="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-1.5">
+                    <div class="bg-primary rounded-full h-1.5 transition-all" :style="{ width: `${Math.min(100, (projectCount / maxProjects) * 100)}%` }" />
+                  </div>
+                </div>
+                <div class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-4 space-y-2">
+                  <div class="text-xs font-medium text-neutral-500 dark:text-neutral-400">Elexess searches this month</div>
+                  <div class="text-sm">
+                    {{ elexessSearchesUsed }}
+                    <span v-if="Number.isFinite(maxElexessSearches)" class="text-neutral-400">of {{ maxElexessSearches.toLocaleString() }}</span>
+                    <span v-else class="text-neutral-400">Unlimited</span>
+                  </div>
+                  <div v-if="Number.isFinite(maxElexessSearches) && maxElexessSearches > 0" class="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-1.5">
+                    <div class="rounded-full h-1.5 transition-all" :class="isAtElexessLimit ? 'bg-red-500' : 'bg-primary'" :style="{ width: `${Math.min(100, (elexessSearchesUsed / maxElexessSearches) * 100)}%` }" />
+                  </div>
+                </div>
+                <div class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-4 space-y-2">
+                  <div class="text-xs font-medium text-neutral-500 dark:text-neutral-400">Spark AI runs this month</div>
+                  <div class="text-sm">{{ sparkAiRunsUsed }}</div>
+                </div>
+              </div>
+
+              <!-- Billing details (from Stripe) -->
+              <div v-if="currentTeam?.billing_name || currentTeam?.billing_vat_id" class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-4 space-y-2">
+                <div class="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-2">Billing details</div>
+                <div v-if="currentTeam?.billing_name" class="text-sm">{{ currentTeam.billing_name }}</div>
+                <div v-if="currentTeam?.billing_email" class="text-sm text-neutral-500">{{ currentTeam.billing_email }}</div>
+                <div v-if="currentTeam?.billing_address" class="text-sm text-neutral-500">
+                  {{ [currentTeam.billing_address.line1, currentTeam.billing_address.city, currentTeam.billing_address.postal_code, currentTeam.billing_address.country].filter(Boolean).join(', ') }}
+                </div>
+                <div v-if="currentTeam?.billing_vat_id" class="text-sm">
+                  VAT ID: {{ currentTeam.billing_vat_id }}
+                </div>
+              </div>
+
+              <!-- Actions based on plan -->
+              <div v-if="isEnterprise" class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-5">
+                <p class="text-sm text-neutral-500">Enterprise plan — contact your account manager for billing changes.</p>
+              </div>
+
+              <template v-else>
+                <div v-if="!isFree && isAdmin" class="flex gap-3">
+                  <UButton variant="outline" :loading="portalLoading" @click="openPortal">
+                    Manage Subscription
+                  </UButton>
+                </div>
+
+                <div v-if="isFree || isPro" class="grid gap-4 sm:grid-cols-2">
+                  <div v-if="isFree" class="rounded-xl border-2 border-[var(--ui-primary)] p-5 space-y-3">
+                    <div class="font-semibold">Pro <span class="text-neutral-400 font-normal text-sm">$25/mo</span></div>
+                    <ul class="text-sm space-y-1 text-neutral-600 dark:text-neutral-300">
+                      <li>15 members, unlimited projects</li>
+                      <li>Spark AI + 1,000 Elexess searches</li>
+                      <li>3 Spaces</li>
+                    </ul>
+                    <UButton color="primary" block :loading="checkoutLoadingId === String(config.public.stripePriceIdPro)" :disabled="!isAdmin || !!checkoutLoadingId" @click="startCheckout(String(config.public.stripePriceIdPro))">
+                      Upgrade to Pro
+                    </UButton>
+                  </div>
+
+                  <div class="rounded-xl border border-neutral-200 dark:border-neutral-800 p-5 space-y-3">
+                    <div class="font-semibold">Team <span class="text-neutral-400 font-normal text-sm">$149/mo</span></div>
+                    <ul class="text-sm space-y-1 text-neutral-600 dark:text-neutral-300">
+                      <li>100 members, unlimited Spaces</li>
+                      <li>10,000 Elexess searches/mo</li>
+                      <li>Guest role for external users</li>
+                    </ul>
+                    <UButton variant="outline" block :loading="checkoutLoadingId === String(config.public.stripePriceIdTeam)" :disabled="!isAdmin || !!checkoutLoadingId" @click="startCheckout(String(config.public.stripePriceIdTeam))">
+                      {{ isPro ? 'Upgrade to Team' : 'Choose Team' }}
+                    </UButton>
+                  </div>
+                </div>
+              </template>
+            </div>
+
             <div v-else class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-5">
               <h2 class="text-lg font-semibold mb-2">Team Members</h2>
               <p class="text-sm text-neutral-500 dark:text-neutral-400 mb-4">
@@ -414,7 +532,7 @@
 <script setup lang="ts">
 const router = useRouter()
 const route = useRoute()
-const { currentTeam, currentTeamRole, isAdmin, updateTeam } = useTeam()
+const { currentTeam, currentTeamRole, isAdmin, updateTeam, teamsLoaded } = useTeam()
 const { isAuthenticated } = useAuth()
 
 watch(isAuthenticated, (authed) => {
@@ -430,14 +548,15 @@ const navItems = [
   { label: 'General', icon: 'i-lucide-settings-2', to: '/team/settings' },
   { label: 'Defaults', icon: 'i-lucide-sliders-horizontal', to: '/team/settings?section=defaults' },
   { label: 'Integrations', icon: 'i-lucide-plug-zap', to: '/team/settings?section=integrations' },
+  { label: 'Billing', icon: 'i-lucide-credit-card', to: '/team/settings?section=billing' },
   { label: 'Members', icon: 'i-lucide-users', to: '/team/members' },
 ]
 
-type SettingsSection = 'general' | 'defaults' | 'integrations'
+type SettingsSection = 'general' | 'defaults' | 'integrations' | 'billing'
 const activeSection = computed<SettingsSection>(() => {
   const section = route.query.section
   const value = Array.isArray(section) ? section[0] : section
-  if (value === 'defaults' || value === 'integrations') return value
+  if (value === 'defaults' || value === 'integrations' || value === 'billing') return value
   return 'general'
 })
 
@@ -446,7 +565,77 @@ function isActive(item: { to: string }) {
   if (item.to === '/team/members') return route.path === '/team/members'
   if (item.to.includes('section=defaults')) return route.path === '/team/settings' && activeSection.value === 'defaults'
   if (item.to.includes('section=integrations')) return route.path === '/team/settings' && activeSection.value === 'integrations'
+  if (item.to.includes('section=billing')) return route.path === '/team/settings' && activeSection.value === 'billing'
   return route.path === '/team/settings' && activeSection.value === 'general'
+}
+
+// ── Billing section ─────────────────────────────────────────────────
+const {
+  plan, isFree, isPro, isTeam: isTeamPlan, isEnterprise, suggestedUpgrade,
+  canUseSparkAi, canUseElexess,
+  maxMembers, maxProjects, maxSpaces, maxElexessSearches,
+  memberCount, projectCount,
+  elexessSearchesUsed, sparkAiRunsUsed,
+  elexessSearchesRemaining, isAtElexessLimit,
+} = useTeamPlan()
+
+const config = useRuntimeConfig()
+
+const checkoutLoadingId = ref<string | null>(null)
+const portalLoading = ref(false)
+
+async function startCheckout(priceId: string) {
+  if (!currentTeam.value) return
+  checkoutLoadingId.value = priceId
+  try {
+    const supabase = useSupabase()
+    const { data: sessionData } = await supabase.auth.getSession()
+    const token = sessionData.session?.access_token
+    if (!token) return
+
+    const { data, error } = await supabase.functions.invoke('stripe-checkout', {
+      body: { team_id: currentTeam.value.id, price_id: priceId },
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (error) {
+      console.error('Checkout error:', error)
+      return
+    }
+    if ((data as any)?.url) {
+      window.location.href = (data as any).url
+    }
+  } finally {
+    checkoutLoadingId.value = null
+  }
+}
+
+async function openPortal() {
+  if (!currentTeam.value) return
+  portalLoading.value = true
+  try {
+    const supabase = useSupabase()
+    const { data: sessionData } = await supabase.auth.getSession()
+    const token = sessionData.session?.access_token
+    if (!token) return
+
+    const { data, error } = await supabase.functions.invoke('stripe-portal', {
+      body: { team_id: currentTeam.value.id },
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (error) {
+      console.error('Portal error:', error)
+      return
+    }
+    if ((data as any)?.url) {
+      window.location.href = (data as any).url
+    }
+  } finally {
+    portalLoading.value = false
+  }
+}
+
+function formatLimit(value: number): string {
+  return Number.isFinite(value) ? String(value) : 'Unlimited'
 }
 
 const teamName = ref('')

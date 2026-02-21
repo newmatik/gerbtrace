@@ -36,6 +36,17 @@
     </div>
 
     <UButton
+      v-if="!isAuthenticated"
+      to="/pricing"
+      size="xs"
+      color="neutral"
+      variant="ghost"
+      icon="i-lucide-credit-card"
+    >
+      Pricing
+    </UButton>
+
+    <UButton
       size="xs"
       color="neutral"
       variant="ghost"
@@ -129,6 +140,7 @@ const { isAuthenticated, signOut } = useAuth()
 const { profile } = useCurrentUser()
 const { unreadCount } = useNotifications()
 const { teams, currentTeam, currentTeamRole, hasTeam, switchTeam } = useTeam()
+const { isPlatformAdmin } = useAdminGuard()
 
 const userInitials = computed(() => {
   const name = profile.value?.name ?? profile.value?.email ?? ''
@@ -185,31 +197,43 @@ const settingsMenuItems = computed(() => {
 })
 
 // User menu items
-const userMenuItems = computed(() => [
-  [
+const userMenuItems = computed(() => {
+  const profileGroup = [
     {
       label: profile.value?.name ?? profile.value?.email ?? 'Account',
       icon: 'i-lucide-user',
       onSelect: () => router.push('/profile'),
     },
-  ],
-  [
+  ]
+
+  const actionGroup: any[] = [
     {
       label: 'Profile',
       icon: 'i-lucide-user-cog',
       onSelect: () => router.push('/profile'),
     },
-    {
-      label: 'Sign Out',
-      icon: 'i-lucide-log-out',
-      onSelect: async () => {
-        await signOut({ force: true })
-        await router.replace('/auth/login')
-        if (import.meta.client) window.location.reload()
-      },
+  ]
+
+  if (isPlatformAdmin.value) {
+    actionGroup.push({
+      label: 'Platform Admin',
+      icon: 'i-lucide-shield',
+      onSelect: () => router.push('/admin'),
+    })
+  }
+
+  actionGroup.push({
+    label: 'Sign Out',
+    icon: 'i-lucide-log-out',
+    onSelect: async () => {
+      await signOut({ force: true })
+      await router.replace('/auth/login')
+      if (import.meta.client) window.location.reload()
     },
-  ],
-])
+  })
+
+  return [profileGroup, actionGroup]
+})
 
 // Sync native window titlebar theme with web app color mode
 async function syncWindowTheme(dark: boolean) {
