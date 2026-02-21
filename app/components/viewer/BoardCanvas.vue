@@ -2040,6 +2040,11 @@ watch(
 )
 
 watch(
+  () => props.pasteSettings?.showJetPath,
+  () => scheduleRedraw(),
+)
+
+watch(
   () => [
     componentSignature(props.pnpComponents),
     props.selectedPnpDesignator ?? '',

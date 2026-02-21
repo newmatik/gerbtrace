@@ -123,7 +123,7 @@ export function useAiEnrichment() {
     return aiSuggestions.value[lineId] ?? null
   }
 
-  type SuggestionField = keyof AiSuggestion
+  type SuggestionField = 'description' | 'type' | 'pinCount' | 'smdClassification'
 
   function acceptSuggestion(
     lineId: string,

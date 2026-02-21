@@ -264,6 +264,10 @@ const fpsColor = computed(() => {
 const copied = ref(false)
 let copiedTimer: ReturnType<typeof setTimeout> | null = null
 
+onBeforeUnmount(() => {
+  if (copiedTimer) clearTimeout(copiedTimer)
+})
+
 function buildCopyText(): string {
   const s = props.snapshot
   const si = sysInfo.value

@@ -43,15 +43,20 @@ export function groupPadsIntoComponents(
     used.add(i)
     const members = [pads[i]!]
 
-    for (let j = i + 1; j < pads.length; j++) {
-      if (used.has(j)) continue
-      const a = pads[i]!
-      const b = pads[j]!
-      const dx = a.cx - b.cx
-      const dy = a.cy - b.cy
-      if (Math.sqrt(dx * dx + dy * dy) < clusterRadius) {
-        used.add(j)
-        members.push(b)
+    const r2 = clusterRadius * clusterRadius
+    const queue = [pads[i]!]
+    while (queue.length) {
+      const a = queue.pop()!
+      for (let j = i + 1; j < pads.length; j++) {
+        if (used.has(j)) continue
+        const b = pads[j]!
+        const dx = a.cx - b.cx
+        const dy = a.cy - b.cy
+        if (dx * dx + dy * dy < r2) {
+          used.add(j)
+          members.push(b)
+          queue.push(b)
+        }
       }
     }
 

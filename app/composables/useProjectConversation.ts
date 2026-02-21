@@ -461,6 +461,10 @@ export function useProjectConversation(projectId: Ref<string | null>, teamId: Re
     if (prev) unsubscribe()
     if (next) {
       const hasCached = hydrateFromCache(next)
+      if (!hasCached) {
+        messages.value = []
+        attachments.value = []
+      }
       await subscribe()
       if (!hasCached || !isCacheFresh(next)) {
         await fetchMessages({ background: hasCached })

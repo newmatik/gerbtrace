@@ -251,17 +251,17 @@
     <div v-if="draw.previewDimensionsMm.value && !draw.preciseMode.value" class="ml-auto flex items-center gap-2 shrink-0">
       <template v-if="draw.activeTool.value === 'rect' && draw.previewDimensionsMm.value.width != null">
         <span class="text-[10px] font-mono text-blue-600 dark:text-blue-400">
-          {{ formatDim(draw.previewDimensionsMm.value.width) }} x {{ formatDim(draw.previewDimensionsMm.value.height) }} mm
+          {{ formatDim(draw.previewDimensionsMm.value.width) }} x {{ formatDim(draw.previewDimensionsMm.value.height) }}
         </span>
       </template>
       <template v-else-if="draw.activeTool.value === 'circle' && draw.previewDimensionsMm.value.radius != null">
         <span class="text-[10px] font-mono text-blue-600 dark:text-blue-400">
-          r={{ formatDim(draw.previewDimensionsMm.value.radius) }} mm
+          r={{ formatDim(draw.previewDimensionsMm.value.radius) }}
         </span>
       </template>
       <template v-else-if="draw.activeTool.value === 'line' && draw.previewDimensionsMm.value.length != null">
         <span class="text-[10px] font-mono text-blue-600 dark:text-blue-400">
-          {{ formatDim(draw.previewDimensionsMm.value.length) }} mm
+          {{ formatDim(draw.previewDimensionsMm.value.length) }}
         </span>
       </template>
     </div>
@@ -378,6 +378,7 @@ function emitQuickBc() {
 
 watch(selectedBcSize, () => {
   if (!canQuickPlace.value) return
+  if (quickPlacementKind.value !== 'bc') return
   const size = bcSizeOptions.find(s => s.label === selectedBcSize.value) ?? bcSizeOptions[1]!
   props.draw.startQuickBcPlacement(size.w, size.h)
 })
@@ -432,8 +433,8 @@ const shapeTools = computed<{ label: string; value: DrawShapeTool; icon: string;
 })
 
 function formatDim(v: number): string {
-  if (v < 0.01) return (v * 1000).toFixed(1)
-  return v.toFixed(3)
+  if (v < 0.01) return `${(v * 1000).toFixed(1)} µm`
+  return `${v.toFixed(3)} mm`
 }
 
 const tbBtnBase =

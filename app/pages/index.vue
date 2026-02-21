@@ -18,8 +18,8 @@
             </div>
             
             <p class="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto leading-relaxed">
-              Open-source PCB NPI and manufacturing data preparation platform.
-              <span class="hidden sm:inline">View, compare, panelize, and prepare your designs for production.</span>
+              From Gerber file to factory floor.
+              <span class="hidden sm:inline">Free PCB viewer and compare tool — with a full manufacturing prep suite when you need it.</span>
             </p>
           </div>
 
@@ -804,7 +804,7 @@ function getApproverLabel(approverUserId: string | null) {
 }
 
 function getSpaceLabel(spaceId: string | null) {
-  if (!spaceId) return defaultSpace.value?.name ?? 'No space'
+  if (!spaceId) return 'Unassigned'
   const space = spaces.value.find(s => s.id === spaceId)
   return space?.name ?? defaultSpace.value?.name ?? 'Unknown space'
 }
