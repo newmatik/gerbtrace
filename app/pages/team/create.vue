@@ -24,6 +24,7 @@
                 v-model="teamName"
                 placeholder="e.g. Newmatik Engineering"
                 size="lg"
+                maxlength="15"
                 autofocus
                 required
                 class="w-full"
@@ -131,7 +132,9 @@ const slugChecking = ref(false)
 const slugError = ref('')
 
 const canCreate = computed(() => {
-  return teamName.value.trim().length > 0
+  const nameLength = teamName.value.trim().length
+  return nameLength > 0
+    && nameLength <= 15
     && slug.value.trim().length >= 3
     && !slugError.value
     && slugAvailable.value === true
@@ -191,6 +194,10 @@ async function handleCreate() {
   creating.value = true
 
   try {
+    if (teamName.value.trim().length > 15) {
+      errorMessage.value = 'Team name must be 15 characters or fewer'
+      return
+    }
     const { teamId, error } = await createTeam(
       teamName.value.trim(),
       slug.value.trim().toLowerCase(),

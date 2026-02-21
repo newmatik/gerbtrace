@@ -278,7 +278,7 @@ import type { TeamMember } from '~/composables/useTeamMembers'
 const router = useRouter()
 const route = useRoute()
 const { isAuthenticated, user: currentUser } = useAuth()
-const { isAdmin } = useTeam()
+const { isAdmin, currentTeamRole } = useTeam()
 const {
   members,
   invitations,
@@ -296,7 +296,12 @@ watch(isAuthenticated, (authed) => {
   if (!authed) router.replace('/auth/login')
 }, { immediate: true })
 
+watch(currentTeamRole, (role) => {
+  if (role === 'guest') router.replace('/')
+}, { immediate: true })
+
 const navItems = [
+  { label: 'Spaces', icon: 'i-lucide-folders', to: '/team/spaces' },
   { label: 'General', icon: 'i-lucide-settings-2', to: '/team/settings' },
   { label: 'Defaults', icon: 'i-lucide-sliders-horizontal', to: '/team/settings?section=defaults' },
   { label: 'Integrations', icon: 'i-lucide-plug-zap', to: '/team/settings?section=integrations' },
@@ -304,6 +309,7 @@ const navItems = [
 ]
 
 function isActive(item: { to: string }) {
+  if (item.to === '/team/spaces') return route.path === '/team/spaces'
   if (item.to === '/team/members') return route.path === '/team/members'
   if (item.to.includes('section=defaults')) return route.path === '/team/settings' && route.query.section === 'defaults'
   if (item.to.includes('section=integrations')) return route.path === '/team/settings' && route.query.section === 'integrations'

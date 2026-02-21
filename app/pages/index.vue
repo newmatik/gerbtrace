@@ -44,8 +44,8 @@
         </section>
 
         <!-- Compact Header for Logged-in Users -->
-        <section v-else class="flex flex-col sm:flex-row items-center justify-between gap-4 max-w-5xl mx-auto w-full">
-          <div>
+        <section v-else class="flex items-center justify-between gap-3 max-w-5xl mx-auto w-full">
+          <div class="min-w-0">
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
               <img
                 :src="isDark ? '/icon-black.png' : '/icon-blue.png'"
@@ -54,12 +54,9 @@
               >
               Gerbtrace
             </h1>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              {{ currentTeam ? `Workspace: ${currentTeam.name}` : 'Welcome back' }}
-            </p>
           </div>
 
-          <div class="flex items-center gap-3 w-full sm:w-auto">
+          <div class="flex items-center gap-3 shrink-0">
             <UButton icon="i-lucide-book-open-text" color="neutral" variant="outline" @click="openDocs()">
               Docs / Help
             </UButton>
@@ -113,6 +110,21 @@
                   <UIcon name="i-lucide-user" class="text-gray-400 w-4 h-4" />
                 </template>
               </USelectMenu>
+              <USelectMenu
+                v-if="isAuthenticated && hasTeam"
+                v-model="spaceFilter"
+                :items="spaceFilterOptions"
+                class="w-48"
+                size="sm"
+                value-key="value"
+                label-key="label"
+                searchable
+                :ui="{ content: 'min-w-[16rem]' }"
+              >
+                <template #leading>
+                  <UIcon name="i-lucide-folders" class="text-gray-400 w-4 h-4" />
+                </template>
+              </USelectMenu>
             </div>
           </div>
 
@@ -124,9 +136,20 @@
                 <span>{{ currentTeam?.name ?? 'Team' }} Projects</span>
                 <UBadge color="neutral" variant="subtle" size="xs">{{ filteredTeamProjects.length }}</UBadge>
               </h2>
-              <UButton v-if="isEditor" icon="i-lucide-plus" size="xs" class="px-3" @click="createTeamProject('viewer')">
+              <div class="flex items-center gap-2">
+                <USelectMenu
+                  v-if="isEditor"
+                  v-model="newProjectSpaceId"
+                  :items="newProjectSpaceOptions"
+                  size="xs"
+                  class="w-44"
+                  value-key="value"
+                  label-key="label"
+                />
+                <UButton v-if="isEditor" icon="i-lucide-plus" size="xs" class="px-3" @click="createTeamProject('viewer')">
                 New Team Project
-              </UButton>
+                </UButton>
+              </div>
             </div>
 
             <div v-if="teamProjectsLoading" class="text-center py-8 text-gray-500">
@@ -159,8 +182,49 @@
                   <div class="flex items-start justify-between gap-3">
                     <div class="min-w-0">
                       <h3 class="font-medium text-sm text-gray-900 dark:text-white truncate pr-4">{{ project.name }}</h3>
-                      <div class="text-xs text-gray-500 dark:text-gray-400">
-                        Updated {{ formatDate(project.updated_at) }}
+                      <div class="text-[11px] leading-tight text-gray-500 dark:text-gray-400 space-y-0.5">
+                        <div class="flex items-center gap-1.5 min-w-0">
+                          <span class="shrink-0">Created</span>
+                          <UBadge color="neutral" variant="outline" size="xs" class="min-w-0 max-w-[11rem]">
+                            <span class="inline-flex items-center gap-1 min-w-0">
+                              <img
+                                v-if="getUserDisplay(project.created_by).avatarUrl"
+                                :src="getUserDisplay(project.created_by).avatarUrl!"
+                                alt=""
+                                class="w-3 h-3 rounded-full object-cover shrink-0"
+                              >
+                              <span
+                                v-else
+                                class="w-3 h-3 rounded-full border border-gray-300 dark:border-gray-600 flex items-center justify-center text-[8px] leading-none shrink-0"
+                              >
+                                {{ getUserDisplay(project.created_by).initials }}
+                              </span>
+                              <span class="truncate">{{ getUserDisplay(project.created_by).label }}</span>
+                            </span>
+                          </UBadge>
+                          <span class="truncate">{{ formatTeamProjectTimestamp(project.created_at) }}</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 min-w-0">
+                          <span class="shrink-0">Updated</span>
+                          <UBadge color="neutral" variant="outline" size="xs" class="min-w-0 max-w-[11rem]">
+                            <span class="inline-flex items-center gap-1 min-w-0">
+                              <img
+                                v-if="getUserDisplay(project.updated_by).avatarUrl"
+                                :src="getUserDisplay(project.updated_by).avatarUrl!"
+                                alt=""
+                                class="w-3 h-3 rounded-full object-cover shrink-0"
+                              >
+                              <span
+                                v-else
+                                class="w-3 h-3 rounded-full border border-gray-300 dark:border-gray-600 flex items-center justify-center text-[8px] leading-none shrink-0"
+                              >
+                                {{ getUserDisplay(project.updated_by).initials }}
+                              </span>
+                              <span class="truncate">{{ getUserDisplay(project.updated_by).label }}</span>
+                            </span>
+                          </UBadge>
+                          <span class="truncate">{{ formatTeamProjectTimestamp(project.updated_at) }}</span>
+                        </div>
                       </div>
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
@@ -184,8 +248,8 @@
                     </div>
                   </div>
 
-                  <div class="flex items-center justify-between pt-1 mt-auto border-t border-gray-100 dark:border-gray-800/50" @click.stop>
-                    <div class="min-w-[140px]">
+                  <div class="flex items-center justify-between gap-2 pt-1 mt-auto border-t border-gray-100 dark:border-gray-800/50" @click.stop>
+                    <div class="flex items-center gap-1 min-w-0">
                       <USelectMenu
                         v-if="isEditor"
                         :model-value="project.assignee_user_id ?? ASSIGNEE_UNASSIGNED"
@@ -203,9 +267,26 @@
                           <UIcon name="i-lucide-user" class="text-gray-400 w-3 h-3" />
                         </template>
                       </USelectMenu>
+                      <USelectMenu
+                        v-if="isEditor"
+                        :model-value="resolveProjectSpaceValue(project.space_id)"
+                        size="xs"
+                        :items="projectSpaceOptions"
+                        variant="none"
+                        :disabled="isAssigning(project.id)"
+                        value-key="value"
+                        label-key="label"
+                        searchable
+                        :ui="{ content: 'min-w-[16rem]' }"
+                        @update:model-value="(value: string) => updateProjectSpace(project, value)"
+                      >
+                        <template #leading>
+                          <UIcon name="i-lucide-folders" class="text-gray-400 w-3 h-3" />
+                        </template>
+                      </USelectMenu>
                       <div v-else class="text-xs text-gray-500 flex items-center gap-1 px-2 py-1">
                         <UIcon name="i-lucide-user" class="w-3 h-3" />
-                        {{ getAssigneeLabel(project.assignee_user_id) }}
+                        {{ getAssigneeLabel(project.assignee_user_id) }} · {{ getSpaceLabel(project.space_id) }}
                       </div>
                     </div>
 
@@ -330,7 +411,7 @@
           </section>
 
           <!-- Download Desktop App (Below Projects) -->
-          <div v-if="!isTauri && release" class="flex flex-col items-center gap-2 pt-10">
+          <div v-if="!isAuthenticated && !isTauri && release" class="flex flex-col items-center gap-2 pt-10">
             <div class="flex items-center gap-3">
               <a
                 v-if="release.macosUrl"
@@ -421,10 +502,29 @@
           <button class="hover:text-primary-600 dark:hover:text-primary-400 transition-colors" @click="aboutOpen = true">About</button>
         </div>
 
-        <!-- Footer downloads (only show small text links since main buttons are prominent) -->
-        <div v-if="!isTauri && release" class="flex gap-3 text-xs text-gray-400">
-          <a v-if="release.macosUrl" :href="release.macosUrl" class="hover:text-gray-600 dark:hover:text-gray-200">macOS</a>
-          <a v-if="release.windowsExeUrl" :href="release.windowsExeUrl" class="hover:text-gray-600 dark:hover:text-gray-200">Windows</a>
+        <div v-if="!isTauri && release" class="flex items-center gap-3">
+          <template v-if="isAuthenticated">
+            <a
+              v-if="release.macosUrl"
+              :href="release.macosUrl"
+              class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-300 text-xs hover:text-gray-800 dark:hover:text-gray-100 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+            >
+              <UIcon name="i-lucide-apple" class="w-3.5 h-3.5" />
+              <span>Download for macOS</span>
+            </a>
+            <a
+              v-if="release.windowsExeUrl"
+              :href="release.windowsExeUrl"
+              class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-300 text-xs hover:text-gray-800 dark:hover:text-gray-100 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+            >
+              <UIcon name="i-lucide-monitor" class="w-3.5 h-3.5" />
+              <span>Download for Windows</span>
+            </a>
+          </template>
+          <template v-else>
+            <a v-if="release.macosUrl" :href="release.macosUrl" class="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">macOS</a>
+            <a v-if="release.windowsExeUrl" :href="release.windowsExeUrl" class="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">Windows</a>
+          </template>
         </div>
       </div>
     </footer>
@@ -517,6 +617,7 @@ const aboutOpen = ref(false)
 const { isAuthenticated } = useAuth()
 const { currentTeam, hasTeam, isEditor, isAdmin, teamsLoaded } = useTeam()
 const { members } = useTeamMembers()
+const { spaces, fetchSpaces } = useSpaces()
 const { projects: teamProjects, projectsLoading: teamProjectsLoading, createProject: createTeamProjectFn, updateProject: updateTeamProjectFn, deleteProject: deleteTeamProjectFn, getPreviewUrl: getTeamPreviewUrl } = useTeamProjects()
 
 const query = ref('')
@@ -528,7 +629,11 @@ const modeOptions = [
 ]
 const ASSIGNEE_ALL = '__all__'
 const ASSIGNEE_UNASSIGNED = '__unassigned__'
+const SPACE_ALL = '__all_spaces__'
+const SPACE_UNASSIGNED = '__unassigned_space__'
 const assigneeFilter = ref<string>(ASSIGNEE_ALL)
+const spaceFilter = ref<string>(SPACE_ALL)
+const newProjectSpaceId = ref<string>(SPACE_UNASSIGNED)
 const assigningByProjectId = ref<Record<string, boolean>>({})
 
 // ── Preview thumbnails ──
@@ -592,6 +697,24 @@ const assigneeOptions = computed(() => {
   ]
 })
 
+const spaceFilterOptions = computed(() => [
+  { label: 'All spaces', value: SPACE_ALL },
+  { label: 'Unassigned', value: SPACE_UNASSIGNED },
+  ...spaces.value.map(space => ({ label: space.name, value: space.id })),
+])
+
+const defaultSpace = computed(() => {
+  const explicit = spaces.value.find(space => space.name.trim().toLowerCase() === 'general')
+  return explicit ?? spaces.value[0] ?? null
+})
+
+const projectSpaceOptions = computed(() => [
+  { label: 'Unassigned', value: SPACE_UNASSIGNED },
+  ...spaces.value.map(space => ({ label: space.name, value: space.id })),
+])
+
+const newProjectSpaceOptions = computed(() => projectSpaceOptions.value)
+
 const hasAnyProjects = computed(() => projects.value.length > 0 || teamProjects.value.length > 0)
 
 const filteredTeamProjects = computed(() => {
@@ -604,7 +727,12 @@ const filteredTeamProjects = computed(() => {
       : assigneeFilter.value === ASSIGNEE_UNASSIGNED
         ? !p.assignee_user_id
         : p.assignee_user_id === assigneeFilter.value
-    return matchesMode && matchesQuery && matchesAssignee
+    const matchesSpace = spaceFilter.value === SPACE_ALL
+      ? true
+      : spaceFilter.value === SPACE_UNASSIGNED
+        ? !p.space_id
+        : p.space_id === spaceFilter.value
+    return matchesMode && matchesQuery && matchesAssignee && matchesSpace
   })
 })
 
@@ -626,7 +754,8 @@ async function createProject(mode: 'viewer' | 'compare') {
 }
 
 async function createTeamProject(mode: 'viewer' | 'compare') {
-  const { project } = await createTeamProjectFn(mode)
+  const spaceId = newProjectSpaceId.value === SPACE_UNASSIGNED ? null : newProjectSpaceId.value
+  const { project } = await createTeamProjectFn(mode, undefined, spaceId)
   if (project) {
     router.push(`/${mode}/team-${project.id}`)
   }
@@ -638,10 +767,53 @@ function getAssigneeLabel(assigneeUserId: string | null) {
   return member?.profile?.name?.trim() || member?.profile?.email || 'Former member'
 }
 
+function getCreatorLabel(userId: string | null) {
+  if (!userId) return 'Unknown user'
+  const member = members.value.find(m => m.user_id === userId)
+  return member?.profile?.name?.trim() || member?.profile?.email || 'Former member'
+}
+
+function getUpdaterLabel(userId: string | null) {
+  if (!userId) return 'Unknown user'
+  const member = members.value.find(m => m.user_id === userId)
+  return member?.profile?.name?.trim() || member?.profile?.email || 'Former member'
+}
+
+function getUserInitials(label: string) {
+  const parts = label.trim().split(/\s+/).filter(Boolean)
+  if (!parts.length) return '?'
+  return parts.slice(0, 2).map(part => part[0]?.toUpperCase() ?? '').join('') || '?'
+}
+
+function getUserDisplay(userId: string | null): { label: string; avatarUrl: string | null; initials: string } {
+  if (!userId) return { label: 'Unknown user', avatarUrl: null, initials: '?' }
+  const member = members.value.find(m => m.user_id === userId)
+  const label = member?.profile?.name?.trim() || member?.profile?.email || 'Former member'
+  const avatarUrl = member?.profile?.avatar_url ?? null
+  return {
+    label,
+    avatarUrl,
+    initials: getUserInitials(label),
+  }
+}
+
 function getApproverLabel(approverUserId: string | null) {
   if (!approverUserId) return 'No approver'
   const member = assignableMembers.value.find(m => m.user_id === approverUserId)
   return member?.profile?.name?.trim() || member?.profile?.email || 'Former member'
+}
+
+function getSpaceLabel(spaceId: string | null) {
+  if (!spaceId) return defaultSpace.value?.name ?? 'No space'
+  const space = spaces.value.find(s => s.id === spaceId)
+  return space?.name ?? defaultSpace.value?.name ?? 'Unknown space'
+}
+
+function resolveProjectSpaceValue(spaceId: string | null) {
+  if (!spaceId) return SPACE_UNASSIGNED
+  const knownSpace = spaces.value.some(space => space.id === spaceId)
+  if (knownSpace) return spaceId
+  return defaultSpace.value?.id ?? SPACE_UNASSIGNED
 }
 
 function teamProjectStatusLabel(status: 'draft' | 'in_progress' | 'for_approval' | 'approved') {
@@ -678,6 +850,21 @@ async function updateProjectAssignee(project: { id: string; assignee_user_id: st
   assigningByProjectId.value = { ...assigningByProjectId.value, [project.id]: true }
   try {
     await updateTeamProjectFn(project.id, { assignee_user_id: nextAssigneeUserId })
+  } finally {
+    const next = { ...assigningByProjectId.value }
+    delete next[project.id]
+    assigningByProjectId.value = next
+  }
+}
+
+async function updateProjectSpace(project: { id: string; space_id: string | null }, spaceValue: string) {
+  if (!isEditor.value || isAssigning(project.id)) return
+  const nextSpaceId = spaceValue === SPACE_UNASSIGNED ? null : spaceValue
+  if (nextSpaceId === project.space_id) return
+
+  assigningByProjectId.value = { ...assigningByProjectId.value, [project.id]: true }
+  try {
+    await updateTeamProjectFn(project.id, { space_id: nextSpaceId })
   } finally {
     const next = { ...assigningByProjectId.value }
     delete next[project.id]
@@ -747,4 +934,30 @@ function formatDate(date: Date | string): string {
     minute: '2-digit',
   })
 }
+
+function formatTeamProjectTimestamp(date: Date | string): string {
+  const dt = new Date(date)
+  const year = dt.getFullYear()
+  const month = String(dt.getMonth() + 1).padStart(2, '0')
+  const day = String(dt.getDate()).padStart(2, '0')
+  const minutes = String(dt.getMinutes()).padStart(2, '0')
+  const format = currentTeam.value?.time_format ?? '24h'
+
+  if (format === '12h') {
+    const rawHours = dt.getHours()
+    const suffix = rawHours >= 12 ? 'PM' : 'AM'
+    const hours12 = rawHours % 12 || 12
+    const hours = String(hours12).padStart(2, '0')
+    return `${year}-${month}-${day} ${hours}:${minutes} ${suffix}`
+  }
+
+  const hours = String(dt.getHours()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hours}:${minutes}`
+}
+
+onMounted(async () => {
+  await fetchSpaces()
+  const firstSpace = defaultSpace.value
+  if (firstSpace) newProjectSpaceId.value = firstSpace.id
+})
 </script>

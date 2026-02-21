@@ -23,6 +23,7 @@ export interface ViewerPageLockState {
 export interface TeamProject {
   id: string
   team_id: string
+  space_id: string | null
   name: string
   assignee_user_id: string | null
   mode: 'viewer' | 'compare'
@@ -31,6 +32,7 @@ export interface TeamProject {
   approved_by: string | null
   approved_at: string | null
   created_by: string
+  updated_by: string | null
   pnp_origin_x: number | null
   pnp_origin_y: number | null
   pnp_convention: string | null
@@ -215,7 +217,7 @@ export function useTeamProjects() {
   }
 
   /** Create a new team project */
-  async function createProject(mode: 'viewer' | 'compare', name?: string) {
+  async function createProject(mode: 'viewer' | 'compare', name?: string, spaceId?: string | null) {
     const teamId = currentTeamId.value
     if (!teamId) return { project: null, error: new Error('No team selected') }
 
@@ -226,6 +228,7 @@ export function useTeamProjects() {
       .from('projects')
       .insert({
         team_id: teamId,
+        space_id: spaceId ?? null,
         name: name ?? `New ${mode === 'viewer' ? 'Viewer' : 'Compare'} Project`,
         mode,
         created_by: userId,

@@ -7,7 +7,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js'
  * Uses Supabase Realtime Presence.
  */
 
-export type PresenceTab = 'files' | 'pcb' | 'panel' | 'paste' | 'smd' | 'tht' | 'bom' | 'pricing' | 'docs' | 'summary'
+export type PresenceTab = 'files' | 'pcb' | 'panel' | 'paste' | 'smd' | 'tht' | 'bom' | 'pricing' | 'docs' | 'summary' | 'conversation'
 
 export interface PresenceUser {
   userId: string
