@@ -42,6 +42,7 @@
                 <UInput
                   v-model="teamName"
                   size="lg"
+                  maxlength="15"
                   :disabled="saving"
                 />
               </UFormField>
@@ -107,6 +108,20 @@
                 <template #help>
                   <span class="text-xs text-neutral-400">
                     BOM prices are converted and displayed in this currency.
+                  </span>
+                </template>
+              </UFormField>
+
+              <UFormField label="Clock Format">
+                <USelect
+                  v-model="timeFormat"
+                  :items="timeFormatOptions"
+                  size="lg"
+                  :disabled="savingDefaults"
+                />
+                <template #help>
+                  <span class="text-xs text-neutral-400">
+                    Controls whether dates show as 24-hour or 12-hour (AM/PM) time.
                   </span>
                 </template>
               </UFormField>
@@ -399,14 +414,19 @@
 <script setup lang="ts">
 const router = useRouter()
 const route = useRoute()
-const { currentTeam, isAdmin, updateTeam } = useTeam()
+const { currentTeam, currentTeamRole, isAdmin, updateTeam } = useTeam()
 const { isAuthenticated } = useAuth()
 
 watch(isAuthenticated, (authed) => {
   if (!authed) router.replace('/auth/login')
 }, { immediate: true })
 
+watch(currentTeamRole, (role) => {
+  if (role === 'guest') router.replace('/')
+}, { immediate: true })
+
 const navItems = [
+  { label: 'Spaces', icon: 'i-lucide-folders', to: '/team/spaces' },
   { label: 'General', icon: 'i-lucide-settings-2', to: '/team/settings' },
   { label: 'Defaults', icon: 'i-lucide-sliders-horizontal', to: '/team/settings?section=defaults' },
   { label: 'Integrations', icon: 'i-lucide-plug-zap', to: '/team/settings?section=integrations' },
@@ -422,6 +442,7 @@ const activeSection = computed<SettingsSection>(() => {
 })
 
 function isActive(item: { to: string }) {
+  if (item.to === '/team/spaces') return route.path === '/team/spaces'
   if (item.to === '/team/members') return route.path === '/team/members'
   if (item.to.includes('section=defaults')) return route.path === '/team/settings' && activeSection.value === 'defaults'
   if (item.to.includes('section=integrations')) return route.path === '/team/settings' && activeSection.value === 'integrations'
@@ -431,6 +452,7 @@ function isActive(item: { to: string }) {
 const teamName = ref('')
 const autoJoinDomain = ref('')
 const defaultCurrency = ref<'USD' | 'EUR'>('EUR')
+const timeFormat = ref<'24h' | '12h'>('24h')
 const preferredPanelWidthInput = ref<string | number>('')
 const preferredPanelHeightInput = ref<string | number>('')
 const maxPanelWidthInput = ref<string | number>('')
@@ -471,6 +493,11 @@ const currencyOptions = [
   { label: 'USD', value: 'USD' as const },
 ]
 
+const timeFormatOptions = [
+  { label: '24-hour (13:25)', value: '24h' as const },
+  { label: '12-hour (01:25 PM)', value: '12h' as const },
+]
+
 const sparkModelOptions = ref<Array<{ label: string, value: string }>>([])
 
 // Init from current team
@@ -479,6 +506,7 @@ watch(currentTeam, (team) => {
     teamName.value = team.name
     autoJoinDomain.value = team.auto_join_domain ?? ''
     defaultCurrency.value = team.default_currency ?? 'EUR'
+    timeFormat.value = team.time_format ?? '24h'
     elexessEnabled.value = team.elexess_enabled ?? !!(team.elexess_username && team.elexess_password)
     elexessUsername.value = team.elexess_username ?? ''
     elexessPassword.value = team.elexess_password ?? ''
@@ -523,6 +551,7 @@ const hasDefaultsChanges = computed(() => {
   const maxPanelWidth = parseOptionalMm(maxPanelWidthInput.value)
   const maxPanelHeight = parseOptionalMm(maxPanelHeightInput.value)
   return defaultCurrency.value !== (currentTeam.value.default_currency ?? 'EUR')
+    || timeFormat.value !== (currentTeam.value.time_format ?? '24h')
     || preferredPanelWidth !== currentTeam.value.preferred_panel_width_mm
     || preferredPanelHeight !== currentTeam.value.preferred_panel_height_mm
     || maxPanelWidth !== currentTeam.value.max_panel_width_mm
@@ -550,6 +579,14 @@ async function handleSave() {
   saving.value = true
 
   try {
+    if (teamName.value.trim().length === 0) {
+      errorMessage.value = 'Team name is required'
+      return
+    }
+    if (teamName.value.trim().length > 15) {
+      errorMessage.value = 'Team name must be 15 characters or fewer'
+      return
+    }
     const { error } = await updateTeam({
       name: teamName.value.trim(),
       auto_join_domain: autoJoinDomain.value.trim() || null,
@@ -587,6 +624,7 @@ async function handleSaveDefaults() {
 
     const { error } = await updateTeam({
       default_currency: defaultCurrency.value,
+      time_format: timeFormat.value,
       preferred_panel_width_mm: preferredPanelWidth,
       preferred_panel_height_mm: preferredPanelHeight,
       max_panel_width_mm: maxPanelWidth,

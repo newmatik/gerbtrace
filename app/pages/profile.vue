@@ -59,6 +59,17 @@
           </UButton>
         </div>
 
+        <div class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-5 mt-4 space-y-3">
+          <h2 class="text-sm font-semibold">Spaces You Can Access</h2>
+          <div v-if="spacesLoading" class="text-sm text-neutral-500">Loading spaces...</div>
+          <div v-else-if="spaces.length === 0" class="text-sm text-neutral-500">No accessible spaces.</div>
+          <div v-else class="flex flex-wrap gap-2">
+            <UBadge v-for="space in spaces" :key="space.id" color="primary" variant="subtle">
+              {{ space.name }}
+            </UBadge>
+          </div>
+        </div>
+
         <div class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-5 mt-4">
           <h2 class="text-sm font-semibold mb-3">Change Password</h2>
           <form class="space-y-3" @submit.prevent="handleUpdatePassword">
@@ -114,6 +125,7 @@ const router = useRouter()
 const { isAuthenticated, user, signIn, updatePassword } = useAuth()
 const { profile, updateProfile } = useCurrentUser()
 const { uploadAvatar } = useAvatarUpload()
+const { spaces, spacesLoading, fetchSpaces } = useSpaces()
 
 watch(isAuthenticated, (authed) => {
   if (!authed) router.replace('/auth/login')
@@ -239,4 +251,8 @@ async function handleAvatarUpload() {
 watch(() => profile.value?.name, (next) => {
   nameValue.value = next ?? ''
 }, { immediate: true })
+
+onMounted(() => {
+  fetchSpaces()
+})
 </script>

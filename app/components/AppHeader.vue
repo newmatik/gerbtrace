@@ -128,7 +128,7 @@ const isTauri = import.meta.client && coreIsTauri()
 const { isAuthenticated, signOut } = useAuth()
 const { profile } = useCurrentUser()
 const { unreadCount } = useNotifications()
-const { teams, currentTeam, hasTeam, switchTeam } = useTeam()
+const { teams, currentTeam, currentTeamRole, hasTeam, switchTeam } = useTeam()
 
 const userInitials = computed(() => {
   const name = profile.value?.name ?? profile.value?.email ?? ''
@@ -143,10 +143,15 @@ const teamSelectorItems = computed(() => {
     onSelect: () => switchTeam(t.id),
   }))
 
+  const actionItems: any[] = []
+  if (currentTeamRole.value !== 'guest') {
+    actionItems.push({ label: 'Team Settings', icon: 'i-lucide-settings-2', onSelect: () => router.push('/team/spaces') })
+  }
+  actionItems.push({ label: 'Create Team', icon: 'i-lucide-plus', onSelect: () => router.push('/team/create') })
+
   return [
     items,
-    [{ label: 'Team Settings', icon: 'i-lucide-settings-2', onSelect: () => router.push('/team/settings') }],
-    [{ label: 'Create Team', icon: 'i-lucide-plus', onSelect: () => router.push('/team/create') }],
+    actionItems,
   ]
 })
 

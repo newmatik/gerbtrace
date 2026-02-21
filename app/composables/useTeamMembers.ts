@@ -8,7 +8,7 @@ export interface TeamMember {
   id: string
   team_id: string
   user_id: string
-  role: 'admin' | 'editor' | 'viewer'
+  role: 'admin' | 'editor' | 'viewer' | 'guest'
   status: 'active' | 'disabled'
   created_at: string
   profile: UserProfile
@@ -18,7 +18,7 @@ export interface TeamInvitation {
   id: string
   team_id: string
   email: string
-  role: 'admin' | 'editor' | 'viewer'
+  role: 'admin' | 'editor' | 'viewer' | 'guest'
   invited_by: string | null
   accepted_at: string | null
   expires_at: string
@@ -79,7 +79,7 @@ export function useTeamMembers() {
   }
 
   /** Invite a new member by email */
-  async function invite(email: string, role: 'admin' | 'editor' | 'viewer') {
+  async function invite(email: string, role: 'admin' | 'editor' | 'viewer' | 'guest') {
     if (!currentTeamId.value) return { error: new Error('No team selected') }
 
     // Generate a random token
@@ -116,7 +116,7 @@ export function useTeamMembers() {
   }
 
   /** Change a member's role */
-  async function changeRole(memberId: string, newRole: 'admin' | 'editor' | 'viewer') {
+  async function changeRole(memberId: string, newRole: 'admin' | 'editor' | 'viewer' | 'guest') {
     const { error } = await supabase
       .from('team_members')
       .update({ role: newRole })

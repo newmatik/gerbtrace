@@ -11,6 +11,7 @@ export interface Team {
   slug: string
   auto_join_domain: string | null
   default_currency: 'USD' | 'EUR'
+  time_format: '24h' | '12h'
   elexess_enabled: boolean
   elexess_username: string | null
   elexess_password: string | null
@@ -27,7 +28,7 @@ export interface Team {
 
 export interface TeamMemberWithRole {
   team_id: string
-  role: 'admin' | 'editor' | 'viewer'
+  role: 'admin' | 'editor' | 'viewer' | 'guest'
   status: 'active' | 'disabled'
 }
 
@@ -46,7 +47,7 @@ export function useTeam() {
     return teams.value.find(t => t.id === currentTeamId.value) ?? null
   })
 
-  const currentTeamRole = ref<'admin' | 'editor' | 'viewer' | null>(null)
+  const currentTeamRole = ref<'admin' | 'editor' | 'viewer' | 'guest' | null>(null)
 
   /** Fetch all teams the current user belongs to */
   async function fetchTeams() {
@@ -150,8 +151,11 @@ export function useTeam() {
 
   /** Create a new team (current user becomes admin) */
   async function createTeam(name: string, slug: string, autoJoinDomain?: string) {
+    const normalizedName = name.trim()
+    if (!normalizedName) return { teamId: null, error: new Error('Team name is required') }
+    if (normalizedName.length > 15) return { teamId: null, error: new Error('Team name must be 15 characters or fewer') }
     const { data, error } = await supabase.rpc('create_team', {
-      p_name: name,
+      p_name: normalizedName,
       p_slug: slug,
       p_auto_join_domain: autoJoinDomain ?? null,
     })
@@ -174,6 +178,7 @@ export function useTeam() {
     name?: string
     auto_join_domain?: string | null
     default_currency?: 'USD' | 'EUR'
+    time_format?: '24h' | '12h'
     elexess_enabled?: boolean
     elexess_username?: string | null
     elexess_password?: string | null
@@ -186,6 +191,12 @@ export function useTeam() {
     ai_model?: string
   }) {
     if (!currentTeamId.value) return { error: new Error('No team selected') }
+    if (typeof updates.name === 'string') {
+      const normalizedName = updates.name.trim()
+      if (!normalizedName) return { error: new Error('Team name is required') }
+      if (normalizedName.length > 15) return { error: new Error('Team name must be 15 characters or fewer') }
+      updates = { ...updates, name: normalizedName }
+    }
 
     const { data, error } = await supabase
       .from('teams')

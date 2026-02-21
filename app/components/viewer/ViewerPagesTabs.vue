@@ -41,7 +41,7 @@
 </template>
 
 <script setup lang="ts">
-type ViewerPage = 'files' | 'pcb' | 'panel' | 'paste' | 'smd' | 'tht' | 'bom' | 'pricing' | 'docs' | 'summary'
+type ViewerPage = 'files' | 'pcb' | 'panel' | 'paste' | 'smd' | 'tht' | 'bom' | 'pricing' | 'docs' | 'summary' | 'conversation'
 
 const page = defineModel<ViewerPage>({ required: true })
 
@@ -51,6 +51,7 @@ const props = defineProps<{
   showPnP?: boolean
   showBom?: boolean
   showDocs?: boolean
+  showConversation?: boolean
   lockedTabs?: ViewerPage[]
 }>()
 
@@ -65,6 +66,7 @@ const allTabs = computed<TabDef[]>(() => [
   { label: 'THT', value: 'tht', icon: 'i-lucide-pin', visible: !!props.showPnP },
   { label: 'BOM', value: 'bom', icon: 'i-lucide-table', visible: !!props.showBom },
   { label: 'Docs', value: 'docs', icon: 'i-lucide-book-open-text', visible: !!props.showDocs },
+  { label: 'Conversation', value: 'conversation', icon: 'i-lucide-messages-square', visible: !!props.showConversation },
   { label: 'Summary', value: 'summary', icon: 'i-lucide-clipboard-list', visible: true },
   { label: 'Pricing', value: 'pricing', icon: 'i-lucide-dollar-sign', visible: true },
 ])

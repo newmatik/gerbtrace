@@ -34,6 +34,7 @@
         :show-pn-p="effectiveShowPnP"
         :show-bom="effectiveShowBom"
         :show-docs="effectiveShowDocs"
+        :show-conversation="isTeamProject"
         :locked-tabs="lockedTabsForNav"
       />
 
@@ -79,88 +80,53 @@
         </template>
 
         <template v-if="isTeamProject">
-          <UBadge :color="workflowBadgeColor" size="xs" variant="subtle" class="gap-1">
-            <UIcon v-if="isApproved" name="i-lucide-lock" class="text-xs" />
-            {{ workflowLabel }}
-          </UBadge>
-          <UButton
-            size="xs"
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-messages-square"
-            :to="conversationLink"
-          >
-            Conversation
-          </UButton>
+          <UDropdownMenu :items="workflowMenuItems">
+            <UButton
+              size="xs"
+              color="neutral"
+              variant="ghost"
+              icon="i-lucide-git-pull-request-arrow"
+              trailing-icon="i-lucide-chevron-down"
+            >
+              {{ workflowLabel }}
+            </UButton>
+          </UDropdownMenu>
+        </template>
+      </template>
+    </AppHeader>
+
+    <UModal v-model:open="requestApprovalModalOpen">
+      <template #content>
+        <div class="p-4 space-y-3">
+          <h3 class="text-sm font-semibold">Request Approval</h3>
+          <p class="text-xs text-neutral-500">
+            Select who should approve this project.
+          </p>
           <USelectMenu
-            v-if="canRequestApproval"
             v-model="selectedApproverUserId"
-            size="xs"
+            size="sm"
             :items="workflowApproverOptions"
             placeholder="Select approver"
             value-key="value"
             label-key="label"
             searchable
-            class="w-40"
           />
-          <UButton
-            v-if="canMoveToInProgress"
-            size="xs"
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-play"
-            title="Set In Progress"
-            @click="handleMoveToInProgress"
-          >
-            In Progress
-          </UButton>
-          <UButton
-            v-if="canRequestApproval"
-            size="xs"
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-send"
-            title="Request approval"
-            @click="handleRequestApproval"
-          >
-            Request Approval
-          </UButton>
-          <UButton
-            v-if="canApproveWorkflow"
-            size="xs"
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-check-circle"
-            title="Approve project"
-            @click="handleApproveProject"
-          >
-            Approve
-          </UButton>
-          <UButton
-            v-if="canRequestChangesWorkflow"
-            size="xs"
-            color="warning"
-            variant="ghost"
-            icon="i-lucide-message-square-warning"
-            title="Request changes"
-            @click="requestChangesModalOpen = true"
-          >
-            Request Changes
-          </UButton>
-          <UButton
-            v-if="isApproved && isTeamAdmin"
-            size="xs"
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-lock-open"
-            title="Revert to Draft"
-            @click="handleRevertToDraft"
-          >
-            Revert
-          </UButton>
-        </template>
+          <div class="flex justify-end gap-2">
+            <UButton size="sm" color="neutral" variant="outline" @click="requestApprovalModalOpen = false">
+              Cancel
+            </UButton>
+            <UButton
+              size="sm"
+              color="primary"
+              :disabled="!selectedApproverUserId"
+              @click="handleRequestApproval"
+            >
+              Request
+            </UButton>
+          </div>
+        </div>
       </template>
-    </AppHeader>
+    </UModal>
 
     <UModal v-model:open="requestChangesModalOpen">
       <template #content>
@@ -207,8 +173,8 @@
       v-model:pnp-auto-focus-on-select="pnpAutoFocusOnSelect"
       v-model:pnp-show-minimap="pnpShowMinimap"
       v-model:measure-constraint-mode="measureTool.constraintMode.value"
-      :page="sidebarTab"
-      :users-in-tab="isTeamProject && isCanvasPage ? presentUsersInTab(sidebarTab) : []"
+      :page="controlsBarPage"
+      :users-in-tab="controlsBarUsersInTab"
       :has-outline="hasOutline"
       :layers-count="layers.length"
       :active-filter-options="activeFilterOptions"
@@ -985,6 +951,98 @@
         </div>
       </template>
 
+      <!-- Conversation: full width threaded discussion -->
+      <template v-else-if="sidebarTab === 'conversation'">
+        <main class="flex-1 min-w-0 overflow-y-auto bg-neutral-50 dark:bg-neutral-950">
+          <div class="mx-auto w-full max-w-5xl p-4 space-y-4">
+            <div class="flex items-center justify-between gap-3">
+              <h2 class="text-sm font-semibold text-neutral-700 dark:text-neutral-200">
+                Conversation
+              </h2>
+              <UButton size="xs" icon="i-lucide-refresh-cw" variant="ghost" color="neutral" @click="fetchConversationMessages">
+                Refresh
+              </UButton>
+            </div>
+
+            <div class="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 space-y-4">
+              <div class="space-y-3">
+                <div
+                  v-for="message in topLevelConversationMessages"
+                  :key="message.id"
+                  class="rounded-md border border-neutral-200 dark:border-neutral-800 p-3"
+                >
+                  <div class="flex items-center justify-between gap-3 text-xs text-neutral-500">
+                    <span class="font-medium text-neutral-700 dark:text-neutral-200">
+                      {{ conversationAuthorLabel(message) }}
+                    </span>
+                    <span>{{ formatConversationDate(message.created_at) }}</span>
+                  </div>
+                  <p class="mt-2 whitespace-pre-wrap text-sm text-neutral-800 dark:text-neutral-100">
+                    {{ message.body }}
+                  </p>
+
+                  <div class="mt-3 border-t border-neutral-200 dark:border-neutral-800 pt-3 space-y-2">
+                    <div
+                      v-for="reply in conversationRepliesFor(message.id)"
+                      :key="reply.id"
+                      class="rounded-md bg-neutral-50 dark:bg-neutral-800/50 p-2"
+                    >
+                      <div class="flex items-center justify-between gap-2 text-[11px] text-neutral-500">
+                        <span class="font-medium text-neutral-700 dark:text-neutral-200">{{ conversationAuthorLabel(reply) }}</span>
+                        <span>{{ formatConversationDate(reply.created_at) }}</span>
+                      </div>
+                      <p class="mt-1 whitespace-pre-wrap text-sm">{{ reply.body }}</p>
+                    </div>
+                    <div class="flex gap-2">
+                      <UInput
+                        v-model="conversationReplyDrafts[message.id]"
+                        size="xs"
+                        placeholder="Reply to thread..."
+                        class="flex-1"
+                      />
+                      <UButton
+                        size="xs"
+                        :disabled="!conversationReplyDrafts[message.id]?.trim()"
+                        @click="submitConversationReply(message.id)"
+                      >
+                        Reply
+                      </UButton>
+                    </div>
+                  </div>
+                </div>
+
+                <div v-if="!conversationLoading && topLevelConversationMessages.length === 0" class="text-sm text-neutral-500 py-8 text-center">
+                  No conversation yet.
+                </div>
+              </div>
+
+              <div class="border-t border-neutral-200 dark:border-neutral-800 pt-4 space-y-2">
+                <UTextarea
+                  v-model="newConversationMessage"
+                  :rows="5"
+                  placeholder="Write a message. Use @john.doe or @jdoe to mention teammates."
+                />
+                <div class="flex items-center justify-between gap-3">
+                  <p class="text-xs text-neutral-500 truncate">
+                    Mention handles:
+                    <span class="text-neutral-700 dark:text-neutral-300">{{ conversationMentionHelpText }}</span>
+                  </p>
+                  <UButton
+                    :disabled="!newConversationMessage.trim()"
+                    :loading="postingConversationMessage"
+                    size="sm"
+                    icon="i-lucide-send"
+                    @click="submitConversationMessage"
+                  >
+                    Post message
+                  </UButton>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </template>
+
       <!-- Summary: full width (no canvas) -->
       <template v-else-if="sidebarTab === 'summary'">
         <main class="flex-1 min-w-0 overflow-hidden bg-neutral-50 dark:bg-neutral-950">
@@ -1251,6 +1309,16 @@ const projectSync = isTeamProject ? useProjectSync(teamProjectIdRef) : null
 const { user } = useAuth()
 const { profile } = useCurrentUser()
 const { members: teamMembers, fetchMembers: fetchTeamMembers } = useTeamMembers()
+const {
+  topLevelMessages: topLevelConversationMessages,
+  repliesFor: conversationRepliesFor,
+  postMessage: postConversationMessage,
+  fetchMessages: fetchConversationMessages,
+  loading: conversationLoading,
+} = useProjectConversation(teamProjectIdRef, currentTeamId)
+const newConversationMessage = ref('')
+const postingConversationMessage = ref(false)
+const conversationReplyDrafts = ref<Record<string, string>>({})
 
 /** Whether this is an approved (frozen) team project */
 const isApproved = computed(() => {
@@ -1275,15 +1343,8 @@ const workflowLabel = computed(() => {
   return 'Draft'
 })
 
-const workflowBadgeColor = computed(() => {
-  if (currentWorkflowStatus.value === 'approved') return 'success'
-  if (currentWorkflowStatus.value === 'for_approval') return 'info'
-  if (currentWorkflowStatus.value === 'in_progress') return 'primary'
-  return 'warning'
-})
-
-const conversationLink = computed(() => `/viewer/${rawId}/conversation`)
 const selectedApproverUserId = ref<string | undefined>(undefined)
+const requestApprovalModalOpen = ref(false)
 const requestChangesModalOpen = ref(false)
 const requestChangesMessage = ref('')
 
@@ -1294,6 +1355,19 @@ const workflowApproverOptions = computed(() =>
       label: m.profile?.name ?? m.profile?.email ?? 'Unknown',
       value: m.user_id,
     })),
+)
+
+const conversationMentionHelpText = computed(() =>
+  teamMembers.value
+    .slice(0, 6)
+    .map(member => {
+      const fromName = (member.profile?.name ?? '').trim().toLowerCase().replace(/\s+/g, '.')
+      const fromEmail = (member.profile?.email ?? '').trim().toLowerCase().split('@')[0]
+      return fromName || fromEmail || null
+    })
+    .filter((value): value is string => !!value)
+    .map(value => `@${value}`)
+    .join(', '),
 )
 
 const canMoveToInProgress = computed(() => {
@@ -1317,6 +1391,59 @@ const canApproveWorkflow = computed(() => {
 })
 
 const canRequestChangesWorkflow = computed(() => canApproveWorkflow.value)
+
+const workflowMenuItems = computed(() => {
+  const items: { label: string; icon: string; color?: 'error' | 'warning'; disabled?: boolean; onSelect: () => void }[] = []
+  if (canMoveToInProgress.value) {
+    items.push({
+      label: 'Set In Progress',
+      icon: 'i-lucide-play',
+      onSelect: () => { handleMoveToInProgress() },
+    })
+  }
+  if (canRequestApproval.value) {
+    items.push({
+      label: 'Request Approval',
+      icon: 'i-lucide-send',
+      onSelect: () => {
+        requestApprovalModalOpen.value = true
+      },
+    })
+  }
+  if (canApproveWorkflow.value) {
+    items.push({
+      label: 'Approve',
+      icon: 'i-lucide-check-circle',
+      onSelect: () => { handleApproveProject() },
+    })
+  }
+  if (canRequestChangesWorkflow.value) {
+    items.push({
+      label: 'Request Changes',
+      icon: 'i-lucide-message-square-warning',
+      color: 'warning',
+      onSelect: () => {
+        requestChangesModalOpen.value = true
+      },
+    })
+  }
+  if (isApproved.value && isTeamAdmin.value) {
+    items.push({
+      label: 'Revert to Draft',
+      icon: 'i-lucide-lock-open',
+      onSelect: () => { handleRevertToDraft() },
+    })
+  }
+  if (items.length === 0) {
+    items.push({
+      label: 'No actions available',
+      icon: 'i-lucide-circle-slash',
+      disabled: true,
+      onSelect: () => {},
+    })
+  }
+  return [items]
+})
 
 watch(currentApproverUserId, (next) => {
   selectedApproverUserId.value = next ?? undefined
@@ -1420,9 +1547,9 @@ function onSidebarDragStart(e: MouseEvent) {
   activeSidebar.value.onDragStart(e)
 }
 
-// ── Sidebar tab (Files / PCB / Panel / SMD / THT / BOM / Pricing / Docs) ──
-type SidebarTab = 'files' | 'pcb' | 'panel' | 'paste' | 'smd' | 'tht' | 'bom' | 'pricing' | 'docs' | 'summary'
-const VALID_TABS: SidebarTab[] = ['files', 'pcb', 'panel', 'paste', 'smd', 'tht', 'bom', 'docs', 'summary', 'pricing']
+// ── Sidebar tab (Files / PCB / Panel / SMD / THT / BOM / Pricing / Docs / Conversation) ──
+type SidebarTab = 'files' | 'pcb' | 'panel' | 'paste' | 'smd' | 'tht' | 'bom' | 'pricing' | 'docs' | 'summary' | 'conversation'
+const VALID_TABS: SidebarTab[] = ['files', 'pcb', 'panel', 'paste', 'smd', 'tht', 'bom', 'docs', 'conversation', 'summary', 'pricing']
 
 const router = useRouter()
 const initialTabRaw = (route.query.tab as string) || 'files'
@@ -1584,6 +1711,9 @@ onMounted(() => {
   if (VALID_TABS.includes(clientTab as SidebarTab) && clientTab !== sidebarTab.value) {
     sidebarTab.value = clientTab as SidebarTab
   }
+  if (!isTeamProject && sidebarTab.value === 'conversation') {
+    sidebarTab.value = 'files'
+  }
 })
 
 // Sync sidebar tab and selected file/bomLine to URL query parameters
@@ -1614,6 +1744,24 @@ watch(sidebarTab, (tab) => {
 
 const isCanvasPage = computed(() => {
   return sidebarTab.value === 'pcb' || sidebarTab.value === 'panel' || sidebarTab.value === 'paste' || sidebarTab.value === 'smd' || sidebarTab.value === 'tht'
+})
+
+const controlsBarPage = computed<'pcb' | 'panel' | 'paste' | 'smd' | 'tht'>(() => {
+  if (
+    sidebarTab.value === 'pcb'
+    || sidebarTab.value === 'panel'
+    || sidebarTab.value === 'paste'
+    || sidebarTab.value === 'smd'
+    || sidebarTab.value === 'tht'
+  ) {
+    return sidebarTab.value
+  }
+  return 'pcb'
+})
+
+const controlsBarUsersInTab = computed(() => {
+  if (!isTeamProject || !isCanvasPage.value) return []
+  return presentUsersInTab(controlsBarPage.value)
 })
 
 const showControlsBar = isCanvasPage
@@ -5100,6 +5248,44 @@ const {
   uploadPreviewImage,
 } = useTeamProjects()
 
+function conversationAuthorLabel(message: {
+  author_profile?: { name: string | null; email: string } | null
+  message_type: 'comment' | 'system'
+}) {
+  if (message.message_type === 'system') return 'Workflow'
+  return message.author_profile?.name ?? message.author_profile?.email ?? 'Unknown user'
+}
+
+function formatConversationDate(value: string) {
+  return new Date(value).toLocaleString()
+}
+
+async function submitConversationMessage() {
+  if (!newConversationMessage.value.trim()) return
+  postingConversationMessage.value = true
+  try {
+    const { error } = await postConversationMessage(newConversationMessage.value)
+    if (error) {
+      useToast().add({ title: 'Failed to post message', description: error.message, color: 'error' })
+      return
+    }
+    newConversationMessage.value = ''
+  } finally {
+    postingConversationMessage.value = false
+  }
+}
+
+async function submitConversationReply(parentId: string) {
+  const body = conversationReplyDrafts.value[parentId]?.trim()
+  if (!body) return
+  const { error } = await postConversationMessage(body, parentId)
+  if (error) {
+    useToast().add({ title: 'Failed to post reply', description: error.message, color: 'error' })
+    return
+  }
+  conversationReplyDrafts.value[parentId] = ''
+}
+
 async function toggleCurrentTabLock() {
   if (!teamProjectId || !isLockableTab(sidebarTab.value) || !canToggleCurrentTabLock.value) return
 
@@ -5163,6 +5349,7 @@ async function handleRequestApproval() {
     return
   }
   selectedApproverUserId.value = undefined
+  requestApprovalModalOpen.value = false
 }
 
 async function handleRequestChanges() {
