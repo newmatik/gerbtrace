@@ -386,6 +386,13 @@
               @align-click="handleAlignClick"
               @draw-commit="handleDrawCommit"
             />
+            <MiniPerfOverlay
+              v-if="appSettings.miniPerfOverlay"
+              :fps="miniPerfData.fps"
+              :frame-ms="miniPerfData.frameMs"
+              :heap-used-bytes="miniPerfData.heapUsedBytes"
+              @open-full="showPerformanceMonitor = true"
+            />
             <MeasureOverlay :measure="measureTool" :transform="canvasInteraction.transform.value" />
             <DrawPreviewOverlay :draw="drawTool" :transform="canvasInteraction.transform.value" />
             <InfoOverlay v-if="sidebarTab !== 'panel'" :info="infoTool" />
@@ -698,13 +705,13 @@
       <!-- BOM: 50/50 split (table + details), resizable -->
       <template v-else-if="sidebarTab === 'bom'">
         <div class="flex-1 min-w-0 flex flex-col overflow-hidden">
-          <div class="px-3 py-1.5 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 flex items-center gap-3">
-            <div class="flex items-center gap-2">
-              <span class="text-[10px] text-neutral-400">Pricing qty</span>
+          <div class="px-3 py-1.5 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 flex items-center gap-2 min-h-[36px] overflow-x-auto">
+            <div class="flex items-center gap-1.5 shrink-0">
+              <span class="text-[10px] text-neutral-400 whitespace-nowrap">Pricing qty</span>
               <USelect
                 :model-value="bom.boardQuantity.value"
                 size="xs"
-                class="w-28"
+                class="w-24"
                 :items="pricingQtySelectItems"
                 value-key="value"
                 label-key="label"
@@ -712,65 +719,80 @@
                 @update:model-value="handleBomBoardQuantityUpdate(($event as number))"
               />
             </div>
-            <div class="min-w-[320px] max-w-[520px] flex-1">
+            <div class="min-w-[200px] max-w-[420px] flex-1 shrink">
               <PricingQuantityTags
                 :model-value="pricingQuantities"
                 :locked="!canEditTab('bom')"
                 @update:model-value="handlePricingQuantitiesFromBom($event)"
               />
             </div>
-            <div class="flex-1" />
-            <UButton
-              v-if="spark.isAiEnabled.value"
-              size="xs"
-              color="secondary"
-              :variant="spark.isEnriching.value ? 'solid' : spark.pendingSuggestionCount.value > 0 ? 'soft' : 'outline'"
-              icon="i-lucide-sparkles"
-              :loading="spark.isEnriching.value"
-              :disabled="(bom.bomLines.value as BomLine[]).length === 0 || spark.isEnriching.value || spark.pendingSuggestionCount.value > 0 || !canEditTab('bom')"
-              :title="spark.pendingSuggestionCount.value > 0 ? `Review ${spark.pendingSuggestionCount.value} pending suggestion${spark.pendingSuggestionCount.value === 1 ? '' : 's'} before running Spark again` : 'Enrich BOM with AI suggestions'"
-              @click="handleSparkEnrich"
-            >
-              <template v-if="spark.isEnriching.value">Analyzing {{ (bom.bomLines.value as BomLine[]).filter(l => !l.dnp).length }} lines...</template>
-              <template v-else>
-                Spark
-                <UBadge v-if="spark.pendingSuggestionCount.value > 0" size="xs" color="secondary" variant="solid" class="ml-1">{{ spark.pendingSuggestionCount.value }}</UBadge>
-              </template>
-            </UButton>
-            <div v-if="spark.pendingSuggestionCount.value > 0" class="flex items-center gap-0.5">
-              <span class="text-[10px] text-secondary-600 dark:text-secondary-400 tabular-nums px-1">{{ sparkReviewPosition }} / {{ spark.pendingSuggestionCount.value }}</span>
+            <div class="flex-1 min-w-0" />
+            <div class="flex items-center gap-1.5 shrink-0">
               <UButton
+                v-if="elexess.hasCredentials.value"
+                size="xs"
+                :color="elexess.isFetching.value ? 'warning' : 'neutral'"
+                :variant="elexess.isFetching.value ? 'soft' : 'outline'"
+                :icon="elexess.isFetching.value ? 'i-lucide-x' : 'i-lucide-refresh-cw'"
+                :disabled="!canEditTab('bom') || (bom.bomLines.value as BomLine[]).length === 0"
+                :title="elexess.isFetching.value ? 'Cancel pricing fetch' : 'Fetch pricing for all manufacturer parts'"
+                @click="elexess.isFetching.value ? handleCancelPricing() : handleFetchAllPricing()"
+              >
+                <template v-if="elexess.isFetching.value">Cancel</template>
+                <template v-else>Fetch Prices</template>
+              </UButton>
+              <UButton
+                v-if="spark.isAiEnabled.value"
                 size="xs"
                 color="secondary"
-                variant="ghost"
-                icon="i-lucide-chevron-up"
-                :disabled="spark.pendingSuggestionCount.value === 0"
-                title="Previous suggestion"
-                class="!p-0.5"
-                @click="sparkReviewNav(-1)"
-              />
+                :variant="spark.isEnriching.value ? 'solid' : spark.pendingSuggestionCount.value > 0 ? 'soft' : 'outline'"
+                icon="i-lucide-sparkles"
+                :loading="spark.isEnriching.value"
+                :disabled="(bom.bomLines.value as BomLine[]).length === 0 || spark.isEnriching.value || spark.pendingSuggestionCount.value > 0 || !canEditTab('bom')"
+                :title="spark.pendingSuggestionCount.value > 0 ? `Review ${spark.pendingSuggestionCount.value} pending suggestion${spark.pendingSuggestionCount.value === 1 ? '' : 's'} before running Spark again` : 'Enrich BOM with AI suggestions'"
+                @click="handleSparkEnrich"
+              >
+                <template v-if="spark.isEnriching.value">Analyzing {{ (bom.bomLines.value as BomLine[]).filter(l => !l.dnp).length }} lines...</template>
+                <template v-else>
+                  Spark
+                  <UBadge v-if="spark.pendingSuggestionCount.value > 0" size="xs" color="secondary" variant="solid" class="ml-1">{{ spark.pendingSuggestionCount.value }}</UBadge>
+                </template>
+              </UButton>
+              <div v-if="spark.pendingSuggestionCount.value > 0" class="flex items-center gap-0.5">
+                <span class="text-[10px] text-secondary-600 dark:text-secondary-400 tabular-nums px-1">{{ sparkReviewPosition }} / {{ spark.pendingSuggestionCount.value }}</span>
+                <UButton
+                  size="xs"
+                  color="secondary"
+                  variant="ghost"
+                  icon="i-lucide-chevron-up"
+                  :disabled="spark.pendingSuggestionCount.value === 0"
+                  title="Previous suggestion"
+                  class="!p-0.5"
+                  @click="sparkReviewNav(-1)"
+                />
+                <UButton
+                  size="xs"
+                  color="secondary"
+                  variant="ghost"
+                  icon="i-lucide-chevron-down"
+                  :disabled="spark.pendingSuggestionCount.value === 0"
+                  title="Next suggestion"
+                  class="!p-0.5"
+                  @click="sparkReviewNav(1)"
+                />
+              </div>
               <UButton
+                v-if="bomCpLines.length > 0"
                 size="xs"
-                color="secondary"
-                variant="ghost"
-                icon="i-lucide-chevron-down"
-                :disabled="spark.pendingSuggestionCount.value === 0"
-                title="Next suggestion"
-                class="!p-0.5"
-                @click="sparkReviewNav(1)"
-              />
+                :color="bomCpCopied ? 'success' : 'neutral'"
+                :variant="bomCpCopied ? 'soft' : 'outline'"
+                :icon="bomCpCopied ? 'i-lucide-check' : 'i-lucide-clipboard-copy'"
+                :title="`Copy ${bomCpLines.length} customer-provided items to clipboard`"
+                @click="copyBomCpItems"
+              >
+                {{ bomCpCopied ? 'Copied' : 'Copy CP List' }}
+              </UButton>
             </div>
-            <UButton
-              v-if="bomCpLines.length > 0"
-              size="xs"
-              :color="bomCpCopied ? 'success' : 'neutral'"
-              :variant="bomCpCopied ? 'soft' : 'outline'"
-              :icon="bomCpCopied ? 'i-lucide-check' : 'i-lucide-clipboard-copy'"
-              :title="`Copy ${bomCpLines.length} customer-provided items to clipboard`"
-              @click="copyBomCpItems"
-            >
-              {{ bomCpCopied ? 'Copied' : 'Copy CP List' }}
-            </UButton>
             <template v-if="isTeamProject && presentUsersInTab('bom').length > 0">
               <div class="flex items-center -space-x-1" :title="presentUsersInTab('bom').map(u => u.name).join(', ')">
                 <div
@@ -841,7 +863,6 @@
               @update-line="handleBomUpdateLine"
               @remove-line="handleBomRemoveLine"
               @add-manufacturer="handleBomAddManufacturer"
-              @fetch-all-pricing="handleFetchAllPricing"
               @fetch-single-pricing="handleFetchSinglePricing"
               @add-group="handleBomAddGroup"
               @remove-group="handleBomRemoveGroup"
@@ -870,6 +891,7 @@
               :team-currency="stableTeamCurrency"
               :exchange-rate="elexess.exchangeRate.value"
               :pnp-designators="pnpDesignators"
+              :pnp-packages="pnpPackages"
               :locked="!canEditTab('bom')"
               :ai-suggestion="selectedBomLine ? spark.getSuggestion(selectedBomLine.id) : null"
               :groups="(bom.bomGroups.value as BomGroup[])"
@@ -877,7 +899,6 @@
               @remove-line="handleBomRemoveLine"
               @remove-manufacturer="handleBomRemoveManufacturer"
               @add-manufacturer="handleBomAddManufacturer"
-              @fetch-all-pricing="handleFetchAllPricing"
               @fetch-single-pricing="handleFetchSinglePricing"
               @accept-ai-suggestion="handleAcceptAiSuggestion"
               @dismiss-ai-suggestion="handleDismissAiSuggestion"
@@ -1126,6 +1147,7 @@ import { parsePnPPreview, type PnPColumnMapping, type PnPCoordUnit } from '~/uti
 import { saveBlobFile } from '~/utils/file-download'
 
 const route = useRoute()
+const { settings: appSettings } = useAppSettings()
 const rawId = route.params.id as string
 const isTeamProject = rawId.startsWith('team-')
 const projectId = isTeamProject ? 0 : Number(rawId) // local projects use numeric IDs
@@ -1428,11 +1450,9 @@ onMounted(() => {
   }
 })
 
-// Sync sidebar tab and selected file to URL query parameters
+// Sync sidebar tab and selected file/bomLine to URL query parameters
 watch(sidebarTab, (tab) => {
   const query = { ...route.query }
-  // Keep URLs clean for first-load defaults, but persist an explicit "layers" tab
-  // once the user is already using the `tab` query param (so reload preserves Files).
   if (tab === 'files') {
     if (route.query.tab) query.tab = 'files'
     else delete query.tab
@@ -1441,6 +1461,11 @@ watch(sidebarTab, (tab) => {
   } else {
     query.tab = tab
     delete query.file
+  }
+  if (tab === 'bom' && selectedBomLineId.value) {
+    query.bomLine = selectedBomLineId.value
+  } else {
+    delete query.bomLine
   }
   router.replace({ query })
 })
@@ -1850,7 +1875,7 @@ watch(activeFilter, (filter) => {
   if (filter === 'all') drawTool.cancelQuickPlacement()
 })
 
-// Panel view does not support info/delete tools; fall back to cursor.
+// Keep tool modes valid for the active tab.
 watch(sidebarTab, (tab) => {
   if (tab !== 'docs' && selectedDocumentId.value) {
     selectedDocumentId.value = null
@@ -1861,7 +1886,10 @@ watch(sidebarTab, (tab) => {
   if (tab === 'panel' && (activeMode.value === 'info' || activeMode.value === 'delete' || activeMode.value === 'draw')) {
     setMode('cursor')
   }
-  if (tab === 'paste' && activeMode.value === 'draw') {
+  if (tab === 'paste' && (activeMode.value === 'delete' || activeMode.value === 'draw')) {
+    setMode('cursor')
+  }
+  if (tab !== 'pcb' && activeMode.value === 'delete') {
     setMode('cursor')
   }
 })
@@ -2785,14 +2813,53 @@ async function refreshPerformanceSnapshot() {
   }
 }
 
+// Mini performance overlay live data (lightweight — only FPS/heap/pool)
+const miniPerfData = reactive({
+  fps: 0,
+  frameMs: 0,
+  heapUsedBytes: null as number | null,
+})
+let miniPerfTimer: ReturnType<typeof setInterval> | null = null
+
+function refreshMiniPerf() {
+  miniPerfData.fps = perfFrameMs > 0 ? 1000 / perfFrameMs : 0
+  miniPerfData.frameMs = perfFrameMs
+  const mem = ((performance as any).memory ?? null) as { usedJSHeapSize: number } | null
+  miniPerfData.heapUsedBytes = mem?.usedJSHeapSize ?? null
+}
+
+function startMiniPerfPolling() {
+  if (miniPerfTimer) return
+  startPerfFrameLoop()
+  miniPerfTimer = setInterval(refreshMiniPerf, 500)
+}
+
+function stopMiniPerfPolling() {
+  if (miniPerfTimer) { clearInterval(miniPerfTimer); miniPerfTimer = null }
+  if (!showPerformanceMonitor.value) {
+    stopPerfFrameLoop()
+  }
+}
+
+watch(() => appSettings.miniPerfOverlay, (on) => {
+  if (on) startMiniPerfPolling()
+  else stopMiniPerfPolling()
+})
+
+onMounted(() => {
+  if (appSettings.miniPerfOverlay) startMiniPerfPolling()
+})
+
 watch(showPerformanceMonitor, (open) => {
   if (!open) {
     if (perfRefreshTimer) {
       clearInterval(perfRefreshTimer)
       perfRefreshTimer = null
     }
-    stopPerfFrameLoop()
-    stopLongTaskObserver()
+    if (!appSettings.miniPerfOverlay) {
+      stopPerfFrameLoop()
+      stopLongTaskObserver()
+    }
     return
   }
   startPerfFrameLoop()
@@ -3893,6 +3960,7 @@ onUnmounted(() => {
   filesSaveTimers.clear()
   for (const doc of documents.value) URL.revokeObjectURL(doc.blobUrl)
   if (perfRefreshTimer) clearInterval(perfRefreshTimer)
+  if (miniPerfTimer) clearInterval(miniPerfTimer)
   if (gerberPrewarmTimer) clearTimeout(gerberPrewarmTimer)
   stopPerfFrameLoop()
   stopLongTaskObserver()
@@ -3933,7 +4001,8 @@ function copyBomCpItems() {
   })
 }
 
-const selectedBomLineId = ref<string | null>(null)
+const initialBomLineId = (route.query.bomLine as string) || null
+const selectedBomLineId = ref<string | null>(initialBomLineId)
 const selectedBomLine = computed(() => {
   const id = selectedBomLineId.value
   if (!id) return null
@@ -3950,6 +4019,14 @@ watch([sidebarTab, () => (bom.filteredLines.value as BomLine[])], ([tab, filtere
     selectedBomLineId.value = filtered[0].id
   }
 }, { immediate: true })
+
+watch(selectedBomLineId, (lineId) => {
+  if (sidebarTab.value !== 'bom') return
+  const query = { ...route.query }
+  if (lineId) query.bomLine = lineId
+  else delete query.bomLine
+  router.replace({ query })
+})
 
 function onBomDragStart(e: MouseEvent) {
   if (!bomSplitEl.value) return
@@ -4000,6 +4077,19 @@ const pnpDesignators = computed(() => {
   return s
 })
 
+const pnpPackages = computed(() => {
+  const m = new Map<string, string>()
+  for (const c of pnp.smdActiveComponents.value) {
+    if (c.matchedPackage) m.set(c.designator, c.matchedPackage)
+    else if (c.cadPackage) m.set(c.designator, c.cadPackage)
+  }
+  for (const c of pnp.thtActiveComponents.value) {
+    if (c.matchedPackage) m.set(c.designator, c.matchedPackage)
+    else if (c.cadPackage) m.set(c.designator, c.cadPackage)
+  }
+  return m
+})
+
 function inferBomLineTypeFromReferences(references: string): BomLine['type'] | null {
   const refs = parseBomRefs(references)
   if (refs.length === 0) return null
@@ -4022,6 +4112,7 @@ const bomDesignators = computed(() => {
 })
 
 watch([() => bom.bomLines.value, pnpSmdDesignators, pnpThtDesignators], () => {
+  if (!canEditTab('bom')) return
   for (const line of bom.bomLines.value) {
     const inferred = inferBomLineTypeFromReferences(line.references)
     if (!inferred || inferred === line.type) continue
@@ -4527,6 +4618,10 @@ async function handleFetchAllPricing() {
   }
 }
 
+function handleCancelPricing() {
+  elexess.cancelFetching()
+}
+
 async function handleFetchSinglePricing(partNumber: string) {
   if (!ensureTabEditable('bom')) return
   const entry = await elexess.fetchSinglePricing(partNumber)
@@ -4644,15 +4739,21 @@ async function handleSparkEnrich() {
   }
 }
 
+function sparkCleanup() {
+  nextTick(() => spark.cleanMatchingSuggestions(bom.bomLines.value as BomLine[]))
+}
+
 function handleAcceptAiSuggestion(lineId: string, field: string) {
   if (!ensureTabEditable('bom')) return
   spark.acceptSuggestion(lineId, field as keyof AiSuggestion, (id, updates) => {
     handleBomUpdateLine(id, updates)
   })
+  sparkCleanup()
 }
 
 function handleDismissAiSuggestion(lineId: string, field: string) {
   spark.dismissSuggestion(lineId, field as keyof AiSuggestion)
+  sparkCleanup()
 }
 
 function handleAcceptAiGroup(lineId: string, groupName: string) {
@@ -4660,10 +4761,12 @@ function handleAcceptAiGroup(lineId: string, groupName: string) {
   const group = bom.addGroup(groupName)
   bom.assignGroup(lineId, group.id)
   spark.dismissSuggestion(lineId, 'group')
+  sparkCleanup()
 }
 
 function handleDismissAiGroup(lineId: string) {
   spark.dismissSuggestion(lineId, 'group')
+  sparkCleanup()
 }
 
 function handleAcceptAllAi(lineId: string) {
@@ -4676,11 +4779,13 @@ function handleAcceptAllAi(lineId: string) {
     const group = bom.addGroup(groupName)
     bom.assignGroup(id, group.id)
   })
+  sparkCleanup()
   sparkAdvanceAfterReview(lineId)
 }
 
 function handleDismissAllAi(lineId: string) {
   spark.dismissAll(lineId)
+  sparkCleanup()
   sparkAdvanceAfterReview(lineId)
 }
 
@@ -4688,10 +4793,12 @@ function handleAcceptAiManufacturer(lineId: string, mfr: { manufacturer: string;
   if (!ensureTabEditable('bom')) return
   handleBomAddManufacturer(lineId, mfr)
   spark.removeSuggestedManufacturer(lineId, mfr)
+  sparkCleanup()
 }
 
 function handleDismissAiManufacturer(lineId: string, mfr: { manufacturer: string; manufacturerPart: string }) {
   spark.removeSuggestedManufacturer(lineId, mfr)
+  sparkCleanup()
 }
 
 // ── Spark review navigation ──
@@ -5157,6 +5264,7 @@ onMounted(async () => {
   const restoredAiSuggestions = project.value?.bomAiSuggestions
   if (restoredAiSuggestions && typeof restoredAiSuggestions === 'object') {
     spark.setSuggestions(restoredAiSuggestions as Record<string, any>)
+    nextTick(() => spark.cleanMatchingSuggestions(bom.bomLines.value as BomLine[]))
   }
   const restoredBomImportOptions = toBomImportOptionsSnapshot(project.value?.bomFileImportOptions)
   const restoredPnpImportOptions = toPnpImportOptionsSnapshot(project.value?.pnpFileImportOptions)

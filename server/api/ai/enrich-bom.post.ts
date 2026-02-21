@@ -23,9 +23,11 @@ type SanitizedSuggestions = Record<string, SanitizedSuggestion>
 function sanitizeSuggestions(raw: unknown): SanitizedSuggestions {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {}
 
-  const result: SanitizedSuggestions = {}
+  const dangerousKeys = new Set(['__proto__', 'prototype', 'constructor'])
+  const result: SanitizedSuggestions = Object.create(null)
 
   for (const [lineId, entry] of Object.entries(raw as Record<string, unknown>)) {
+    if (dangerousKeys.has(lineId)) continue
     if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue
     const src = entry as Record<string, unknown>
     const suggestion: SanitizedSuggestion = {}

@@ -205,7 +205,7 @@ export function usePackageLibrary() {
     const results = await fetchConcurrentSmd(tasks, FETCH_CONCURRENCY)
     const cache: Record<string, PackageWithLibrary> = {}
     for (const pkg of results) {
-      if (pkg) cache[`legacy/${pkg.name}`] = pkg
+      if (pkg) cache[`legacy/${pkg.name}.json`] = pkg
     }
     fullPackageCache.value = cache
     libraries.value = [{
