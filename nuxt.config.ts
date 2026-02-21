@@ -4,7 +4,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      appVersion: '1.1.3',
+      appVersion: '1.2.0',
       supabaseUrl: process.env.SUPABASE_URL || 'https://gqrnlnlfidighosujpdb.supabase.co',
       supabaseAnonKey: process.env.SUPABASE_ANON_KEY || '',
       // Keep in sync with Supabase Auth -> Email OTP length.
