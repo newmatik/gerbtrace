@@ -52,7 +52,7 @@ export interface DrawToolLayerInfo {
 }
 
 const SNAP_THRESHOLD_PX = 12
-const DEFAULT_STROKE_WIDTH_MM = 0.2
+const DEFAULT_STROKE_WIDTH_MM = 0.1
 const DEFAULT_GRID_SPACING_MM = 0.5
 
 export function useDrawTool() {
@@ -71,7 +71,7 @@ export function useDrawTool() {
   const preciseHeightMm = ref(5)
   const preciseRadiusMm = ref(1)
   const preciseText = ref('LABEL')
-  const preciseTextHeightMm = ref(1.5)
+  const preciseTextHeightMm = ref(1.0)
   const drillDiameterMm = ref(0.8)
 
   // Drawing state
@@ -84,6 +84,8 @@ export function useDrawTool() {
   // Snap targets from all visible layers
   const snapTargets = ref<AlignSnapPoint[]>([])
   const fileUnits = ref<'mm' | 'in'>('mm')
+  let moveRafId = 0
+  let queuedMove: { x: number; y: number; canvasEl: HTMLCanvasElement; transform: CanvasTransform } | null = null
 
   // Undo support: last committed operation
   const lastCommit = ref<{
@@ -101,6 +103,11 @@ export function useDrawTool() {
     drawStart.value = null
     previewShape.value = null
     activeSnap.value = null
+    if (moveRafId) {
+      cancelAnimationFrame(moveRafId)
+      moveRafId = 0
+    }
+    queuedMove = null
   }
 
   function setTool(tool: DrawShapeTool) {
@@ -172,12 +179,12 @@ export function useDrawTool() {
 
   // -- Mouse handlers --
 
-  function handleMouseMove(e: MouseEvent, canvasEl: HTMLCanvasElement, transform: CanvasTransform) {
+  function processMouseMove(x: number, y: number, canvasEl: HTMLCanvasElement, transform: CanvasTransform) {
     if (!active.value) return
 
     const rect = canvasEl.getBoundingClientRect()
-    const sx = e.clientX - rect.left
-    const sy = e.clientY - rect.top
+    const sx = x - rect.left
+    const sy = y - rect.top
     let gerber = screenToGerber(sx, sy, transform)
     gerber = applySnap(gerber, transform)
     cursorGerber.value = gerber
@@ -185,6 +192,18 @@ export function useDrawTool() {
     if (isDrawing.value && drawStart.value) {
       updatePreview(drawStart.value, gerber)
     }
+  }
+
+  function handleMouseMove(e: MouseEvent, canvasEl: HTMLCanvasElement, transform: CanvasTransform) {
+    queuedMove = { x: e.clientX, y: e.clientY, canvasEl, transform }
+    if (moveRafId) return
+    moveRafId = requestAnimationFrame(() => {
+      moveRafId = 0
+      const move = queuedMove
+      queuedMove = null
+      if (!move) return
+      processMouseMove(move.x, move.y, move.canvasEl, move.transform)
+    })
   }
 
   function handleMouseDown(e: MouseEvent, canvasEl: HTMLCanvasElement, transform: CanvasTransform): DrawCommitRequest | null {

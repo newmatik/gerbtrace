@@ -190,6 +190,7 @@ const canvasCursor = computed(() => {
 
 // Canvas pool for offscreen rendering
 const _canvasPool: HTMLCanvasElement[] = []
+const MAX_CANVAS_POOL_SIZE = 8
 function acquireCanvas(w: number, h: number): HTMLCanvasElement {
   const c = _canvasPool.pop() || document.createElement('canvas')
   const ctx = c.getContext('2d')!
@@ -204,7 +205,22 @@ function acquireCanvas(w: number, h: number): HTMLCanvasElement {
   ctx.setLineDash([])
   return c
 }
-function releaseCanvas(c: HTMLCanvasElement) { _canvasPool.push(c) }
+function releaseCanvas(c: HTMLCanvasElement) {
+  if (_canvasPool.length >= MAX_CANVAS_POOL_SIZE) {
+    c.width = 0
+    c.height = 0
+    return
+  }
+  _canvasPool.push(c)
+}
+
+function clearCanvasPool() {
+  for (const canvas of _canvasPool) {
+    canvas.width = 0
+    canvas.height = 0
+  }
+  _canvasPool.length = 0
+}
 
 const gerberTreeCache = useGerberImageTreeCache()
 const PERF_ENABLED = import.meta.dev
@@ -3245,6 +3261,7 @@ onMounted(() => {
       releaseCanvas(_dzCache.canvas)
       _dzCache = null
     }
+    clearCanvasPool()
     resetPanelPerf()
   })
 })

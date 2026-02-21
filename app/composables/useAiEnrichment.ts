@@ -7,6 +7,28 @@
 
 import type { BomLine, BomManufacturer, AiSuggestion, BomAiSuggestions } from '~/utils/bom-types'
 
+/**
+ * Returns only the suggestion fields that actually differ from the current
+ * BOM line, or null if nothing actionable remains.
+ */
+function mfrKey(m: BomManufacturer): string {
+  return `${(m.manufacturer ?? '').trim().toLowerCase()}|${(m.manufacturerPart ?? '').trim().toLowerCase()}`
+}
+
+function diffSuggestion(suggestion: AiSuggestion, line: BomLine): AiSuggestion | null {
+  const next: AiSuggestion = {}
+  if (suggestion.description && suggestion.description !== line.description) next.description = suggestion.description
+  if (suggestion.type && suggestion.type !== line.type) next.type = suggestion.type
+  if (suggestion.pinCount != null && suggestion.pinCount !== line.pinCount) next.pinCount = suggestion.pinCount
+  if (suggestion.smdClassification && suggestion.smdClassification !== line.smdClassification) next.smdClassification = suggestion.smdClassification
+  if (suggestion.manufacturers && suggestion.manufacturers.length > 0) {
+    const existing = new Set(line.manufacturers.map(mfrKey))
+    const novel = suggestion.manufacturers.filter(m => !existing.has(mfrKey(m)))
+    if (novel.length > 0) next.manufacturers = novel
+  }
+  return Object.keys(next).length > 0 ? next : null
+}
+
 export function useAiEnrichment() {
   const aiSuggestions = useState<BomAiSuggestions>('spark-ai-suggestions', () => ({}))
   const isEnriching = useState<boolean>('spark-is-enriching', () => false)
@@ -41,8 +63,18 @@ export function useAiEnrichment() {
         },
       })
 
-      aiSuggestions.value = result.suggestions ?? {}
-      return aiSuggestions.value
+      const raw = result.suggestions ?? {}
+      const lineMap = new Map(bomLines.map(l => [l.id, l]))
+      const cleaned: BomAiSuggestions = {}
+      for (const [id, s] of Object.entries(raw)) {
+        const line = lineMap.get(id)
+        if (!line) continue
+        const diff = diffSuggestion(s, line)
+        if (diff) cleaned[id] = diff
+      }
+
+      aiSuggestions.value = cleaned
+      return cleaned
     } catch (err: any) {
       enrichError.value = err?.data?.data?.message ?? err?.data?.statusMessage ?? err?.message ?? 'AI enrichment failed'
       throw err
@@ -51,20 +83,35 @@ export function useAiEnrichment() {
     }
   }
 
-  function getSuggestion(lineId: string): AiSuggestion | null {
-    return aiSuggestions.value[lineId] ?? null
+  /**
+   * Remove suggestion fields that now match the current BOM data.
+   * Call after any BOM line update so the count stays accurate.
+   */
+  function cleanMatchingSuggestions(bomLines: BomLine[]) {
+    const current = aiSuggestions.value
+    if (Object.keys(current).length === 0) return
+
+    const lineMap = new Map(bomLines.map(l => [l.id, l]))
+    const cleaned: BomAiSuggestions = {}
+    let changed = false
+
+    for (const [id, s] of Object.entries(current)) {
+      const line = lineMap.get(id)
+      if (!line) { changed = true; continue }
+      const diff = diffSuggestion(s, line)
+      if (diff) {
+        cleaned[id] = diff
+        if (diff !== s) changed = true
+      } else {
+        changed = true
+      }
+    }
+
+    if (changed) aiSuggestions.value = cleaned
   }
 
-  function hasSuggestions(lineId: string): boolean {
-    const s = aiSuggestions.value[lineId]
-    if (!s) return false
-    return !!(
-      s.description
-      || s.type
-      || s.pinCount != null
-      || s.smdClassification
-      || (s.manufacturers && s.manufacturers.length > 0)
-    )
+  function getSuggestion(lineId: string): AiSuggestion | null {
+    return aiSuggestions.value[lineId] ?? null
   }
 
   type SuggestionField = keyof AiSuggestion
@@ -85,8 +132,6 @@ export function useAiEnrichment() {
       applyToLine(lineId, { pinCount: suggestion.pinCount })
     } else if (field === 'smdClassification' && suggestion.smdClassification != null) {
       applyToLine(lineId, { smdClassification: suggestion.smdClassification })
-    } else if (field === 'manufacturers' && suggestion.manufacturers) {
-      // Manufacturers are handled externally (added one by one)
     }
 
     dismissSuggestion(lineId, field)
@@ -99,15 +144,7 @@ export function useAiEnrichment() {
     const next = { ...suggestion }
     delete next[field]
 
-    const hasRemaining = !!(
-      next.description
-      || next.type
-      || next.pinCount != null
-      || next.smdClassification
-      || (next.manufacturers && next.manufacturers.length > 0)
-    )
-
-    if (hasRemaining) {
+    if (Object.keys(next).length > 0) {
       aiSuggestions.value = { ...aiSuggestions.value, [lineId]: next }
     } else {
       const copy = { ...aiSuggestions.value }
@@ -145,6 +182,24 @@ export function useAiEnrichment() {
     aiSuggestions.value = copy
   }
 
+  function removeSuggestedManufacturer(lineId: string, mfr: BomManufacturer) {
+    const suggestion = aiSuggestions.value[lineId]
+    if (!suggestion?.manufacturers) return
+
+    const remaining = suggestion.manufacturers.filter(
+      m => m.manufacturer !== mfr.manufacturer || m.manufacturerPart !== mfr.manufacturerPart,
+    )
+
+    if (remaining.length === 0) {
+      dismissSuggestion(lineId, 'manufacturers')
+    } else {
+      aiSuggestions.value = {
+        ...aiSuggestions.value,
+        [lineId]: { ...suggestion, manufacturers: remaining },
+      }
+    }
+  }
+
   function dismissAll(lineId: string) {
     const copy = { ...aiSuggestions.value }
     delete copy[lineId]
@@ -155,23 +210,30 @@ export function useAiEnrichment() {
     aiSuggestions.value = suggestions
   }
 
-  const pendingSuggestionCount = computed(() => {
-    return Object.keys(aiSuggestions.value).length
-  })
+  function clearAllSuggestions() {
+    aiSuggestions.value = {}
+  }
+
+  const pendingLineIds = computed(() => Object.keys(aiSuggestions.value))
+
+  const pendingSuggestionCount = computed(() => pendingLineIds.value.length)
 
   return {
     isAiEnabled,
     isEnriching: readonly(isEnriching),
     enrichError: readonly(enrichError),
     aiSuggestions: readonly(aiSuggestions),
+    pendingLineIds,
     pendingSuggestionCount,
     enrichBom,
     getSuggestion,
-    hasSuggestions,
+    cleanMatchingSuggestions,
     acceptSuggestion,
     dismissSuggestion,
+    removeSuggestedManufacturer,
     acceptAll,
     dismissAll,
     setSuggestions,
+    clearAllSuggestions,
   }
 }

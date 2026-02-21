@@ -1,42 +1,52 @@
-import type { BomLineType, SmdClassification, BomManufacturer, AiSuggestion, BomAiSuggestions } from '~~/app/utils/bom-types'
-import { BOM_LINE_TYPES, SMD_CLASSIFICATIONS } from '~~/app/utils/bom-types'
-
 const MAX_BOM_LINES = 500
 const MAX_PNP_COMPONENTS = 1000
+
+const VALID_TYPES = ['SMD', 'THT', 'Mounting', 'Other'] as const
+const VALID_SMD_CLASSES = ['Fast', 'Slow', 'Finepitch', 'BGA'] as const
+
+interface SanitizedManufacturer { manufacturer: string; manufacturerPart: string }
+interface SanitizedSuggestion {
+  description?: string
+  type?: string
+  pinCount?: number
+  smdClassification?: string
+  manufacturers?: SanitizedManufacturer[]
+}
+type SanitizedSuggestions = Record<string, SanitizedSuggestion>
 
 /**
  * Validate and sanitize AI-returned suggestions against the expected schema.
  * Drops unknown keys and coerces values to the correct types so malformed
  * model output never propagates to the client.
  */
-function sanitizeSuggestions(raw: unknown): BomAiSuggestions {
+function sanitizeSuggestions(raw: unknown): SanitizedSuggestions {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {}
 
-  const result: BomAiSuggestions = {}
+  const result: SanitizedSuggestions = {}
 
   for (const [lineId, entry] of Object.entries(raw as Record<string, unknown>)) {
     if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue
     const src = entry as Record<string, unknown>
-    const suggestion: AiSuggestion = {}
+    const suggestion: SanitizedSuggestion = {}
 
     if (typeof src.description === 'string' && src.description.trim()) {
       suggestion.description = src.description.trim()
     }
 
-    if (typeof src.type === 'string' && BOM_LINE_TYPES.includes(src.type as BomLineType)) {
-      suggestion.type = src.type as BomLineType
+    if (typeof src.type === 'string' && (VALID_TYPES as readonly string[]).includes(src.type)) {
+      suggestion.type = src.type
     }
 
     if (typeof src.pinCount === 'number' && Number.isInteger(src.pinCount) && src.pinCount > 0) {
       suggestion.pinCount = src.pinCount
     }
 
-    if (typeof src.smdClassification === 'string' && SMD_CLASSIFICATIONS.includes(src.smdClassification as SmdClassification)) {
-      suggestion.smdClassification = src.smdClassification as SmdClassification
+    if (typeof src.smdClassification === 'string' && (VALID_SMD_CLASSES as readonly string[]).includes(src.smdClassification)) {
+      suggestion.smdClassification = src.smdClassification
     }
 
     if (Array.isArray(src.manufacturers)) {
-      const mfrs: BomManufacturer[] = []
+      const mfrs: SanitizedManufacturer[] = []
       for (const m of src.manufacturers) {
         if (m && typeof m === 'object' && typeof m.manufacturer === 'string' && typeof m.manufacturerPart === 'string') {
           const mfr = m.manufacturer.trim()
@@ -89,12 +99,12 @@ For each BOM line, suggest improvements where applicable:
    - "Capacitor Electrolytic 100µF 25V ±20% 6.3x7.7mm" instead of "ECAP 100u"
 
    **Thick Film Resistors** — format: "Resistor Thick Film {value} {tolerance} {power} {TCR} {package}"
-   - "Resistor Thick Film 27kΩ 1% 0.063W 100ppm/°C 0402" instead of "RES 27K"
-   - "Resistor Thick Film 10kΩ 1% 0.1W 100ppm/°C 0603" instead of "R 10K 1%"
+   - "Resistor Thick Film 27kΩ 1% 0.063W 100ppm 0402" instead of "RES 27K"
+   - "Resistor Thick Film 10kΩ 1% 0.1W 100ppm 0603" instead of "R 10K 1%"
    - "Resistor Thick Film 0Ω (Jumper) 0.063W 0402" instead of "0R"
 
    **Thin Film Resistors** — format: "Resistor Thin Film {value} {tolerance} {power} {TCR} {package}"
-   - "Resistor Thin Film 4.99kΩ 0.1% 0.1W 25ppm/°C 0603"
+   - "Resistor Thin Film 4.99kΩ 0.1% 0.1W 25ppm 0603"
 
    **ICs / Semiconductors** — format: "{Part Number} {brief function} {package}"
    - "STM32F407VGT6 ARM Cortex-M4 Microcontroller LQFP-100" instead of "MCU"
@@ -147,6 +157,7 @@ Only output the JSON object, nothing else.`
       designator: c.designator,
       value: c.value,
       package: c.package ?? c.cadPackage ?? c.matchedPackage,
+      ...(c.description ? { description: c.description } : {}),
     }))
   }
 
@@ -155,6 +166,7 @@ Only output the JSON object, nothing else.`
       designator: c.designator,
       value: c.value,
       package: c.package ?? c.cadPackage ?? c.matchedPackage,
+      ...(c.description ? { description: c.description } : {}),
     }))
   }
 
@@ -201,7 +213,7 @@ Only output the JSON object, nothing else.`
     const suggestions = sanitizeSuggestions(parsed)
     return { suggestions }
   } catch (err: any) {
-    if (err.statusCode) throw err
+    if (err.__h3_error__) throw err
 
     const anthropicError = err?.data?.error?.message ?? err?.data?.message ?? null
     const status = err?.statusCode ?? err?.status ?? 502

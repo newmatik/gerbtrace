@@ -483,6 +483,7 @@ const modeOptions: { label: string; value: InteractionMode; icon: string; title:
 const visibleModeOptions = computed(() => {
   if (props.page === 'panel') return modeOptions.filter(m => m.value !== 'info' && m.value !== 'delete' && m.value !== 'draw')
   if (props.page === 'smd' || props.page === 'tht') return modeOptions.filter(m => m.value !== 'info' && m.value !== 'delete' && m.value !== 'draw')
+  if (props.page === 'paste') return modeOptions.filter(m => m.value !== 'draw')
   return modeOptions
 })
 

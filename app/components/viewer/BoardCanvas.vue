@@ -119,6 +119,8 @@ function markWheelActivity() {
 }
 
 const isInteracting = computed(() => props.interaction.isDragging.value || isZooming.value)
+const TRANSFORM_REDRAW_DEBOUNCE_MS = 16
+const MAX_CANVAS_POOL_SIZE = 8
 
 // ── Layer-composite cache ──
 // Stores the last fully-rendered gerber scene so pan/zoom can reproject it
@@ -220,6 +222,7 @@ function rotateScreenPoint(sx: number, sy: number, cssWidth: number, cssHeight: 
 }
 
 function invalidateSceneCache() {
+  if (sceneCache) releaseCanvas(sceneCache.canvas)
   sceneCache = null
 }
 
@@ -333,7 +336,21 @@ function acquireCanvas(w: number, h: number): HTMLCanvasElement {
 }
 
 function releaseCanvas(c: HTMLCanvasElement) {
+  if (_canvasPool.length >= MAX_CANVAS_POOL_SIZE) {
+    // Drop oversized pooled canvases to let browser reclaim memory.
+    c.width = 0
+    c.height = 0
+    return
+  }
   _canvasPool.push(c)
+}
+
+function clearCanvasPool() {
+  for (const canvas of _canvasPool) {
+    canvas.width = 0
+    canvas.height = 0
+  }
+  _canvasPool.length = 0
 }
 
 const gerberTreeCache = useGerberImageTreeCache()
@@ -1938,6 +1955,15 @@ function scheduleRedraw() {
     draw()
   })
 }
+let transformRedrawTimer: ReturnType<typeof setTimeout> | null = null
+
+function scheduleTransformRedraw() {
+  if (transformRedrawTimer) clearTimeout(transformRedrawTimer)
+  transformRedrawTimer = setTimeout(() => {
+    transformRedrawTimer = null
+    scheduleRedraw()
+  }, TRANSFORM_REDRAW_DEBOUNCE_MS)
+}
 
 // Redraw when interaction ends (to restore footprints/markers)
 watch(
@@ -1965,7 +1991,7 @@ watch(
     appSettings.gridSpacingMm,
     bgColor.value,
   ],
-  () => scheduleRedraw(),
+  () => scheduleTransformRedraw(),
 )
 
 watch(
@@ -2035,6 +2061,12 @@ onMounted(() => {
   onUnmounted(() => {
     observer.disconnect()
     if (rafId) { cancelAnimationFrame(rafId); rafId = 0 }
+    if (transformRedrawTimer) {
+      clearTimeout(transformRedrawTimer)
+      transformRedrawTimer = null
+    }
+    invalidateSceneCache()
+    clearCanvasPool()
   })
 })
 

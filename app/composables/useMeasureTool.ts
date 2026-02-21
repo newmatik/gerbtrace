@@ -44,6 +44,14 @@ export function useMeasureTool() {
   const unitsToMm = ref(1)
 
   const snapTargets = ref<SnapPoint[]>([])
+  let moveRafId = 0
+  let queuedMove: {
+    x: number
+    y: number
+    shiftKey: boolean
+    canvasEl: HTMLCanvasElement
+    transform: CanvasTransform
+  } | null = null
 
   // ── Coordinate transforms ──
 
@@ -140,14 +148,25 @@ export function useMeasureTool() {
     pointA.value = null
     pointB.value = null
     activeSnap.value = null
+    if (moveRafId) {
+      cancelAnimationFrame(moveRafId)
+      moveRafId = 0
+    }
+    queuedMove = null
   }
 
-  function handleMouseMove(e: MouseEvent, canvasEl: HTMLCanvasElement, transform: CanvasTransform) {
+  function processMouseMove(
+    x: number,
+    y: number,
+    shiftKey: boolean,
+    canvasEl: HTMLCanvasElement,
+    transform: CanvasTransform,
+  ) {
     const rect = canvasEl.getBoundingClientRect()
-    const sx = e.clientX - rect.left
-    const sy = e.clientY - rect.top
+    const sx = x - rect.left
+    const sy = y - rect.top
 
-    shiftHeld.value = e.shiftKey
+    shiftHeld.value = shiftKey
 
     let gerber = screenToGerber(sx, sy, transform)
 
@@ -168,6 +187,24 @@ export function useMeasureTool() {
     }
 
     cursorGerber.value = gerber
+  }
+
+  function handleMouseMove(e: MouseEvent, canvasEl: HTMLCanvasElement, transform: CanvasTransform) {
+    queuedMove = {
+      x: e.clientX,
+      y: e.clientY,
+      shiftKey: e.shiftKey,
+      canvasEl,
+      transform,
+    }
+    if (moveRafId) return
+    moveRafId = requestAnimationFrame(() => {
+      moveRafId = 0
+      const move = queuedMove
+      queuedMove = null
+      if (!move) return
+      processMouseMove(move.x, move.y, move.shiftKey, move.canvasEl, move.transform)
+    })
   }
 
   function handleClick(e: MouseEvent, canvasEl: HTMLCanvasElement, transform: CanvasTransform) {
