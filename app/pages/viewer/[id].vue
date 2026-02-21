@@ -47,7 +47,13 @@
             :class="u.mode === 'editing' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' : 'bg-neutral-100 text-neutral-500 dark:bg-neutral-700 dark:text-neutral-300'"
             :title="`${u.name} (${u.role}, ${u.mode})`"
           >
-            {{ u.name.split(' ').map((p: string) => p[0]).join('').toUpperCase().slice(0, 2) }}
+            <img
+              v-if="u.avatarUrl"
+              :src="u.avatarUrl"
+              alt=""
+              class="size-full rounded-full object-cover"
+            >
+            <span v-else>{{ u.name.split(' ').map((p: string) => p[0]).join('').toUpperCase().slice(0, 2) }}</span>
           </div>
           <div
             v-if="presentUsers.length > 5"
@@ -73,24 +79,74 @@
         </template>
 
         <template v-if="isTeamProject">
-          <UBadge
-            v-if="isApproved"
-            color="success"
-            size="xs"
-            variant="subtle"
-            class="gap-1"
-          >
-            <UIcon name="i-lucide-lock" class="text-xs" />
-            Approved
+          <UBadge :color="workflowBadgeColor" size="xs" variant="subtle" class="gap-1">
+            <UIcon v-if="isApproved" name="i-lucide-lock" class="text-xs" />
+            {{ workflowLabel }}
           </UBadge>
-          <UBadge
-            v-else
+          <UButton
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-messages-square"
+            :to="conversationLink"
+          >
+            Conversation
+          </UButton>
+          <USelectMenu
+            v-if="canRequestApproval"
+            v-model="selectedApproverUserId"
+            size="xs"
+            :items="workflowApproverOptions"
+            placeholder="Select approver"
+            value-key="value"
+            label-key="label"
+            searchable
+            class="w-40"
+          />
+          <UButton
+            v-if="canMoveToInProgress"
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-play"
+            title="Set In Progress"
+            @click="handleMoveToInProgress"
+          >
+            In Progress
+          </UButton>
+          <UButton
+            v-if="canRequestApproval"
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-send"
+            title="Request approval"
+            @click="handleRequestApproval"
+          >
+            Request Approval
+          </UButton>
+          <UButton
+            v-if="canApproveWorkflow"
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-check-circle"
+            title="Approve project"
+            @click="handleApproveProject"
+          >
+            Approve
+          </UButton>
+          <UButton
+            v-if="canRequestChangesWorkflow"
+            size="xs"
             color="warning"
-            size="xs"
-            variant="subtle"
+            variant="ghost"
+            icon="i-lucide-message-square-warning"
+            title="Request changes"
+            @click="requestChangesModalOpen = true"
           >
-            Draft
-          </UBadge>
+            Request Changes
+          </UButton>
           <UButton
             v-if="isApproved && isTeamAdmin"
             size="xs"
@@ -102,20 +158,34 @@
           >
             Revert
           </UButton>
-          <UButton
-            v-if="!isApproved && isTeamAdmin"
-            size="xs"
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-check-circle"
-            title="Approve project"
-            @click="handleApproveProject"
-          >
-            Approve
-          </UButton>
         </template>
       </template>
     </AppHeader>
+
+    <UModal v-model:open="requestChangesModalOpen">
+      <template #content>
+        <div class="p-4 space-y-3">
+          <h3 class="text-sm font-semibold">Request Changes</h3>
+          <p class="text-xs text-neutral-500">
+            A message is required and will be posted in Conversation.
+          </p>
+          <UTextarea v-model="requestChangesMessage" :rows="5" placeholder="Describe required changes..." />
+          <div class="flex justify-end gap-2">
+            <UButton size="sm" color="neutral" variant="outline" @click="requestChangesModalOpen = false">
+              Cancel
+            </UButton>
+            <UButton
+              size="sm"
+              color="warning"
+              :disabled="!requestChangesMessage.trim()"
+              @click="handleRequestChanges"
+            >
+              Submit
+            </UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
 
     <ViewerControlsBar
       v-if="showControlsBar"
@@ -1180,6 +1250,7 @@ const { presentUsers, presentUsersInTab, updatePresence } = presence
 const projectSync = isTeamProject ? useProjectSync(teamProjectIdRef) : null
 const { user } = useAuth()
 const { profile } = useCurrentUser()
+const { members: teamMembers, fetchMembers: fetchTeamMembers } = useTeamMembers()
 
 /** Whether this is an approved (frozen) team project */
 const isApproved = computed(() => {
@@ -1187,10 +1258,74 @@ const isApproved = computed(() => {
   return projectSync?.project.value?.status === 'approved'
 })
 
+const currentWorkflowStatus = computed(() => {
+  if (!isTeamProject) return 'draft'
+  return projectSync?.project.value?.status ?? 'draft'
+})
+
+const currentApproverUserId = computed(() => {
+  if (!isTeamProject) return null
+  return projectSync?.project.value?.approver_user_id ?? null
+})
+
+const workflowLabel = computed(() => {
+  if (currentWorkflowStatus.value === 'in_progress') return 'In Progress'
+  if (currentWorkflowStatus.value === 'for_approval') return 'For Approval'
+  if (currentWorkflowStatus.value === 'approved') return 'Approved'
+  return 'Draft'
+})
+
+const workflowBadgeColor = computed(() => {
+  if (currentWorkflowStatus.value === 'approved') return 'success'
+  if (currentWorkflowStatus.value === 'for_approval') return 'info'
+  if (currentWorkflowStatus.value === 'in_progress') return 'primary'
+  return 'warning'
+})
+
+const conversationLink = computed(() => `/viewer/${rawId}/conversation`)
+const selectedApproverUserId = ref<string | undefined>(undefined)
+const requestChangesModalOpen = ref(false)
+const requestChangesMessage = ref('')
+
+const workflowApproverOptions = computed(() =>
+  teamMembers.value
+    .filter(m => m.status === 'active' && (m.role === 'admin' || m.role === 'editor'))
+    .map(m => ({
+      label: m.profile?.name ?? m.profile?.email ?? 'Unknown',
+      value: m.user_id,
+    })),
+)
+
+const canMoveToInProgress = computed(() => {
+  if (!isTeamProject || !user.value?.id) return false
+  const status = currentWorkflowStatus.value
+  const isActor = user.value.id === (projectSync?.project.value?.created_by ?? '') || user.value.id === (projectSync?.project.value?.assignee_user_id ?? '')
+  return isActor && (status === 'draft' || status === 'for_approval')
+})
+
+const canRequestApproval = computed(() => {
+  if (!isTeamProject || !user.value?.id) return false
+  const status = currentWorkflowStatus.value
+  const isActor = user.value.id === (projectSync?.project.value?.created_by ?? '') || user.value.id === (projectSync?.project.value?.assignee_user_id ?? '')
+  return isActor && (status === 'draft' || status === 'in_progress')
+})
+
+const canApproveWorkflow = computed(() => {
+  if (!isTeamProject || !user.value?.id) return false
+  if (currentWorkflowStatus.value !== 'for_approval') return false
+  return isTeamAdmin.value || user.value.id === currentApproverUserId.value
+})
+
+const canRequestChangesWorkflow = computed(() => canApproveWorkflow.value)
+
+watch(currentApproverUserId, (next) => {
+  selectedApproverUserId.value = next ?? undefined
+}, { immediate: true })
+
 /** Whether the current user can edit this project */
 const canEdit = computed(() => {
   if (!isTeamProject) return true // local projects are always editable
-  if (isApproved.value) return false // approved = frozen
+  if (isApproved.value || currentWorkflowStatus.value === 'for_approval') return false // frozen states
   // Viewers can't edit, editors and admins can
   return currentTeamRole.value === 'editor' || currentTeamRole.value === 'admin'
 })
@@ -3644,7 +3779,12 @@ function mutateSelectedBomImportOptions(
   mutator: (prev: BomImportOptionEntry) => BomImportOptionEntry,
 ) {
   const currentMap = { ...bom.fileImportOptions.value } as BomImportOptionsSnapshot
-  const previous = { ...(bom.resolveFileImportOptions(fileName) ?? currentMap[fileName] ?? {}) }
+  const resolved = bom.resolveFileImportOptions(fileName) ?? currentMap[fileName] ?? {}
+  const previous: BomImportOptionEntry = {
+    ...resolved,
+    fixedColumns: resolved.fixedColumns ? [...resolved.fixedColumns] : undefined,
+    extraColumns: resolved.extraColumns ? [...resolved.extraColumns] : undefined,
+  }
   const nextOptions = mutator(previous)
   const nextMap = buildCanonicalImportOptionMap(currentMap, fileName, nextOptions)
   if (areBomImportOptionsEqual(toBomImportOptionsSnapshot(currentMap), toBomImportOptionsSnapshot(nextMap))) return
@@ -3656,7 +3796,11 @@ function mutateSelectedPnpImportOptions(
   mutator: (prev: PnpImportOptionEntry) => PnpImportOptionEntry,
 ) {
   const currentMap = { ...pnp.fileImportOptions.value } as PnpImportOptionsSnapshot
-  const previous = { ...(pnp.resolveFileImportOptions(fileName) ?? currentMap[fileName] ?? {}) }
+  const resolved = pnp.resolveFileImportOptions(fileName) ?? currentMap[fileName] ?? {}
+  const previous: PnpImportOptionEntry = {
+    ...resolved,
+    fixedColumns: resolved.fixedColumns ? [...resolved.fixedColumns] : undefined,
+  }
   const nextOptions = mutator(previous)
   const nextMap = buildCanonicalImportOptionMap(currentMap, fileName, nextOptions)
   if (arePnpImportOptionsEqual(toPnpImportOptionsSnapshot(currentMap), toPnpImportOptionsSnapshot(nextMap))) return
@@ -4935,7 +5079,25 @@ function cancelEdit() {
 }
 
 // ── Team project actions (approve / revert) ──
-const { getProject: getTeamProject, approveProject: doApprove, revertToDraft: doRevert, updateProject: updateTeamProject, getProjectFiles: getTeamFiles, downloadFile: downloadTeamFile, uploadFile: uploadTeamFile, deleteFile: deleteTeamFile, getProjectDocuments: getTeamDocuments, uploadDocument: uploadTeamDocument, downloadDocument: downloadTeamDocument, updateDocumentType: updateTeamDocumentType, deleteDocument: deleteTeamDocument, uploadPreviewImage } = useTeamProjects()
+const {
+  getProject: getTeamProject,
+  approveProject: doApprove,
+  revertToDraft: doRevert,
+  moveToInProgress: doMoveToInProgress,
+  requestApproval: doRequestApproval,
+  requestChanges: doRequestChanges,
+  updateProject: updateTeamProject,
+  getProjectFiles: getTeamFiles,
+  downloadFile: downloadTeamFile,
+  uploadFile: uploadTeamFile,
+  deleteFile: deleteTeamFile,
+  getProjectDocuments: getTeamDocuments,
+  uploadDocument: uploadTeamDocument,
+  downloadDocument: downloadTeamDocument,
+  updateDocumentType: updateTeamDocumentType,
+  deleteDocument: deleteTeamDocument,
+  uploadPreviewImage,
+} = useTeamProjects()
 
 async function toggleCurrentTabLock() {
   if (!teamProjectId || !isLockableTab(sidebarTab.value) || !canToggleCurrentTabLock.value) return
@@ -4978,6 +5140,41 @@ async function handleApproveProject() {
   if (!teamProjectId) return
   const { error } = await doApprove(teamProjectId)
   if (error) console.warn('Failed to approve project:', error)
+}
+
+async function handleMoveToInProgress() {
+  if (!teamProjectId) return
+  const { error } = await doMoveToInProgress(teamProjectId)
+  if (error) {
+    useToast().add({ title: 'Failed to update workflow', description: error.message, color: 'error' })
+  }
+}
+
+async function handleRequestApproval() {
+  if (!teamProjectId) return
+  if (!selectedApproverUserId.value) {
+    useToast().add({ title: 'Select an approver first', color: 'warning' })
+    return
+  }
+  const { error } = await doRequestApproval(teamProjectId, selectedApproverUserId.value)
+  if (error) {
+    useToast().add({ title: 'Failed to request approval', description: error.message, color: 'error' })
+    return
+  }
+  selectedApproverUserId.value = undefined
+}
+
+async function handleRequestChanges() {
+  if (!teamProjectId) return
+  const message = requestChangesMessage.value.trim()
+  if (!message) return
+  const { error } = await doRequestChanges(teamProjectId, message)
+  if (error) {
+    useToast().add({ title: 'Failed to request changes', description: error.message, color: 'error' })
+    return
+  }
+  requestChangesMessage.value = ''
+  requestChangesModalOpen.value = false
 }
 
 async function handleRevertToDraft() {
@@ -5070,6 +5267,7 @@ function applyDefaultCropToOutline() {
 
 onMounted(async () => {
   if (isTeamProject && teamProjectId) {
+    await fetchTeamMembers()
     // Always refresh from DB to avoid stale in-memory cache after collaborative writes.
     const tp = await getTeamProject(teamProjectId, { force: true })
     if (tp) {

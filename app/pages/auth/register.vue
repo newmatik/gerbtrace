@@ -143,8 +143,7 @@ import { useColorMode } from '#imports'
 const router = useRouter()
 const colorMode = useColorMode()
 const isDark = computed(() => colorMode.value === 'dark')
-const { signUp, signInWithGitHub, isAuthenticated } = useAuth()
-const supabase = useSupabase()
+const { signUp, signInWithGitHub, resendSignUpConfirmation, isAuthenticated } = useAuth()
 
 const name = ref('')
 const email = ref('')
@@ -189,10 +188,7 @@ async function handleSubmit() {
 async function handleResend() {
   resendLoading.value = true
   try {
-    const { error } = await supabase.auth.resend({
-      type: 'signup',
-      email: registeredEmail.value,
-    })
+    const { error } = await resendSignUpConfirmation(registeredEmail.value)
     if (error) {
       errorMessage.value = error.message
     } else {

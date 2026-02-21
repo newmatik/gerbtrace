@@ -296,7 +296,7 @@ function buildCopyText(): string {
     `  Pixel ratio:  ${si.dpr}`,
     `  CPU cores:    ${s?.logicalCores ?? '—'}`,
     `  RAM:          ${s?.deviceMemoryGb ? `${s.deviceMemoryGb} GB` : '—'}`,
-  ]
+  )
   if (si.connection) lines.push(`  Network:      ${si.connection}`)
   lines.push(
     `  GPU:          ${s?.gpuRenderer || 'Unavailable'}`,

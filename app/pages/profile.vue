@@ -15,10 +15,48 @@
 
         <div class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-5">
           <h2 class="text-sm font-semibold mb-3">Account</h2>
-          <div class="text-sm">
-            <div class="text-neutral-500 dark:text-neutral-400">Email</div>
-            <div class="font-medium break-all">{{ profile?.email ?? user?.email ?? '—' }}</div>
+          <div class="grid gap-4 md:grid-cols-[1fr_auto]">
+            <div class="space-y-3 text-sm">
+              <div>
+                <div class="text-neutral-500 dark:text-neutral-400">Email</div>
+                <div class="font-medium break-all">{{ profile?.email ?? user?.email ?? '—' }}</div>
+              </div>
+              <div class="space-y-2">
+                <UFormField label="Display name">
+                  <UInput v-model="nameValue" placeholder="Your name" />
+                </UFormField>
+                <p v-if="nameMessage" class="text-xs" :class="nameError ? 'text-red-500' : 'text-green-600 dark:text-green-400'">
+                  {{ nameMessage }}
+                </p>
+                <UButton size="sm" :loading="nameSaving" :disabled="!canSaveName" @click="handleUpdateName">
+                  Save Name
+                </UButton>
+              </div>
+            </div>
+            <div class="space-y-2">
+              <div class="text-xs text-neutral-500">Avatar</div>
+              <img
+                v-if="profile?.avatar_url"
+                :src="profile.avatar_url"
+                alt="Avatar"
+                class="size-20 rounded-full object-cover border border-neutral-200 dark:border-neutral-800"
+              >
+              <div v-else class="size-20 rounded-full bg-primary/10 flex items-center justify-center text-lg font-semibold text-primary">
+                {{ userInitials }}
+              </div>
+            </div>
           </div>
+        </div>
+
+        <div class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-5 mt-4 space-y-3">
+          <h2 class="text-sm font-semibold">Avatar</h2>
+          <AvatarCropper @cropped="handleAvatarCropped" />
+          <p v-if="avatarMessage" class="text-xs" :class="avatarError ? 'text-red-500' : 'text-green-600 dark:text-green-400'">
+            {{ avatarMessage }}
+          </p>
+          <UButton size="sm" :loading="avatarSaving" :disabled="!croppedAvatarBlob" @click="handleAvatarUpload">
+            Upload Avatar
+          </UButton>
         </div>
 
         <div class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-5 mt-4">
@@ -74,7 +112,8 @@
 <script setup lang="ts">
 const router = useRouter()
 const { isAuthenticated, user, signIn, updatePassword } = useAuth()
-const { profile } = useCurrentUser()
+const { profile, updateProfile } = useCurrentUser()
+const { uploadAvatar } = useAvatarUpload()
 
 watch(isAuthenticated, (authed) => {
   if (!authed) router.replace('/auth/login')
@@ -86,6 +125,25 @@ const confirmPassword = ref('')
 const passwordSaving = ref(false)
 const passwordError = ref('')
 const passwordSuccess = ref('')
+const nameValue = ref('')
+const nameSaving = ref(false)
+const nameMessage = ref('')
+const nameError = ref(false)
+const avatarSaving = ref(false)
+const avatarMessage = ref('')
+const avatarError = ref(false)
+const croppedAvatarBlob = ref<Blob | null>(null)
+
+const userInitials = computed(() => {
+  const name = profile.value?.name ?? profile.value?.email ?? user.value?.email ?? ''
+  return name.split(' ').map(part => part[0]).join('').toUpperCase().slice(0, 2) || '?'
+})
+
+const canSaveName = computed(() => {
+  const next = nameValue.value.trim()
+  if (!next) return false
+  return next !== (profile.value?.name ?? '').trim()
+})
 
 const passwordMismatch = computed(() =>
   confirmPassword.value.length > 0 && newPassword.value !== confirmPassword.value,
@@ -133,4 +191,52 @@ async function handleUpdatePassword() {
     passwordSaving.value = false
   }
 }
+
+async function handleUpdateName() {
+  const trimmed = nameValue.value.trim()
+  if (!trimmed) return
+  nameSaving.value = true
+  nameMessage.value = ''
+  nameError.value = false
+  try {
+    const { error } = await updateProfile({ name: trimmed })
+    if (error) {
+      nameMessage.value = error.message
+      nameError.value = true
+      return
+    }
+    nameMessage.value = 'Name updated.'
+  } finally {
+    nameSaving.value = false
+  }
+}
+
+function handleAvatarCropped(blob: Blob) {
+  croppedAvatarBlob.value = blob
+  avatarMessage.value = ''
+  avatarError.value = false
+}
+
+async function handleAvatarUpload() {
+  if (!croppedAvatarBlob.value) return
+  avatarSaving.value = true
+  avatarMessage.value = ''
+  avatarError.value = false
+  try {
+    const { error } = await uploadAvatar(croppedAvatarBlob.value)
+    if (error) {
+      avatarMessage.value = error.message
+      avatarError.value = true
+      return
+    }
+    avatarMessage.value = 'Avatar updated.'
+    croppedAvatarBlob.value = null
+  } finally {
+    avatarSaving.value = false
+  }
+}
+
+watch(() => profile.value?.name, (next) => {
+  nameValue.value = next ?? ''
+}, { immediate: true })
 </script>
