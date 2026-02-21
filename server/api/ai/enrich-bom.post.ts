@@ -11,6 +11,7 @@ interface SanitizedSuggestion {
   pinCount?: number
   smdClassification?: string
   manufacturers?: SanitizedManufacturer[]
+  group?: string
 }
 type SanitizedSuggestions = Record<string, SanitizedSuggestion>
 
@@ -45,6 +46,10 @@ function sanitizeSuggestions(raw: unknown): SanitizedSuggestions {
       suggestion.smdClassification = src.smdClassification
     }
 
+    if (typeof src.group === 'string' && src.group.trim()) {
+      suggestion.group = src.group.trim()
+    }
+
     if (Array.isArray(src.manufacturers)) {
       const mfrs: SanitizedManufacturer[] = []
       for (const m of src.manufacturers) {
@@ -67,7 +72,7 @@ function sanitizeSuggestions(raw: unknown): SanitizedSuggestions {
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
-  const { apiKey, model, bomLines, smdPnpComponents, thtPnpComponents } = body ?? {}
+  const { apiKey, model, bomLines, smdPnpComponents, thtPnpComponents, existingGroups } = body ?? {}
 
   if (!apiKey || typeof apiKey !== 'string') {
     throw createError({ statusCode: 400, statusMessage: 'Missing apiKey' })
@@ -132,9 +137,22 @@ For each BOM line, suggest improvements where applicable:
    - Electrolytic Capacitors: Panasonic, Nichicon, Murata, TDK
    Only suggest manufacturer part numbers you are confident are real, valid, currently-available part numbers. The part number must match the component's value, tolerance, voltage rating, and package size.
 
+6. **Group**: Suggest a group name to organize the BOM. Use these standard group names consistently:
+   - "Standard Resistors" — generic thick/thin film resistors (non-precision, non-specialty)
+   - "Standard MLCC" — generic MLCC ceramic capacitors (non-precision, non-specialty)
+   - "Electrolytic Capacitors" — electrolytic and tantalum capacitors
+   - "ICs" — integrated circuits, microcontrollers, regulators, op-amps, etc.
+   - "Connectors" — connectors, headers, sockets
+   - "THT Components" — through-hole components that don't fit other groups
+   - "LEDs & Indicators" — LEDs, displays, indicator components
+   - "Inductors & Ferrites" — inductors, ferrite beads, transformers
+   - "Diodes & Transistors" — discrete semiconductors
+   - "Mechanical" — mounting hardware, heatsinks, spacers
+   Use these exact names when applicable. Only create a new group name if a component truly doesn't fit any of the above categories.
+
 IMPORTANT: Only include fields where you have a meaningful suggestion that differs from the existing data. Do not echo back the same values. If a description is already good, omit it. If you cannot determine a field, omit it entirely.
 
-Respond with a JSON object where keys are the BOM line IDs and values are objects with optional fields: description, type, pinCount, smdClassification, manufacturers (array of {manufacturer, manufacturerPart}).
+Respond with a JSON object where keys are the BOM line IDs and values are objects with optional fields: description, type, pinCount, smdClassification, manufacturers (array of {manufacturer, manufacturerPart}), group (string).
 
 Only output the JSON object, nothing else.`
 
@@ -150,6 +168,10 @@ Only output the JSON object, nothing else.`
       manufacturers: line.manufacturers,
       extra: line.extra,
     })),
+  }
+
+  if (Array.isArray(existingGroups) && existingGroups.length > 0) {
+    userPayload.existingGroups = existingGroups.map((g: any) => g?.name).filter(Boolean)
   }
 
   if (Array.isArray(smdPnpComponents) && smdPnpComponents.length > 0) {

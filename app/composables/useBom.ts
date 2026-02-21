@@ -9,7 +9,7 @@ import type { LayerInfo } from '~/utils/gerber-helpers'
 import { isBomLayer, isBomFile } from '~/utils/gerber-helpers'
 import { parseBomFile, buildBomLines } from '~/utils/bom-parser'
 import type { BomParseResult } from '~/utils/bom-parser'
-import type { BomLine, BomManufacturer, BomColumnMapping, BomPricingCache, BomLineType } from '~/utils/bom-types'
+import type { BomLine, BomManufacturer, BomColumnMapping, BomPricingCache, BomLineType, BomGroup } from '~/utils/bom-types'
 
 interface BomFileImportOptions {
   skipRows?: number
@@ -421,6 +421,69 @@ export function useBom(layers: Ref<LayerInfo[]>) {
     updateLine(lineId, { manufacturers: mfrs })
   }
 
+  // ── Groups ──
+
+  const bomGroups = ref<BomGroup[]>([])
+
+  function addGroup(name: string): BomGroup {
+    const existing = bomGroups.value.find(g => g.name === name)
+    if (existing) return existing
+    const group: BomGroup = { id: crypto.randomUUID(), name, comment: '', collapsed: false }
+    bomGroups.value = [...bomGroups.value, group]
+    return group
+  }
+
+  function removeGroup(groupId: string) {
+    bomGroups.value = bomGroups.value.filter(g => g.id !== groupId)
+    bomLines.value = bomLines.value.map(l =>
+      l.groupId === groupId ? { ...l, groupId: null } : l,
+    )
+  }
+
+  function updateGroup(groupId: string, updates: Partial<Omit<BomGroup, 'id'>>) {
+    bomGroups.value = bomGroups.value.map(g =>
+      g.id === groupId ? { ...g, ...updates } : g,
+    )
+  }
+
+  function reorderGroups(orderedIds: string[]) {
+    const byId = new Map(bomGroups.value.map(g => [g.id, g]))
+    const reordered = orderedIds.map(id => byId.get(id)).filter(Boolean) as BomGroup[]
+    bomGroups.value = reordered
+  }
+
+  function assignGroup(lineId: string, groupId: string | null) {
+    updateLine(lineId, { groupId: groupId ?? null })
+  }
+
+  function moveLineBefore(draggedId: string, targetId: string) {
+    const list = [...bomLines.value]
+    const dragIdx = list.findIndex(l => l.id === draggedId)
+    if (dragIdx < 0) return
+    const [dragged] = list.splice(dragIdx, 1)
+    const targetIdx = list.findIndex(l => l.id === targetId)
+    if (targetIdx < 0) list.push(dragged!)
+    else list.splice(targetIdx, 0, dragged!)
+    hasPersistedBomLines.value = true
+    bomLines.value = list
+  }
+
+  function moveLineToEnd(draggedId: string) {
+    const list = [...bomLines.value]
+    const dragIdx = list.findIndex(l => l.id === draggedId)
+    if (dragIdx < 0) return
+    const [dragged] = list.splice(dragIdx, 1)
+    list.push(dragged!)
+    hasPersistedBomLines.value = true
+    bomLines.value = list
+  }
+
+  function setBomGroups(groups: BomGroup[] | null | undefined) {
+    bomGroups.value = groups ? [...groups] : []
+  }
+
+  const bomGroupsRecord = computed<BomGroup[]>(() => bomGroups.value.map(g => ({ ...g })))
+
   // ── Pricing cache ──
 
   function updatePricingCache(cache: BomPricingCache) {
@@ -471,6 +534,7 @@ export function useBom(layers: Ref<LayerInfo[]>) {
   function resetBom() {
     bomLines.value = []
     customerBomLines.value = []
+    bomGroups.value = []
     pricingCache.value = {}
     fileImportOptions.value = {}
     parsedLayerCache.clear()
@@ -522,6 +586,16 @@ export function useBom(layers: Ref<LayerInfo[]>) {
     addManufacturer,
     removeManufacturer,
 
+    // Groups
+    bomGroups: readonly(bomGroups),
+    addGroup,
+    removeGroup,
+    updateGroup,
+    reorderGroups,
+    assignGroup,
+    moveLineBefore,
+    moveLineToEnd,
+
     // Pricing
     updatePricingCache,
     updateSinglePricing,
@@ -529,9 +603,11 @@ export function useBom(layers: Ref<LayerInfo[]>) {
     // Persistence
     bomLinesRecord,
     customerBomLinesRecord,
+    bomGroupsRecord,
     pricingCacheRecord,
     fileImportOptionsRecord,
     setBomLines,
+    setBomGroups,
     setPricingCache,
     setBoardQuantity,
     totalPieces,

@@ -159,6 +159,9 @@
       v-if="activeMode === 'draw' && isCanvasPage"
       :draw="drawTool"
       :layers="layers.map(l => ({ fileName: l.file.fileName, type: l.type, color: l.color }))"
+      :active-filter="activeFilter"
+      @quick-fiducial="handleQuickFiducial"
+      @quick-bc="handleQuickBc"
     />
 
     <div class="flex-1 flex overflow-hidden">
@@ -730,7 +733,7 @@
               :title="spark.pendingSuggestionCount.value > 0 ? `Review ${spark.pendingSuggestionCount.value} pending suggestion${spark.pendingSuggestionCount.value === 1 ? '' : 's'} before running Spark again` : 'Enrich BOM with AI suggestions'"
               @click="handleSparkEnrich"
             >
-              <template v-if="spark.isEnriching.value">Analyzing {{ (bom.bomLines.value as BomLine[]).length }} lines...</template>
+              <template v-if="spark.isEnriching.value">Analyzing {{ (bom.bomLines.value as BomLine[]).filter(l => !l.dnp).length }} lines...</template>
               <template v-else>
                 Spark
                 <UBadge v-if="spark.pendingSuggestionCount.value > 0" size="xs" color="secondary" variant="solid" class="ml-1">{{ spark.pendingSuggestionCount.value }}</UBadge>
@@ -833,6 +836,7 @@
               :selected-line-id="selectedBomLineId"
               :locked="!canEditTab('bom')"
               :ai-suggestions="(spark.aiSuggestions.value as BomAiSuggestions)"
+              :groups="(bom.bomGroups.value as BomGroup[])"
               @select-line="selectedBomLineId = $event"
               @update:search-query="bom.searchQuery.value = $event"
               @add-line="handleBomAddLine"
@@ -841,6 +845,12 @@
               @add-manufacturer="handleBomAddManufacturer"
               @fetch-all-pricing="handleFetchAllPricing"
               @fetch-single-pricing="handleFetchSinglePricing"
+              @add-group="handleBomAddGroup"
+              @remove-group="handleBomRemoveGroup"
+              @update-group="handleBomUpdateGroup"
+              @assign-group="handleBomAssignGroup"
+              @move-line-before="handleBomMoveLineBefore"
+              @move-line-to-end="handleBomMoveLineToEnd"
             />
           </section>
 
@@ -864,6 +874,7 @@
               :pnp-designators="pnpDesignators"
               :locked="!canEditTab('bom')"
               :ai-suggestion="selectedBomLine ? spark.getSuggestion(selectedBomLine.id) : null"
+              :groups="(bom.bomGroups.value as BomGroup[])"
               @update-line="handleBomUpdateLine"
               @remove-line="handleBomRemoveLine"
               @remove-manufacturer="handleBomRemoveManufacturer"
@@ -876,6 +887,9 @@
               @dismiss-all-ai="handleDismissAllAi"
               @accept-ai-manufacturer="handleAcceptAiManufacturer"
               @dismiss-ai-manufacturer="handleDismissAiManufacturer"
+              @accept-ai-group="handleAcceptAiGroup"
+              @dismiss-ai-group="handleDismissAiGroup"
+              @assign-group="handleBomAssignGroup"
             />
           </section>
           </div>
@@ -1090,7 +1104,7 @@ import type { GerberFile, LayerInfo, LayerFilter } from '~/utils/gerber-helpers'
 import type { SourceRange, ImageTree, BoundingBox } from '@lib/gerber/types'
 import { mergeBounds, emptyBounds, isEmpty } from '@lib/gerber/bounding-box'
 import { sortLayersByPcbOrder, isTopLayer, isBottomLayer, isSharedLayer, getColorForType, isPnPLayer } from '~/utils/gerber-helpers'
-import type { BomLine, BomColumnMapping, BomAiSuggestions, AiSuggestion } from '~/utils/bom-types'
+import type { BomLine, BomColumnMapping, BomAiSuggestions, AiSuggestion, BomGroup } from '~/utils/bom-types'
 import type { PricingQueueItem } from '~/composables/useElexessApi'
 import type { ViewMode } from '~/components/viewer/BoardCanvas.vue'
 import { getPresetForAppearance } from '~/utils/pcb-presets'
@@ -1100,6 +1114,15 @@ import type { PnPConvention } from '~/utils/pnp-conventions'
 import type { PnPExportFormat, PnPExportSideMode } from '~/utils/pnp-export'
 import { generatePnPExport, getPnPExportExtension, getPnPExportMimeType } from '~/utils/pnp-export'
 import { removeSourceRanges } from '@lib/gerber/editor'
+import {
+  parseFormatFromSource,
+  findNextApertureCode,
+  generateCircle,
+  generateRect,
+  generateText,
+  injectGerberCommands,
+  mmToFileUnits,
+} from '@lib/gerber/generator'
 import { parseBomFile } from '~/utils/bom-parser'
 import { parsePnPPreview, type PnPColumnMapping, type PnPCoordUnit } from '~/utils/pnp-parser'
 import { saveBlobFile } from '~/utils/file-download'
@@ -1109,7 +1132,7 @@ const rawId = route.params.id as string
 const isTeamProject = rawId.startsWith('team-')
 const projectId = isTeamProject ? 0 : Number(rawId) // local projects use numeric IDs
 const teamProjectId = isTeamProject ? rawId.replace('team-', '') : null
-const { getProject, getFiles, addFiles, upsertFiles, clearFiles, renameFile, removeFile, getOriginalFiles, storeOriginalFiles, renameOriginalFile, removeOriginalFile, renameProject, updateFileLayerType, updateFileContent, updateProjectOrigin, updateProjectConvention, updateProjectRotationOverrides, updateProjectDnp, updateProjectCadPackageMap, updateProjectPolarizedOverrides, updateProjectComponentNotes, updateProjectFieldOverrides, updateProjectManualComponents, updateProjectDeletedComponents, updateProjectSortSmd, updateProjectSortTht, updateProjectManualOrderSmd, updateProjectManualOrderTht, updateProjectComponentGroups, updateProjectGroupAssignments, updatePnpAssemblyTypes, updateBomLines, updateBomPricingCache, updateBomBoardQuantity, updatePcbData, updatePanelData, updatePasteSettings: updateLocalPasteSettings, updateLayerOrder: updateLocalLayerOrder, updateDocumentOrder: updateLocalDocumentOrder, updateBomFileImportOptions: updateLocalBomFileImportOptions, updatePnpFileImportOptions: updateLocalPnpFileImportOptions, updateProjectPreview, getDocuments, addDocument, removeDocument: removeDocumentFromDb, updateDocumentType: updateDocumentTypeInDb } = useProject()
+const { getProject, getFiles, addFiles, upsertFiles, clearFiles, renameFile, removeFile, getOriginalFiles, storeOriginalFiles, renameOriginalFile, removeOriginalFile, renameProject, updateFileLayerType, updateFileContent, updateProjectOrigin, updateProjectConvention, updateProjectRotationOverrides, updateProjectDnp, updateProjectCadPackageMap, updateProjectPolarizedOverrides, updateProjectComponentNotes, updateProjectFieldOverrides, updateProjectManualComponents, updateProjectDeletedComponents, updateProjectSortSmd, updateProjectSortTht, updateProjectManualOrderSmd, updateProjectManualOrderTht, updateProjectComponentGroups, updateProjectGroupAssignments, updatePnpAssemblyTypes, updateBomLines, updateBomGroups, updateBomPricingCache, updateBomBoardQuantity, updatePcbData, updatePanelData, updatePasteSettings: updateLocalPasteSettings, updateLayerOrder: updateLocalLayerOrder, updateDocumentOrder: updateLocalDocumentOrder, updateBomFileImportOptions: updateLocalBomFileImportOptions, updatePnpFileImportOptions: updateLocalPnpFileImportOptions, updateProjectPreview, getDocuments, addDocument, removeDocument: removeDocumentFromDb, updateDocumentType: updateDocumentTypeInDb } = useProject()
 
 // ── Team project support ──
 const teamProjectIdRef = ref(teamProjectId)
@@ -1594,8 +1617,26 @@ function arePcbDataEqual(a: PcbDataSnapshot | null, b: PcbDataSnapshot | null): 
   return JSON.stringify(a ?? null) === JSON.stringify(b ?? null)
 }
 
-type BomImportOptionsSnapshot = Record<string, { skipRows?: number; skipBottomRows?: number; mapping?: BomColumnMapping; fixedColumns?: number[]; delimiter?: ',' | ';' | '\t' | 'fixed'; decimal?: '.' | ','; extraColumns?: string[] }>
-type PnpImportOptionsSnapshot = Record<string, { skipRows?: number; skipBottomRows?: number; mapping?: PnPColumnMapping; unitOverride?: 'auto' | PnPCoordUnit; fixedColumns?: number[]; delimiter?: ',' | ';' | '\t' | 'fixed'; decimal?: '.' | ',' }>
+type BomImportOptionEntry = {
+  skipRows?: number
+  skipBottomRows?: number
+  mapping?: BomColumnMapping
+  fixedColumns?: number[]
+  delimiter?: ',' | ';' | '\t' | 'fixed'
+  decimal?: '.' | ','
+  extraColumns?: string[]
+}
+type PnpImportOptionEntry = {
+  skipRows?: number
+  skipBottomRows?: number
+  mapping?: PnPColumnMapping
+  unitOverride?: 'auto' | PnPCoordUnit
+  fixedColumns?: number[]
+  delimiter?: ',' | ';' | '\t' | 'fixed'
+  decimal?: '.' | ','
+}
+type BomImportOptionsSnapshot = Record<string, BomImportOptionEntry>
+type PnpImportOptionsSnapshot = Record<string, PnpImportOptionEntry>
 
 function hasImportOptions(snapshot: Record<string, unknown>): boolean {
   return Object.keys(snapshot).length > 0
@@ -1651,6 +1692,30 @@ function sanitizeExtraColumns(value: unknown): string[] | undefined {
   if (!Array.isArray(value)) return undefined
   const out = value.filter((v): v is string => typeof v === 'string' && v.trim().length > 0)
   return out.length > 0 ? out : undefined
+}
+
+function normalizeImportKey(name: string): string {
+  return name.toLowerCase().replace(/\.[^.]+$/, '').replace(/[^a-z0-9]/g, '')
+}
+
+function hasEquivalentImportKey(a: string, b: string): boolean {
+  return a.toLowerCase() === b.toLowerCase() || normalizeImportKey(a) === normalizeImportKey(b)
+}
+
+function buildCanonicalImportOptionMap<T>(
+  currentMap: Record<string, T>,
+  activeFileName: string,
+  nextOptions: T,
+): Record<string, T> {
+  const nextMap: Record<string, T> = {
+    ...currentMap,
+    [activeFileName]: nextOptions,
+  }
+  for (const key of Object.keys(nextMap)) {
+    if (key === activeFileName) continue
+    if (hasEquivalentImportKey(key, activeFileName)) delete nextMap[key]
+  }
+  return nextMap
 }
 
 function toBomImportOptionsSnapshot(input: unknown): BomImportOptionsSnapshot {
@@ -3491,14 +3556,37 @@ function updateSelectedLayerText(nextContent: string) {
   queueLayerTextPersist(layer.file.fileName)
 }
 
+function mutateSelectedBomImportOptions(
+  fileName: string,
+  mutator: (prev: BomImportOptionEntry) => BomImportOptionEntry,
+) {
+  const currentMap = { ...bom.fileImportOptions.value } as BomImportOptionsSnapshot
+  const previous = { ...(bom.resolveFileImportOptions(fileName) ?? currentMap[fileName] ?? {}) }
+  const nextOptions = mutator(previous)
+  const nextMap = buildCanonicalImportOptionMap(currentMap, fileName, nextOptions)
+  if (areBomImportOptionsEqual(toBomImportOptionsSnapshot(currentMap), toBomImportOptionsSnapshot(nextMap))) return
+  bom.setFileImportOptionsMap(nextMap)
+}
+
+function mutateSelectedPnpImportOptions(
+  fileName: string,
+  mutator: (prev: PnpImportOptionEntry) => PnpImportOptionEntry,
+) {
+  const currentMap = { ...pnp.fileImportOptions.value } as PnpImportOptionsSnapshot
+  const previous = { ...(pnp.resolveFileImportOptions(fileName) ?? currentMap[fileName] ?? {}) }
+  const nextOptions = mutator(previous)
+  const nextMap = buildCanonicalImportOptionMap(currentMap, fileName, nextOptions)
+  if (arePnpImportOptionsEqual(toPnpImportOptionsSnapshot(currentMap), toPnpImportOptionsSnapshot(nextMap))) return
+  pnp.setFileImportOptionsMap(nextMap)
+}
+
 function updateSelectedLayerPnpUnit(value: unknown) {
   const layer = filesSelectedLayer.value
   if (!layer || !isSelectedLayerPnp.value) return
   const raw = String(value ?? 'auto')
   const unitOverride: 'auto' | PnPCoordUnit =
     raw === 'mm' || raw === 'mils' || raw === 'inches' ? raw : 'auto'
-  const prev = pnp.fileImportOptions.value[layer.file.fileName] ?? {}
-  pnp.setFileImportOptions(layer.file.fileName, { ...prev, unitOverride })
+  mutateSelectedPnpImportOptions(layer.file.fileName, prev => ({ ...prev, unitOverride }))
 }
 
 function updateSelectedLayerSkipRows(value: number) {
@@ -3506,13 +3594,11 @@ function updateSelectedLayerSkipRows(value: number) {
   if (!layer) return
   const skipRows = Math.max(0, Number(value) || 0)
   if (isSelectedLayerBom.value) {
-    const prev = bom.fileImportOptions.value[layer.file.fileName] ?? {}
-    bom.setFileImportOptions(layer.file.fileName, { ...prev, skipRows })
+    mutateSelectedBomImportOptions(layer.file.fileName, prev => ({ ...prev, skipRows }))
     return
   }
   if (isSelectedLayerPnp.value) {
-    const prev = pnp.fileImportOptions.value[layer.file.fileName] ?? {}
-    pnp.setFileImportOptions(layer.file.fileName, { ...prev, skipRows })
+    mutateSelectedPnpImportOptions(layer.file.fileName, prev => ({ ...prev, skipRows }))
   }
 }
 
@@ -3521,13 +3607,11 @@ function updateSelectedLayerSkipBottomRows(value: number) {
   if (!layer) return
   const skipBottomRows = Math.max(0, Number(value) || 0)
   if (isSelectedLayerBom.value) {
-    const prev = bom.fileImportOptions.value[layer.file.fileName] ?? {}
-    bom.setFileImportOptions(layer.file.fileName, { ...prev, skipBottomRows })
+    mutateSelectedBomImportOptions(layer.file.fileName, prev => ({ ...prev, skipBottomRows }))
     return
   }
   if (isSelectedLayerPnp.value) {
-    const prev = pnp.fileImportOptions.value[layer.file.fileName] ?? {}
-    pnp.setFileImportOptions(layer.file.fileName, { ...prev, skipBottomRows })
+    mutateSelectedPnpImportOptions(layer.file.fileName, prev => ({ ...prev, skipBottomRows }))
   }
 }
 
@@ -3535,13 +3619,11 @@ function updateSelectedLayerMappingByField(next: Record<string, number | undefin
   const layer = filesSelectedLayer.value
   if (!layer) return
   if (isSelectedLayerBom.value) {
-    const prev = bom.fileImportOptions.value[layer.file.fileName] ?? {}
-    bom.setFileImportOptions(layer.file.fileName, { ...prev, mapping: next as BomColumnMapping })
+    mutateSelectedBomImportOptions(layer.file.fileName, prev => ({ ...prev, mapping: next as BomColumnMapping }))
     return
   }
   if (isSelectedLayerPnp.value) {
-    const prev = pnp.fileImportOptions.value[layer.file.fileName] ?? {}
-    pnp.setFileImportOptions(layer.file.fileName, { ...prev, mapping: next as PnPColumnMapping })
+    mutateSelectedPnpImportOptions(layer.file.fileName, prev => ({ ...prev, mapping: next as PnPColumnMapping }))
   }
 }
 
@@ -3561,15 +3643,15 @@ function updateSelectedLayerFixedColumns(next: number[]) {
   }
 
   if (isSelectedLayerBom.value) {
-    const prev = bom.fileImportOptions.value[layer.file.fileName] ?? {}
-    if (arraysEqual(prev.fixedColumns, fixedColumns)) return
-    bom.setFileImportOptions(layer.file.fileName, { ...prev, fixedColumns })
+    const prev = bom.resolveFileImportOptions(layer.file.fileName)
+    if (arraysEqual(prev?.fixedColumns, fixedColumns)) return
+    mutateSelectedBomImportOptions(layer.file.fileName, opts => ({ ...opts, fixedColumns }))
     return
   }
   if (isSelectedLayerPnp.value) {
-    const prev = pnp.fileImportOptions.value[layer.file.fileName] ?? {}
-    if (arraysEqual(prev.fixedColumns, fixedColumns)) return
-    pnp.setFileImportOptions(layer.file.fileName, { ...prev, fixedColumns })
+    const prev = pnp.resolveFileImportOptions(layer.file.fileName)
+    if (arraysEqual(prev?.fixedColumns, fixedColumns)) return
+    mutateSelectedPnpImportOptions(layer.file.fileName, opts => ({ ...opts, fixedColumns }))
   }
 }
 
@@ -3577,15 +3659,15 @@ function updateSelectedLayerDelimiter(next: ',' | ';' | '\t' | 'fixed') {
   const layer = filesSelectedLayer.value
   if (!layer) return
   if (isSelectedLayerBom.value) {
-    const prev = bom.fileImportOptions.value[layer.file.fileName] ?? {}
-    if (prev.delimiter === next) return
-    bom.setFileImportOptions(layer.file.fileName, { ...prev, delimiter: next })
+    const prev = bom.resolveFileImportOptions(layer.file.fileName)
+    if (prev?.delimiter === next) return
+    mutateSelectedBomImportOptions(layer.file.fileName, opts => ({ ...opts, delimiter: next }))
     return
   }
   if (isSelectedLayerPnp.value) {
-    const prev = pnp.fileImportOptions.value[layer.file.fileName] ?? {}
-    if (prev.delimiter === next) return
-    pnp.setFileImportOptions(layer.file.fileName, { ...prev, delimiter: next })
+    const prev = pnp.resolveFileImportOptions(layer.file.fileName)
+    if (prev?.delimiter === next) return
+    mutateSelectedPnpImportOptions(layer.file.fileName, opts => ({ ...opts, delimiter: next }))
   }
 }
 
@@ -3593,27 +3675,29 @@ function updateSelectedLayerDecimal(next: '.' | ',') {
   const layer = filesSelectedLayer.value
   if (!layer) return
   if (isSelectedLayerBom.value) {
-    const prev = bom.fileImportOptions.value[layer.file.fileName] ?? {}
-    if (prev.decimal === next) return
-    bom.setFileImportOptions(layer.file.fileName, { ...prev, decimal: next })
+    const prev = bom.resolveFileImportOptions(layer.file.fileName)
+    if (prev?.decimal === next) return
+    mutateSelectedBomImportOptions(layer.file.fileName, opts => ({ ...opts, decimal: next }))
     return
   }
   if (isSelectedLayerPnp.value) {
-    const prev = pnp.fileImportOptions.value[layer.file.fileName] ?? {}
-    if (prev.decimal === next) return
-    pnp.setFileImportOptions(layer.file.fileName, { ...prev, decimal: next })
+    const prev = pnp.resolveFileImportOptions(layer.file.fileName)
+    if (prev?.decimal === next) return
+    mutateSelectedPnpImportOptions(layer.file.fileName, opts => ({ ...opts, decimal: next }))
   }
 }
 
 function updateSelectedLayerExtraColumns(next: string[]) {
   const layer = filesSelectedLayer.value
   if (!layer || !isSelectedLayerBom.value) return
-  const prev = bom.fileImportOptions.value[layer.file.fileName] ?? {}
-  bom.setFileImportOptions(layer.file.fileName, { ...prev, extraColumns: next.length > 0 ? next : undefined })
+  mutateSelectedBomImportOptions(layer.file.fileName, prev => ({
+    ...prev,
+    extraColumns: next.length > 0 ? next : undefined,
+  }))
 }
 
 function resolveSelectedPnpUnitOverride(layerFileName: string): PnPCoordUnit | undefined {
-  const fileOverride = pnp.fileImportOptions.value[layerFileName]?.unitOverride
+  const fileOverride = pnp.resolveFileImportOptions(layerFileName)?.unitOverride
   if (fileOverride && fileOverride !== 'auto') return fileOverride
   return pnp.coordUnitOverride.value === 'auto' ? undefined : pnp.coordUnitOverride.value
 }
@@ -4300,6 +4384,15 @@ watch(bom.bomLinesRecord, (lines) => {
   }
 }, { deep: true })
 
+watch(bom.bomGroupsRecord, (groups) => {
+  if (!hasLoadedProjectData.value) return
+  if (isTeamProject) {
+    persistToProject({ bomGroups: groups })
+  } else {
+    updateBomGroups(projectId, groups)
+  }
+}, { deep: true })
+
 watch(bom.pricingCacheRecord, (cache) => {
   if (!hasLoadedProjectData.value) return
   if (isTeamProject) {
@@ -4480,6 +4573,36 @@ function handleBomRemoveManufacturer(lineId: string, idx: number) {
   bom.removeManufacturer(lineId, idx)
 }
 
+function handleBomAddGroup(name: string) {
+  if (!ensureTabEditable('bom')) return
+  bom.addGroup(name)
+}
+
+function handleBomRemoveGroup(groupId: string) {
+  if (!ensureTabEditable('bom')) return
+  bom.removeGroup(groupId)
+}
+
+function handleBomUpdateGroup(groupId: string, updates: Partial<Omit<BomGroup, 'id'>>) {
+  if (!ensureTabEditable('bom')) return
+  bom.updateGroup(groupId, updates)
+}
+
+function handleBomAssignGroup(lineId: string, groupId: string | null) {
+  if (!ensureTabEditable('bom')) return
+  bom.assignGroup(lineId, groupId)
+}
+
+function handleBomMoveLineBefore(draggedId: string, targetId: string) {
+  if (!ensureTabEditable('bom')) return
+  bom.moveLineBefore(draggedId, targetId)
+}
+
+function handleBomMoveLineToEnd(draggedId: string) {
+  if (!ensureTabEditable('bom')) return
+  bom.moveLineToEnd(draggedId)
+}
+
 function handleBomBoardQuantityUpdate(qty: number) {
   if (!ensureTabEditable('bom')) return
   bom.boardQuantity.value = qty
@@ -4503,6 +4626,7 @@ async function handleSparkEnrich() {
       bom.bomLines.value as BomLine[],
       pnp.smdActiveComponents.value,
       pnp.thtActiveComponents.value,
+      (bom.bomGroups.value as BomGroup[]).map(g => ({ id: g.id, name: g.name })),
     )
     const count = Object.keys(result).length
     toast.add({
@@ -4530,12 +4654,26 @@ function handleDismissAiSuggestion(lineId: string, field: string) {
   spark.dismissSuggestion(lineId, field as keyof AiSuggestion)
 }
 
+function handleAcceptAiGroup(lineId: string, groupName: string) {
+  if (!ensureTabEditable('bom')) return
+  const group = bom.addGroup(groupName)
+  bom.assignGroup(lineId, group.id)
+  spark.dismissSuggestion(lineId, 'group')
+}
+
+function handleDismissAiGroup(lineId: string) {
+  spark.dismissSuggestion(lineId, 'group')
+}
+
 function handleAcceptAllAi(lineId: string) {
   if (!ensureTabEditable('bom')) return
   spark.acceptAll(lineId, (id, updates) => {
     handleBomUpdateLine(id, updates)
   }, (id, mfr) => {
     handleBomAddManufacturer(id, mfr)
+  }, (id, groupName) => {
+    const group = bom.addGroup(groupName)
+    bom.assignGroup(id, group.id)
   })
   sparkAdvanceAfterReview(lineId)
 }
@@ -4633,6 +4771,9 @@ const filterOptions: { label: string; value: LayerFilter }[] = [
 ]
 
 const activeFilterOptions = computed(() => {
+  if (viewMode.value === 'realistic') {
+    return filterOptions.filter(option => option.value !== 'all')
+  }
   return filterOptions
 })
 
@@ -4761,10 +4902,19 @@ function applyFilterVisibility(filter: LayerFilter) {
 }
 
 function setFilter(filter: LayerFilter) {
+  if (viewMode.value === 'realistic' && filter === 'all') {
+    filter = 'top'
+  }
   activeFilter.value = filter
   applyFilterVisibility(filter)
   mirrored.value = filter === 'bot'
 }
+
+watch(viewMode, (mode) => {
+  if (mode === 'realistic' && activeFilter.value === 'all') {
+    setFilter('top')
+  }
+}, { immediate: true })
 
 // ── Board rotation ──
 
@@ -4823,6 +4973,7 @@ onMounted(async () => {
         pnpComponentGroups: tp.pnp_component_groups,
         pnpGroupAssignments: tp.pnp_group_assignments,
         bomLines: tp.bom_lines,
+        bomGroups: tp.bom_groups,
         bomPricingCache: tp.bom_pricing_cache,
         bomBoardQuantity: tp.bom_board_quantity,
         bomAiSuggestions: tp.bom_ai_suggestions,
@@ -4993,6 +5144,7 @@ onMounted(async () => {
 
   // Restore persisted BOM data
   bom.setBomLines(project.value?.bomLines)
+  bom.setBomGroups(project.value?.bomGroups as any)
   const restoredCache = project.value?.bomPricingCache
   try {
     if (restoredCache) elexess.cleanPricingCache(restoredCache)
@@ -5536,6 +5688,164 @@ async function handleConfirmDelete() {
 }
 
 // ── Draw handler ──
+
+type QuickSide = 'top' | 'bot'
+
+function getLayerByType(type: string): LayerInfo | null {
+  return layers.value.find(l => l.type === type) ?? null
+}
+
+async function persistLayerContentOrThrow(layer: LayerInfo, content: string) {
+  if (isTeamProject && teamProjectId) {
+    const teamId = currentTeamId.value || await waitForTeamId()
+    const { error } = await uploadTeamFile(teamProjectId, teamId, 1, layer.file.fileName, content, layer.type)
+    if (error) throw error
+  } else {
+    await updateFileContent(projectId, 1, layer.file.fileName, content)
+  }
+}
+
+function injectFilledCircleByMm(source: string, cx: number, cy: number, diameterMm: number): string {
+  const spec = parseFormatFromSource(source)
+  const r = mmToFileUnits(diameterMm / 2, spec.units)
+  const nextCode = findNextApertureCode(source)
+  const { commands } = generateCircle({ cx, cy, r, filled: true, strokeWidth: 0 }, spec, nextCode)
+  return injectGerberCommands(source, '', commands)
+}
+
+function injectClearCircleByMm(source: string, cx: number, cy: number, diameterMm: number): string {
+  const spec = parseFormatFromSource(source)
+  const r = mmToFileUnits(diameterMm / 2, spec.units)
+  const nextCode = findNextApertureCode(source)
+  const { commands } = generateCircle({ cx, cy, r, filled: true, strokeWidth: 0 }, spec, nextCode)
+  const wrapped = `%LPC*%\n${commands}\n%LPD*%`
+  return injectGerberCommands(source, '', wrapped)
+}
+
+function injectBcByMm(source: string, cx: number, cy: number, widthMm: number, heightMm: number): string {
+  const spec = parseFormatFromSource(source)
+  const w = mmToFileUnits(widthMm, spec.units)
+  const h = mmToFileUnits(heightMm, spec.units)
+  const strokeW = mmToFileUnits(0.1, spec.units)
+
+  const rectRes = generateRect({
+    x: cx - w / 2,
+    y: cy - h / 2,
+    w,
+    h,
+    filled: false,
+    strokeWidth: strokeW,
+  }, spec, findNextApertureCode(source))
+  let out = injectGerberCommands(source, rectRes.apertureDef, rectRes.commands)
+
+  const textH = Math.max(mmToFileUnits(1.0, spec.units), h * 0.35)
+  const approxTextW = textH * 1.45
+  const textRes = generateText({
+    text: 'BC',
+    x: cx - approxTextW / 2,
+    y: cy - textH / 2,
+    height: textH,
+    strokeWidth: strokeW,
+  }, spec, findNextApertureCode(out))
+  out = injectGerberCommands(out, textRes.apertureDef, textRes.commands)
+  return out
+}
+
+async function applyMultiLayerEdits(
+  edits: { layer: LayerInfo; newContent: string }[],
+  undoLabel: string,
+) {
+  if (edits.length === 0) return
+  const canvas = boardCanvasRef.value
+  if (!canvas) return
+
+  const snapshots = new Map<string, string>()
+  for (const { layer } of edits) snapshots.set(layer.file.fileName, layer.file.content)
+
+  try {
+    for (const { layer, newContent } of edits) {
+      layer.file.content = newContent
+      await persistLayerContentOrThrow(layer, newContent)
+      canvas.invalidateCache(layer.file.fileName)
+    }
+  } catch (err) {
+    // Best-effort rollback in memory + persistence
+    for (const [fileName, previousContent] of snapshots) {
+      const layer = layers.value.find(l => l.file.fileName === fileName)
+      if (!layer) continue
+      layer.file.content = previousContent
+      try {
+        await persistLayerContentOrThrow(layer, previousContent)
+      } catch {}
+      canvas.invalidateCache(fileName)
+    }
+    layers.value = [...layers.value]
+    toast.add({
+      title: 'Save failed',
+      description: 'Quick element could not be saved.',
+      color: 'error',
+    })
+    console.warn('[draw] failed to persist quick element', err)
+    return
+  }
+
+  editHistory.pushEntry(snapshots, undoLabel)
+  undoToastVisible.value = true
+  if (undoToastTimer) clearTimeout(undoToastTimer)
+  undoToastTimer = setTimeout(() => { undoToastVisible.value = false }, 5000)
+  layers.value = [...layers.value]
+}
+
+async function handleQuickFiducial(payload: { side: QuickSide }) {
+  if (isCurrentTabLocked.value) return
+  if (activeMode.value !== 'draw') return
+
+  const cursor = drawTool.cursorGerber.value
+  const copperType = payload.side === 'top' ? 'Top Copper' : 'Bottom Copper'
+  const maskType = payload.side === 'top' ? 'Top Solder Mask' : 'Bottom Solder Mask'
+  const copper = getLayerByType(copperType)
+  if (!copper) {
+    toast.add({ title: 'Layer missing', description: `${copperType} layer not found.`, color: 'warning' })
+    return
+  }
+
+  // Copper: clear 3.0mm around + 1.0mm filled fiducial at center
+  let copperContent = copper.file.content
+  copperContent = injectClearCircleByMm(copperContent, cursor.x, cursor.y, 3.0)
+  copperContent = injectFilledCircleByMm(copperContent, cursor.x, cursor.y, 1.0)
+
+  const edits: { layer: LayerInfo; newContent: string }[] = [{ layer: copper, newContent: copperContent }]
+
+  // Mask: open 2.0mm around fiducial
+  const mask = getLayerByType(maskType)
+  if (mask) {
+    const maskContent = injectFilledCircleByMm(mask.file.content, cursor.x, cursor.y, 2.0)
+    edits.push({ layer: mask, newContent: maskContent })
+  } else {
+    toast.add({ title: 'Mask layer missing', description: `${maskType} not found. Added copper fiducial only.`, color: 'warning' })
+  }
+
+  await applyMultiLayerEdits(edits, `Added fiducial (${payload.side.toUpperCase()})`)
+}
+
+async function handleQuickBc(payload: { side: QuickSide; widthMm: number; heightMm: number }) {
+  if (isCurrentTabLocked.value) return
+  if (activeMode.value !== 'draw') return
+
+  const cursor = drawTool.cursorGerber.value
+  const silkType = payload.side === 'top' ? 'Top Silkscreen' : 'Bottom Silkscreen'
+  const silk = getLayerByType(silkType)
+  if (!silk) {
+    toast.add({ title: 'Layer missing', description: `${silkType} layer not found.`, color: 'warning' })
+    return
+  }
+
+  const silkContent = injectBcByMm(silk.file.content, cursor.x, cursor.y, payload.widthMm, payload.heightMm)
+  await applyMultiLayerEdits(
+    [{ layer: silk, newContent: silkContent }],
+    `Added BC ${payload.widthMm}x${payload.heightMm} (${payload.side.toUpperCase()})`,
+  )
+}
 
 async function handleDrawCommit(request: import('~/composables/useDrawTool').DrawCommitRequest) {
   if (isCurrentTabLocked.value) return

@@ -46,6 +46,16 @@ export interface BomLine {
   pinCount?: number | null
   /** SMD placement classification */
   smdClassification?: SmdClassification | null
+  /** Group ID this line belongs to */
+  groupId?: string | null
+}
+
+/** A named BOM group (section header) */
+export interface BomGroup {
+  id: string
+  name: string
+  comment: string
+  collapsed: boolean
 }
 
 /** Cached Elexess pricing data for a single manufacturer part */
@@ -80,6 +90,7 @@ export interface AiSuggestion {
   pinCount?: number | null
   smdClassification?: SmdClassification | null
   manufacturers?: BomManufacturer[]
+  group?: string
 }
 
 /** AI suggestions keyed by BomLine.id */

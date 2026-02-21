@@ -186,6 +186,30 @@
         </div>
 
         <div>
+          <div class="text-[10px] text-neutral-400 mb-1">Group</div>
+          <USelect
+            :model-value="line.groupId || GROUP_NONE"
+            :items="groupItems"
+            size="sm"
+            @update:model-value="(v: any) => emit('assignGroup', line!.id, v === GROUP_NONE ? null : v)"
+          />
+          <!-- Spark: Group suggestion -->
+          <div v-if="aiSuggestion?.group" class="mt-1.5 rounded-md border-l-2 border-violet-500 bg-violet-50/60 dark:bg-violet-900/15 border border-violet-200 dark:border-violet-800 px-2.5 py-1.5">
+            <div class="flex items-start gap-1.5">
+              <UIcon name="i-lucide-sparkles" class="text-[10px] text-violet-500 shrink-0 mt-0.5" />
+              <div class="flex-1 min-w-0">
+                <div class="text-[9px] font-medium text-violet-600 dark:text-violet-400 uppercase tracking-wider mb-0.5">Suggested group</div>
+                <div class="text-xs text-violet-900 dark:text-violet-200">{{ aiSuggestion.group }}</div>
+              </div>
+              <div class="flex items-center gap-0.5 shrink-0">
+                <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" @click="emit('acceptAiGroup', line.id, aiSuggestion!.group!)" />
+                <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" @click="emit('dismissAiGroup', line.id)" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
           <div class="flex items-center justify-between mb-1">
             <div class="text-[10px] text-neutral-400">References</div>
             <span class="text-[10px] text-neutral-400 tabular-nums">{{ refList.length }}</span>
@@ -461,7 +485,7 @@
 </template>
 
 <script setup lang="ts">
-import type { BomLine, BomPricingCache, BomManufacturer, AiSuggestion } from '~/utils/bom-types'
+import type { BomLine, BomPricingCache, BomManufacturer, AiSuggestion, BomGroup } from '~/utils/bom-types'
 import { BOM_LINE_TYPES, SMD_CLASSIFICATIONS } from '~/utils/bom-types'
 import type { ExchangeRateSnapshot, PricingQueueItem } from '~/composables/useElexessApi'
 import { formatCurrency, normalizeCurrencyCode } from '~/utils/currency'
@@ -479,6 +503,7 @@ const props = defineProps<{
   pnpDesignators: Set<string>
   locked?: boolean
   aiSuggestion?: AiSuggestion | null
+  groups: BomGroup[]
 }>()
 
 const emit = defineEmits<{
@@ -494,6 +519,9 @@ const emit = defineEmits<{
   dismissAllAi: [lineId: string]
   acceptAiManufacturer: [lineId: string, mfr: { manufacturer: string; manufacturerPart: string }]
   dismissAiManufacturer: [lineId: string, mfr: { manufacturer: string; manufacturerPart: string }]
+  acceptAiGroup: [lineId: string, groupName: string]
+  dismissAiGroup: [lineId: string]
+  assignGroup: [lineId: string, groupId: string | null]
 }>()
 
 const bomLineTypeItems = [...BOM_LINE_TYPES]
@@ -502,6 +530,12 @@ const smdClassItems = [
   { label: '(none)', value: SMD_CLASS_NONE },
   ...SMD_CLASSIFICATIONS.map(c => ({ label: c, value: c })),
 ]
+
+const GROUP_NONE = '__none__'
+const groupItems = computed(() => [
+  { label: '(none)', value: GROUP_NONE },
+  ...props.groups.map(g => ({ label: g.name, value: g.id })),
+])
 
 const showSecondaryTypeField = computed(() => {
   const t = props.line?.type
@@ -517,6 +551,7 @@ const hasAnySuggestion = computed(() => {
     || (s.pinCount != null && s.pinCount !== props.line?.pinCount)
     || (s.smdClassification && s.smdClassification !== props.line?.smdClassification)
     || (s.manufacturers && s.manufacturers.length > 0)
+    || s.group
   )
 })
 

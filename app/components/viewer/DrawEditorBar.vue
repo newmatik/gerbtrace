@@ -263,6 +263,66 @@
         </span>
       </template>
     </div>
+
+    <!-- Quick elements -->
+    <div class="w-px h-5 bg-neutral-300 dark:bg-neutral-600 mx-0.5 shrink-0" />
+    <div class="flex items-center gap-1 shrink-0">
+      <span class="text-[10px] uppercase tracking-wide font-semibold text-neutral-500 dark:text-neutral-400 px-1">
+        Quick
+      </span>
+      <div class="flex items-center rounded-lg p-0.5 gap-0.5 bg-neutral-100/90 border border-neutral-200 dark:bg-neutral-900/70 dark:border-neutral-700">
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          :class="[tbBtnBase, quickSide === 'top' ? tbBtnActive : tbBtnIdle]"
+          @click="quickSide = 'top'"
+        >
+          Top
+        </UButton>
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          :class="[tbBtnBase, quickSide === 'bot' ? tbBtnActive : tbBtnIdle]"
+          @click="quickSide = 'bot'"
+        >
+          Bot
+        </UButton>
+      </div>
+      <UButton
+        size="xs"
+        color="neutral"
+        variant="ghost"
+        icon="i-lucide-target"
+        :class="[tbBtnBase, tbBtnIdle]"
+        title="Place fiducial (1mm copper, 3mm copper clear, 2mm mask opening)"
+        @click="emitQuickFiducial"
+      >
+        Fiducial
+      </UButton>
+      <div class="flex items-center gap-1">
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-square-dashed"
+          :class="[tbBtnBase, tbBtnIdle]"
+          title="Place barcode label box on silkscreen"
+          @click="emitQuickBc"
+        >
+          BC
+        </UButton>
+        <USelectMenu
+          v-model="selectedBcSize"
+          :items="bcSizeOptions"
+          value-key="label"
+          label-key="label"
+          size="xs"
+          class="w-20"
+        />
+      </div>
+    </div>
   </div>
 </template>
 
@@ -272,6 +332,12 @@ import type { useDrawTool, DrawShapeTool } from '~/composables/useDrawTool'
 const props = defineProps<{
   draw: ReturnType<typeof useDrawTool>
   layers: { fileName: string; type: string; color: string }[]
+  activeFilter: 'all' | 'top' | 'bot'
+}>()
+
+const emit = defineEmits<{
+  quickFiducial: [payload: { side: 'top' | 'bot' }]
+  quickBc: [payload: { side: 'top' | 'bot'; widthMm: number; heightMm: number }]
 }>()
 
 const DRAWABLE_LAYER_TYPES = new Set([
@@ -297,6 +363,30 @@ const selectedLayerName = computed({
   get: () => props.draw.targetLayerName.value,
   set: (v: string) => { props.draw.targetLayerName.value = v },
 })
+
+const quickSide = ref<'top' | 'bot'>(props.activeFilter === 'bot' ? 'bot' : 'top')
+
+watch(() => props.activeFilter, (f) => {
+  if (f === 'top' || f === 'bot') quickSide.value = f
+}, { immediate: true })
+
+const bcSizeOptions = [
+  { label: '5x5', w: 5, h: 5 },
+  { label: '7x7', w: 7, h: 7 },
+  { label: '8x25', w: 8, h: 25 },
+  { label: '10x20', w: 10, h: 20 },
+  { label: '10x30', w: 10, h: 30 },
+]
+const selectedBcSize = ref('7x7')
+
+function emitQuickFiducial() {
+  emit('quickFiducial', { side: quickSide.value })
+}
+
+function emitQuickBc() {
+  const size = bcSizeOptions.find(s => s.label === selectedBcSize.value) ?? bcSizeOptions[1]!
+  emit('quickBc', { side: quickSide.value, widthMm: size.w, heightMm: size.h })
+}
 
 const selectedLayerColor = computed(() =>
   layerOptions.value.find(o => o.value === selectedLayerName.value)?.color,
