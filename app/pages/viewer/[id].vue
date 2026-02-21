@@ -1701,6 +1701,7 @@ function arePasteSettingsEqual(
     && a.pattern === b.pattern
     && a.dynamicDots === b.dynamicDots
     && a.highlightDots === b.highlightDots
+    && a.showJetPath === b.showJetPath
   )
 }
 
