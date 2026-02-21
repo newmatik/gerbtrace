@@ -6,46 +6,23 @@ definePageMeta({
   layout: 'docs',
 })
 
-const route = useRoute()
 const navigation = inject<Ref<ContentNavigationItem[]>>('navigation')
 
-async function loadDoc(path: string) {
-  const trimmed = path.replace(/\/+$/, '')
-  const stripped = trimmed.replace(/^\/docs/, '') || '/index'
-  const stem = stripped.replace(/^\//, '')
-  const stemWithDocs = `docs/${stem}`
-  const candidates = Array.from(new Set([
-    trimmed || '/docs',
-    path,
-    stripped,
-    trimmed === '/docs' ? '/docs/index' : trimmed,
-    stripped === '/index' ? '/' : stripped,
-    stem,
-    stemWithDocs,
-  ]))
-
+async function loadDocsHome() {
+  const candidates = ['/docs', '/docs/index', '/index', '/']
   for (const candidate of candidates) {
-    const byPath = await queryCollection('docs').path(candidate).first()
-    if (byPath) return byPath
-    const byStem = await queryCollection('docs').where('stem', '=', candidate).first()
-    if (byStem) return byStem
+    const doc = await queryCollection('docs').path(candidate).first()
+    if (doc) return doc
   }
-
   return null
 }
 
-const { data: page } = await useAsyncData(route.path, () => loadDoc(route.path))
+const { data: page } = await useAsyncData('docs-home', loadDocsHome)
 if (!page.value) {
   throw createError({ statusCode: 404, statusMessage: 'Page not found', fatal: true })
 }
 
-const docPath = computed(() => page.value?.path || route.path)
-
-const { data: surround } = await useAsyncData(`${route.path}-surround`, () => {
-  return queryCollectionItemSurroundings('docs', docPath.value, {
-    fields: ['description'],
-  })
-})
+const surround = ref([])
 
 const title = page.value.seo?.title || page.value.title
 const description = page.value.seo?.description || page.value.description

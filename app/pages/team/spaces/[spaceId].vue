@@ -125,6 +125,7 @@
 const route = useRoute()
 const router = useRouter()
 const { isAuthenticated } = useAuth()
+const { reportError } = useErrorReporting()
 const { currentTeamRole, isAdmin } = useTeam()
 const { members, fetchMembers } = useTeamMembers()
 const {
@@ -201,7 +202,7 @@ async function handleSaveSpaceName() {
   try {
     const { error } = await updateSpace(selectedSpace.value.id, spaceName.value)
     if (error) {
-      useToast().add({ title: 'Failed to update space', description: error.message, color: 'error' })
+      reportError(error, { title: 'Failed to update space', context: 'team.space.update' })
       return
     }
     spaceName.value = spaceName.value.trim()
@@ -218,7 +219,7 @@ async function sendGuestInvite() {
 
   const { error } = await inviteGuestToSpace(selectedSpace.value.id, email)
   if (error) {
-    useToast().add({ title: 'Failed to send invite', description: error.message, color: 'error' })
+    reportError(error, { title: 'Failed to send invite', context: 'team.space.invite_guest' })
     return
   }
   guestInviteEmail.value = ''
@@ -230,7 +231,7 @@ async function handleDeleteSpace() {
   if (!selectedSpace.value || !isAdmin.value) return
   const { error } = await deleteSpace(selectedSpace.value.id)
   if (error) {
-    useToast().add({ title: 'Failed to delete space', description: error.message, color: 'error' })
+    reportError(error, { title: 'Failed to delete space', context: 'team.space.delete' })
     return
   }
   useToast().add({ title: 'Space deleted', color: 'success' })

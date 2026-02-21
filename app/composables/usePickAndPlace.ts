@@ -83,6 +83,7 @@ interface PnPFileImportOptions {
   fixedColumns?: readonly number[]
   delimiter?: ',' | ';' | '\t' | 'fixed'
   decimal?: '.' | ','
+  extraColumns?: readonly string[]
 }
 
 function normalizeImportKey(name: string): string {
@@ -234,6 +235,7 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
       skipBottomRows: fileOpts?.skipBottomRows,
       mapping: fileOpts?.mapping,
       fixedColumns: fileOpts?.fixedColumns,
+      extraColumns: fileOpts?.extraColumns,
     }, layer.file.fileName)
     // Combined layers return all components; single-side layers filter by side
     const isCombined = layer.type === 'PnP Top + Bot' || layer.type === 'PnP Top + Bot (THT)'
@@ -471,6 +473,7 @@ export function usePickAndPlace(layers: Ref<LayerInfo[]>) {
           comp.designator,
           comp.value,
           comp.description,
+          ...Object.entries(comp.extra ?? {}).map(([key, value]) => `${key}: ${value}`),
           comp.cadPackage,
           comp.matchedPackage,
           comp.note,

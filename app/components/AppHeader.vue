@@ -57,20 +57,20 @@
 
     <UButton
       v-if="isAuthenticated"
-      to="/inbox"
       size="xs"
       color="neutral"
       variant="ghost"
       class="relative"
       icon="i-lucide-bell"
       title="Inbox"
+      @click="openInbox"
     >
       <UBadge
         v-if="unreadCount > 0"
         size="xs"
         color="error"
         variant="solid"
-        class="absolute -top-1 -right-1 min-w-[1rem] h-4 px-1 flex items-center justify-center"
+        class="absolute -top-1 -right-1 min-w-[1rem] h-4 px-1 flex items-center justify-center pointer-events-none"
       >
         {{ unreadCount > 9 ? '9+' : unreadCount }}
       </UBadge>
@@ -230,5 +230,9 @@ function toggleColorMode() {
 
 function openDocumentation() {
   void openDocs()
+}
+
+function openInbox() {
+  void router.push('/inbox')
 }
 </script>
