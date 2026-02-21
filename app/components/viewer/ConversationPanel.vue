@@ -406,28 +406,35 @@ const mentionDirectory = computed<MentionItem[]>(() => {
   const list: MentionItem[] = []
   for (const member of members.value) {
     const profile = member.profile
-    if (!profile) continue
+    if (!profile || seen.has(profile.id)) continue
+    seen.add(profile.id)
     const nameHandle = (profile.name ?? '').trim().toLowerCase().replace(/\s+/g, '.')
     const emailHandle = (profile.email ?? '').trim().toLowerCase().split('@')[0]
-    for (const handle of [nameHandle, emailHandle]) {
-      if (!handle || seen.has(`${profile.id}:${handle}`)) continue
-      seen.add(`${profile.id}:${handle}`)
-      list.push({
-        id: profile.id,
-        name: profile.name ?? null,
-        email: profile.email,
-        avatar_url: profile.avatar_url ?? null,
-        handle,
-      })
-    }
+    const handle = nameHandle || emailHandle
+    if (!handle) continue
+    list.push({
+      id: profile.id,
+      name: profile.name ?? null,
+      email: profile.email,
+      avatar_url: profile.avatar_url ?? null,
+      handle,
+    })
   }
   return list
 })
 
 const mentionByHandle = computed(() => {
   const map = new Map<string, MentionItem>()
-  for (const item of mentionDirectory.value) {
-    if (!map.has(item.handle)) map.set(item.handle, item)
+  for (const member of members.value) {
+    const profile = member.profile
+    if (!profile) continue
+    const item = mentionDirectory.value.find(m => m.id === profile.id)
+    if (!item) continue
+    const nameHandle = (profile.name ?? '').trim().toLowerCase().replace(/\s+/g, '.')
+    const emailHandle = (profile.email ?? '').trim().toLowerCase().split('@')[0]
+    for (const h of [nameHandle, emailHandle]) {
+      if (h && !map.has(h)) map.set(h, item)
+    }
   }
   return map
 })
@@ -521,11 +528,43 @@ function createRefChipEl(type: ReferenceType, id: string, label: string, icon: s
 
   const iconEl = document.createElement('span')
   iconEl.className = `${icon} size-3 shrink-0`
+  iconEl.style.display = 'inline-block'
+  iconEl.style.width = '0.75rem'
+  iconEl.style.height = '0.75rem'
+  iconEl.style.flexShrink = '0'
   chip.appendChild(iconEl)
 
   const labelEl = document.createElement('span')
   labelEl.className = 'truncate max-w-[240px]'
   labelEl.textContent = label
+  chip.appendChild(labelEl)
+
+  return chip
+}
+
+function createMentionChipEl(handle: string, avatarUrl: string | null): HTMLElement {
+  const chip = document.createElement('span')
+  chip.contentEditable = 'false'
+  chip.className = 'ce-mention-chip'
+  chip.dataset.mentionHandle = handle
+
+  if (avatarUrl) {
+    const img = document.createElement('img')
+    img.src = avatarUrl
+    img.alt = `@${handle}`
+    img.className = 'size-4 rounded-full object-cover shrink-0'
+    img.style.display = 'inline-block'
+    chip.appendChild(img)
+  }
+  else {
+    const placeholder = document.createElement('span')
+    placeholder.className = 'ce-mention-avatar-placeholder'
+    placeholder.textContent = '@'
+    chip.appendChild(placeholder)
+  }
+
+  const labelEl = document.createElement('span')
+  labelEl.textContent = `@${handle}`
   chip.appendChild(labelEl)
 
   return chip
@@ -538,7 +577,10 @@ function extractRawText(container: HTMLElement): string {
       text += node.textContent || ''
     }
     else if (node instanceof HTMLElement) {
-      if (node.dataset.refType && node.dataset.refId && node.dataset.refLabel) {
+      if (node.dataset.mentionHandle) {
+        text += `@${node.dataset.mentionHandle}`
+      }
+      else if (node.dataset.refType && node.dataset.refId && node.dataset.refLabel) {
         text += serializeReference(
           node.dataset.refType as ReferenceType,
           node.dataset.refId,
@@ -561,7 +603,7 @@ function extractRawText(container: HTMLElement): string {
 
 function ceHasContent(el: HTMLElement | null | undefined): boolean {
   if (!el) return false
-  return (el.textContent?.trim().length ?? 0) > 0 || !!el.querySelector('[data-ref-type]')
+  return (el.textContent?.trim().length ?? 0) > 0 || !!el.querySelector('[data-ref-type]') || !!el.querySelector('[data-mention-handle]')
 }
 
 function cleanEmptyEditable(el: HTMLElement) {
@@ -673,9 +715,12 @@ function detectAutocompleteContext() {
   }
 
   const token = match[2] ?? ''
+  const queryChanged = autocompleteQuery.value !== token
   autocompleteQuery.value = token
   autocompleteOpen.value = true
-  autocompleteActiveIndex.value = 0
+  if (queryChanged) {
+    autocompleteActiveIndex.value = 0
+  }
   autocompleteReplaceCtx.value = {
     textNode: anchorNode as Text,
     start: cursorOffset - token.length - 1,
@@ -745,11 +790,24 @@ function selectSuggestion(flatIndex: number) {
   const after = text.slice(ctx.end)
 
   if (suggestion.kind === 'person') {
-    const handle = suggestion.person.handle
-    textNode.textContent = `${before}@${handle} ${after}`
+    const { handle, avatar_url } = suggestion.person
+    textNode.textContent = before
+    const chip = createMentionChipEl(handle, avatar_url)
+    const afterNode = document.createTextNode(`\u00A0${after.trimStart()}`)
+    const parent = textNode.parentNode
+    if (parent) {
+      const nextSib = textNode.nextSibling
+      if (nextSib) {
+        parent.insertBefore(chip, nextSib)
+        parent.insertBefore(afterNode, chip.nextSibling)
+      }
+      else {
+        parent.appendChild(chip)
+        parent.appendChild(afterNode)
+      }
+    }
     const sel = window.getSelection()
-    const newOffset = Math.min(before.length + handle.length + 2, textNode.textContent!.length)
-    sel?.collapse(textNode, newOffset)
+    sel?.collapse(afterNode, 1)
   }
   else {
     const { type, id, label, icon } = suggestion.item
@@ -1137,5 +1195,50 @@ onMounted(async () => {
   border-color: rgba(96, 165, 250, 0.35);
   background: rgba(59, 130, 246, 0.12);
   color: rgb(191 219 254); /* blue-200 */
+}
+
+/* Mention chip inside contenteditable */
+.ce-input :deep(.ce-mention-chip) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  background: rgba(59, 130, 246, 0.08);
+  color: rgb(29 78 216); /* blue-700 */
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+  vertical-align: baseline;
+  user-select: all;
+  cursor: default;
+  white-space: nowrap;
+}
+
+:root.dark .ce-input :deep(.ce-mention-chip),
+.dark .ce-input :deep(.ce-mention-chip) {
+  border-color: rgba(96, 165, 250, 0.35);
+  background: rgba(59, 130, 246, 0.12);
+  color: rgb(191 219 254); /* blue-200 */
+}
+
+.ce-input :deep(.ce-mention-avatar-placeholder) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 9999px;
+  background: rgba(59, 130, 246, 0.15);
+  color: rgb(29 78 216);
+  font-size: 9px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+:root.dark .ce-input :deep(.ce-mention-avatar-placeholder),
+.dark .ce-input :deep(.ce-mention-avatar-placeholder) {
+  background: rgba(59, 130, 246, 0.2);
+  color: rgb(191 219 254);
 }
 </style>

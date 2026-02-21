@@ -59,4 +59,22 @@ See the [Development Setup](https://gerbtrace.com/docs/development/setup) guide 
 
 ## License
 
-BUSL-1.1 — [Newmatik GmbH](https://www.newmatik.com) — See [LICENSE](LICENSE)
+Gerbtrace is licensed under the [Business Source License 1.1](LICENSE) (BUSL 1.1).
+
+**What you can do:**
+
+- Use Gerbtrace internally within your organization for any purpose, including production
+- Read, study, modify, and learn from the source code
+- Contribute improvements back via pull requests
+
+**What you cannot do:**
+
+- Offer Gerbtrace (or a modified version) to third parties as a competing product or service
+- Rebrand and redistribute Gerbtrace as your own product to customers
+- Embed Gerbtrace in a commercial offering that competes with Gerbtrace
+
+After four years, each version automatically converts to the **MIT** license.
+
+For alternative licensing arrangements, contact [software@newmatik.com](mailto:software@newmatik.com).
+
+Copyright (c) 2025-2026 [Newmatik GmbH](https://www.newmatik.com)

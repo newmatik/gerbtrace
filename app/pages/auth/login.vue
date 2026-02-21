@@ -75,7 +75,19 @@
             <h1 class="text-2xl font-bold">Sign in to Gerbtrace</h1>
           </div>
 
-          <!-- GitHub OAuth -->
+          <!-- OAuth providers -->
+          <UButton
+            block
+            size="lg"
+            color="neutral"
+            variant="outline"
+            icon="i-simple-icons-microsoft"
+            class="mb-3"
+            :loading="microsoftLoading"
+            @click="handleMicrosoft"
+          >
+            Continue with Microsoft
+          </UButton>
           <UButton
             block
             size="lg"
@@ -184,7 +196,7 @@ import { useColorMode } from '#imports'
 const router = useRouter()
 const colorMode = useColorMode()
 const isDark = computed(() => colorMode.value === 'dark')
-const { signIn, signInWithMagicLink, signInWithGitHub, resetPassword, isAuthenticated } = useAuth()
+const { signIn, signInWithMagicLink, signInWithGitHub, signInWithMicrosoft, resetPassword, isAuthenticated } = useAuth()
 const supabase = useSupabase()
 const runtimeConfig = useRuntimeConfig()
 
@@ -199,6 +211,7 @@ const email = ref('')
 const password = ref('')
 const submitLoading = ref(false)
 const githubLoading = ref(false)
+const microsoftLoading = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 
@@ -280,6 +293,16 @@ async function handleGitHub() {
     githubLoading.value = false
   }
   // OAuth redirects away; loading stays true
+}
+
+async function handleMicrosoft() {
+  microsoftLoading.value = true
+  errorMessage.value = ''
+  const { error } = await signInWithMicrosoft()
+  if (error) {
+    errorMessage.value = error.message
+    microsoftLoading.value = false
+  }
 }
 
 async function handleForgot() {

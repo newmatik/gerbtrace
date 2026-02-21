@@ -491,7 +491,7 @@
     <footer class="py-6 border-t border-gray-200 dark:border-gray-800 mt-10 bg-white dark:bg-gray-950">
       <div class="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div class="flex items-center gap-2 text-xs text-gray-500">
-          <span class="font-semibold text-gray-700 dark:text-gray-300">Gerbtrace</span>
+          <a href="https://www.newmatik.com" target="_blank" class="font-semibold text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Gerbtrace by Newmatik</a>
           <span class="opacity-30">•</span>
           <span>v{{ appVersion }}</span>
         </div>

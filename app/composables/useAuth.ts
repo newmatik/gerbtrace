@@ -136,6 +136,20 @@ export function useAuth() {
     return { data, error }
   }
 
+  /** Sign in with Microsoft (Azure/Entra ID) OAuth */
+  async function signInWithMicrosoft() {
+    const redirectTo = `${window.location.origin}/auth/callback`
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'azure',
+      options: {
+        redirectTo,
+        // Supabase requires Azure to return a valid email; request it explicitly.
+        scopes: 'email',
+      },
+    })
+    return { data, error }
+  }
+
   /** Sign out (clears session). Force mode also purges local auth storage. */
   async function signOut(options?: { force?: boolean }) {
     if (options?.force) {
@@ -188,6 +202,7 @@ export function useAuth() {
     signIn,
     signInWithMagicLink,
     signInWithGitHub,
+    signInWithMicrosoft,
     signOut,
     resetPassword,
     updatePassword,
