@@ -50,6 +50,7 @@ export interface TeamProject {
   bom_lines: BomLine[] | null
   bom_pricing_cache: BomPricingCache | null
   bom_board_quantity: number | null
+  bom_groups: { id: string; name: string; comment: string; collapsed: boolean }[] | null
   bom_ai_suggestions: Record<string, any> | null
   pcb_data: {
     sizeX?: number
@@ -70,8 +71,8 @@ export interface TeamProject {
   paste_settings: PasteSettings | null
   layer_order: string[] | null
   document_order: string[] | null
-  bom_file_import_options: Record<string, { skipRows?: number; skipBottomRows?: number; mapping?: BomColumnMapping; fixedColumns?: readonly number[] }> | null
-  pnp_file_import_options: Record<string, { skipRows?: number; skipBottomRows?: number; mapping?: PnPColumnMapping; unitOverride?: 'auto' | PnPCoordUnit; fixedColumns?: readonly number[] }> | null
+  bom_file_import_options: Record<string, { skipRows?: number; skipBottomRows?: number; mapping?: BomColumnMapping; fixedColumns?: readonly number[]; delimiter?: ',' | ';' | '\t' | 'fixed'; decimal?: '.' | ','; extraColumns?: readonly string[] }> | null
+  pnp_file_import_options: Record<string, { skipRows?: number; skipBottomRows?: number; mapping?: PnPColumnMapping; unitOverride?: 'auto' | PnPCoordUnit; fixedColumns?: readonly number[]; delimiter?: ',' | ';' | '\t' | 'fixed'; decimal?: '.' | ',' }> | null
   preview_image_path: string | null
   created_at: string
   updated_at: string

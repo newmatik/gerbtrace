@@ -193,107 +193,174 @@
       </div>
 
       <div v-else class="space-y-1">
-        <div
-          v-for="line in displayLines"
-          :key="line.id"
-          :ref="(el) => { if (el) lineRefs[line.id] = el as HTMLElement }"
-          class="rounded-lg border transition-colors cursor-pointer"
-          :class="selectedLineId === line.id
-            ? 'border-blue-400/40 bg-blue-50/70 dark:border-blue-500/30 dark:bg-blue-500/10'
-            : isLineChanged(line)
-              ? 'border-amber-300/70 bg-amber-50/60 dark:border-amber-700/40 dark:bg-amber-900/10 hover:border-amber-300 dark:hover:border-amber-600'
-              : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600'"
-          @click="emit('selectLine', line.id)"
-        >
-          <div class="px-2.5 py-1.5 flex items-center gap-2" :class="{ 'opacity-40': line.dnp }">
-            <span class="text-[10px] font-mono text-neutral-500 dark:text-neutral-400 shrink-0 w-[60px] truncate" :title="line.references">
-              {{ line.references || '--' }}
-            </span>
-            <span
-              v-if="isLineChanged(line)"
-              class="text-[9px] px-1.5 py-0.5 rounded-full border shrink-0 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20"
-              title="This line differs from the original customer BOM"
-            >
-              Edited
-            </span>
-            <UIcon
-              v-if="getMissingInPnP(line).length > 0"
-              name="i-lucide-triangle-alert"
-              class="text-[10px] text-amber-500 shrink-0"
-              :title="`Not in PnP: ${getMissingInPnP(line).join(', ')}`"
-            />
-            <span
-              class="text-[11px] flex-1 truncate"
-              :class="line.dnp ? 'line-through text-neutral-400 dark:text-neutral-500' : 'text-neutral-800 dark:text-neutral-200'"
-              :title="line.description"
-            >
-              {{ line.description || '(no description)' }}
-            </span>
-            <span
-              v-if="line.dnp"
-              class="text-[10px] px-1.5 py-0.5 rounded-full border shrink-0 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20"
-            >
-              DNP
-            </span>
-            <span
-              v-if="line.customerProvided"
-              class="text-[10px] px-1.5 py-0.5 rounded-full border shrink-0 border-teal-200 dark:border-teal-800 text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-900/20"
-            >
-              CP
-            </span>
-            <button
-              class="text-[10px] px-1.5 py-0.5 rounded-full border shrink-0 transition-colors"
-              :disabled="props.locked"
-              :class="typeClass(line.type)"
-              title="Click to change type"
-              @click.stop="cycleType(line)"
-            >
-              {{ line.type }}
+        <template v-for="(row, rowIdx) in displayRows" :key="row.kind === 'line' ? row.line.id : row.kind === 'group' ? row.group.id : 'ungrouped'">
+          <!-- Ungrouped section header -->
+          <div
+            v-if="row.kind === 'ungrouped' && hasGroups"
+            class="flex items-center gap-2 px-2 py-1.5 text-[10px] select-none"
+            @dragover.prevent
+            @drop.prevent="onDropOnUngrouped()"
+          >
+            <span class="font-medium text-neutral-500 dark:text-neutral-400">Ungrouped</span>
+            <span class="text-neutral-400">({{ row.count }})</span>
+          </div>
+
+          <!-- Group header -->
+          <div
+            v-else-if="row.kind === 'group'"
+            class="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-neutral-100/80 dark:bg-neutral-800/60 border border-neutral-200/60 dark:border-neutral-700/40 text-[10px] select-none"
+            @dragover.prevent
+            @drop.prevent="onDropOnGroup(row.group.id)"
+          >
+            <button class="shrink-0 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300" @click="emit('updateGroup', row.group.id, { collapsed: !row.group.collapsed })">
+              <UIcon :name="row.group.collapsed ? 'i-lucide-chevron-right' : 'i-lucide-chevron-down'" class="text-xs" />
             </button>
-            <UIcon
-              v-if="props.aiSuggestions?.[line.id]"
-              name="i-lucide-sparkles"
-              class="text-[10px] text-violet-500 shrink-0"
-              title="Spark has suggestions for this line"
-            />
-            <div class="shrink-0 text-right" @click.stop>
+            <template v-if="editingGroupId === row.group.id">
               <input
-                v-if="editingQtyId === line.id"
-                ref="qtyInputRef"
-                v-model.number="editingQtyValue"
-                type="number"
-                min="0"
-                class="w-12 text-[10px] tabular-nums bg-neutral-100 dark:bg-neutral-800 border border-primary rounded px-1 py-0.5 outline-none text-center"
-                @keydown.enter="commitQty(line.id)"
-                @keydown.escape="cancelQty"
-                @blur="commitQty(line.id)"
+                v-model="editingGroupName"
+                class="flex-1 min-w-0 bg-white dark:bg-neutral-900 border border-primary rounded px-1.5 py-0.5 text-[10px] outline-none"
+                @keydown.enter="commitGroupRename(row.group.id)"
+                @keydown.escape="editingGroupId = null"
+                @blur="commitGroupRename(row.group.id)"
+                @vue:mounted="($event as any).el?.focus()"
               />
-              <button
-                v-else
-                class="text-[10px] text-neutral-500 tabular-nums hover:text-primary transition-colors"
-                :disabled="props.locked"
-                :title="`${line.quantity} per board × ${boardQuantity} boards — click to edit`"
-                @click.stop="startQtyEdit(line)"
+            </template>
+            <template v-else>
+              <span class="font-medium text-neutral-700 dark:text-neutral-200 truncate flex-1 min-w-0 cursor-pointer" @dblclick="startGroupRename(row.group)">{{ row.group.name }}</span>
+            </template>
+            <span class="text-neutral-400 shrink-0">({{ row.count }})</span>
+            <UButton v-if="!props.locked" size="xs" color="neutral" variant="ghost" icon="i-lucide-trash-2" class="!p-0.5" title="Delete group" @click="emit('removeGroup', row.group.id)" />
+          </div>
+
+          <!-- BOM line -->
+          <div
+            v-else-if="row.kind === 'line'"
+            :ref="(el) => { if (el) lineRefs[row.line.id] = el as HTMLElement }"
+            class="rounded-lg border transition-colors cursor-pointer"
+            :class="[
+              selectedLineId === row.line.id
+                ? 'border-blue-400/40 bg-blue-50/70 dark:border-blue-500/30 dark:bg-blue-500/10'
+                : isLineChanged(row.line)
+                  ? 'border-amber-300/70 bg-amber-50/60 dark:border-amber-700/40 dark:bg-amber-900/10 hover:border-amber-300 dark:hover:border-amber-600'
+                  : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600',
+              dragOverTarget === row.line.id && dragLineId !== row.line.id ? 'ring-2 ring-primary/40' : '',
+            ]"
+            draggable="true"
+            @click="emit('selectLine', row.line.id)"
+            @dragstart="onDragStart($event, row.line.id)"
+            @dragend="onDragEnd"
+            @dragover="onDragOverLine($event, row.line.id)"
+            @dragleave="dragOverTarget === row.line.id && (dragOverTarget = null)"
+            @drop.prevent="onDropOnLine(row.line.id)"
+          >
+            <div class="px-2.5 py-1.5 flex items-center gap-2" :class="{ 'opacity-40': row.line.dnp }">
+              <span class="text-[10px] font-mono text-neutral-500 dark:text-neutral-400 shrink-0 w-[60px] truncate" :title="row.line.references">
+                {{ row.line.references || '--' }}
+              </span>
+              <span
+                v-if="isLineChanged(row.line)"
+                class="text-[9px] px-1.5 py-0.5 rounded-full border shrink-0 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20"
+                title="This line differs from the original customer BOM"
               >
-                {{ line.quantity }}x
-                <span v-if="boardQuantity > 1" class="text-neutral-400">({{ formatNumber(line.quantity * boardQuantity) }})</span>
+                Edited
+              </span>
+              <UIcon
+                v-if="getMissingInPnP(row.line).length > 0"
+                name="i-lucide-triangle-alert"
+                class="text-[10px] text-amber-500 shrink-0"
+                :title="`Not in PnP: ${getMissingInPnP(row.line).join(', ')}`"
+              />
+              <span
+                class="text-[11px] flex-1 truncate"
+                :class="row.line.dnp ? 'line-through text-neutral-400 dark:text-neutral-500' : 'text-neutral-800 dark:text-neutral-200'"
+                :title="row.line.description"
+              >
+                {{ row.line.description || '(no description)' }}
+              </span>
+              <span
+                v-if="row.line.dnp"
+                class="text-[10px] px-1.5 py-0.5 rounded-full border shrink-0 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20"
+              >
+                DNP
+              </span>
+              <span
+                v-if="row.line.customerProvided"
+                class="text-[10px] px-1.5 py-0.5 rounded-full border shrink-0 border-teal-200 dark:border-teal-800 text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-900/20"
+              >
+                CP
+              </span>
+              <button
+                class="text-[10px] px-1.5 py-0.5 rounded-full border shrink-0 transition-colors"
+                :disabled="props.locked"
+                :class="typeClass(row.line.type)"
+                title="Click to change type"
+                @click.stop="cycleType(row.line)"
+              >
+                {{ row.line.type }}
               </button>
-            </div>
-            <template v-if="!line.dnp">
-              <template v-for="offer in [getLineBestOffer(line)]" :key="'price'">
-                <template v-if="offer">
-                  <template v-for="display in [getDisplayOffer(offer)]" :key="`${line.id}-${display.currency}`">
-                    <span class="text-[10px] text-green-600 dark:text-green-400 font-medium shrink-0 tabular-nums">
-                      {{ formatCurrency(display.unitPrice, display.currency) }}/pc
-                    </span>
-                    <span class="text-[10px] text-neutral-400 shrink-0 tabular-nums">
-                      {{ formatCurrency(display.lineValue, display.currency) }}
-                    </span>
+              <UIcon
+                v-if="props.aiSuggestions?.[row.line.id]"
+                name="i-lucide-sparkles"
+                class="text-[10px] text-violet-500 shrink-0"
+                title="Spark has suggestions for this line"
+              />
+              <div class="shrink-0 text-right" @click.stop>
+                <input
+                  v-if="editingQtyId === row.line.id"
+                  ref="qtyInputRef"
+                  v-model.number="editingQtyValue"
+                  type="number"
+                  min="0"
+                  class="w-12 text-[10px] tabular-nums bg-neutral-100 dark:bg-neutral-800 border border-primary rounded px-1 py-0.5 outline-none text-center"
+                  @keydown.enter="commitQty(row.line.id)"
+                  @keydown.escape="cancelQty"
+                  @blur="commitQty(row.line.id)"
+                />
+                <button
+                  v-else
+                  class="text-[10px] text-neutral-500 tabular-nums hover:text-primary transition-colors"
+                  :disabled="props.locked"
+                  :title="`${row.line.quantity} per board × ${boardQuantity} boards — click to edit`"
+                  @click.stop="startQtyEdit(row.line)"
+                >
+                  {{ row.line.quantity }}x
+                  <span v-if="boardQuantity > 1" class="text-neutral-400">({{ formatNumber(row.line.quantity * boardQuantity) }})</span>
+                </button>
+              </div>
+              <template v-if="!row.line.dnp">
+                <template v-for="offer in [getLineBestOffer(row.line)]" :key="'price'">
+                  <template v-if="offer">
+                    <template v-for="display in [getDisplayOffer(offer)]" :key="`${row.line.id}-${display.currency}`">
+                      <span class="text-[10px] text-green-600 dark:text-green-400 font-medium shrink-0 tabular-nums">
+                        {{ formatCurrency(display.unitPrice, display.currency) }}/pc
+                      </span>
+                      <span class="text-[10px] text-neutral-400 shrink-0 tabular-nums">
+                        {{ formatCurrency(display.lineValue, display.currency) }}
+                      </span>
+                    </template>
                   </template>
                 </template>
               </template>
-            </template>
+            </div>
           </div>
+        </template>
+
+        <!-- Add group button -->
+        <div v-if="!props.locked" class="pt-1">
+          <div v-if="showNewGroupInput" class="flex items-center gap-1.5 px-2">
+            <input
+              v-model="newGroupName"
+              class="flex-1 min-w-0 bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded px-2 py-1 text-[10px] outline-none focus:border-primary"
+              placeholder="Group name"
+              @keydown.enter="commitNewGroup"
+              @keydown.escape="showNewGroupInput = false; newGroupName = ''"
+              @blur="commitNewGroup"
+              @vue:mounted="($event as any).el?.focus()"
+            />
+          </div>
+          <UButton v-else size="xs" color="neutral" variant="ghost" icon="i-lucide-folder-plus" class="text-[10px]" @click="showNewGroupInput = true">
+            Add group
+          </UButton>
         </div>
       </div>
     </div>
@@ -302,7 +369,7 @@
 </template>
 
 <script setup lang="ts">
-import type { BomLine, BomPricingCache, BomAiSuggestions } from '~/utils/bom-types'
+import type { BomLine, BomPricingCache, BomAiSuggestions, BomGroup } from '~/utils/bom-types'
 import { BOM_LINE_TYPES } from '~/utils/bom-types'
 import type { ExchangeRateSnapshot, PricingQueueItem } from '~/composables/useElexessApi'
 import { formatCurrency, normalizeCurrencyCode } from '~/utils/currency'
@@ -323,6 +390,7 @@ const props = defineProps<{
   selectedLineId: string | null
   locked?: boolean
   aiSuggestions?: BomAiSuggestions
+  groups: BomGroup[]
 }>()
 
 const emit = defineEmits<{
@@ -334,6 +402,12 @@ const emit = defineEmits<{
   'fetchAllPricing': []
   'fetchSinglePricing': [partNumber: string]
   'selectLine': [id: string]
+  'addGroup': [name: string]
+  'removeGroup': [groupId: string]
+  'updateGroup': [groupId: string, updates: Partial<Omit<BomGroup, 'id'>>]
+  'assignGroup': [lineId: string, groupId: string | null]
+  'moveLineBefore': [draggedId: string, targetId: string]
+  'moveLineToEnd': [draggedId: string]
 }>()
 
 const lineRefs = reactive<Record<string, HTMLElement>>({})
@@ -656,14 +730,14 @@ const filterDefs = computed(() => {
 
 const dnpCount = computed(() => props.filteredLines.filter(l => l.dnp).length)
 
-const displayLines = computed(() => {
-  let lines = props.filteredLines
+function applyFilters(lines: BomLine[]): BomLine[] {
+  let result = lines
   const filters = activeFilters.value
   if (hideDnp.value && !filters.has('dnp')) {
-    lines = lines.filter(line => !line.dnp)
+    result = result.filter(line => !line.dnp)
   }
   if (filters.size > 0) {
-    lines = lines.filter(line => {
+    result = result.filter(line => {
       if (filters.has('smd') && line.type === 'SMD') return true
       if (filters.has('tht') && line.type === 'THT') return true
       if (filters.has('dnp') && line.dnp) return true
@@ -674,12 +748,141 @@ const displayLines = computed(() => {
       return false
     })
   }
+  return result
+}
+
+function sortLines(lines: BomLine[]): BomLine[] {
   if (sortBy.value === 'price') {
-    lines = [...lines].sort((a, b) => (getLineBestOffer(b)?.lineValue ?? -1) - (getLineBestOffer(a)?.lineValue ?? -1))
-  } else {
-    lines = [...lines].sort((a, b) => (a.references || '\uffff').localeCompare((b.references || '\uffff'), undefined, { numeric: true }))
+    return [...lines].sort((a, b) => (getLineBestOffer(b)?.lineValue ?? -1) - (getLineBestOffer(a)?.lineValue ?? -1))
+  }
+  if (sortBy.value === 'designator') {
+    return [...lines].sort((a, b) => (a.references || '\uffff').localeCompare((b.references || '\uffff'), undefined, { numeric: true }))
   }
   return lines
+}
+
+type DisplayRow =
+  | { kind: 'ungrouped'; count: number }
+  | { kind: 'group'; group: BomGroup; count: number }
+  | { kind: 'line'; line: BomLine }
+
+const hasGroups = computed(() => props.groups.length > 0)
+
+const displayRows = computed<DisplayRow[]>(() => {
+  const filtered = applyFilters(props.filteredLines)
+
+  if (!hasGroups.value) {
+    return sortLines(filtered).map(line => ({ kind: 'line' as const, line }))
+  }
+
+  const groupIds = new Set(props.groups.map(g => g.id))
+  const ungrouped: BomLine[] = []
+  const byGroup = new Map<string, BomLine[]>()
+  for (const g of props.groups) byGroup.set(g.id, [])
+
+  for (const line of filtered) {
+    const gid = line.groupId
+    if (gid && groupIds.has(gid)) {
+      byGroup.get(gid)!.push(line)
+    } else {
+      ungrouped.push(line)
+    }
+  }
+
+  const rows: DisplayRow[] = []
+  const sortedUngrouped = sortLines(ungrouped)
+  rows.push({ kind: 'ungrouped', count: sortedUngrouped.length })
+  for (const line of sortedUngrouped) rows.push({ kind: 'line', line })
+
+  for (const group of props.groups) {
+    const lines = sortLines(byGroup.get(group.id) ?? [])
+    rows.push({ kind: 'group', group, count: lines.length })
+    if (!group.collapsed) {
+      for (const line of lines) rows.push({ kind: 'line', line })
+    }
+  }
+
+  return rows
 })
+
+// Keep displayLines for backward compat (used by watcher)
+const displayLines = computed(() =>
+  displayRows.value.filter((r): r is { kind: 'line'; line: BomLine } => r.kind === 'line').map(r => r.line),
+)
+
+// ── Drag and drop ──
+const dragLineId = ref<string | null>(null)
+const dragOverTarget = ref<string | null>(null)
+
+function onDragStart(e: DragEvent, lineId: string) {
+  if (props.locked) { e.preventDefault(); return }
+  dragLineId.value = lineId
+  if (e.dataTransfer) {
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', lineId)
+  }
+}
+
+function onDragEnd() {
+  dragLineId.value = null
+  dragOverTarget.value = null
+}
+
+function onDragOverLine(e: DragEvent, lineId: string) {
+  e.preventDefault()
+  dragOverTarget.value = lineId
+}
+
+function onDropOnLine(lineId: string) {
+  const dragged = dragLineId.value
+  if (!dragged || dragged === lineId) return
+  const targetLine = props.bomLines.find(l => l.id === lineId)
+  if (targetLine) {
+    emit('assignGroup', dragged, targetLine.groupId ?? null)
+  }
+  emit('moveLineBefore', dragged, lineId)
+  dragLineId.value = null
+  dragOverTarget.value = null
+}
+
+function onDropOnGroup(groupId: string) {
+  const dragged = dragLineId.value
+  if (!dragged) return
+  emit('assignGroup', dragged, groupId)
+  dragLineId.value = null
+  dragOverTarget.value = null
+}
+
+function onDropOnUngrouped() {
+  const dragged = dragLineId.value
+  if (!dragged) return
+  emit('assignGroup', dragged, null)
+  dragLineId.value = null
+  dragOverTarget.value = null
+}
+
+// ── Group editing ──
+const editingGroupId = ref<string | null>(null)
+const editingGroupName = ref('')
+const newGroupName = ref('')
+const showNewGroupInput = ref(false)
+
+function startGroupRename(group: BomGroup) {
+  editingGroupId.value = group.id
+  editingGroupName.value = group.name
+}
+
+function commitGroupRename(groupId: string) {
+  const name = editingGroupName.value.trim()
+  if (name) emit('updateGroup', groupId, { name })
+  editingGroupId.value = null
+}
+
+function commitNewGroup() {
+  const name = newGroupName.value.trim()
+  if (name) emit('addGroup', name)
+  newGroupName.value = ''
+  showNewGroupInput.value = false
+}
 </script>
 

@@ -547,6 +547,9 @@ watch(delimiterMode, (next) => {
 
 watch(() => props.mapping, () => {
   if (!props.extraColumns || props.extraColumns.length === 0) return
+  if (isLoading.value) return
+  if (headers.value.length === 0) return
+  if ((props.mappingFields?.length ?? 0) === 0) return
   const stillUnmapped = props.extraColumns.filter((name) => {
     const idx = headers.value.indexOf(name)
     return idx >= 0 && isColumnUnmapped(idx)

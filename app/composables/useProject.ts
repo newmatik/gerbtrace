@@ -83,6 +83,8 @@ interface ProjectRecord {
   bomPricingCache?: BomPricingCache | null
   /** Board quantity for BOM pricing calculation */
   bomBoardQuantity?: number | null
+  /** BOM groups (sections) */
+  bomGroups?: { id: string; name: string; comment: string; collapsed: boolean }[] | null
   /** AI (Spark) suggestions keyed by BOM line ID */
   bomAiSuggestions?: Record<string, any> | null
   /** PCB board parameters for pricing estimation */
@@ -108,10 +110,10 @@ interface ProjectRecord {
   layerOrder?: string[] | null
   /** Persisted document ordering by file name */
   documentOrder?: string[] | null
-  /** Per-file BOM import options (header skip + mapping + optional fixed-width markers) */
-  bomFileImportOptions?: Record<string, { skipRows?: number; skipBottomRows?: number; mapping?: BomColumnMapping; fixedColumns?: readonly number[] }> | null
-  /** Per-file PnP import options (header skip + mapping + unit override + optional fixed-width markers) */
-  pnpFileImportOptions?: Record<string, { skipRows?: number; skipBottomRows?: number; mapping?: PnPColumnMapping; unitOverride?: 'auto' | PnPCoordUnit; fixedColumns?: readonly number[] }> | null
+  /** Per-file BOM import options (header skip + mapping + delimiter/decimal + fixed markers + extra columns) */
+  bomFileImportOptions?: Record<string, { skipRows?: number; skipBottomRows?: number; mapping?: BomColumnMapping; fixedColumns?: readonly number[]; delimiter?: ',' | ';' | '\t' | 'fixed'; decimal?: '.' | ','; extraColumns?: readonly string[] }> | null
+  /** Per-file PnP import options (header skip + mapping + unit override + delimiter/decimal + fixed markers) */
+  pnpFileImportOptions?: Record<string, { skipRows?: number; skipBottomRows?: number; mapping?: PnPColumnMapping; unitOverride?: 'auto' | PnPCoordUnit; fixedColumns?: readonly number[]; delimiter?: ',' | ';' | '\t' | 'fixed'; decimal?: '.' | ',' }> | null
   /** Small PNG thumbnail of the rendered PCB board */
   previewImage?: Blob | null
 }
@@ -471,6 +473,10 @@ export function useProject() {
     await db.projects.update(id, { bomLines: toIndexedDbSafe(lines), updatedAt: new Date() })
   }
 
+  async function updateBomGroups(id: number, groups: { id: string; name: string; comment: string; collapsed: boolean }[]) {
+    await db.projects.update(id, { bomGroups: toIndexedDbSafe(groups), updatedAt: new Date() })
+  }
+
   async function updateBomPricingCache(id: number, cache: BomPricingCache) {
     await db.projects.update(id, { bomPricingCache: toIndexedDbSafe(cache), updatedAt: new Date() })
   }
@@ -501,14 +507,14 @@ export function useProject() {
 
   async function updateBomFileImportOptions(
     id: number,
-    options: Record<string, { skipRows?: number; skipBottomRows?: number; mapping?: BomColumnMapping; fixedColumns?: readonly number[] }>,
+    options: Record<string, { skipRows?: number; skipBottomRows?: number; mapping?: BomColumnMapping; fixedColumns?: readonly number[]; delimiter?: ',' | ';' | '\t' | 'fixed'; decimal?: '.' | ','; extraColumns?: readonly string[] }>,
   ) {
     await db.projects.update(id, { bomFileImportOptions: toIndexedDbSafe(options), updatedAt: new Date() })
   }
 
   async function updatePnpFileImportOptions(
     id: number,
-    options: Record<string, { skipRows?: number; skipBottomRows?: number; mapping?: PnPColumnMapping; unitOverride?: 'auto' | PnPCoordUnit; fixedColumns?: readonly number[] }>,
+    options: Record<string, { skipRows?: number; skipBottomRows?: number; mapping?: PnPColumnMapping; unitOverride?: 'auto' | PnPCoordUnit; fixedColumns?: readonly number[]; delimiter?: ',' | ';' | '\t' | 'fixed'; decimal?: '.' | ',' }>,
   ) {
     await db.projects.update(id, { pnpFileImportOptions: toIndexedDbSafe(options), updatedAt: new Date() })
   }
@@ -660,6 +666,7 @@ export function useProject() {
     updateProjectGroupAssignments,
     updatePnpAssemblyTypes,
     updateBomLines,
+    updateBomGroups,
     updateBomPricingCache,
     updateBomBoardQuantity,
     updatePcbData,

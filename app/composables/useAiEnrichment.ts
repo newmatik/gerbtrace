@@ -15,12 +15,16 @@ function mfrKey(m: BomManufacturer): string {
   return `${(m.manufacturer ?? '').trim().toLowerCase()}|${(m.manufacturerPart ?? '').trim().toLowerCase()}`
 }
 
-function diffSuggestion(suggestion: AiSuggestion, line: BomLine): AiSuggestion | null {
+function diffSuggestion(suggestion: AiSuggestion, line: BomLine, groupNameById?: Map<string, string>): AiSuggestion | null {
   const next: AiSuggestion = {}
   if (suggestion.description && suggestion.description !== line.description) next.description = suggestion.description
   if (suggestion.type && suggestion.type !== line.type) next.type = suggestion.type
   if (suggestion.pinCount != null && suggestion.pinCount !== line.pinCount) next.pinCount = suggestion.pinCount
   if (suggestion.smdClassification && suggestion.smdClassification !== line.smdClassification) next.smdClassification = suggestion.smdClassification
+  if (suggestion.group) {
+    const currentGroupName = line.groupId && groupNameById ? groupNameById.get(line.groupId) : undefined
+    if (suggestion.group !== currentGroupName) next.group = suggestion.group
+  }
   if (suggestion.manufacturers && suggestion.manufacturers.length > 0) {
     const existing = new Set(line.manufacturers.map(mfrKey))
     const novel = suggestion.manufacturers.filter(m => !existing.has(mfrKey(m)))
@@ -43,6 +47,7 @@ export function useAiEnrichment() {
     bomLines: BomLine[],
     smdPnpComponents: any[],
     thtPnpComponents: any[],
+    existingGroups?: { id: string; name: string }[],
   ): Promise<BomAiSuggestions> {
     if (!currentTeam.value?.ai_api_key || !currentTeam.value?.ai_model) {
       throw new Error('AI not configured')
@@ -51,25 +56,29 @@ export function useAiEnrichment() {
     isEnriching.value = true
     enrichError.value = null
 
+    const activeLines = bomLines.filter(l => !l.dnp)
+
     try {
       const result = await $fetch<{ suggestions: BomAiSuggestions }>('/api/ai/enrich-bom', {
         method: 'POST',
         body: {
           apiKey: currentTeam.value.ai_api_key,
           model: currentTeam.value.ai_model,
-          bomLines,
+          bomLines: activeLines,
           smdPnpComponents,
           thtPnpComponents,
+          existingGroups: existingGroups ?? [],
         },
       })
 
       const raw = result.suggestions ?? {}
       const lineMap = new Map(bomLines.map(l => [l.id, l]))
+      const groupNameById = new Map((existingGroups ?? []).map(g => [g.id, g.name]))
       const cleaned: BomAiSuggestions = {}
       for (const [id, s] of Object.entries(raw)) {
         const line = lineMap.get(id)
         if (!line) continue
-        const diff = diffSuggestion(s, line)
+        const diff = diffSuggestion(s, line, groupNameById)
         if (diff) cleaned[id] = diff
       }
 
@@ -157,6 +166,7 @@ export function useAiEnrichment() {
     lineId: string,
     applyToLine: (lineId: string, updates: Partial<BomLine>) => void,
     addManufacturer: (lineId: string, mfr: BomManufacturer) => void,
+    assignGroup?: (lineId: string, groupName: string) => void,
   ) {
     const suggestion = aiSuggestions.value[lineId]
     if (!suggestion) return
@@ -175,6 +185,10 @@ export function useAiEnrichment() {
       for (const mfr of suggestion.manufacturers) {
         addManufacturer(lineId, mfr)
       }
+    }
+
+    if (suggestion.group && assignGroup) {
+      assignGroup(lineId, suggestion.group)
     }
 
     const copy = { ...aiSuggestions.value }
