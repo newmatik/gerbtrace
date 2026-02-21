@@ -7,6 +7,8 @@ export default defineNuxtConfig({
       appVersion: '1.1.3',
       supabaseUrl: process.env.SUPABASE_URL || 'https://gqrnlnlfidighosujpdb.supabase.co',
       supabaseAnonKey: process.env.SUPABASE_ANON_KEY || '',
+      // Keep in sync with Supabase Auth -> Email OTP length.
+      supabaseEmailOtpLength: Number(process.env.SUPABASE_EMAIL_OTP_LENGTH || 8),
       elexessUrl: process.env.ELEXESS_URL || 'https://api.dev.elexess.com/api',
       sentry: {
         dsn: process.env.SENTRY_DSN || '',

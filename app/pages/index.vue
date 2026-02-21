@@ -60,7 +60,7 @@
           </div>
 
           <div class="flex items-center gap-3 w-full sm:w-auto">
-            <UButton icon="i-lucide-circle-help" color="neutral" variant="outline" @click="openDocs()">
+            <UButton icon="i-lucide-book-open-text" color="neutral" variant="outline" @click="openDocs()">
               Docs / Help
             </UButton>
           </div>
@@ -165,12 +165,21 @@
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
                       <UBadge
-                        :color="project.status === 'approved' ? 'success' : 'warning'"
+                        :color="teamProjectStatusColor(project.status)"
                         size="xs"
                         variant="subtle"
                       >
-                        <UIcon v-if="project.status === 'approved'" name="i-lucide-lock" class="w-3 h-3 mr-1" />
-                        {{ project.status === 'approved' ? 'Approved' : 'Draft' }}
+                        <UIcon :name="teamProjectStatusIcon(project.status)" class="w-3 h-3 mr-1" />
+                        {{ teamProjectStatusLabel(project.status) }}
+                      </UBadge>
+                      <UBadge
+                        v-if="project.status === 'for_approval' && project.approver_user_id"
+                        color="neutral"
+                        size="xs"
+                        variant="subtle"
+                      >
+                        <UIcon name="i-lucide-user-check" class="w-3 h-3 mr-1" />
+                        {{ getApproverLabel(project.approver_user_id) }}
                       </UBadge>
                     </div>
                   </div>
@@ -627,6 +636,33 @@ function getAssigneeLabel(assigneeUserId: string | null) {
   if (!assigneeUserId) return 'Unassigned'
   const member = assignableMembers.value.find(m => m.user_id === assigneeUserId)
   return member?.profile?.name?.trim() || member?.profile?.email || 'Former member'
+}
+
+function getApproverLabel(approverUserId: string | null) {
+  if (!approverUserId) return 'No approver'
+  const member = assignableMembers.value.find(m => m.user_id === approverUserId)
+  return member?.profile?.name?.trim() || member?.profile?.email || 'Former member'
+}
+
+function teamProjectStatusLabel(status: 'draft' | 'in_progress' | 'for_approval' | 'approved') {
+  if (status === 'in_progress') return 'In Progress'
+  if (status === 'for_approval') return 'For Approval'
+  if (status === 'approved') return 'Approved'
+  return 'Draft'
+}
+
+function teamProjectStatusIcon(status: 'draft' | 'in_progress' | 'for_approval' | 'approved') {
+  if (status === 'in_progress') return 'i-lucide-play'
+  if (status === 'for_approval') return 'i-lucide-hourglass'
+  if (status === 'approved') return 'i-lucide-lock'
+  return 'i-lucide-file-pen'
+}
+
+function teamProjectStatusColor(status: 'draft' | 'in_progress' | 'for_approval' | 'approved') {
+  if (status === 'in_progress') return 'primary'
+  if (status === 'for_approval') return 'info'
+  if (status === 'approved') return 'success'
+  return 'warning'
 }
 
 function isAssigning(projectId: string) {

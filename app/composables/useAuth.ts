@@ -79,12 +79,27 @@ export function useAuth() {
 
   /** Sign up with email + password */
   async function signUp(email: string, password: string, name?: string) {
+    const origin = webOrigin()
+    const redirectTo = `${origin}/auth/callback`
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: { name: name ?? email.split('@')[0] },
+        emailRedirectTo: redirectTo,
       },
+    })
+    return { data, error }
+  }
+
+  /** Resend sign-up confirmation email */
+  async function resendSignUpConfirmation(email: string) {
+    const origin = webOrigin()
+    const emailRedirectTo = `${origin}/auth/callback`
+    const { data, error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: { emailRedirectTo },
     })
     return { data, error }
   }
@@ -176,5 +191,6 @@ export function useAuth() {
     signOut,
     resetPassword,
     updatePassword,
+    resendSignUpConfirmation,
   }
 }

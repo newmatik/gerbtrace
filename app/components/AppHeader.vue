@@ -21,17 +21,28 @@
     </template>
 
     <!-- Team selector (when user has teams) -->
-    <UDropdownMenu v-if="isAuthenticated && hasTeam" :items="teamSelectorItems">
-      <UButton
-        size="xs"
-        color="neutral"
-        variant="ghost"
-        class="max-w-[160px]"
-      >
-        <span class="truncate text-xs font-medium">{{ currentTeam?.name ?? 'Select Team' }}</span>
-        <UIcon name="i-lucide-chevron-down" class="text-xs shrink-0" />
-      </UButton>
-    </UDropdownMenu>
+    <div v-if="isAuthenticated && hasTeam" class="flex items-center gap-1">
+      <UDropdownMenu :items="teamSelectorItems">
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          class="max-w-[160px]"
+        >
+          <span class="truncate text-xs font-medium">{{ currentTeam?.name ?? 'Select Team' }}</span>
+          <UIcon name="i-lucide-chevron-down" class="text-xs shrink-0" />
+        </UButton>
+      </UDropdownMenu>
+    </div>
+
+    <UButton
+      size="xs"
+      color="neutral"
+      variant="ghost"
+      icon="i-lucide-book-open-text"
+      title="Docs / Help"
+      @click="openDocumentation"
+    />
 
     <!-- Settings / Packages dropdown -->
     <UDropdownMenu :items="settingsMenuItems">
@@ -44,6 +55,27 @@
       />
     </UDropdownMenu>
 
+    <UButton
+      v-if="isAuthenticated"
+      to="/inbox"
+      size="xs"
+      color="neutral"
+      variant="ghost"
+      class="relative"
+      icon="i-lucide-bell"
+      title="Inbox"
+    >
+      <UBadge
+        v-if="unreadCount > 0"
+        size="xs"
+        color="error"
+        variant="solid"
+        class="absolute -top-1 -right-1 min-w-[1rem] h-4 px-1 flex items-center justify-center"
+      >
+        {{ unreadCount > 9 ? '9+' : unreadCount }}
+      </UBadge>
+    </UButton>
+
     <!-- User menu or Sign In -->
     <UDropdownMenu v-if="isAuthenticated" :items="userMenuItems">
       <UButton
@@ -52,7 +84,13 @@
         variant="ghost"
         class="rounded-full"
       >
-        <div class="size-5 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
+        <img
+          v-if="profile?.avatar_url"
+          :src="profile.avatar_url"
+          alt="User avatar"
+          class="size-5 rounded-full object-cover"
+        >
+        <div v-else class="size-5 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
           {{ userInitials }}
         </div>
       </UButton>
@@ -89,7 +127,8 @@ const { openDocs } = useDocsLink()
 const isTauri = import.meta.client && coreIsTauri()
 const { isAuthenticated, signOut } = useAuth()
 const { profile } = useCurrentUser()
-const { teams, currentTeam, hasTeam, isAdmin, switchTeam } = useTeam()
+const { unreadCount } = useNotifications()
+const { teams, currentTeam, hasTeam, switchTeam } = useTeam()
 
 const userInitials = computed(() => {
   const name = profile.value?.name ?? profile.value?.email ?? ''
@@ -98,33 +137,28 @@ const userInitials = computed(() => {
 
 // Team selector dropdown items
 const teamSelectorItems = computed(() => {
-  const items = teams.value.map(t => ({
+  const items = teams.value.map((t) => ({
     label: t.name,
     icon: t.id === currentTeam.value?.id ? 'i-lucide-check' : undefined,
     onSelect: () => switchTeam(t.id),
   }))
+
   return [
     items,
+    [{ label: 'Team Settings', icon: 'i-lucide-settings-2', onSelect: () => router.push('/team/settings') }],
     [{ label: 'Create Team', icon: 'i-lucide-plus', onSelect: () => router.push('/team/create') }],
   ]
 })
 
 const bugReportOpen = ref(false)
 
-// Settings menu items (unified package manager + team admin)
+// Settings menu items
 const settingsMenuItems = computed(() => {
   const items: any[][] = [
     [
       { label: 'Package Manager', icon: 'i-lucide-package', onSelect: () => router.push('/packages') },
     ],
   ]
-
-  if (isAdmin.value) {
-    items.push([
-      { label: 'Team Settings', icon: 'i-lucide-settings-2', onSelect: () => router.push('/team/settings') },
-      { label: 'Team Members', icon: 'i-lucide-users', onSelect: () => router.push('/team/members') },
-    ])
-  }
 
   items.push([
     ...(showPerformanceMonitorItem
@@ -134,7 +168,6 @@ const settingsMenuItems = computed(() => {
           onSelect: () => emit('openPerformanceMonitor'),
         }]
       : []),
-    { label: 'Docs / Help', icon: 'i-lucide-book-open-text', onSelect: () => { void openDocs() } },
     { label: 'Report a Bug', icon: 'i-lucide-bug', onSelect: () => { bugReportOpen.value = true } },
     {
       label: isDark.value ? 'Light Mode' : 'Dark Mode',
@@ -188,5 +221,9 @@ watch(isDark, (dark) => syncWindowTheme(dark), { immediate: true })
 
 function toggleColorMode() {
   colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
+}
+
+function openDocumentation() {
+  void openDocs()
 }
 </script>

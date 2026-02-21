@@ -11,6 +11,7 @@ export interface Team {
   slug: string
   auto_join_domain: string | null
   default_currency: 'USD' | 'EUR'
+  elexess_enabled: boolean
   elexess_username: string | null
   elexess_password: string | null
   preferred_panel_width_mm: number | null
@@ -173,6 +174,7 @@ export function useTeam() {
     name?: string
     auto_join_domain?: string | null
     default_currency?: 'USD' | 'EUR'
+    elexess_enabled?: boolean
     elexess_username?: string | null
     elexess_password?: string | null
     preferred_panel_width_mm?: number | null

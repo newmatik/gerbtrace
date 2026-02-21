@@ -122,8 +122,15 @@ export function useElexessApi() {
 
   const baseUrl = computed(() => (config.public as any).elexessUrl as string || 'https://api.dev.elexess.com/api')
 
+  const isEnabled = computed(() => {
+    const team = currentTeam.value
+    if (!team) return false
+    if (typeof team.elexess_enabled === 'boolean') return team.elexess_enabled
+    return !!(team.elexess_username && team.elexess_password)
+  })
+
   const hasCredentials = computed(() => {
-    return !!(currentTeam.value?.elexess_username && currentTeam.value?.elexess_password)
+    return !!(isEnabled.value && currentTeam.value?.elexess_username && currentTeam.value?.elexess_password)
   })
 
   // ── Reactive queue state ──
@@ -510,6 +517,7 @@ export function useElexessApi() {
   }, { immediate: true })
 
   return {
+    isEnabled,
     hasCredentials,
     isFetching: readonly(isFetching),
     pricingQueue: readonly(pricingQueue),
