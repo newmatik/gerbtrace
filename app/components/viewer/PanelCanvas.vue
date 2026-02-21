@@ -2,7 +2,7 @@
   <div class="relative w-full h-full">
     <canvas
       ref="canvasEl"
-      class="w-full h-full"
+      class="w-full h-full gpu-canvas"
       :style="{ cursor: canvasCursor }"
       @wheel.prevent="onWheel"
       @mousedown="onMouseDown"
@@ -2809,6 +2809,10 @@ function draw() {
         tileCanvas = acquireCanvas(pcbPixW, pcbPixH)
         if (isRealistic) {
           const ps = props.pasteSettings
+          const poolOpts = {
+            acquireCanvas: (w: number, h: number) => acquireCanvas(w, h),
+            releaseCanvas: (c: HTMLCanvasElement) => releaseCanvas(c),
+          }
           if (side === 'all') {
             renderRealisticView(gatherRealisticLayers('top'), tileCanvas, {
               preset: props.preset!,
@@ -2816,6 +2820,7 @@ function draw() {
               dpr,
               side: 'top',
               pasteColor: ps?.mode === 'jetprint' && ps.highlightDots ? '#00FF66' : undefined,
+              ...poolOpts,
             })
             const bottomCanvas = acquireCanvas(pcbPixW, pcbPixH)
             renderRealisticView(gatherRealisticLayers('bottom'), bottomCanvas, {
@@ -2824,6 +2829,7 @@ function draw() {
               dpr,
               side: 'bottom',
               pasteColor: ps?.mode === 'jetprint' && ps.highlightDots ? '#00FF66' : undefined,
+              ...poolOpts,
             })
             const tileCtx = tileCanvas.getContext('2d')!
             tileCtx.save()
@@ -2839,6 +2845,7 @@ function draw() {
               dpr,
               side,
               pasteColor: ps?.mode === 'jetprint' && ps.highlightDots ? '#00FF66' : undefined,
+              ...poolOpts,
             })
           }
         } else {

@@ -40,13 +40,16 @@
         </div>
 
         <!-- Editable fields -->
-      <fieldset class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-2.5 space-y-2 border-0 m-0 min-w-0" :disabled="props.locked">
+      <fieldset class="border-0 m-0 p-0 min-w-0 space-y-2.5" :disabled="props.locked">
+        <!-- Description (full width) -->
         <div>
           <div class="text-[10px] text-neutral-400 mb-1">Description</div>
-          <UInput
+          <UTextarea
             :model-value="line.description"
             size="sm"
-            placeholder="e.g. 1uF Ceramic Capacitor"
+            :rows="1"
+            autoresize
+            placeholder="e.g. Capacitor MLCC 100nF 50V X7R ±10% 0402"
             :class="fieldClass('description')"
             @update:model-value="(v) => emitUpdate({ description: String(v ?? '') })"
           />
@@ -65,6 +68,8 @@
             </div>
           </div>
         </div>
+
+        <!-- Comment (full width) -->
         <div>
           <div class="text-[10px] text-neutral-400 mb-1">Comment</div>
           <UTextarea
@@ -78,137 +83,7 @@
           />
         </div>
 
-        <div class="grid grid-cols-[1fr_auto] gap-x-2 gap-y-1 items-end">
-          <div class="grid gap-2 items-end" :class="showSecondaryTypeField ? 'grid-cols-2' : 'grid-cols-1'">
-            <div class="min-w-0">
-              <div class="text-[10px] text-neutral-400 mb-1">Type</div>
-              <USelect
-                :model-value="line.type || 'SMD'"
-                :items="bomLineTypeItems"
-                size="sm"
-                @update:model-value="(v: any) => emitUpdate({ type: v })"
-              />
-            </div>
-            <div v-if="line.type === 'SMD' || aiSuggestion?.smdClassification != null" class="min-w-0">
-              <div class="text-[10px] text-neutral-400 mb-1">SMD Classification</div>
-              <USelect
-                :model-value="line.smdClassification || SMD_CLASS_NONE"
-                :items="smdClassItems"
-                size="sm"
-                @update:model-value="(v: any) => emitUpdate({ smdClassification: v === SMD_CLASS_NONE ? null : v })"
-              />
-            </div>
-            <div v-else-if="line.type === 'THT' || aiSuggestion?.pinCount != null" class="min-w-0">
-              <div class="text-[10px] text-neutral-400 mb-1">Pin Count</div>
-              <UInput
-                :model-value="line.pinCount != null ? String(line.pinCount) : ''"
-                size="sm"
-                type="number"
-                min="1"
-                placeholder="e.g. 8"
-                @update:model-value="(v) => emitUpdate({ pinCount: v ? Number(v) : null })"
-              />
-            </div>
-          </div>
-          <div class="flex items-center gap-3 pb-1">
-            <label class="flex items-center gap-1.5 text-xs text-neutral-600 dark:text-neutral-300 whitespace-nowrap">
-              <USwitch
-                :model-value="line.customerProvided"
-                size="xs"
-                @update:model-value="(v: boolean) => emitUpdate({ customerProvided: v })"
-              />
-              Customer provided
-            </label>
-            <label class="flex items-center gap-1.5 text-xs text-neutral-600 dark:text-neutral-300">
-              <USwitch
-                :model-value="line.dnp"
-                size="xs"
-                @update:model-value="(v: boolean) => emitUpdate({ dnp: v })"
-              />
-              DNP
-            </label>
-          </div>
-          <!-- Spark suggestions for Type / Classification / Pin Count -->
-          <div v-if="aiSuggestion?.type || aiSuggestion?.smdClassification || aiSuggestion?.pinCount != null" class="col-span-2 grid gap-2" :class="(aiSuggestion?.type && (aiSuggestion?.smdClassification || aiSuggestion?.pinCount != null)) ? 'grid-cols-2' : 'grid-cols-1'">
-            <div v-if="aiSuggestion?.type && aiSuggestion.type !== line.type" class="flex items-center gap-1.5 px-2 py-1 rounded border-l-2 border-violet-500 bg-violet-50/60 dark:bg-violet-900/15 border border-violet-200 dark:border-violet-800">
-              <UIcon name="i-lucide-sparkles" class="text-[9px] text-violet-500 shrink-0" />
-              <span class="text-[10px] text-violet-800 dark:text-violet-200 flex-1">{{ aiSuggestion.type }}</span>
-              <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" @click="emit('acceptAiSuggestion', line.id, 'type')" />
-              <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" @click="emit('dismissAiSuggestion', line.id, 'type')" />
-            </div>
-            <div v-if="aiSuggestion?.smdClassification && aiSuggestion.smdClassification !== line.smdClassification" class="flex items-center gap-1.5 px-2 py-1 rounded border-l-2 border-violet-500 bg-violet-50/60 dark:bg-violet-900/15 border border-violet-200 dark:border-violet-800">
-              <UIcon name="i-lucide-sparkles" class="text-[9px] text-violet-500 shrink-0" />
-              <span class="text-[10px] text-violet-800 dark:text-violet-200 flex-1">{{ aiSuggestion.smdClassification }}</span>
-              <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" @click="emit('acceptAiSuggestion', line.id, 'smdClassification')" />
-              <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" @click="emit('dismissAiSuggestion', line.id, 'smdClassification')" />
-            </div>
-            <div v-if="aiSuggestion?.pinCount != null && aiSuggestion.pinCount !== line.pinCount" class="flex items-center gap-1.5 px-2 py-1 rounded border-l-2 border-violet-500 bg-violet-50/60 dark:bg-violet-900/15 border border-violet-200 dark:border-violet-800">
-              <UIcon name="i-lucide-sparkles" class="text-[9px] text-violet-500 shrink-0" />
-              <span class="text-[10px] text-violet-800 dark:text-violet-200 flex-1">{{ aiSuggestion.pinCount }} pins</span>
-              <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" @click="emit('acceptAiSuggestion', line.id, 'pinCount')" />
-              <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" @click="emit('dismissAiSuggestion', line.id, 'pinCount')" />
-            </div>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-3 gap-2">
-          <div>
-            <div class="text-[10px] text-neutral-400 mb-1">Package</div>
-            <UInput
-              :model-value="line.package"
-              size="sm"
-              placeholder="e.g. 0603"
-              :class="fieldClass('package')"
-              @update:model-value="(v) => emitUpdate({ package: String(v ?? '') })"
-            />
-          </div>
-          <div>
-            <div class="text-[10px] text-neutral-400 mb-1">Customer item</div>
-            <UInput
-              :model-value="line.customerItemNo"
-              size="sm"
-              placeholder="(optional)"
-              :class="fieldClass('customerItemNo')"
-              @update:model-value="(v) => emitUpdate({ customerItemNo: String(v ?? '') })"
-            />
-          </div>
-          <div>
-            <div class="text-[10px] text-neutral-400 mb-1">Qty / board</div>
-            <UInput
-              :model-value="String(line.quantity)"
-              size="sm"
-              type="number"
-              min="0"
-              :class="fieldClass('quantity')"
-              @update:model-value="(v) => emitUpdate({ quantity: Math.max(0, Number(v ?? 0) || 0) })"
-            />
-          </div>
-        </div>
-
-        <div>
-          <div class="text-[10px] text-neutral-400 mb-1">Group</div>
-          <USelect
-            :model-value="line.groupId || GROUP_NONE"
-            :items="groupItems"
-            size="sm"
-            @update:model-value="(v: any) => emit('assignGroup', line!.id, v === GROUP_NONE ? null : v)"
-          />
-          <!-- Spark: Group suggestion -->
-          <div v-if="aiSuggestion?.group" class="mt-1.5 rounded-md border-l-2 border-violet-500 bg-violet-50/60 dark:bg-violet-900/15 border border-violet-200 dark:border-violet-800 px-2.5 py-1.5">
-            <div class="flex items-start gap-1.5">
-              <UIcon name="i-lucide-sparkles" class="text-[10px] text-violet-500 shrink-0 mt-0.5" />
-              <div class="flex-1 min-w-0">
-                <div class="text-[9px] font-medium text-violet-600 dark:text-violet-400 uppercase tracking-wider mb-0.5">Suggested group</div>
-                <div class="text-xs text-violet-900 dark:text-violet-200">{{ aiSuggestion.group }}</div>
-              </div>
-              <div class="flex items-center gap-0.5 shrink-0">
-                <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" @click="emit('acceptAiGroup', line.id, aiSuggestion!.group!)" />
-                <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" @click="emit('dismissAiGroup', line.id)" />
-              </div>
-            </div>
-          </div>
-        </div>
-
+        <!-- References (full width, compact) -->
         <div>
           <div class="flex items-center justify-between mb-1">
             <div class="text-[10px] text-neutral-400">References</div>
@@ -258,6 +133,151 @@
             </div>
           </div>
         </div>
+
+        <!-- Type row: Type + Classification/Pins -->
+        <div class="grid gap-2" :class="showSecondaryTypeField ? 'grid-cols-2' : 'grid-cols-1'">
+          <div class="min-w-0">
+            <div class="text-[10px] text-neutral-400 mb-1">Type</div>
+            <USelect
+              :model-value="line.type || 'SMD'"
+              :items="bomLineTypeItems"
+              size="sm"
+              @update:model-value="(v: any) => emitUpdate({ type: v })"
+            />
+          </div>
+          <div v-if="line.type === 'SMD' || aiSuggestion?.smdClassification != null" class="min-w-0">
+            <div class="text-[10px] text-neutral-400 mb-1">SMD Classification</div>
+            <USelect
+              :model-value="line.smdClassification || SMD_CLASS_NONE"
+              :items="smdClassItems"
+              size="sm"
+              @update:model-value="(v: any) => emitUpdate({ smdClassification: v === SMD_CLASS_NONE ? null : v })"
+            />
+          </div>
+          <div v-else-if="line.type === 'THT' || aiSuggestion?.pinCount != null" class="min-w-0">
+            <div class="text-[10px] text-neutral-400 mb-1">Pin Count</div>
+            <UInput
+              :model-value="line.pinCount != null ? String(line.pinCount) : ''"
+              size="sm"
+              type="number"
+              min="1"
+              placeholder="e.g. 8"
+              @update:model-value="(v) => emitUpdate({ pinCount: v ? Number(v) : null })"
+            />
+          </div>
+        </div>
+
+        <!-- Spark suggestions for Type / Classification / Pin Count -->
+        <div v-if="aiSuggestion?.type || aiSuggestion?.smdClassification || aiSuggestion?.pinCount != null" class="grid gap-2" :class="(aiSuggestion?.type && (aiSuggestion?.smdClassification || aiSuggestion?.pinCount != null)) ? 'grid-cols-2' : 'grid-cols-1'">
+          <div v-if="aiSuggestion?.type && aiSuggestion.type !== line.type" class="flex items-center gap-1.5 px-2 py-1 rounded border-l-2 border-violet-500 bg-violet-50/60 dark:bg-violet-900/15 border border-violet-200 dark:border-violet-800">
+            <UIcon name="i-lucide-sparkles" class="text-[9px] text-violet-500 shrink-0" />
+            <span class="text-[10px] text-violet-800 dark:text-violet-200 flex-1">{{ aiSuggestion.type }}</span>
+            <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" @click="emit('acceptAiSuggestion', line.id, 'type')" />
+            <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" @click="emit('dismissAiSuggestion', line.id, 'type')" />
+          </div>
+          <div v-if="aiSuggestion?.smdClassification && aiSuggestion.smdClassification !== line.smdClassification" class="flex items-center gap-1.5 px-2 py-1 rounded border-l-2 border-violet-500 bg-violet-50/60 dark:bg-violet-900/15 border border-violet-200 dark:border-violet-800">
+            <UIcon name="i-lucide-sparkles" class="text-[9px] text-violet-500 shrink-0" />
+            <span class="text-[10px] text-violet-800 dark:text-violet-200 flex-1">{{ aiSuggestion.smdClassification }}</span>
+            <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" @click="emit('acceptAiSuggestion', line.id, 'smdClassification')" />
+            <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" @click="emit('dismissAiSuggestion', line.id, 'smdClassification')" />
+          </div>
+          <div v-if="aiSuggestion?.pinCount != null && aiSuggestion.pinCount !== line.pinCount" class="flex items-center gap-1.5 px-2 py-1 rounded border-l-2 border-violet-500 bg-violet-50/60 dark:bg-violet-900/15 border border-violet-200 dark:border-violet-800">
+            <UIcon name="i-lucide-sparkles" class="text-[9px] text-violet-500 shrink-0" />
+            <span class="text-[10px] text-violet-800 dark:text-violet-200 flex-1">{{ aiSuggestion.pinCount }} pins</span>
+            <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" @click="emit('acceptAiSuggestion', line.id, 'pinCount')" />
+            <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" @click="emit('dismissAiSuggestion', line.id, 'pinCount')" />
+          </div>
+        </div>
+
+        <!-- Toggles row -->
+        <div class="flex items-center gap-4">
+          <label class="flex items-center gap-1.5 text-xs text-neutral-600 dark:text-neutral-300 whitespace-nowrap">
+            <USwitch
+              :model-value="line.customerProvided"
+              size="xs"
+              @update:model-value="(v: boolean) => emitUpdate({ customerProvided: v })"
+            />
+            Customer provided
+          </label>
+          <label class="flex items-center gap-1.5 text-xs text-neutral-600 dark:text-neutral-300">
+            <USwitch
+              :model-value="line.dnp"
+              size="xs"
+              @update:model-value="(v: boolean) => emitUpdate({ dnp: v })"
+            />
+            DNP
+          </label>
+        </div>
+
+        <!-- Package row: Package + PnP Package -->
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <div class="text-[10px] text-neutral-400 mb-1">Package</div>
+            <UInput
+              :model-value="line.package"
+              size="sm"
+              placeholder="e.g. 0603"
+              :class="fieldClass('package')"
+              @update:model-value="(v) => emitUpdate({ package: String(v ?? '') })"
+            />
+          </div>
+          <div>
+            <div class="text-[10px] text-neutral-400 mb-1">PnP Package</div>
+            <div class="h-8 flex items-center px-2 text-xs rounded-md border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50" :class="pnpPackage ? 'text-neutral-700 dark:text-neutral-300' : 'text-neutral-400'">
+              {{ pnpPackage || '—' }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Customer item + Qty row -->
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <div class="text-[10px] text-neutral-400 mb-1">Customer item</div>
+            <UInput
+              :model-value="line.customerItemNo"
+              size="sm"
+              placeholder="(optional)"
+              :class="fieldClass('customerItemNo')"
+              @update:model-value="(v) => emitUpdate({ customerItemNo: String(v ?? '') })"
+            />
+          </div>
+          <div>
+            <div class="text-[10px] text-neutral-400 mb-1">Qty / board</div>
+            <UInput
+              :model-value="String(line.quantity)"
+              size="sm"
+              type="number"
+              min="0"
+              :class="fieldClass('quantity')"
+              @update:model-value="(v) => emitUpdate({ quantity: Math.max(0, Number(v ?? 0) || 0) })"
+            />
+          </div>
+        </div>
+
+        <!-- Group -->
+        <div>
+          <div class="text-[10px] text-neutral-400 mb-1">Group</div>
+          <USelect
+            :model-value="line.groupId || GROUP_NONE"
+            :items="groupItems"
+            size="sm"
+            @update:model-value="(v: any) => emit('assignGroup', line!.id, v === GROUP_NONE ? null : v)"
+          />
+          <!-- Spark: Group suggestion -->
+          <div v-if="aiSuggestion?.group" class="mt-1.5 rounded-md border-l-2 border-violet-500 bg-violet-50/60 dark:bg-violet-900/15 border border-violet-200 dark:border-violet-800 px-2.5 py-1.5">
+            <div class="flex items-start gap-1.5">
+              <UIcon name="i-lucide-sparkles" class="text-[10px] text-violet-500 shrink-0 mt-0.5" />
+              <div class="flex-1 min-w-0">
+                <div class="text-[9px] font-medium text-violet-600 dark:text-violet-400 uppercase tracking-wider mb-0.5">Suggested group</div>
+                <div class="text-xs text-violet-900 dark:text-violet-200">{{ aiSuggestion.group }}</div>
+              </div>
+              <div class="flex items-center gap-0.5 shrink-0">
+                <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" @click="emit('acceptAiGroup', line.id, aiSuggestion!.group!)" />
+                <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" @click="emit('dismissAiGroup', line.id)" />
+              </div>
+            </div>
+          </div>
+        </div>
       </fieldset>
 
       <div v-if="extraEntries.length > 0" class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-2.5 space-y-1.5">
@@ -282,8 +302,8 @@
             size="xs"
             color="neutral"
             variant="outline"
-            icon="i-lucide-refresh-cw"
-            :disabled="isFetchingAnyForLine"
+            :icon="isFetchingAnyForLine ? 'i-lucide-loader-2' : 'i-lucide-refresh-cw'"
+            :loading="isFetchingAnyForLine"
             @click="refreshAllForLine"
           >
             Refresh
@@ -501,6 +521,7 @@ const props = defineProps<{
   teamCurrency: 'USD' | 'EUR'
   exchangeRate: ExchangeRateSnapshot | null
   pnpDesignators: Set<string>
+  pnpPackages: Map<string, string>
   locked?: boolean
   aiSuggestion?: AiSuggestion | null
   groups: BomGroup[]
@@ -512,7 +533,6 @@ const emit = defineEmits<{
   removeManufacturer: [lineId: string, index: number]
   addManufacturer: [lineId: string, mfr: { manufacturer: string; manufacturerPart: string }]
   fetchSinglePricing: [partNumber: string]
-  fetchAllPricing: []
   acceptAiSuggestion: [lineId: string, field: string]
   dismissAiSuggestion: [lineId: string, field: string]
   acceptAllAi: [lineId: string]
@@ -536,6 +556,16 @@ const groupItems = computed(() => [
   { label: '(none)', value: GROUP_NONE },
   ...props.groups.map(g => ({ label: g.name, value: g.id })),
 ])
+
+const pnpPackage = computed(() => {
+  if (!props.line || props.pnpPackages.size === 0) return ''
+  const refs = parseRefs(props.line.references)
+  for (const r of refs) {
+    const pkg = props.pnpPackages.get(r)
+    if (pkg) return pkg
+  }
+  return ''
+})
 
 const showSecondaryTypeField = computed(() => {
   const t = props.line?.type
@@ -709,8 +739,12 @@ const isFetchingAnyForLine = computed(() => {
 })
 
 function refreshAllForLine() {
-  if (props.locked) return
-  emit('fetchAllPricing')
+  if (props.locked || !props.line) return
+  for (const mfr of props.line.manufacturers) {
+    if (mfr.manufacturerPart) {
+      emit('fetchSinglePricing', mfr.manufacturerPart)
+    }
+  }
 }
 
 // Pricing helpers (copied from BomPanel)

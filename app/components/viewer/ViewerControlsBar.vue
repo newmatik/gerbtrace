@@ -1,5 +1,10 @@
 <template>
-  <div class="border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/80 px-2 py-1.5 flex items-center gap-1.5 overflow-x-auto">
+  <div
+    :class="[
+      'border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/80 px-2 py-1.5 flex items-center gap-1.5 overflow-x-auto',
+      { 'pnp-actions-compact': isPnpActionsCompact },
+    ]"
+  >
     <!-- View mode: Layers / Realistic -->
     <div class="flex items-center rounded-lg p-0.5 gap-0.5 bg-neutral-100/90 border border-neutral-200 dark:bg-neutral-900/70 dark:border-neutral-700 shrink-0">
       <UButton
@@ -8,10 +13,11 @@
         size="xs"
         color="neutral"
         variant="ghost"
+        :icon="m.icon"
         :class="[tbBtnBase, viewMode === m.value ? tbBtnActive : tbBtnIdle]"
         @click="setViewMode(m.value)"
       >
-        {{ m.label }}
+        <span class="tb-label">{{ m.label }}</span>
       </UButton>
     </div>
 
@@ -23,10 +29,12 @@
         size="xs"
         color="neutral"
         variant="ghost"
+        :icon="filterIcons[f.value]"
+        :title="f.label"
         :class="[tbBtnBase, activeFilter === f.value ? tbBtnActive : tbBtnIdle]"
         @click="setFilter(f.value)"
       >
-        {{ f.label }}
+        <span class="tb-label">{{ f.label }}</span>
       </UButton>
       <UButton
         v-if="activeFilter === 'bot'"
@@ -37,7 +45,7 @@
         :class="[tbBtnBase, mirrored ? tbBtnActive : tbBtnIdle]"
         @click="mirrored = !mirrored"
       >
-        <span>Mirror</span>
+        <span class="tb-label">Mirror</span>
       </UButton>
     </div>
 
@@ -55,7 +63,7 @@
         :title="m.title"
         @click="setMode(m.value)"
       >
-        <span>{{ m.label }}</span>
+        <span class="tb-label">{{ m.label }}</span>
       </UButton>
 
       <!-- Measure constraint modes (visible when Measure mode is active) -->
@@ -67,11 +75,12 @@
           size="xs"
           color="neutral"
           variant="ghost"
+          :icon="m.icon"
           :class="[tbBtnBase, measureConstraintMode === m.value ? tbBtnMeasureActive : tbBtnIdle]"
           :title="m.title"
           @click="measureConstraintMode = m.value"
         >
-          {{ m.label }}
+          <span class="tb-label">{{ m.label }}</span>
         </UButton>
       </template>
 
@@ -85,7 +94,7 @@
           title="Toggle danger zone overlay"
           @click="panelShowDangerZones = !panelShowDangerZones"
         >
-          Show Danger
+          <span class="tb-label">Show Danger</span>
         </UButton>
         <div v-if="panelShowDangerZones" class="flex items-center gap-1 shrink-0">
           <UInput
@@ -113,7 +122,7 @@
           title="Toggle SMD component overlay"
           @click="panelShowSmdComponents = !panelShowSmdComponents"
         >
-          SMD
+          <span class="tb-label">SMD</span>
         </UButton>
         <UButton
           size="xs"
@@ -124,7 +133,7 @@
           title="Toggle THT component overlay"
           @click="panelShowThtComponents = !panelShowThtComponents"
         >
-          THT
+          <span class="tb-label">THT</span>
         </UButton>
       </div>
     </template>
@@ -139,31 +148,34 @@
           size="xs"
           color="neutral"
           variant="ghost"
+          icon="i-lucide-move"
           :class="[tbBtnBase, panelTabEditMode === 'move' ? tbBtnActive : tbBtnIdle]"
           :disabled="isLocked || !panelTabControlEnabled"
           @click="togglePanelTabMode('move')"
         >
-          Move
+          <span class="tb-label">Move</span>
         </UButton>
         <UButton
           size="xs"
           color="neutral"
           variant="ghost"
+          icon="i-lucide-plus"
           :class="[tbBtnBase, panelTabEditMode === 'add' ? tbBtnActive : tbBtnIdle]"
           :disabled="isLocked || !panelTabControlEnabled"
           @click="togglePanelTabMode('add')"
         >
-          Add
+          <span class="tb-label">Add</span>
         </UButton>
         <UButton
           size="xs"
           color="neutral"
           variant="ghost"
+          icon="i-lucide-trash-2"
           :class="[tbBtnBase, panelTabEditMode === 'delete' ? tbBtnActive : tbBtnIdle]"
           :disabled="isLocked || !panelTabControlEnabled"
           @click="togglePanelTabMode('delete')"
         >
-          Delete
+          <span class="tb-label">Delete</span>
         </UButton>
       </div>
 
@@ -175,31 +187,34 @@
           size="xs"
           color="neutral"
           variant="ghost"
+          icon="i-lucide-move"
           :class="[tbBtnBase, panelAddedRoutingEditMode === 'move' ? tbBtnActive : tbBtnIdle]"
           :disabled="isLocked"
           @click="togglePanelRoutingMode('move')"
         >
-          Move
+          <span class="tb-label">Move</span>
         </UButton>
         <UButton
           size="xs"
           color="neutral"
           variant="ghost"
+          icon="i-lucide-plus"
           :class="[tbBtnBase, panelAddedRoutingEditMode === 'add' ? tbBtnActive : tbBtnIdle]"
           :disabled="isLocked"
           @click="togglePanelRoutingMode('add')"
         >
-          Add
+          <span class="tb-label">Add</span>
         </UButton>
         <UButton
           size="xs"
           color="neutral"
           variant="ghost"
+          icon="i-lucide-trash-2"
           :class="[tbBtnBase, panelAddedRoutingEditMode === 'delete' ? tbBtnActive : tbBtnIdle]"
           :disabled="isLocked"
           @click="togglePanelRoutingMode('delete')"
         >
-          Delete
+          <span class="tb-label">Delete</span>
         </UButton>
       </div>
     </template>
@@ -214,7 +229,7 @@
         :class="[tbBtnBase, cropToOutline ? tbBtnActive : tbBtnIdle]"
         @click="cropToOutline = !cropToOutline"
       >
-        <span>Crop</span>
+        <span class="tb-label">Crop</span>
       </UButton>
     </template>
 
@@ -307,7 +322,7 @@
           title="Show SMD components on canvas"
           @click="pnpShowSmd = !pnpShowSmd"
         >
-          SMD
+          <span class="tb-label">SMD</span>
         </UButton>
         <UButton
           size="xs"
@@ -318,18 +333,18 @@
           title="Show THT components on canvas"
           @click="pnpShowTht = !pnpShowTht"
         >
-          THT
+          <span class="tb-label">THT</span>
         </UButton>
         <UButton
           size="xs"
           color="neutral"
           variant="ghost"
+          icon="i-lucide-circle-dot"
           :class="[tbBtnBase, pnpShowDnpHighlight ? tbBtnActive : tbBtnIdle]"
           title="Show DNP components highlighted in blue on canvas"
           @click="pnpShowDnpHighlight = !pnpShowDnpHighlight"
         >
-          <span class="text-[14px] leading-none -mt-px" aria-hidden="true">•</span>
-          DNP Blue
+          <span class="tb-label">DNP Blue</span>
         </UButton>
         <UButton
           size="xs"
@@ -340,7 +355,7 @@
           title="Automatically center and zoom when selecting components"
           @click="pnpAutoFocusOnSelect = !pnpAutoFocusOnSelect"
         >
-          Auto Focus
+          <span class="tb-label">Auto Focus</span>
         </UButton>
         <UButton
           size="xs"
@@ -351,7 +366,7 @@
           title="Show minimap with current viewport"
           @click="pnpShowMinimap = !pnpShowMinimap"
         >
-          Minimap
+          <span class="tb-label">Minimap</span>
         </UButton>
       </div>
     </template>
@@ -391,7 +406,7 @@
             :disabled="!canToggleLock"
             @click="toggleLock?.()"
           >
-            {{ isLocked ? 'Locked' : 'Unlocked' }}
+            <span class="tb-label">{{ isLocked ? 'Locked' : 'Unlocked' }}</span>
           </UButton>
         </div>
         <template #content>
@@ -466,11 +481,18 @@ const showLockControl = computed(() => !!props.showLockControl)
 const canToggleLock = computed(() => props.canToggleLock ?? false)
 const lockTooltip = computed(() => props.lockTooltip ?? '')
 const lockPopoverOpen = ref(false)
+const isPnpActionsCompact = computed(() => props.page === 'smd' || props.page === 'tht')
 
-const viewModeOptions: { label: string; value: ViewMode }[] = [
-  { label: 'Layers', value: 'layers' },
-  { label: 'Realistic', value: 'realistic' },
+const viewModeOptions: { label: string; value: ViewMode; icon: string }[] = [
+  { label: 'Layers', value: 'layers', icon: 'i-lucide-layers' },
+  { label: 'Realistic', value: 'realistic', icon: 'i-lucide-sparkles' },
 ]
+
+const filterIcons: Record<LayerFilter, string> = {
+  all: 'i-lucide-layers',
+  top: 'i-lucide-arrow-down-to-line',
+  bot: 'i-lucide-arrow-up-to-line',
+}
 
 const modeOptions: { label: string; value: InteractionMode; icon: string; title: string }[] = [
   { label: 'Cursor', value: 'cursor', icon: 'i-lucide-mouse-pointer', title: 'Default cursor mode' },
@@ -483,7 +505,7 @@ const modeOptions: { label: string; value: InteractionMode; icon: string; title:
 const visibleModeOptions = computed(() => {
   if (props.page === 'panel') return modeOptions.filter(m => m.value !== 'info' && m.value !== 'delete' && m.value !== 'draw')
   if (props.page === 'smd' || props.page === 'tht') return modeOptions.filter(m => m.value !== 'info' && m.value !== 'delete' && m.value !== 'draw')
-  if (props.page === 'paste') return modeOptions.filter(m => m.value !== 'draw')
+  if (props.page === 'paste') return modeOptions.filter(m => m.value !== 'delete' && m.value !== 'draw')
   return modeOptions
 })
 
@@ -514,9 +536,17 @@ const tbBtnMeasureActive =
   'dark:!border-yellow-400/70 dark:!text-yellow-200 dark:!bg-yellow-500/15'
 
 const measureConstraintModes = [
-  { value: 'free' as const, label: 'Free', title: 'Free measurement (hold Shift for auto axis lock)' },
-  { value: 'horizontal' as const, label: 'H', title: 'Constrain to horizontal axis' },
-  { value: 'vertical' as const, label: 'V', title: 'Constrain to vertical axis' },
+  { value: 'free' as const, label: 'Free', icon: 'i-lucide-move', title: 'Free measurement (hold Shift for auto axis lock)' },
+  { value: 'horizontal' as const, label: 'H', icon: 'i-lucide-move-horizontal', title: 'Constrain to horizontal axis' },
+  { value: 'vertical' as const, label: 'V', icon: 'i-lucide-move-vertical', title: 'Constrain to vertical axis' },
 ]
 </script>
+
+<style scoped>
+@media (max-width: 1350px) {
+  .pnp-actions-compact .tb-label {
+    display: none;
+  }
+}
+</style>
 

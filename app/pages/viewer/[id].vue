@@ -1043,6 +1043,7 @@
     <AppSettingsModal v-model:open="showSettings" />
     <PerformanceMonitorModal
       v-model:open="showPerformanceMonitor"
+      :context="perfContext"
       :snapshot="performanceSnapshot"
       @refresh="refreshPerformanceSnapshot"
     />
@@ -2673,6 +2674,20 @@ const performanceSnapshot = ref<{
   board?: { sceneCacheBytes?: number, canvasPoolSize?: number, draws?: number }
   panel?: { tileBytesTotal?: number, canvasPoolSize?: number, draws?: number }
 } | null>(null)
+
+const perfContext = computed(() => {
+  const userName = profile.value?.name?.trim()
+    || profile.value?.email?.trim()
+    || user.value?.email
+    || undefined
+  return {
+    projectName: project.value?.name || undefined,
+    projectId: teamProjectId || projectId || undefined,
+    url: typeof window !== 'undefined' ? window.location.href : undefined,
+    userName,
+    teamName: currentTeam.value?.name || undefined,
+  }
+})
 
 const documentSizeById = ref<Record<string, number>>({})
 let perfFrameReq = 0

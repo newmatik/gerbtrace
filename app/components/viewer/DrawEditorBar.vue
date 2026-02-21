@@ -47,7 +47,7 @@
         :title="t.title"
         @click="draw.setTool(t.value)"
       >
-        {{ t.label }}
+        <span class="max-[1100px]:hidden">{{ t.label }}</span>
       </UButton>
     </div>
 
@@ -75,21 +75,23 @@
         size="xs"
         color="neutral"
         variant="ghost"
+        icon="i-lucide-paint-bucket"
         :class="[tbBtnBase, draw.filled.value ? tbBtnActive : tbBtnIdle]"
         title="Filled shape"
         @click="draw.filled.value = true"
       >
-        Fill
+        <span class="max-[1100px]:hidden">Fill</span>
       </UButton>
       <UButton
         size="xs"
         color="neutral"
         variant="ghost"
+        icon="i-lucide-pen-line"
         :class="[tbBtnBase, !draw.filled.value ? tbBtnActive : tbBtnIdle]"
         title="Stroke-only shape"
         @click="draw.filled.value = false"
       >
-        Stroke
+        <span class="max-[1100px]:hidden">Stroke</span>
       </UButton>
     </div>
 
@@ -121,7 +123,7 @@
       title="Toggle grid and object snapping"
       @click="draw.snapEnabled.value = !draw.snapEnabled.value"
     >
-      Snap
+      <span class="max-[1100px]:hidden">Snap</span>
     </UButton>
 
     <!-- Grid spacing -->
@@ -154,7 +156,7 @@
         title="Toggle precise dimensions mode (type exact sizes, click to place)"
         @click="draw.preciseMode.value = !draw.preciseMode.value"
       >
-        Precise
+        <span class="max-[1100px]:hidden">Precise</span>
       </UButton>
     </template>
 
@@ -281,7 +283,7 @@
         title="Place fiducial (1mm copper, 3mm copper clear, 2mm mask opening)"
         @click="emitQuickFiducial"
       >
-        Fiducial
+        <span class="max-[1100px]:hidden">Fiducial</span>
       </UButton>
       <div class="flex items-center gap-1">
         <UButton
@@ -294,7 +296,7 @@
           title="Place barcode label box on silkscreen"
           @click="emitQuickBc"
         >
-          BC
+          <span class="max-[1100px]:hidden">BC</span>
         </UButton>
         <USelectMenu
           v-model="selectedBcSize"
