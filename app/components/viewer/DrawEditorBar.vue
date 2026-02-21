@@ -270,32 +270,14 @@
       <span class="text-[10px] uppercase tracking-wide font-semibold text-neutral-500 dark:text-neutral-400 px-1">
         Quick
       </span>
-      <div class="flex items-center rounded-lg p-0.5 gap-0.5 bg-neutral-100/90 border border-neutral-200 dark:bg-neutral-900/70 dark:border-neutral-700">
-        <UButton
-          size="xs"
-          color="neutral"
-          variant="ghost"
-          :class="[tbBtnBase, quickSide === 'top' ? tbBtnActive : tbBtnIdle]"
-          @click="quickSide = 'top'"
-        >
-          Top
-        </UButton>
-        <UButton
-          size="xs"
-          color="neutral"
-          variant="ghost"
-          :class="[tbBtnBase, quickSide === 'bot' ? tbBtnActive : tbBtnIdle]"
-          @click="quickSide = 'bot'"
-        >
-          Bot
-        </UButton>
-      </div>
+      <UBadge size="xs" variant="subtle" color="neutral">{{ activeFilter.toUpperCase() }}</UBadge>
       <UButton
         size="xs"
         color="neutral"
         variant="ghost"
         icon="i-lucide-target"
-        :class="[tbBtnBase, tbBtnIdle]"
+        :class="[tbBtnBase, quickPlacementKind === 'fiducial' ? tbBtnActive : tbBtnIdle]"
+        :disabled="!canQuickPlace"
         title="Place fiducial (1mm copper, 3mm copper clear, 2mm mask opening)"
         @click="emitQuickFiducial"
       >
@@ -307,7 +289,8 @@
           color="neutral"
           variant="ghost"
           icon="i-lucide-square-dashed"
-          :class="[tbBtnBase, tbBtnIdle]"
+          :class="[tbBtnBase, quickPlacementKind === 'bc' ? tbBtnActive : tbBtnIdle]"
+          :disabled="!canQuickPlace"
           title="Place barcode label box on silkscreen"
           @click="emitQuickBc"
         >
@@ -322,6 +305,7 @@
           class="w-20"
         />
       </div>
+      <span v-if="!canQuickPlace" class="text-[10px] text-amber-600 dark:text-amber-400 ml-1">Select Top or Bot to place</span>
     </div>
   </div>
 </template>
@@ -333,11 +317,6 @@ const props = defineProps<{
   draw: ReturnType<typeof useDrawTool>
   layers: { fileName: string; type: string; color: string }[]
   activeFilter: 'all' | 'top' | 'bot'
-}>()
-
-const emit = defineEmits<{
-  quickFiducial: [payload: { side: 'top' | 'bot' }]
-  quickBc: [payload: { side: 'top' | 'bot'; widthMm: number; heightMm: number }]
 }>()
 
 const DRAWABLE_LAYER_TYPES = new Set([
@@ -364,11 +343,8 @@ const selectedLayerName = computed({
   set: (v: string) => { props.draw.targetLayerName.value = v },
 })
 
-const quickSide = ref<'top' | 'bot'>(props.activeFilter === 'bot' ? 'bot' : 'top')
-
-watch(() => props.activeFilter, (f) => {
-  if (f === 'top' || f === 'bot') quickSide.value = f
-}, { immediate: true })
+const canQuickPlace = computed(() => props.activeFilter === 'top' || props.activeFilter === 'bot')
+const quickPlacementKind = computed(() => props.draw.quickPlacement.value?.kind ?? null)
 
 const bcSizeOptions = [
   { label: '5x5', w: 5, h: 5 },
@@ -380,13 +356,29 @@ const bcSizeOptions = [
 const selectedBcSize = ref('7x7')
 
 function emitQuickFiducial() {
-  emit('quickFiducial', { side: quickSide.value })
+  if (!canQuickPlace.value) return
+  if (quickPlacementKind.value === 'fiducial') {
+    props.draw.cancelQuickPlacement()
+    return
+  }
+  props.draw.startQuickFiducialPlacement()
 }
 
 function emitQuickBc() {
+  if (!canQuickPlace.value) return
+  if (quickPlacementKind.value === 'bc') {
+    props.draw.cancelQuickPlacement()
+    return
+  }
   const size = bcSizeOptions.find(s => s.label === selectedBcSize.value) ?? bcSizeOptions[1]!
-  emit('quickBc', { side: quickSide.value, widthMm: size.w, heightMm: size.h })
+  props.draw.startQuickBcPlacement(size.w, size.h)
 }
+
+watch(selectedBcSize, () => {
+  if (!canQuickPlace.value) return
+  const size = bcSizeOptions.find(s => s.label === selectedBcSize.value) ?? bcSizeOptions[1]!
+  props.draw.startQuickBcPlacement(size.w, size.h)
+})
 
 const selectedLayerColor = computed(() =>
   layerOptions.value.find(o => o.value === selectedLayerName.value)?.color,

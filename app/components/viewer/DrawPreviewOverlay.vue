@@ -205,6 +205,66 @@
         </text>
       </template>
 
+      <!-- Quick Fiducial preview -->
+      <template v-if="draw.quickPlacement.value?.kind === 'fiducial' && cursorScreen">
+        <circle
+          :cx="cursorScreen.sx"
+          :cy="cursorScreen.sy"
+          :r="quickFiducialScreen.rCopperClear"
+          fill="none"
+          stroke="#60a5fa"
+          stroke-width="1"
+          stroke-dasharray="3 2"
+          opacity="0.8"
+        />
+        <circle
+          :cx="cursorScreen.sx"
+          :cy="cursorScreen.sy"
+          :r="quickFiducialScreen.rMaskOpen"
+          fill="none"
+          stroke="#34d399"
+          stroke-width="1"
+          stroke-dasharray="3 2"
+          opacity="0.9"
+        />
+        <circle
+          :cx="cursorScreen.sx"
+          :cy="cursorScreen.sy"
+          :r="quickFiducialScreen.rCopperDot"
+          fill="rgba(245, 208, 90, 0.35)"
+          stroke="#f5d05a"
+          stroke-width="1"
+          stroke-dasharray="2 2"
+        />
+      </template>
+
+      <!-- Quick BC preview -->
+      <template v-if="draw.quickPlacement.value?.kind === 'bc' && cursorScreen">
+        <rect
+          :x="cursorScreen.sx - quickBcScreen.hw"
+          :y="cursorScreen.sy - quickBcScreen.hh"
+          :width="quickBcScreen.hw * 2"
+          :height="quickBcScreen.hh * 2"
+          fill="none"
+          stroke="#60a5fa"
+          stroke-width="1"
+          stroke-dasharray="3 2"
+          opacity="0.9"
+        />
+        <text
+          :x="cursorScreen.sx"
+          :y="cursorScreen.sy + quickBcScreen.fontSize * 0.35"
+          text-anchor="middle"
+          fill="#60a5fa"
+          :font-size="quickBcScreen.fontSize"
+          font-family="ui-monospace, monospace"
+          font-weight="600"
+          opacity="0.75"
+        >
+          BC
+        </text>
+      </template>
+
       <!-- Precise mode placement crosshair (larger) -->
       <template v-if="draw.preciseMode.value && draw.activeTool.value !== 'drill' && !draw.isDrawing.value && cursorScreen">
         <!-- Ghost preview of precise shape at cursor -->
@@ -379,6 +439,27 @@ const preciseCircleScreenR = computed(() => {
 const drillScreenRadius = computed(() => {
   const units = props.draw.fileUnits.value
   return mmToFileUnits(props.draw.drillDiameterMm.value / 2, units) * props.transform.scale
+})
+
+const quickFiducialScreen = computed(() => {
+  const units = props.draw.fileUnits.value
+  return {
+    rCopperDot: mmToFileUnits(1.0 / 2, units) * props.transform.scale,
+    rMaskOpen: mmToFileUnits(2.0 / 2, units) * props.transform.scale,
+    rCopperClear: mmToFileUnits(3.0 / 2, units) * props.transform.scale,
+  }
+})
+
+const quickBcScreen = computed(() => {
+  const units = props.draw.fileUnits.value
+  const qp = props.draw.quickPlacement.value
+  const w = mmToFileUnits(qp?.bcWidthMm ?? 7, units) * props.transform.scale
+  const h = mmToFileUnits(qp?.bcHeightMm ?? 7, units) * props.transform.scale
+  return {
+    hw: w / 2,
+    hh: h / 2,
+    fontSize: Math.max(8, Math.min(w, h) * 0.35),
+  }
 })
 
 function formatDim(v: number): string {

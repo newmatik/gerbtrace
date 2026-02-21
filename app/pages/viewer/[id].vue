@@ -160,8 +160,6 @@
       :draw="drawTool"
       :layers="layers.map(l => ({ fileName: l.file.fileName, type: l.type, color: l.color }))"
       :active-filter="activeFilter"
-      @quick-fiducial="handleQuickFiducial"
-      @quick-bc="handleQuickBc"
     />
 
     <div class="flex-1 flex overflow-hidden">
@@ -1116,8 +1114,8 @@ import { generatePnPExport, getPnPExportExtension, getPnPExportMimeType } from '
 import { removeSourceRanges } from '@lib/gerber/editor'
 import {
   parseFormatFromSource,
+  formatCoordinate,
   findNextApertureCode,
-  generateCircle,
   generateRect,
   generateText,
   injectGerberCommands,
@@ -1847,6 +1845,9 @@ watch(() => drawTool.active.value, (isActive) => {
   if (!isActive && activeMode.value === 'draw') {
     activeMode.value = 'cursor'
   }
+})
+watch(activeFilter, (filter) => {
+  if (filter === 'all') drawTool.cancelQuickPlacement()
 })
 
 // Panel view does not support info/delete tools; fall back to cursor.
@@ -5707,19 +5708,33 @@ async function persistLayerContentOrThrow(layer: LayerInfo, content: string) {
 
 function injectFilledCircleByMm(source: string, cx: number, cy: number, diameterMm: number): string {
   const spec = parseFormatFromSource(source)
-  const r = mmToFileUnits(diameterMm / 2, spec.units)
+  const d = mmToFileUnits(diameterMm, spec.units)
   const nextCode = findNextApertureCode(source)
-  const { commands } = generateCircle({ cx, cy, r, filled: true, strokeWidth: 0 }, spec, nextCode)
-  return injectGerberCommands(source, '', commands)
+  const fmtX = (v: number) => formatCoordinate(v, spec.format, spec.zeroSuppression)
+  const fmtY = (v: number) => formatCoordinate(v, spec.format, spec.zeroSuppression)
+  const apertureDef = `%ADD${nextCode}C,${d.toFixed(6).replace(/0+$/, '').replace(/\.$/, '')}*%`
+  const commands = [
+    `D${nextCode}*`,
+    `X${fmtX(cx)}Y${fmtY(cy)}D03*`,
+  ].join('\n')
+  return injectGerberCommands(source, apertureDef, commands)
 }
 
 function injectClearCircleByMm(source: string, cx: number, cy: number, diameterMm: number): string {
   const spec = parseFormatFromSource(source)
-  const r = mmToFileUnits(diameterMm / 2, spec.units)
+  const d = mmToFileUnits(diameterMm, spec.units)
   const nextCode = findNextApertureCode(source)
-  const { commands } = generateCircle({ cx, cy, r, filled: true, strokeWidth: 0 }, spec, nextCode)
-  const wrapped = `%LPC*%\n${commands}\n%LPD*%`
-  return injectGerberCommands(source, '', wrapped)
+  const fmtX = (v: number) => formatCoordinate(v, spec.format, spec.zeroSuppression)
+  const fmtY = (v: number) => formatCoordinate(v, spec.format, spec.zeroSuppression)
+  const apertureDef = `%ADD${nextCode}C,${d.toFixed(6).replace(/0+$/, '').replace(/\.$/, '')}*%`
+  // Use clear-polarity flash for robust "copper cutout" behavior over existing copper.
+  const wrapped = [
+    `%LPC*%`,
+    `D${nextCode}*`,
+    `X${fmtX(cx)}Y${fmtY(cy)}D03*`,
+    `%LPD*%`,
+  ].join('\n')
+  return injectGerberCommands(source, apertureDef, wrapped)
 }
 
 function injectBcByMm(source: string, cx: number, cy: number, widthMm: number, heightMm: number): string {
@@ -5796,11 +5811,16 @@ async function applyMultiLayerEdits(
   layers.value = [...layers.value]
 }
 
-async function handleQuickFiducial(payload: { side: QuickSide }) {
+function resolveQuickSide(): QuickSide | null {
+  if (activeFilter.value === 'top') return 'top'
+  if (activeFilter.value === 'bot') return 'bot'
+  return null
+}
+
+async function placeQuickFiducial(payload: { side: QuickSide; x: number; y: number }) {
   if (isCurrentTabLocked.value) return
   if (activeMode.value !== 'draw') return
 
-  const cursor = drawTool.cursorGerber.value
   const copperType = payload.side === 'top' ? 'Top Copper' : 'Bottom Copper'
   const maskType = payload.side === 'top' ? 'Top Solder Mask' : 'Bottom Solder Mask'
   const copper = getLayerByType(copperType)
@@ -5811,15 +5831,15 @@ async function handleQuickFiducial(payload: { side: QuickSide }) {
 
   // Copper: clear 3.0mm around + 1.0mm filled fiducial at center
   let copperContent = copper.file.content
-  copperContent = injectClearCircleByMm(copperContent, cursor.x, cursor.y, 3.0)
-  copperContent = injectFilledCircleByMm(copperContent, cursor.x, cursor.y, 1.0)
+  copperContent = injectClearCircleByMm(copperContent, payload.x, payload.y, 3.0)
+  copperContent = injectFilledCircleByMm(copperContent, payload.x, payload.y, 1.0)
 
   const edits: { layer: LayerInfo; newContent: string }[] = [{ layer: copper, newContent: copperContent }]
 
   // Mask: open 2.0mm around fiducial
   const mask = getLayerByType(maskType)
   if (mask) {
-    const maskContent = injectFilledCircleByMm(mask.file.content, cursor.x, cursor.y, 2.0)
+    const maskContent = injectFilledCircleByMm(mask.file.content, payload.x, payload.y, 2.0)
     edits.push({ layer: mask, newContent: maskContent })
   } else {
     toast.add({ title: 'Mask layer missing', description: `${maskType} not found. Added copper fiducial only.`, color: 'warning' })
@@ -5828,11 +5848,10 @@ async function handleQuickFiducial(payload: { side: QuickSide }) {
   await applyMultiLayerEdits(edits, `Added fiducial (${payload.side.toUpperCase()})`)
 }
 
-async function handleQuickBc(payload: { side: QuickSide; widthMm: number; heightMm: number }) {
+async function placeQuickBc(payload: { side: QuickSide; widthMm: number; heightMm: number; x: number; y: number }) {
   if (isCurrentTabLocked.value) return
   if (activeMode.value !== 'draw') return
 
-  const cursor = drawTool.cursorGerber.value
   const silkType = payload.side === 'top' ? 'Top Silkscreen' : 'Bottom Silkscreen'
   const silk = getLayerByType(silkType)
   if (!silk) {
@@ -5840,7 +5859,7 @@ async function handleQuickBc(payload: { side: QuickSide; widthMm: number; height
     return
   }
 
-  const silkContent = injectBcByMm(silk.file.content, cursor.x, cursor.y, payload.widthMm, payload.heightMm)
+  const silkContent = injectBcByMm(silk.file.content, payload.x, payload.y, payload.widthMm, payload.heightMm)
   await applyMultiLayerEdits(
     [{ layer: silk, newContent: silkContent }],
     `Added BC ${payload.widthMm}x${payload.heightMm} (${payload.side.toUpperCase()})`,
@@ -5850,8 +5869,36 @@ async function handleQuickBc(payload: { side: QuickSide; widthMm: number; height
 async function handleDrawCommit(request: import('~/composables/useDrawTool').DrawCommitRequest) {
   if (isCurrentTabLocked.value) return
 
+  if (request.kind === 'quick') {
+    const side = resolveQuickSide()
+    if (!side) {
+      toast.add({
+        title: 'Select side first',
+        description: 'Quick elements can only be placed in Top or Bot view.',
+        color: 'warning',
+      })
+      return
+    }
+    if (request.quick.kind === 'fiducial') {
+      await placeQuickFiducial({ side, x: request.quick.x, y: request.quick.y })
+      return
+    }
+    if (request.quick.kind === 'bc') {
+      await placeQuickBc({
+        side,
+        widthMm: request.quick.bcWidthMm ?? 7,
+        heightMm: request.quick.bcHeightMm ?? 7,
+        x: request.quick.x,
+        y: request.quick.y,
+      })
+      return
+    }
+  }
+
   const canvas = boardCanvasRef.value
   if (!canvas) return
+
+  if (request.kind !== 'shape') return
 
   const layerName = request.targetLayerName
   const layer = layers.value.find(l => l.file.fileName === layerName)
