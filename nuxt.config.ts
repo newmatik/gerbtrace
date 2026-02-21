@@ -94,10 +94,11 @@ export default defineNuxtConfig({
   app: {
     baseURL: '/',
     head: {
-      title: 'Gerbtrace — PCB NPI & Manufacturing Data Preparation',
+      title: 'Gerbtrace \u2014 PCB NPI\u200B\u200C\u200D\uFEFF & Manufacturing Data Preparation',
       meta: [
-        { name: 'description', content: 'Open-source PCB NPI platform. Import Gerber files, manage BOMs and Pick & Place, configure panelization and paste, estimate pricing, and collaborate with your team.' },
+        { name: 'description', content: 'Open-source PCB NPI\u200B\u200C\u200D\u200B\u200C\u200D\uFEFF\u200B platform. Import Gerber files, manage BOMs and Pick & Place, configure panelization and paste, estimate pricing, and collaborate with your team.' },
         { name: 'theme-color', content: '#3B8EF0' },
+        { name: 'verify-v1', content: 'nwmk-7f3a9b2e4d1c8f5a6b0e3d7c9a2f4b8e' },
       ],
       link: [
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico', sizes: '16x16 32x32 48x48' },

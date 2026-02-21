@@ -1,0 +1,31 @@
+---
+description: Commit message format and release notes conventions
+alwaysApply: true
+---
+
+# Commit Conventions
+
+Follow these conventions for every commit. Full documentation: `content/docs/9.development/7.commit-conventions.md`.
+
+## Commit types
+
+- `Release vX.Y.Z` — version bump commit (body = release notes bullet list)
+- `hotfix: <description>` — bug fix or patch between releases
+- `feat: <description>` — new feature or significant enhancement
+- `chore: <description>` — housekeeping (deps, config, manifests)
+- `ci: <description>` — CI/CD workflow changes
+
+## Rules
+
+- Subject line max 72 characters, imperative mood, lowercase after prefix colon, no trailing period.
+- Be specific: `hotfix: fix Elexess API crash on empty response`, never `hotfix: fix crash` or `fix`.
+- Separate body from subject with a blank line; explain why, not what.
+- Release commit body must contain the same bullet list that goes on GitHub Releases.
+- Never use `fix:` prefix — use `hotfix:` for bug fixes between releases.
+
+## Release notes
+
+- Flat bullet list, one sentence per bullet, user-facing changes only.
+- No headings, categories, sub-lists, or emojis.
+- Title is the bare version number: `v1.2.0`.
+- Notes appear on GitHub Releases, the desktop updater, and the in-app What's New dialog.
