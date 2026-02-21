@@ -389,7 +389,7 @@ const { spaces, fetchSpaces } = useSpaces()
 
 const packageMode = ref<'smd' | 'tht'>('smd')
 const packageScope = ref<'team' | 'space'>('team')
-const selectedSpaceId = ref<string | null>(null)
+const selectedSpaceId = ref<string | undefined>(undefined)
 const packageScopeOptions = [
   { label: 'Team Package', value: 'team' as const },
   { label: 'Space Package', value: 'space' as const },

@@ -8,7 +8,7 @@
             <h1 class="text-2xl font-semibold">Inbox</h1>
             <p class="text-sm text-neutral-500">Mentions and workflow updates for your team projects.</p>
           </div>
-          <UButton size="xs" variant="outline" color="neutral" @click="markAllAsRead">
+          <UButton size="xs" variant="outline" color="neutral" @click="() => { markAllAsRead() }">
             Mark all read
           </UButton>
         </div>
