@@ -823,6 +823,7 @@ function onDragOverLine(e: DragEvent, lineId: string) {
 }
 
 function onDropOnLine(lineId: string) {
+  if (props.locked) { onDragEnd(); return }
   const dragged = dragLineId.value
   if (!dragged || dragged === lineId) return
   const targetLine = props.bomLines.find(l => l.id === lineId)
@@ -835,6 +836,7 @@ function onDropOnLine(lineId: string) {
 }
 
 function onDropOnGroup(groupId: string) {
+  if (props.locked) { onDragEnd(); return }
   const dragged = dragLineId.value
   if (!dragged) return
   emit('assignGroup', dragged, groupId)
@@ -843,6 +845,7 @@ function onDropOnGroup(groupId: string) {
 }
 
 function onDropOnUngrouped() {
+  if (props.locked) { onDragEnd(); return }
   const dragged = dragLineId.value
   if (!dragged) return
   emit('assignGroup', dragged, null)
@@ -870,6 +873,7 @@ function commitGroupRename(groupId: string) {
 }
 
 function commitNewGroup() {
+  if (props.locked) return
   const name = newGroupName.value.trim()
   if (name) emit('addGroup', name)
   newGroupName.value = ''

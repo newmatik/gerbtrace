@@ -400,30 +400,34 @@ export function useProjectConversation(projectId: Ref<string | null>, teamId: Re
   }
 
   async function handleAttachmentRowChange(payload: RealtimePostgresChangesPayload<ProjectConversationAttachment>) {
-    if (payload.eventType === 'INSERT' && payload.new) {
-      const next = payload.new as ProjectConversationAttachment
-      if (!attachments.value.some(a => a.id === next.id)) {
-        attachments.value.push({
-          ...next,
-          publicUrl: await buildSignedUrl(next.storage_path),
-        })
-        updateCache(projectId.value)
-      }
-    } else if (payload.eventType === 'UPDATE' && payload.new) {
-      const next = payload.new as ProjectConversationAttachment
-      const idx = attachments.value.findIndex(a => a.id === next.id)
-      if (idx >= 0) {
-        attachments.value[idx] = {
-          ...attachments.value[idx],
-          ...next,
-          publicUrl: await buildSignedUrl(next.storage_path),
+    try {
+      if (payload.eventType === 'INSERT' && payload.new) {
+        const next = payload.new as ProjectConversationAttachment
+        if (!attachments.value.some(a => a.id === next.id)) {
+          attachments.value.push({
+            ...next,
+            publicUrl: await buildSignedUrl(next.storage_path),
+          })
+          updateCache(projectId.value)
         }
+      } else if (payload.eventType === 'UPDATE' && payload.new) {
+        const next = payload.new as ProjectConversationAttachment
+        const idx = attachments.value.findIndex(a => a.id === next.id)
+        if (idx >= 0) {
+          attachments.value[idx] = {
+            ...attachments.value[idx],
+            ...next,
+            publicUrl: await buildSignedUrl(next.storage_path),
+          }
+          updateCache(projectId.value)
+        }
+      } else if (payload.eventType === 'DELETE' && payload.old) {
+        const old = payload.old as ProjectConversationAttachment
+        attachments.value = attachments.value.filter(a => a.id !== old.id)
         updateCache(projectId.value)
       }
-    } else if (payload.eventType === 'DELETE' && payload.old) {
-      const old = payload.old as ProjectConversationAttachment
-      attachments.value = attachments.value.filter(a => a.id !== old.id)
-      updateCache(projectId.value)
+    } catch (err) {
+      console.warn('[useProjectConversation] attachment realtime handler error:', err)
     }
   }
 

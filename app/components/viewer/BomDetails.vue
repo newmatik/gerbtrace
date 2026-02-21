@@ -90,6 +90,7 @@
               :model-value="line.groupId || GROUP_NONE"
               :items="groupItems"
               size="sm"
+              :disabled="props.locked"
               class="w-full"
               @update:model-value="(v: any) => emit('assignGroup', line!.id, v === GROUP_NONE ? null : v)"
             />
