@@ -133,11 +133,15 @@ For each BOM line, suggest improvements where applicable:
    - "Finepitch" — packages with very fine pin pitch (<0.5mm) requiring microscope inspection, such as QFN with 0.4mm pitch, fine-pitch QFP, CSP
    - "BGA" — Ball Grid Array packages of any kind (BGA, µBGA, WLCSP, LGA with ball attach)
 
-5. **Manufacturers** (standard passives only): For resistors and capacitors, suggest a specific manufacturer and manufacturer part number. Use well-known manufacturers:
+5. **Manufacturers** (standard passives): For resistors and capacitors, suggest manufacturers and manufacturer part numbers. This includes suggesting **alternative second-source options** when the line already has a manufacturer — the goal is to give users safe 1-to-1 drop-in replacements from different vendors.
+   - If a line has NO manufacturers, suggest 2 options from different vendors.
+   - If a line already HAS a manufacturer, suggest 1–2 ALTERNATIVE manufacturers (different vendor, same specs) as second sources.
+   - Do NOT repeat a manufacturer+part that already exists on the line.
+   Use well-known manufacturers:
    - Resistors: Yageo, Samsung Electro-Mechanics, Vishay, Panasonic, KOA Speer, TE Connectivity
    - Ceramic Capacitors: Samsung Electro-Mechanics, Murata, Yageo, TDK, Kemet
    - Electrolytic Capacitors: Panasonic, Nichicon, Murata, TDK
-   Only suggest manufacturer part numbers you are confident are real, valid, currently-available part numbers. The part number must match the component's value, tolerance, voltage rating, and package size.
+   Only suggest manufacturer part numbers you are confident are real, valid, currently-available part numbers. The part number must exactly match the component's value, tolerance, voltage rating, and package size. For example, if the line is "Capacitor MLCC 4.7µF 16V X5R ±10% 0603" with Samsung Electro-Mechanics CL10A475K08NNNC, suggest Murata GRM188R61C475KE15D as an alternative.
 
 6. **Group**: Suggest a group name to organize the BOM. Use these standard group names consistently:
    - "Standard Resistors" — generic thick/thin film resistors (non-precision, non-specialty)
@@ -153,6 +157,7 @@ For each BOM line, suggest improvements where applicable:
    Use these exact names when applicable. Only create a new group name if a component truly doesn't fit any of the above categories.
 
 IMPORTANT: Only include fields where you have a meaningful suggestion that differs from the existing data. Do not echo back the same values. If a description is already good, omit it. If you cannot determine a field, omit it entirely.
+For manufacturers: DO include the manufacturers array even if the line already has manufacturers — suggest NEW alternative manufacturers only (do not repeat existing ones). The system will automatically deduplicate.
 
 Respond with a JSON object where keys are the BOM line IDs and values are objects with optional fields: description, type, pinCount, smdClassification, manufacturers (array of {manufacturer, manufacturerPart}), group (string).
 

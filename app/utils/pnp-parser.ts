@@ -29,6 +29,8 @@ export interface PnPComponent {
   description: string
   /** Side the component belongs to */
   side: 'top' | 'bottom'
+  /** Optional values from selected unmapped columns, keyed by header name. */
+  extra?: Record<string, string>
 }
 
 export type PnPCoordUnit = 'mm' | 'mils' | 'inches'
@@ -50,6 +52,7 @@ export interface ParsePnPOptions {
   skipBottomRows?: number
   mapping?: PnPColumnMapping
   fixedColumns?: readonly number[]
+  extraColumns?: readonly string[]
 }
 
 type Delimiter = '\t' | ',' | ';' | 'fixed'
@@ -351,6 +354,16 @@ export function parsePnPFile(content: string, side: 'top' | 'bottom', options?: 
   const components: PnPComponent[] = []
   const headerMap = preview.mapping
   const coordScale = preview.coordScale
+  const mappedIndices = new Set<number>(Object.values(headerMap ?? {}).filter((idx): idx is number => Number.isFinite(idx)))
+  const extraIndices: Array<{ index: number; header: string }> = []
+  if (preview.headers.length > 0 && options?.extraColumns && options.extraColumns.length > 0) {
+    const selected = new Set(options.extraColumns)
+    for (let i = 0; i < preview.headers.length; i++) {
+      const header = (preview.headers[i] ?? '').trim()
+      if (!header || mappedIndices.has(i) || !selected.has(header)) continue
+      extraIndices.push({ index: i, header })
+    }
+  }
 
   for (const fields of preview.rows) {
     // Need at least 4 fields (designator, x, y, rotation) — value and package are optional
@@ -387,6 +400,19 @@ export function parsePnPFile(content: string, side: 'top' | 'bottom', options?: 
       else if (/(top|f\.cu)/.test(sideVal)) effectiveSide = 'top'
     }
 
+    let extra: Record<string, string> | undefined
+    if (extraIndices.length > 0) {
+      const bag: Record<string, string> = {}
+      let count = 0
+      for (const { index, header } of extraIndices) {
+        const value = (fields[index] ?? '').trim()
+        if (!value) continue
+        bag[header] = value
+        count++
+      }
+      if (count > 0) extra = bag
+    }
+
     components.push({
       designator: designator.trim(),
       x,
@@ -396,6 +422,7 @@ export function parsePnPFile(content: string, side: 'top' | 'bottom', options?: 
       package: pkg.trim(),
       description: description.trim(),
       side: effectiveSide,
+      ...(extra ? { extra } : {}),
     })
   }
 

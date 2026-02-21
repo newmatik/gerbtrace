@@ -46,7 +46,8 @@
               <div
                 v-for="space in spaces"
                 :key="space.id"
-                class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-4"
+                class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-4 cursor-pointer hover:border-primary/40 transition-colors"
+                @click="openSpace(space.id)"
               >
                 <div class="flex items-center justify-between gap-3">
                   <div class="min-w-0">
@@ -54,7 +55,12 @@
                     <div class="text-xs text-neutral-500">Created {{ formatDate(space.created_at) }}</div>
                   </div>
                   <div class="flex items-center gap-2">
-                    <UButton size="xs" color="neutral" variant="outline" :to="`/team/spaces/${space.id}`">
+                    <UButton
+                      size="xs"
+                      color="neutral"
+                      variant="outline"
+                      @click.stop="openSpace(space.id)"
+                    >
                       Open
                     </UButton>
                   </div>
@@ -87,6 +93,7 @@
 const router = useRouter()
 const { isAuthenticated } = useAuth()
 const { currentTeamRole, isAdmin } = useTeam()
+const { reportError } = useErrorReporting()
 const {
   spaces,
   spacesLoading,
@@ -119,6 +126,10 @@ function formatDate(value: string) {
   return new Date(value).toLocaleDateString()
 }
 
+function openSpace(spaceId: string) {
+  router.push(`/team/spaces/${spaceId}`)
+}
+
 async function handleCreateSpace() {
   if (!newSpaceName.value.trim()) return
   if (newSpaceName.value.trim().length > 15) {
@@ -127,7 +138,7 @@ async function handleCreateSpace() {
   }
   const { error } = await createSpace(newSpaceName.value)
   if (error) {
-    useToast().add({ title: 'Failed to create space', description: error.message, color: 'error' })
+    reportError(error, { title: 'Failed to create space', context: 'team.spaces.create' })
     return
   }
   newSpaceName.value = ''

@@ -7,13 +7,36 @@
     <template v-else>
       <!-- Pinned header -->
       <div class="shrink-0 px-3 pt-3 space-y-2">
-        <div class="flex items-center gap-2">
-          <span class="flex-1 min-w-0 text-sm font-semibold text-neutral-900 dark:text-white truncate">
-            {{ line.description || '(no description)' }}
-          </span>
-          <UBadge v-if="isLineChanged" size="xs" variant="subtle" color="warning">Edited</UBadge>
-          <UBadge v-if="line.dnp" size="xs" variant="subtle" color="error">DNP</UBadge>
-          <UButton size="xs" color="error" variant="ghost" icon="i-lucide-trash-2" title="Delete BOM line" :disabled="props.locked" @click="emit('removeLine', line.id)" />
+        <div class="flex items-start gap-2">
+          <UInput
+            :model-value="line.description"
+            size="sm"
+            :disabled="props.locked"
+            placeholder="(no description)"
+            :class="fieldClass('description')"
+            class="flex-1 min-w-0 [&_input]:text-sm [&_input]:font-semibold"
+            @update:model-value="(v) => emitUpdate({ description: String(v ?? '') })"
+          />
+          <div class="flex items-center gap-2 shrink-0 pt-1">
+            <UBadge v-if="isLineChanged" size="xs" variant="subtle" color="warning">Edited</UBadge>
+            <UBadge v-if="line.dnp" size="xs" variant="subtle" color="error">DNP</UBadge>
+            <UButton size="xs" color="error" variant="ghost" icon="i-lucide-trash-2" title="Delete BOM line" :disabled="props.locked" @click="emit('removeLine', line.id)" />
+          </div>
+        </div>
+
+        <!-- Spark: Description suggestion -->
+        <div v-if="aiSuggestion?.description && aiSuggestion.description !== line.description" class="rounded-md border-l-2 border-violet-500 bg-violet-50/60 dark:bg-violet-900/15 border border-violet-200 dark:border-violet-800 px-2.5 py-1.5">
+          <div class="flex items-start gap-1.5">
+            <UIcon name="i-lucide-sparkles" class="text-[10px] text-violet-500 shrink-0 mt-0.5" />
+            <div class="flex-1 min-w-0">
+              <div class="text-[9px] font-medium text-violet-600 dark:text-violet-400 uppercase tracking-wider mb-0.5">Spark suggestion</div>
+              <div class="text-xs text-violet-900 dark:text-violet-200">{{ aiSuggestion.description }}</div>
+            </div>
+            <div class="flex items-center gap-0.5 shrink-0">
+              <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" @click="emit('acceptAiSuggestion', line.id, 'description')" />
+              <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" @click="emit('dismissAiSuggestion', line.id, 'description')" />
+            </div>
+          </div>
         </div>
 
         <!-- Spark: Accept/Dismiss all -->
@@ -41,54 +64,49 @@
 
         <!-- Editable fields -->
       <fieldset class="border-0 m-0 p-0 min-w-0 space-y-2.5" :disabled="props.locked">
-        <!-- Description (full width) -->
-        <div>
-          <div class="text-[10px] text-neutral-400 mb-1">Description</div>
-          <UTextarea
-            :model-value="line.description"
-            size="sm"
-            :rows="1"
-            autoresize
-            placeholder="e.g. Capacitor MLCC 100nF 50V X7R ±10% 0402"
-            :class="fieldClass('description')"
-            @update:model-value="(v) => emitUpdate({ description: String(v ?? '') })"
-          />
-          <!-- Spark: Description suggestion -->
-          <div v-if="aiSuggestion?.description && aiSuggestion.description !== line.description" class="mt-1.5 rounded-md border-l-2 border-violet-500 bg-violet-50/60 dark:bg-violet-900/15 border border-violet-200 dark:border-violet-800 px-2.5 py-1.5">
-            <div class="flex items-start gap-1.5">
-              <UIcon name="i-lucide-sparkles" class="text-[10px] text-violet-500 shrink-0 mt-0.5" />
-              <div class="flex-1 min-w-0">
-                <div class="text-[9px] font-medium text-violet-600 dark:text-violet-400 uppercase tracking-wider mb-0.5">Spark suggestion</div>
-                <div class="text-xs text-violet-900 dark:text-violet-200">{{ aiSuggestion.description }}</div>
-              </div>
-              <div class="flex items-center gap-0.5 shrink-0">
-                <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" @click="emit('acceptAiSuggestion', line.id, 'description')" />
-                <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" @click="emit('dismissAiSuggestion', line.id, 'description')" />
-              </div>
+        <!-- Comment + Group row (2/3 + 1/3) -->
+        <div class="grid grid-cols-3 gap-2">
+          <div class="col-span-2 min-w-0">
+            <div class="text-[10px] text-neutral-400 mb-1">Comment</div>
+            <UInput
+              :model-value="line.comment"
+              size="sm"
+              placeholder="(optional)"
+              :class="fieldClass('comment')"
+              class="w-full"
+              @update:model-value="(v) => emitUpdate({ comment: String(v ?? '') })"
+            />
+          </div>
+          <div class="col-span-1 min-w-0">
+            <div class="text-[10px] text-neutral-400 mb-1">Group</div>
+            <USelect
+              :model-value="line.groupId || GROUP_NONE"
+              :items="groupItems"
+              size="sm"
+              class="w-full"
+              @update:model-value="(v: any) => emit('assignGroup', line!.id, v === GROUP_NONE ? null : v)"
+            />
+          </div>
+        </div>
+
+        <!-- Spark: Group suggestion -->
+        <div v-if="aiSuggestion?.group" class="rounded-md border-l-2 border-violet-500 bg-violet-50/60 dark:bg-violet-900/15 border border-violet-200 dark:border-violet-800 px-2.5 py-1.5">
+          <div class="flex items-start gap-1.5">
+            <UIcon name="i-lucide-sparkles" class="text-[10px] text-violet-500 shrink-0 mt-0.5" />
+            <div class="flex-1 min-w-0">
+              <div class="text-[9px] font-medium text-violet-600 dark:text-violet-400 uppercase tracking-wider mb-0.5">Suggested group</div>
+              <div class="text-xs text-violet-900 dark:text-violet-200">{{ aiSuggestion.group }}</div>
+            </div>
+            <div class="flex items-center gap-0.5 shrink-0">
+              <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" @click="emit('acceptAiGroup', line.id, aiSuggestion!.group!)" />
+              <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" @click="emit('dismissAiGroup', line.id)" />
             </div>
           </div>
         </div>
 
-        <!-- Comment (full width) -->
-        <div>
-          <div class="text-[10px] text-neutral-400 mb-1">Comment</div>
-          <UTextarea
-            :model-value="line.comment"
-            size="sm"
-            placeholder="(optional)"
-            :rows="1"
-            autoresize
-            :class="fieldClass('comment')"
-            @update:model-value="(v) => emitUpdate({ comment: String(v ?? '') })"
-          />
-        </div>
-
         <!-- References (full width, compact) -->
         <div>
-          <div class="flex items-center justify-between mb-1">
-            <div class="text-[10px] text-neutral-400">References</div>
-            <span class="text-[10px] text-neutral-400 tabular-nums">{{ refList.length }}</span>
-          </div>
+          <div class="text-[10px] text-neutral-400 mb-1">References ({{ refList.length }})</div>
 
           <div
             class="rounded-md border border-neutral-200 dark:border-neutral-800 p-2"
@@ -134,14 +152,15 @@
           </div>
         </div>
 
-        <!-- Type row: Type + Classification/Pins -->
-        <div class="grid gap-2" :class="showSecondaryTypeField ? 'grid-cols-2' : 'grid-cols-1'">
+        <!-- One-line 4-column row: Type + Classification + Package + PnP Package -->
+        <div class="grid grid-cols-4 gap-2">
           <div class="min-w-0">
             <div class="text-[10px] text-neutral-400 mb-1">Type</div>
             <USelect
               :model-value="line.type || 'SMD'"
               :items="bomLineTypeItems"
               size="sm"
+              class="w-full"
               @update:model-value="(v: any) => emitUpdate({ type: v })"
             />
           </div>
@@ -151,19 +170,43 @@
               :model-value="line.smdClassification || SMD_CLASS_NONE"
               :items="smdClassItems"
               size="sm"
+              class="w-full"
               @update:model-value="(v: any) => emitUpdate({ smdClassification: v === SMD_CLASS_NONE ? null : v })"
             />
           </div>
           <div v-else-if="line.type === 'THT' || aiSuggestion?.pinCount != null" class="min-w-0">
-            <div class="text-[10px] text-neutral-400 mb-1">Pin Count</div>
+            <div class="text-[10px] text-neutral-400 mb-1">THT Classification</div>
             <UInput
               :model-value="line.pinCount != null ? String(line.pinCount) : ''"
               size="sm"
               type="number"
               min="1"
-              placeholder="e.g. 8"
+              placeholder="Pin count"
+              class="w-full"
               @update:model-value="(v) => emitUpdate({ pinCount: v ? Number(v) : null })"
             />
+          </div>
+          <div v-else class="min-w-0">
+            <div class="text-[10px] text-neutral-400 mb-1">Classification</div>
+            <div class="h-8 flex items-center px-2 text-xs rounded-md border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50 text-neutral-400">
+              —
+            </div>
+          </div>
+          <div class="min-w-0">
+            <div class="text-[10px] text-neutral-400 mb-1">Package</div>
+            <UInput
+              :model-value="line.package"
+              size="sm"
+              placeholder="e.g. 0603"
+              :class="fieldClass('package')"
+              @update:model-value="(v) => emitUpdate({ package: String(v ?? '') })"
+            />
+          </div>
+          <div class="min-w-0">
+            <div class="text-[10px] text-neutral-400 mb-1">PnP Package</div>
+            <div class="h-8 flex items-center px-2 text-xs rounded-md border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50" :class="pnpPackage ? 'text-neutral-700 dark:text-neutral-300' : 'text-neutral-400'">
+              {{ pnpPackage || '—' }}
+            </div>
           </div>
         </div>
 
@@ -189,59 +232,9 @@
           </div>
         </div>
 
-        <!-- Toggles row -->
-        <div class="flex items-center gap-4">
-          <label class="flex items-center gap-1.5 text-xs text-neutral-600 dark:text-neutral-300 whitespace-nowrap">
-            <USwitch
-              :model-value="line.customerProvided"
-              size="xs"
-              @update:model-value="(v: boolean) => emitUpdate({ customerProvided: v })"
-            />
-            Customer provided
-          </label>
-          <label class="flex items-center gap-1.5 text-xs text-neutral-600 dark:text-neutral-300">
-            <USwitch
-              :model-value="line.dnp"
-              size="xs"
-              @update:model-value="(v: boolean) => emitUpdate({ dnp: v })"
-            />
-            DNP
-          </label>
-        </div>
-
-        <!-- Package row: Package + PnP Package -->
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <div class="text-[10px] text-neutral-400 mb-1">Package</div>
-            <UInput
-              :model-value="line.package"
-              size="sm"
-              placeholder="e.g. 0603"
-              :class="fieldClass('package')"
-              @update:model-value="(v) => emitUpdate({ package: String(v ?? '') })"
-            />
-          </div>
-          <div>
-            <div class="text-[10px] text-neutral-400 mb-1">PnP Package</div>
-            <div class="h-8 flex items-center px-2 text-xs rounded-md border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50" :class="pnpPackage ? 'text-neutral-700 dark:text-neutral-300' : 'text-neutral-400'">
-              {{ pnpPackage || '—' }}
-            </div>
-          </div>
-        </div>
-
-        <!-- Customer item + Qty row -->
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <div class="text-[10px] text-neutral-400 mb-1">Customer item</div>
-            <UInput
-              :model-value="line.customerItemNo"
-              size="sm"
-              placeholder="(optional)"
-              :class="fieldClass('customerItemNo')"
-              @update:model-value="(v) => emitUpdate({ customerItemNo: String(v ?? '') })"
-            />
-          </div>
-          <div>
+        <!-- One-line 4-column row: Qty + Customer item + Customer provided + DNP -->
+        <div class="grid grid-cols-4 gap-2">
+          <div class="min-w-0">
             <div class="text-[10px] text-neutral-400 mb-1">Qty / board</div>
             <UInput
               :model-value="String(line.quantity)"
@@ -252,29 +245,34 @@
               @update:model-value="(v) => emitUpdate({ quantity: Math.max(0, Number(v ?? 0) || 0) })"
             />
           </div>
-        </div>
-
-        <!-- Group -->
-        <div>
-          <div class="text-[10px] text-neutral-400 mb-1">Group</div>
-          <USelect
-            :model-value="line.groupId || GROUP_NONE"
-            :items="groupItems"
-            size="sm"
-            @update:model-value="(v: any) => emit('assignGroup', line!.id, v === GROUP_NONE ? null : v)"
-          />
-          <!-- Spark: Group suggestion -->
-          <div v-if="aiSuggestion?.group" class="mt-1.5 rounded-md border-l-2 border-violet-500 bg-violet-50/60 dark:bg-violet-900/15 border border-violet-200 dark:border-violet-800 px-2.5 py-1.5">
-            <div class="flex items-start gap-1.5">
-              <UIcon name="i-lucide-sparkles" class="text-[10px] text-violet-500 shrink-0 mt-0.5" />
-              <div class="flex-1 min-w-0">
-                <div class="text-[9px] font-medium text-violet-600 dark:text-violet-400 uppercase tracking-wider mb-0.5">Suggested group</div>
-                <div class="text-xs text-violet-900 dark:text-violet-200">{{ aiSuggestion.group }}</div>
-              </div>
-              <div class="flex items-center gap-0.5 shrink-0">
-                <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" @click="emit('acceptAiGroup', line.id, aiSuggestion!.group!)" />
-                <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" @click="emit('dismissAiGroup', line.id)" />
-              </div>
+          <div class="min-w-0">
+            <div class="text-[10px] text-neutral-400 mb-1">Customer item</div>
+            <UInput
+              :model-value="line.customerItemNo"
+              size="sm"
+              placeholder="(optional)"
+              :class="fieldClass('customerItemNo')"
+              @update:model-value="(v) => emitUpdate({ customerItemNo: String(v ?? '') })"
+            />
+          </div>
+          <div class="min-w-0">
+            <div class="text-[10px] text-neutral-400 mb-1">Customer provided</div>
+            <div class="h-8 rounded-md border border-neutral-200 dark:border-neutral-800 px-2 flex items-center">
+              <USwitch
+                :model-value="line.customerProvided"
+                size="xs"
+                @update:model-value="(v: boolean) => emitUpdate({ customerProvided: v })"
+              />
+            </div>
+          </div>
+          <div class="min-w-0">
+            <div class="text-[10px] text-neutral-400 mb-1">DNP</div>
+            <div class="h-8 rounded-md border border-neutral-200 dark:border-neutral-800 px-2 flex items-center">
+              <USwitch
+                :model-value="line.dnp"
+                size="xs"
+                @update:model-value="(v: boolean) => emitUpdate({ dnp: v })"
+              />
             </div>
           </div>
         </div>
@@ -294,7 +292,7 @@
         </div>
       </div>
 
-      <fieldset class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-2.5 space-y-2 border-0 m-0 min-w-0" :class="manufacturersClass" :disabled="props.locked">
+      <fieldset class="space-y-2 border-0 m-0 p-0 min-w-0" :class="manufacturersClass" :disabled="props.locked">
         <div class="flex items-center justify-between">
           <div class="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">Manufacturers</div>
           <UButton
@@ -302,11 +300,12 @@
             size="xs"
             color="neutral"
             variant="outline"
+            class="!px-1.5 !py-0.5 text-[10px]"
             :icon="isFetchingAnyForLine ? 'i-lucide-loader-2' : 'i-lucide-refresh-cw'"
             :loading="isFetchingAnyForLine"
             @click="refreshAllForLine"
           >
-            Refresh
+            Fetch Prices
           </UButton>
         </div>
 
@@ -565,11 +564,6 @@ const pnpPackage = computed(() => {
     if (pkg) return pkg
   }
   return ''
-})
-
-const showSecondaryTypeField = computed(() => {
-  const t = props.line?.type
-  return t === 'SMD' || t === 'THT' || props.aiSuggestion?.smdClassification != null || props.aiSuggestion?.pinCount != null
 })
 
 const hasAnySuggestion = computed(() => {

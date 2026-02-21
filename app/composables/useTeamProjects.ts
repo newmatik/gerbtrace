@@ -75,7 +75,7 @@ export interface TeamProject {
   layer_order: string[] | null
   document_order: string[] | null
   bom_file_import_options: Record<string, { skipRows?: number; skipBottomRows?: number; mapping?: BomColumnMapping; fixedColumns?: number[]; delimiter?: ',' | ';' | '\t' | 'fixed'; decimal?: '.' | ','; extraColumns?: string[] }> | null
-  pnp_file_import_options: Record<string, { skipRows?: number; skipBottomRows?: number; mapping?: PnPColumnMapping; unitOverride?: 'auto' | PnPCoordUnit; fixedColumns?: number[]; delimiter?: ',' | ';' | '\t' | 'fixed'; decimal?: '.' | ',' }> | null
+  pnp_file_import_options: Record<string, { skipRows?: number; skipBottomRows?: number; mapping?: PnPColumnMapping; unitOverride?: 'auto' | PnPCoordUnit; fixedColumns?: number[]; delimiter?: ',' | ';' | '\t' | 'fixed'; decimal?: '.' | ','; extraColumns?: string[] }> | null
   preview_image_path: string | null
   created_at: string
   updated_at: string

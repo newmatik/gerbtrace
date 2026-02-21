@@ -1205,6 +1205,11 @@
       :svg-format-note="imageExportTarget === 'panel' ? 'Panel SVG exports embed a rasterized PNG. They preserve panel size, but scaling quality is lower and files can be larger than vector SVG.' : undefined"
       @export="handleExportImage"
     />
+    <LazyDxfExportModal
+      v-model:open="showDxfExport"
+      :layers="dxfExportableLayers"
+      @export="handleExportDxf"
+    />
 
     <!-- Component edit modal -->
     <LazyComponentEditModal
@@ -1308,6 +1313,7 @@ const { presentUsers, presentUsersInTab, updatePresence } = presence
 const projectSync = isTeamProject ? useProjectSync(teamProjectIdRef) : null
 const { user } = useAuth()
 const { profile } = useCurrentUser()
+const { reportError } = useErrorReporting()
 const { members: teamMembers, fetchMembers: fetchTeamMembers } = useTeamMembers()
 const {
   topLevelMessages: topLevelConversationMessages,
@@ -1942,6 +1948,7 @@ type PnpImportOptionEntry = {
   fixedColumns?: number[]
   delimiter?: ',' | ';' | '\t' | 'fixed'
   decimal?: '.' | ','
+  extraColumns?: string[]
 }
 type BomImportOptionsSnapshot = Record<string, BomImportOptionEntry>
 type PnpImportOptionsSnapshot = Record<string, PnpImportOptionEntry>
@@ -2086,6 +2093,7 @@ function toPnpImportOptionsSnapshot(input: unknown): PnpImportOptionsSnapshot {
       fixedColumns: sanitizeFixedColumns(rawOpts.fixedColumns),
       delimiter: sanitizeDelimiter(rawOpts.delimiter),
       decimal: sanitizeDecimal(rawOpts.decimal),
+      extraColumns: sanitizeExtraColumns(rawOpts.extraColumns),
     }
   }
   return out
@@ -2930,6 +2938,7 @@ const showSettings = ref(false)
 const showPerformanceMonitor = ref(false)
 const showPnPExport = ref(false)
 const showImageExport = ref(false)
+const showDxfExport = ref(false)
 const showJpsysExport = ref(false)
 const imageExportTarget = ref<'board' | 'panel'>('board')
 const filesLockPopoverOpen = ref(false)
@@ -3305,6 +3314,17 @@ const detectedLayerCount = computed<number | null>(() => {
   return count > 0 ? count : null
 })
 
+const dxfExportableLayers = computed<Array<{ index: number; fileName: string; type: string }>>(() => {
+  return layers.value
+    .map((layer, index) => ({ layer, index }))
+    .filter(({ layer }) => !isPnPLayer(layer.type) && layer.type !== 'BOM')
+    .map(({ layer, index }) => ({
+      index,
+      fileName: layer.file.fileName,
+      type: layer.type,
+    }))
+})
+
 const downloadMenuItems = computed(() => {
   const items: { label: string; icon: string; onSelect: () => void }[] = []
   if (layers.value.length > 0) {
@@ -3333,6 +3353,9 @@ const downloadMenuItems = computed(() => {
   }
   if (layers.value.length > 0) {
     items.push({ label: 'Download Gerber', icon: 'i-lucide-file-archive', onSelect: () => { handleDownloadGerber() } })
+  }
+  if (dxfExportableLayers.value.length > 0) {
+    items.push({ label: 'Export DXF', icon: 'i-lucide-file-code', onSelect: () => { showDxfExport.value = true } })
   }
   if (pnp.hasPnP.value) {
     items.push({ label: 'Export PnP', icon: 'i-lucide-table', onSelect: () => { showPnPExport.value = true } })
@@ -3815,8 +3838,10 @@ const selectedLayerDecimal = computed<'.' | ',' | undefined>(() => {
 })
 const selectedLayerExtraColumns = computed(() => {
   const layer = filesSelectedLayer.value
-  if (!layer || !isSelectedLayerBom.value) return undefined
-  const cols = bom.resolveFileImportOptions(layer.file.fileName)?.extraColumns
+  if (!layer || !isSelectedLayerImportConfigurable.value) return undefined
+  const cols = isSelectedLayerBom.value
+    ? bom.resolveFileImportOptions(layer.file.fileName)?.extraColumns
+    : pnp.resolveFileImportOptions(layer.file.fileName)?.extraColumns
   return cols ? [...cols] : undefined
 })
 const selectedLayerPnpUnit = computed<'auto' | PnPCoordUnit>(() => {
@@ -3949,6 +3974,7 @@ function mutateSelectedPnpImportOptions(
   const previous: PnpImportOptionEntry = {
     ...resolved,
     fixedColumns: resolved.fixedColumns ? [...resolved.fixedColumns] : undefined,
+    extraColumns: resolved.extraColumns ? [...resolved.extraColumns] : undefined,
   }
   const nextOptions = mutator(previous)
   const nextMap = buildCanonicalImportOptionMap(currentMap, fileName, nextOptions)
@@ -4065,11 +4091,20 @@ function updateSelectedLayerDecimal(next: '.' | ',') {
 
 function updateSelectedLayerExtraColumns(next: string[]) {
   const layer = filesSelectedLayer.value
-  if (!layer || !isSelectedLayerBom.value) return
-  mutateSelectedBomImportOptions(layer.file.fileName, prev => ({
-    ...prev,
-    extraColumns: next.length > 0 ? next : undefined,
-  }))
+  if (!layer) return
+  if (isSelectedLayerBom.value) {
+    mutateSelectedBomImportOptions(layer.file.fileName, prev => ({
+      ...prev,
+      extraColumns: next.length > 0 ? next : undefined,
+    }))
+    return
+  }
+  if (isSelectedLayerPnp.value) {
+    mutateSelectedPnpImportOptions(layer.file.fileName, prev => ({
+      ...prev,
+      extraColumns: next.length > 0 ? next : undefined,
+    }))
+  }
 }
 
 function resolveSelectedPnpUnitOverride(layerFileName: string): PnPCoordUnit | undefined {
@@ -4550,7 +4585,7 @@ let pendingLocalPnpFileImportOptions: PnpImportOptionsSnapshot | null = null
 
 function persistToProject(updates: Record<string, any>): Promise<void> {
   if (!isTeamProject || !teamProjectId) return Promise.resolve()
-  if (!hasLoadedProjectData.value) {
+  if (!hasLoadedProjectData.value || !currentTeamId.value) {
     pendingTeamUpdates = { ...pendingTeamUpdates, ...updates }
     return Promise.resolve()
   }
@@ -4610,12 +4645,22 @@ function persistToProject(updates: Record<string, any>): Promise<void> {
   return teamPersistQueue
 }
 
-watch(hasLoadedProjectData, (loaded) => {
-  if (!loaded || !isTeamProject || !teamProjectId) return
+function flushPendingTeamUpdates() {
+  if (!isTeamProject || !teamProjectId) return
+  if (!hasLoadedProjectData.value || !currentTeamId.value) return
   if (Object.keys(pendingTeamUpdates).length === 0) return
   const buffered = { ...pendingTeamUpdates }
   pendingTeamUpdates = {}
   persistToProject(buffered)
+}
+
+watch(hasLoadedProjectData, (loaded) => {
+  if (!loaded) return
+  flushPendingTeamUpdates()
+})
+
+watch(currentTeamId, () => {
+  flushPendingTeamUpdates()
 })
 
 // Persist PnP origin to database when it changes
@@ -5266,7 +5311,7 @@ async function submitConversationMessage() {
   try {
     const { error } = await postConversationMessage(newConversationMessage.value)
     if (error) {
-      useToast().add({ title: 'Failed to post message', description: error.message, color: 'error' })
+      reportError(error, { title: 'Failed to post message', context: 'viewer.conversation.post' })
       return
     }
     newConversationMessage.value = ''
@@ -5280,7 +5325,7 @@ async function submitConversationReply(parentId: string) {
   if (!body) return
   const { error } = await postConversationMessage(body, parentId)
   if (error) {
-    useToast().add({ title: 'Failed to post reply', description: error.message, color: 'error' })
+    reportError(error, { title: 'Failed to post reply', context: 'viewer.conversation.reply' })
     return
   }
   conversationReplyDrafts.value[parentId] = ''
@@ -5313,7 +5358,7 @@ async function toggleCurrentTabLock() {
 
   const { error } = await updateTeamProject(teamProjectId, { page_locks: next })
   if (error) {
-    console.warn('Failed to update page lock:', error)
+    reportError(error, { title: 'Failed to update page lock', context: 'viewer.page_lock.update' })
     pendingLocalPageLocks = null
     pageLocksOverride.value = before
     if (project.value) project.value.pageLocks = before
@@ -5326,14 +5371,14 @@ async function toggleCurrentTabLock() {
 async function handleApproveProject() {
   if (!teamProjectId) return
   const { error } = await doApprove(teamProjectId)
-  if (error) console.warn('Failed to approve project:', error)
+  if (error) reportError(error, { title: 'Failed to approve project', context: 'viewer.workflow.approve' })
 }
 
 async function handleMoveToInProgress() {
   if (!teamProjectId) return
   const { error } = await doMoveToInProgress(teamProjectId)
   if (error) {
-    useToast().add({ title: 'Failed to update workflow', description: error.message, color: 'error' })
+    reportError(error, { title: 'Failed to update workflow', context: 'viewer.workflow.in_progress' })
   }
 }
 
@@ -5345,7 +5390,7 @@ async function handleRequestApproval() {
   }
   const { error } = await doRequestApproval(teamProjectId, selectedApproverUserId.value)
   if (error) {
-    useToast().add({ title: 'Failed to request approval', description: error.message, color: 'error' })
+    reportError(error, { title: 'Failed to request approval', context: 'viewer.workflow.request_approval' })
     return
   }
   selectedApproverUserId.value = undefined
@@ -5358,7 +5403,7 @@ async function handleRequestChanges() {
   if (!message) return
   const { error } = await doRequestChanges(teamProjectId, message)
   if (error) {
-    useToast().add({ title: 'Failed to request changes', description: error.message, color: 'error' })
+    reportError(error, { title: 'Failed to request changes', context: 'viewer.workflow.request_changes' })
     return
   }
   requestChangesMessage.value = ''
@@ -5368,7 +5413,7 @@ async function handleRequestChanges() {
 async function handleRevertToDraft() {
   if (!teamProjectId) return
   const { error } = await doRevert(teamProjectId)
-  if (error) console.warn('Failed to revert project:', error)
+  if (error) reportError(error, { title: 'Failed to revert project', context: 'viewer.workflow.revert' })
 }
 
 function setViewMode(mode: ViewMode) {
@@ -6520,6 +6565,18 @@ function loadSvgExporter(): Promise<SvgExporterModule> {
   return svgExporterPromise
 }
 
+type DxfExporterModule = typeof import('../../../lib/renderer/dxf-exporter')
+let dxfExporterPromise: Promise<DxfExporterModule> | null = null
+function loadDxfExporter(): Promise<DxfExporterModule> {
+  if (!dxfExporterPromise) {
+    dxfExporterPromise = import('../../../lib/renderer/dxf-exporter')
+  }
+  return dxfExporterPromise
+}
+
+type DxfExportMode = 'combined' | 'zip'
+type DxfExportVariant = 'r12' | 'r2000'
+
 async function handleDownloadGerber() {
   const JSZipCtor = await loadJsZipCtor()
   const zip = new JSZipCtor()
@@ -6530,6 +6587,65 @@ async function handleDownloadGerber() {
   }
   const blob = await zip.generateAsync({ type: 'blob' })
   await triggerDownload(blob, `${project.value?.name || 'gerber-files'}.zip`)
+}
+
+async function handleExportDxf(options: { selectedLayerIndices: number[]; mode: DxfExportMode; variant: DxfExportVariant }) {
+  if (!options.selectedLayerIndices.length) return
+  const dxfExporter = await loadDxfExporter()
+  const selectedLayers = options.selectedLayerIndices
+    .map(index => ({ index, layer: layers.value[index] }))
+    .filter((entry): entry is { index: number; layer: LayerInfo } => !!entry.layer)
+    .filter(({ layer }) => !isPnPLayer(layer.type) && layer.type !== 'BOM')
+
+  const buildLayerName = (layer: LayerInfo) => {
+    return layer.type
+      .replace(/[<>\/\\":;?*|=]/g, '_')
+      .replace(/\s+/g, '_')
+      .slice(0, 255)
+  }
+
+  const exportEntries = selectedLayers
+    .map(({ layer }) => {
+      const tree = gerberTreeCache.getOrParseSync(layer)
+      if (!tree || tree.children.length === 0) return null
+      return {
+        layer,
+        tree,
+        dxfLayerName: buildLayerName(layer),
+      }
+    })
+    .filter((entry): entry is { layer: LayerInfo; tree: ImageTree; dxfLayerName: string } => !!entry)
+
+  if (!exportEntries.length) return
+
+  const projectName = (project.value?.name || 'pcb').trim() || 'pcb'
+  const variantTag = options.variant === 'r12' ? 'r12' : 'r2000'
+
+  if (options.mode === 'combined') {
+    const dxfContent = dxfExporter.exportImageTreesToCombinedDxf(
+      exportEntries.map(entry => ({ name: entry.dxfLayerName, tree: entry.tree })),
+      { variant: options.variant },
+    )
+    const blob = new Blob([dxfContent], { type: 'application/dxf' })
+    await triggerDownload(blob, `${projectName}-${variantTag}-combined.dxf`)
+    return
+  }
+
+  const JSZipCtor = await loadJsZipCtor()
+  const zip = new JSZipCtor()
+  for (const entry of exportEntries) {
+    const baseName = entry.layer.file.fileName.replace(/\.[^/.]+$/, '') || entry.layer.file.fileName
+    const safeBaseName = baseName
+      .replace(/[<>\/\\":;?*|=]/g, '_')
+      .replace(/\s+/g, '_')
+    const dxfContent = dxfExporter.exportImageTreeToDxf(entry.tree, {
+      variant: options.variant,
+      layerName: entry.dxfLayerName,
+    })
+    zip.file(`${safeBaseName}-${variantTag}.dxf`, dxfContent)
+  }
+  const blob = await zip.generateAsync({ type: 'blob' })
+  await triggerDownload(blob, `${projectName}-${variantTag}-dxf-layers.zip`)
 }
 
 // ── Export handlers ──
