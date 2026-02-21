@@ -759,6 +759,10 @@ async function handleSaveSpark() {
   sparkErrorMessage.value = ''
   sparkSuccessMessage.value = ''
 
+  if (sparkEnabled.value && !sparkApiKey.value.trim()) {
+    sparkErrorMessage.value = 'API key is required when Spark is enabled.'
+    return
+  }
   if (sparkEnabled.value && sparkApiKey.value.trim() && !sparkModel.value) {
     sparkErrorMessage.value = 'Please select a model before saving. Click "Test Connection" to load available models.'
     return

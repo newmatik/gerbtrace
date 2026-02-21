@@ -40,8 +40,8 @@
               <div class="text-xs text-violet-900 dark:text-violet-200">{{ aiSuggestion.description }}</div>
             </div>
             <div class="flex items-center gap-0.5 shrink-0">
-              <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" @click="emit('acceptAiSuggestion', line.id, 'description')" />
-              <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" @click="emit('dismissAiSuggestion', line.id, 'description')" />
+              <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" :disabled="props.locked" @click="emit('acceptAiSuggestion', line.id, 'description')" />
+              <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" :disabled="props.locked" @click="emit('dismissAiSuggestion', line.id, 'description')" />
             </div>
           </div>
         </div>
@@ -50,10 +50,10 @@
         <div v-if="hasAnySuggestion" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border-l-2 border-violet-500 bg-violet-50 dark:bg-violet-900/10 border border-violet-200 dark:border-violet-800">
           <UIcon name="i-lucide-sparkles" class="text-sm text-violet-500 shrink-0" />
           <span class="text-[11px] font-medium text-violet-700 dark:text-violet-300 flex-1">Spark has suggestions for this line</span>
-          <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" title="Accept all suggestions" @click="emit('acceptAllAi', line.id)">
+          <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" title="Accept all suggestions" :disabled="props.locked" @click="emit('acceptAllAi', line.id)">
             Accept All
           </UButton>
-          <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" title="Dismiss all suggestions" @click="emit('dismissAllAi', line.id)">
+          <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" title="Dismiss all suggestions" :disabled="props.locked" @click="emit('dismissAllAi', line.id)">
             Dismiss
           </UButton>
         </div>
@@ -105,8 +105,8 @@
               <div class="text-xs text-violet-900 dark:text-violet-200">{{ aiSuggestion.group }}</div>
             </div>
             <div class="flex items-center gap-0.5 shrink-0">
-              <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" @click="emit('acceptAiGroup', line.id, aiSuggestion!.group!)" />
-              <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" @click="emit('dismissAiGroup', line.id)" />
+              <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" :disabled="props.locked" @click="emit('acceptAiGroup', line.id, aiSuggestion!.group!)" />
+              <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" :disabled="props.locked" @click="emit('dismissAiGroup', line.id)" />
             </div>
           </div>
         </div>
@@ -222,20 +222,20 @@
           <div v-if="aiSuggestion?.type && aiSuggestion.type !== line.type" class="flex items-center gap-1.5 px-2 py-1 rounded border-l-2 border-violet-500 bg-violet-50/60 dark:bg-violet-900/15 border border-violet-200 dark:border-violet-800">
             <UIcon name="i-lucide-sparkles" class="text-[9px] text-violet-500 shrink-0" />
             <span class="text-[10px] text-violet-800 dark:text-violet-200 flex-1">{{ aiSuggestion.type }}</span>
-            <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" @click="emit('acceptAiSuggestion', line.id, 'type')" />
-            <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" @click="emit('dismissAiSuggestion', line.id, 'type')" />
+            <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" :disabled="props.locked" @click="emit('acceptAiSuggestion', line.id, 'type')" />
+            <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" :disabled="props.locked" @click="emit('dismissAiSuggestion', line.id, 'type')" />
           </div>
           <div v-if="aiSuggestion?.smdClassification && aiSuggestion.smdClassification !== line.smdClassification" class="flex items-center gap-1.5 px-2 py-1 rounded border-l-2 border-violet-500 bg-violet-50/60 dark:bg-violet-900/15 border border-violet-200 dark:border-violet-800">
             <UIcon name="i-lucide-sparkles" class="text-[9px] text-violet-500 shrink-0" />
             <span class="text-[10px] text-violet-800 dark:text-violet-200 flex-1">{{ aiSuggestion.smdClassification }}</span>
-            <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" @click="emit('acceptAiSuggestion', line.id, 'smdClassification')" />
-            <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" @click="emit('dismissAiSuggestion', line.id, 'smdClassification')" />
+            <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" :disabled="props.locked" @click="emit('acceptAiSuggestion', line.id, 'smdClassification')" />
+            <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" :disabled="props.locked" @click="emit('dismissAiSuggestion', line.id, 'smdClassification')" />
           </div>
           <div v-if="aiSuggestion?.pinCount != null && aiSuggestion.pinCount !== line.pinCount" class="flex items-center gap-1.5 px-2 py-1 rounded border-l-2 border-violet-500 bg-violet-50/60 dark:bg-violet-900/15 border border-violet-200 dark:border-violet-800">
             <UIcon name="i-lucide-sparkles" class="text-[9px] text-violet-500 shrink-0" />
             <span class="text-[10px] text-violet-800 dark:text-violet-200 flex-1">{{ aiSuggestion.pinCount }} pins</span>
-            <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" @click="emit('acceptAiSuggestion', line.id, 'pinCount')" />
-            <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" @click="emit('dismissAiSuggestion', line.id, 'pinCount')" />
+            <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" :disabled="props.locked" @click="emit('acceptAiSuggestion', line.id, 'pinCount')" />
+            <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" :disabled="props.locked" @click="emit('dismissAiSuggestion', line.id, 'pinCount')" />
           </div>
         </div>
 
@@ -465,8 +465,8 @@
                 </div>
               </div>
               <div class="flex items-center gap-0.5 shrink-0">
-                <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" @click="emit('acceptAiManufacturer', line.id, mfr)" />
-                <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" @click="emit('dismissAiManufacturer', line.id, mfr)" />
+                <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" :disabled="props.locked" @click="emit('acceptAiManufacturer', line.id, mfr)" />
+                <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" :disabled="props.locked" @click="emit('dismissAiManufacturer', line.id, mfr)" />
               </div>
             </div>
           </div>

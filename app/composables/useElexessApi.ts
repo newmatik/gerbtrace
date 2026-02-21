@@ -447,14 +447,16 @@ export function useElexessApi() {
    * Returns the updated cache entry, or null on failure.
    */
   async function fetchSinglePricing(partNumber: string): Promise<BomPricingEntry | null> {
+    if (cancelRequested) {
+      cancelRequested = false
+      return null
+    }
     await ensureExchangeRateForToday()
-    // Cancel any pending clear timer
     if (clearTimer) {
       clearTimeout(clearTimer)
       clearTimer = null
     }
 
-    // Add to queue (or update existing entry)
     const existing = pricingQueue.value.find(i => i.partNumber === partNumber)
     if (existing) {
       setQueueItemStatus(partNumber, 'fetching')
@@ -464,6 +466,11 @@ export function useElexessApi() {
     isFetching.value = true
 
     const data = await searchPart(partNumber)
+
+    if (cancelRequested) {
+      cancelRequested = false
+      return null
+    }
 
     if (data !== null) {
       setQueueItemStatus(partNumber, 'done')

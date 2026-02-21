@@ -42,6 +42,7 @@ export function useBom(layers: Ref<LayerInfo[]>) {
   // ── Field mapping state (for when auto-detect fails) ──
   const needsFieldMapping = ref(false)
   const pendingParseResult = ref<BomParseResult | null>(null)
+  const pendingParseExtraColumns = ref<readonly string[] | undefined>(undefined)
   const hasPersistedBomLines = ref(false)
   const fileImportOptions = ref<Record<string, BomFileImportOptions>>({})
   const parsedLayerCache = new Map<string, CachedLayerParse>()
@@ -91,6 +92,7 @@ export function useBom(layers: Ref<LayerInfo[]>) {
     const activeLayerKeys = new Set<string>()
     const parsedCustomer: BomLine[] = []
     let unresolvedParse: BomParseResult | null = null
+    let unresolvedExtraColumns: readonly string[] | undefined
     const previousParsedSnapshot = customerBomLines.value
 
     for (const layer of bomLayers.value) {
@@ -110,6 +112,7 @@ export function useBom(layers: Ref<LayerInfo[]>) {
         parsedCustomer.push(...result.lines)
       } else if (!unresolvedParse && result.headers.length > 0 && result.rows.length > 0) {
         unresolvedParse = result
+        unresolvedExtraColumns = opts?.extraColumns
       }
     }
 
@@ -122,6 +125,7 @@ export function useBom(layers: Ref<LayerInfo[]>) {
     customerBomLines.value = dedupedParsed
     needsFieldMapping.value = unresolvedParse != null
     pendingParseResult.value = unresolvedParse
+    pendingParseExtraColumns.value = unresolvedExtraColumns
 
     if (!hasPersistedBomLines.value) {
       // Initial import path: editable BOM is the parsed snapshot.
@@ -316,12 +320,16 @@ export function useBom(layers: Ref<LayerInfo[]>) {
   function applyFieldMapping(mapping: BomColumnMapping) {
     if (!pendingParseResult.value) return
     const pr = pendingParseResult.value
-    const lines = buildBomLines(pr.rows, mapping, { headers: pr.headers })
+    const lines = buildBomLines(pr.rows, mapping, {
+      headers: pr.headers,
+      extraColumns: pendingParseExtraColumns.value,
+    })
     const deduped = dedupeParsedLines(lines)
     const previousParsedSnapshot = customerBomLines.value
     mergeParsedCustomerLines(deduped)
     mergeParsedLines(deduped, previousParsedSnapshot)
     pendingParseResult.value = null
+    pendingParseExtraColumns.value = undefined
     needsFieldMapping.value = false
   }
 
@@ -363,6 +371,7 @@ export function useBom(layers: Ref<LayerInfo[]>) {
 
   function cancelFieldMapping() {
     pendingParseResult.value = null
+    pendingParseExtraColumns.value = undefined
     needsFieldMapping.value = false
   }
 

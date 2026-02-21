@@ -119,8 +119,6 @@ export function useNotifications() {
     }
   }, { immediate: true })
 
-  onBeforeUnmount(() => unsubscribe())
-
   return {
     notifications: readonly(notifications),
     loading: readonly(loading),

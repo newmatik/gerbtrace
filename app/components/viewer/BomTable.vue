@@ -857,11 +857,13 @@ const newGroupName = ref('')
 const showNewGroupInput = ref(false)
 
 function startGroupRename(group: BomGroup) {
+  if (props.locked) return
   editingGroupId.value = group.id
   editingGroupName.value = group.name
 }
 
 function commitGroupRename(groupId: string) {
+  if (props.locked) { editingGroupId.value = null; return }
   const name = editingGroupName.value.trim()
   if (name) emit('updateGroup', groupId, { name })
   editingGroupId.value = null

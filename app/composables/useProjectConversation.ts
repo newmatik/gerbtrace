@@ -185,6 +185,9 @@ export function useProjectConversation(projectId: Ref<string | null>, teamId: Re
     if (!messages.value.some(m => m.id === message.id)) {
       messages.value.push(message)
     }
+    if (members.value.length === 0) {
+      await fetchMembers()
+    }
     const mentionUserIds = extractMentionUserIds(trimmed)
     if (mentionUserIds.length > 0) {
       await createMentionNotifications(message.id, mentionUserIds)
@@ -466,6 +469,7 @@ export function useProjectConversation(projectId: Ref<string | null>, teamId: Re
 
   watch(isAuthenticated, (authed) => {
     if (!authed) {
+      unsubscribe()
       conversationCache.clear()
       inFlightByProject.clear()
       messages.value = []

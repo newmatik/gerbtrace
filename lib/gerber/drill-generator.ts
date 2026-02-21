@@ -32,7 +32,14 @@ export function parseDrillFormat(source: string): DrillFormatSpec {
       zeroSuppression = /TZ/i.test(unitsLine[2]) ? 'leading' : 'trailing'
     }
     if (unitsLine[3] && unitsLine[4]) {
-      format = [unitsLine[3].length, unitsLine[4].length]
+      const intToken = unitsLine[3]
+      const decToken = unitsLine[4]
+      const intPlaces = /^0+\d*$/.test(intToken) ? intToken.length : parseInt(intToken, 10)
+      const decPlaces = /^0+\d*$/.test(decToken) ? decToken.length : parseInt(decToken, 10)
+      format = [
+        Number.isFinite(intPlaces) ? intPlaces : intToken.length,
+        Number.isFinite(decPlaces) ? decPlaces : decToken.length,
+      ]
     }
   }
 
