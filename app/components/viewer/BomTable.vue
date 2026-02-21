@@ -81,24 +81,36 @@
       </div>
       <div class="flex items-center gap-1">
         <button
-          v-if="hasCredentials"
-          class="text-[10px] px-1.5 py-0.5 rounded-full border border-neutral-200 dark:border-neutral-700 text-neutral-400 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-300 dark:hover:border-blue-600 transition-colors flex items-center gap-0.5"
-          title="Fetch pricing for all manufacturer parts from Elexess"
-          :disabled="isFetchingPricing || props.locked"
-          @click="handleFetchAllPricing"
-        >
-          <UIcon :name="isFetchingPricing ? 'i-lucide-loader-2' : 'i-lucide-refresh-cw'" class="text-[10px]" :class="{ 'animate-spin': isFetchingPricing }" />
-          <span>{{ isFetchingPricing ? `${queueDone}/${queueTotal}` : 'Fetch Prices' }}</span>
-        </button>
-        <button
           class="text-[10px] px-1.5 py-0.5 rounded-full border border-neutral-200 dark:border-neutral-700 text-neutral-400 hover:text-green-600 dark:hover:text-green-400 hover:border-green-300 dark:hover:border-green-600 transition-colors flex items-center gap-0.5"
           title="Add BOM line"
           :disabled="props.locked"
           @click="emit('addLine')"
         >
           <UIcon name="i-lucide-plus" class="text-[10px]" />
-          Add
+          Add Item
         </button>
+        <template v-if="!props.locked">
+          <div v-if="showNewGroupInput" class="flex items-center gap-1">
+            <input
+              v-model="newGroupName"
+              class="min-w-0 w-28 bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded px-1.5 py-0.5 text-[10px] outline-none focus:border-primary"
+              placeholder="Group name"
+              @keydown.enter="commitNewGroup"
+              @keydown.escape="showNewGroupInput = false; newGroupName = ''"
+              @blur="commitNewGroup"
+              @vue:mounted="($event as any).el?.focus()"
+            />
+          </div>
+          <button
+            v-else
+            class="text-[10px] px-1.5 py-0.5 rounded-full border border-neutral-200 dark:border-neutral-700 text-neutral-400 hover:text-green-600 dark:hover:text-green-400 hover:border-green-300 dark:hover:border-green-600 transition-colors flex items-center gap-0.5"
+            title="Add group"
+            @click="showNewGroupInput = true"
+          >
+            <UIcon name="i-lucide-folder-plus" class="text-[10px]" />
+            Add Group
+          </button>
+        </template>
       </div>
     </div>
 
@@ -345,23 +357,6 @@
           </div>
         </template>
 
-        <!-- Add group button -->
-        <div v-if="!props.locked" class="pt-1">
-          <div v-if="showNewGroupInput" class="flex items-center gap-1.5 px-2">
-            <input
-              v-model="newGroupName"
-              class="flex-1 min-w-0 bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded px-2 py-1 text-[10px] outline-none focus:border-primary"
-              placeholder="Group name"
-              @keydown.enter="commitNewGroup"
-              @keydown.escape="showNewGroupInput = false; newGroupName = ''"
-              @blur="commitNewGroup"
-              @vue:mounted="($event as any).el?.focus()"
-            />
-          </div>
-          <UButton v-else size="xs" color="neutral" variant="ghost" icon="i-lucide-folder-plus" class="text-[10px]" @click="showNewGroupInput = true">
-            Add group
-          </UButton>
-        </div>
       </div>
     </div>
 
@@ -399,7 +394,6 @@ const emit = defineEmits<{
   'updateLine': [id: string, updates: Partial<BomLine>]
   'removeLine': [id: string]
   'addManufacturer': [lineId: string, mfr: { manufacturer: string; manufacturerPart: string }]
-  'fetchAllPricing': []
   'fetchSinglePricing': [partNumber: string]
   'selectLine': [id: string]
   'addGroup': [name: string]
@@ -419,11 +413,6 @@ watch(() => props.selectedLineId, (id) => {
     if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
   })
 })
-
-function handleFetchAllPricing() {
-  if (props.locked) return
-  emit('fetchAllPricing')
-}
 
 const searchQuery = computed({
   get: () => props.searchQuery,

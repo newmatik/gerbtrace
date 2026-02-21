@@ -111,7 +111,7 @@
           @click="emit('addLine')"
         >
           <UIcon name="i-lucide-plus" class="text-[10px]" />
-          Add
+          Add Item
         </button>
       </div>
     </div>

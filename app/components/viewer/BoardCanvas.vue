@@ -1,7 +1,7 @@
 <template>
   <canvas
     ref="canvasEl"
-    class="w-full h-full"
+    class="w-full h-full gpu-canvas"
     :class="{
       'cursor-crosshair': measure?.active.value || info?.active.value || deleteTool?.active.value || drawTool?.active.value || (alignMode && alignMode !== 'idle'),
     }"
@@ -1790,10 +1790,19 @@ function draw() {
 
   // ── Layer composite with caching ──
   const cacheKey = computeSceneCacheKey()
-  // Reprojecting an interaction-time cache is fast, but with board rotation it
-  // can produce visible edge popping/flicker while zooming and panning.
-  // Prefer correctness over speed for rotated views.
-  const canUseCache = isInteracting.value
+  // During interaction (pan/zoom) we can cheaply re-project the cached scene
+  // via drawImage — but with board rotation the reprojection produces visible
+  // edge popping, so we skip the reprojection shortcut for rotated views.
+  //
+  // Even outside of interaction, if the cache key AND transform match exactly,
+  // the cached scene is pixel-identical — reuse it to skip the expensive
+  // realistic/layer render entirely (the biggest CPU win for idle redraws).
+  const exactTransformMatch = sceneCache
+    && Math.abs(sceneCache.transform.offsetX - (transform.offsetX + cssWidth * (rotDeg === 0 ? 0.10 : 0.30))) < 0.01
+    && Math.abs(sceneCache.transform.offsetY - (transform.offsetY + cssHeight * (rotDeg === 0 ? 0.10 : 0.30))) < 0.01
+    && Math.abs(sceneCache.transform.scale - transform.scale) < 0.0001
+
+  const canReprojectCache = isInteracting.value
     && rotDeg === 0
     && sceneCache
     && sceneCache.key === cacheKey
@@ -1801,7 +1810,14 @@ function draw() {
     && sceneCache.height === canvas.height
     && sceneCache.dpr === dpr
 
-  if (canUseCache && sceneCache) {
+  const canReuseExact = sceneCache
+    && sceneCache.key === cacheKey
+    && sceneCache.width === canvas.width
+    && sceneCache.height === canvas.height
+    && sceneCache.dpr === dpr
+    && exactTransformMatch
+
+  if ((canReprojectCache || canReuseExact) && sceneCache) {
     blitScene(sceneCache.canvas, sceneCache.transform)
     boardPerf.sceneCacheHits++
   } else {
@@ -1822,6 +1838,10 @@ function draw() {
       sceneCanvas = acquireCanvas(overscanW, overscanH)
 
       const ps = props.pasteSettings
+      const realisticPoolOpts = {
+        acquireCanvas: (w: number, h: number) => acquireCanvas(w, h),
+        releaseCanvas: (c: HTMLCanvasElement) => releaseCanvas(c),
+      }
       if (side === 'all') {
         renderRealisticView(gatherRealisticLayers('top'), sceneCanvas, {
           preset: props.preset!,
@@ -1829,6 +1849,7 @@ function draw() {
           dpr,
           side: 'top',
           pasteColor: ps?.mode === 'jetprint' && ps.highlightDots ? '#00FF66' : undefined,
+          ...realisticPoolOpts,
         })
         const bottomCanvas = acquireCanvas(overscanW, overscanH)
         renderRealisticView(gatherRealisticLayers('bottom'), bottomCanvas, {
@@ -1837,6 +1858,7 @@ function draw() {
           dpr,
           side: 'bottom',
           pasteColor: ps?.mode === 'jetprint' && ps.highlightDots ? '#00FF66' : undefined,
+          ...realisticPoolOpts,
         })
         const sceneCtx = sceneCanvas.getContext('2d')!
         sceneCtx.save()
@@ -1852,6 +1874,7 @@ function draw() {
           dpr,
           side,
           pasteColor: ps?.mode === 'jetprint' && ps.highlightDots ? '#00FF66' : undefined,
+          ...realisticPoolOpts,
         })
       }
     } else {

@@ -48,16 +48,16 @@
         @click="emit('addComponent')"
       >
         <UIcon name="i-lucide-plus" class="text-[10px]" />
-        Add
+        Add Item
       </button>
       <button
-        class="text-[10px] px-1.5 py-0.5 rounded-full border border-neutral-200 dark:border-neutral-700 text-neutral-400 hover:text-indigo-600 dark:hover:text-indigo-300 hover:border-indigo-300 dark:hover:border-indigo-600 transition-colors flex items-center gap-0.5"
+        class="text-[10px] px-1.5 py-0.5 rounded-full border border-neutral-200 dark:border-neutral-700 text-neutral-400 hover:text-green-600 dark:hover:text-green-400 hover:border-green-300 dark:hover:border-green-600 transition-colors flex items-center gap-0.5"
         title="Create a component group"
         :disabled="locked"
         @click="createGroup"
       >
         <UIcon name="i-lucide-folder-plus" class="text-[10px]" />
-        Group
+        Add Group
       </button>
     </div>
 
