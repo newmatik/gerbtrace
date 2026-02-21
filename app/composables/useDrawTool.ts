@@ -24,6 +24,7 @@ import {
 } from '~/utils/snap-points'
 
 export type DrawShapeTool = 'line' | 'rect' | 'circle' | 'text' | 'drill'
+export type QuickPlacementKind = 'fiducial' | 'bc'
 
 export interface DrawPreviewShape {
   tool: DrawShapeTool
@@ -41,6 +42,12 @@ export interface DrawPreviewShape {
   drillDiameter?: number
   filled: boolean
   strokeWidth: number
+}
+
+export interface DrawQuickPlacement {
+  kind: QuickPlacementKind
+  bcWidthMm?: number
+  bcHeightMm?: number
 }
 
 export interface DrawToolLayerInfo {
@@ -73,6 +80,7 @@ export function useDrawTool() {
   const preciseText = ref('LABEL')
   const preciseTextHeightMm = ref(1.0)
   const drillDiameterMm = ref(0.8)
+  const quickPlacement = ref<DrawQuickPlacement | null>(null)
 
   // Drawing state
   const isDrawing = ref(false)
@@ -108,11 +116,24 @@ export function useDrawTool() {
       moveRafId = 0
     }
     queuedMove = null
+    quickPlacement.value = null
   }
 
   function setTool(tool: DrawShapeTool) {
     activeTool.value = tool
     clear()
+  }
+
+  function startQuickFiducialPlacement() {
+    quickPlacement.value = { kind: 'fiducial' }
+  }
+
+  function startQuickBcPlacement(widthMm: number, heightMm: number) {
+    quickPlacement.value = { kind: 'bc', bcWidthMm: widthMm, bcHeightMm: heightMm }
+  }
+
+  function cancelQuickPlacement() {
+    quickPlacement.value = null
   }
 
   // -- Coordinate transforms --
@@ -214,6 +235,21 @@ export function useDrawTool() {
     const sy = e.clientY - rect.top
     let gerber = screenToGerber(sx, sy, transform)
     gerber = applySnap(gerber, transform)
+
+    if (quickPlacement.value) {
+      const req: DrawCommitRequest = {
+        kind: 'quick',
+        quick: {
+          kind: quickPlacement.value.kind,
+          x: gerber.x,
+          y: gerber.y,
+          bcWidthMm: quickPlacement.value.bcWidthMm,
+          bcHeightMm: quickPlacement.value.bcHeightMm,
+        },
+      }
+      quickPlacement.value = null
+      return req
+    }
 
     if (preciseMode.value) {
       return handlePrecisePlacement(gerber)
@@ -419,6 +455,7 @@ export function useDrawTool() {
 
   function buildCommitRequest(shape: DrawPreviewShape): DrawCommitRequest {
     return {
+      kind: 'shape',
       shape,
       targetLayerName: targetLayerName.value,
     }
@@ -426,6 +463,10 @@ export function useDrawTool() {
 
   function handleKeyDown(e: KeyboardEvent) {
     if (e.key === 'Escape') {
+      if (quickPlacement.value) {
+        quickPlacement.value = null
+        return
+      }
       if (isDrawing.value) {
         isDrawing.value = false
         drawStart.value = null
@@ -561,6 +602,7 @@ export function useDrawTool() {
     preciseText,
     preciseTextHeightMm,
     drillDiameterMm,
+    quickPlacement,
     isDrawing,
     drawStart,
     cursorGerber,
@@ -572,6 +614,9 @@ export function useDrawTool() {
     toggle,
     clear,
     setTool,
+    startQuickFiducialPlacement,
+    startQuickBcPlacement,
+    cancelQuickPlacement,
     handleMouseMove,
     handleMouseDown,
     handleMouseUp,
@@ -584,7 +629,19 @@ export function useDrawTool() {
   }
 }
 
-export interface DrawCommitRequest {
-  shape: DrawPreviewShape
-  targetLayerName: string
-}
+export type DrawCommitRequest =
+  | {
+    kind: 'shape'
+    shape: DrawPreviewShape
+    targetLayerName: string
+  }
+  | {
+    kind: 'quick'
+    quick: {
+      kind: QuickPlacementKind
+      x: number
+      y: number
+      bcWidthMm?: number
+      bcHeightMm?: number
+    }
+  }

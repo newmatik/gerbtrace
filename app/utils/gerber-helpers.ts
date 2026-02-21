@@ -34,7 +34,7 @@ const LAYER_TYPE_MAP: Record<string, string> = {
   '.gm3': 'Outline',
   '.gm7': 'Outline',
   '.gm': 'Outline',
-  '.gko': 'Keep-Out',
+  '.gko': 'Outline',
   // Altium drawing / guide layers (Gerber-format, generic)
   '.gd1': 'Unmatched',
   '.gd2': 'Unmatched',

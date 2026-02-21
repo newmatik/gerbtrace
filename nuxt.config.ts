@@ -1,6 +1,6 @@
 export default defineNuxtConfig({
   ssr: false,
-  devtools: { enabled: false },
+  devtools: { enabled: process.env.NODE_ENV !== 'production' },
 
   runtimeConfig: {
     public: {
