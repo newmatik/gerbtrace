@@ -1,0 +1,95 @@
+{
+  "name": "DO-214AB",
+  "type": "PT_GENERIC",
+  "aliases": [
+    "DO214AB",
+    "SMC"
+  ],
+  "body": {
+    "length": 6.2,
+    "width": 7.2
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "J_LEAD",
+        "numLeads": 1,
+        "distFromCenter": -3.2,
+        "ccHalf": 0,
+        "angleMilliDeg": 180000,
+        "padLength": 1.14,
+        "padWidth": 3.05
+      },
+      {
+        "shape": "J_LEAD",
+        "numLeads": 1,
+        "distFromCenter": 3.2,
+        "ccHalf": 0,
+        "angleMilliDeg": 0,
+        "padLength": 1.14,
+        "padWidth": 3.05
+      }
+    ]
+  },
+  "height": {
+    "nominal": 2.33,
+    "max": 2.446,
+    "min": 2.214
+  },
+  "searchArea": {
+    "x": 8.067,
+    "y": 6.159
+  },
+  "machine": {
+    "mountTools": [
+      "A23"
+    ],
+    "hydraTools": [
+      "H03"
+    ],
+    "pickWaitTime": 100,
+    "placeWaitTime": 100,
+    "zMountForce": 3500,
+    "flags": {
+      "pickPositionFeedback": false,
+      "holdDuringXMove": false,
+      "vacuumTest": false
+    },
+    "accelerations": {
+      "x": "low",
+      "y": "highest",
+      "tape": "high",
+      "theta": "highest",
+      "z": "high",
+      "hydraTheta": "low",
+      "hydraZ": "high"
+    },
+    "centering": [
+      {
+        "method": "optical",
+        "tools": [
+          "Z_TOOL",
+          "HYDRA_TOOL"
+        ]
+      }
+    ],
+    "visionModes": [
+      "linescan"
+    ],
+    "coplanarityCheck": false,
+    "markingPositions": [
+      {
+        "x": 0,
+        "y": 0,
+        "dotType": "DOT3.0mm"
+      }
+    ]
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/DO-214AB.json",
+    "sourceFootprint": "DO-214AB"
+  }
+}

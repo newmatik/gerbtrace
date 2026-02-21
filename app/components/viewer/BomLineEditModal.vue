@@ -141,7 +141,7 @@
             <input
               v-model="mfr.manufacturerPart"
               type="text"
-              placeholder="MPN"
+              placeholder="Manufacturer Part"
               class="flex-1 text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md px-2 py-1 outline-none focus:border-primary transition-colors"
             />
             <button

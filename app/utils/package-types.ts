@@ -471,17 +471,47 @@ export const PACKAGE_TYPE_LABELS: Record<PackageDefinition['type'], string> = {
  * All coordinates in mm. The caller applies rotation + translation.
  */
 export function computeFootprint(pkg: PackageDefinition): FootprintShape[] {
+  const fallback = bodyOnlyFootprint(pkg as unknown as Partial<PackageBase>)
   switch (pkg.type) {
-    case 'PT_TWO_POLE': return computeChip(pkg)
-    case 'PT_THREE_POLE': return computeThreePole(pkg)
-    case 'PT_TWO_SYM': return computeTwoSymmetric(pkg)
-    case 'PT_FOUR_SYM': return computeFourSymmetric(pkg)
-    case 'PT_TWO_PLUS_TWO': return computeTwoPlusTwo(pkg)
-    case 'PT_FOUR_ON_TWO': return computeFourOnTwo(pkg)
-    case 'PT_BGA': return computeBga(pkg)
-    case 'PT_OUTLINE': return computeOutline(pkg)
-    case 'PT_GENERIC': return computeTpsysGeneric(pkg)
+    case 'PT_TWO_POLE':
+      if (!hasFiniteNumbers((pkg as any)?.chip?.chipLength, (pkg as any)?.chip?.leadWidth, (pkg as any)?.chip?.leadLength)) return fallback
+      return computeChip(pkg)
+    case 'PT_THREE_POLE':
+      if (!hasFiniteNumbers((pkg as any)?.threePole?.widthOverLeads, (pkg as any)?.threePole?.ccDistance, (pkg as any)?.threePole?.leadWidth, (pkg as any)?.threePole?.leadLength)) return fallback
+      return computeThreePole(pkg)
+    case 'PT_TWO_SYM':
+      if (!hasFiniteNumbers((pkg as any)?.twoSymmetric?.numberOfLeads, (pkg as any)?.twoSymmetric?.widthOverLeads, (pkg as any)?.twoSymmetric?.leadPitch, (pkg as any)?.twoSymmetric?.leadWidth, (pkg as any)?.twoSymmetric?.leadLength)) return fallback
+      return computeTwoSymmetric(pkg)
+    case 'PT_FOUR_SYM':
+      if (!hasFiniteNumbers((pkg as any)?.fourSymmetric?.numberOfLeads, (pkg as any)?.fourSymmetric?.widthOverLeads, (pkg as any)?.fourSymmetric?.leadPitch, (pkg as any)?.fourSymmetric?.leadWidth, (pkg as any)?.fourSymmetric?.leadLength)) return fallback
+      return computeFourSymmetric(pkg)
+    case 'PT_TWO_PLUS_TWO':
+      if (!hasFiniteNumbers((pkg as any)?.twoPlusTwo?.leadsLong, (pkg as any)?.twoPlusTwo?.leadsShort, (pkg as any)?.twoPlusTwo?.widthOverLeadsX, (pkg as any)?.twoPlusTwo?.widthOverLeadsY, (pkg as any)?.twoPlusTwo?.leadPitch, (pkg as any)?.twoPlusTwo?.leadWidth, (pkg as any)?.twoPlusTwo?.leadLength)) return fallback
+      return computeTwoPlusTwo(pkg)
+    case 'PT_FOUR_ON_TWO':
+      if (!hasFiniteNumbers((pkg as any)?.fourOnTwo?.leadsPerGroup, (pkg as any)?.fourOnTwo?.widthOverLeads, (pkg as any)?.fourOnTwo?.leadPitch, (pkg as any)?.fourOnTwo?.leadWidth, (pkg as any)?.fourOnTwo?.leadLength, (pkg as any)?.fourOnTwo?.groupGap)) return fallback
+      return computeFourOnTwo(pkg)
+    case 'PT_BGA':
+      if (!hasFiniteNumbers((pkg as any)?.bga?.leadsPerRow, (pkg as any)?.bga?.leadsPerColumn, (pkg as any)?.bga?.leadPitch, (pkg as any)?.bga?.leadDiameter)) return fallback
+      return computeBga(pkg)
+    case 'PT_OUTLINE':
+      if (!hasFiniteNumbers((pkg as any)?.outline?.length, (pkg as any)?.outline?.width)) return fallback
+      return computeOutline(pkg)
+    case 'PT_GENERIC':
+      if (!(pkg as any)?.generic?.leadGroups) return fallback
+      return computeTpsysGeneric(pkg)
   }
+}
+
+function hasFiniteNumbers(...vals: unknown[]): boolean {
+  return vals.every(v => Number.isFinite(v))
+}
+
+function bodyOnlyFootprint(pkg: Partial<PackageBase>): FootprintShape[] {
+  const bodyL = pkg?.body?.length
+  const bodyW = pkg?.body?.width
+  if (!hasFiniteNumbers(bodyL, bodyW)) return []
+  return [{ kind: 'rect', cx: 0, cy: 0, w: bodyW!, h: bodyL!, role: 'body' }]
 }
 
 // ── Chip: 2 pads top/bottom, body in center (Mycronic/TPSys 0°) ──
@@ -489,7 +519,7 @@ export function computeFootprint(pkg: PackageDefinition): FootprintShape[] {
 
 function computeChip(pkg: ChipPackage): FootprintShape[] {
   const { chipLength, leadWidth, leadLength } = pkg.chip
-  const { length: bodyL, width: bodyW } = pkg.body
+  const { length: bodyL, width: bodyW } = pkg.body ?? { length: 0, width: 0 }
   const shapes: FootprintShape[] = []
 
   // Body — centered at origin, width along X, length along Y
@@ -510,7 +540,7 @@ function computeChip(pkg: ChipPackage): FootprintShape[] {
 
 function computeThreePole(pkg: ThreePolePackage): FootprintShape[] {
   const { widthOverLeads, ccDistance, leadWidth, leadLength } = pkg.threePole
-  const { length: bodyL, width: bodyW } = pkg.body
+  const { length: bodyL, width: bodyW } = pkg.body ?? { length: 0, width: 0 }
   const shapes: FootprintShape[] = []
 
   // Body — centered at origin, width along X, length along Y
@@ -538,7 +568,7 @@ function computeThreePole(pkg: ThreePolePackage): FootprintShape[] {
 
 function computeTwoSymmetric(pkg: TwoSymmetricPackage): FootprintShape[] {
   const { numberOfLeads, widthOverLeads, leadPitch, leadWidth, leadLength } = pkg.twoSymmetric
-  const { length: bodyL, width: bodyW } = pkg.body
+  const { length: bodyL, width: bodyW } = pkg.body ?? { length: 0, width: 0 }
   const shapes: FootprintShape[] = []
 
   // Body — centered at origin, width along X, length along Y
@@ -576,7 +606,7 @@ function computeTwoSymmetric(pkg: TwoSymmetricPackage): FootprintShape[] {
 
 function computeFourSymmetric(pkg: FourSymmetricPackage): FootprintShape[] {
   const { numberOfLeads, widthOverLeads, leadPitch, leadWidth, leadLength } = pkg.fourSymmetric
-  const { length: bodyL, width: bodyW } = pkg.body
+  const { length: bodyL, width: bodyW } = pkg.body ?? { length: 0, width: 0 }
   const shapes: FootprintShape[] = []
 
   // Body — centered at origin, width along X, length along Y
@@ -615,7 +645,7 @@ function computeFourSymmetric(pkg: FourSymmetricPackage): FootprintShape[] {
 
 function computeTwoPlusTwo(pkg: TwoPlusTwoPackage): FootprintShape[] {
   const { leadsLong, leadsShort, widthOverLeadsX, widthOverLeadsY, leadPitch, leadWidth, leadLength } = pkg.twoPlusTwo
-  const { length: bodyL, width: bodyW } = pkg.body
+  const { length: bodyL, width: bodyW } = pkg.body ?? { length: 0, width: 0 }
   const shapes: FootprintShape[] = []
 
   shapes.push({ kind: 'rect', cx: 0, cy: 0, w: bodyW, h: bodyL, role: 'body' })
@@ -666,7 +696,7 @@ function computeTwoPlusTwo(pkg: TwoPlusTwoPackage): FootprintShape[] {
 
 function computeFourOnTwo(pkg: FourOnTwoPackage): FootprintShape[] {
   const { leadsPerGroup, widthOverLeads, leadPitch, leadWidth, leadLength, groupGap } = pkg.fourOnTwo
-  const { length: bodyL, width: bodyW } = pkg.body
+  const { length: bodyL, width: bodyW } = pkg.body ?? { length: 0, width: 0 }
   const shapes: FootprintShape[] = []
 
   shapes.push({ kind: 'rect', cx: 0, cy: 0, w: bodyW, h: bodyL, role: 'body' })
@@ -711,7 +741,7 @@ function computeFourOnTwo(pkg: FourOnTwoPackage): FootprintShape[] {
 
 function computeBga(pkg: BgaPackage): FootprintShape[] {
   const { leadsPerRow, leadsPerColumn, leadPitch, leadDiameter, leadsPerRowInHole = 0, leadsPerColumnInHole = 0 } = pkg.bga
-  const { length: bodyL, width: bodyW } = pkg.body
+  const { length: bodyL, width: bodyW } = pkg.body ?? { length: 0, width: 0 }
   const shapes: FootprintShape[] = []
 
   // Body — centered at origin, width along X, length along Y
@@ -760,10 +790,13 @@ function computeOutline(pkg: OutlinePackage): FootprintShape[] {
 // This follows TPSys semantics (P051 + P055) as stored in `pkg.generic.leadGroups`.
 function computeTpsysGeneric(pkg: TpsysGenericPackage): FootprintShape[] {
   const shapes: FootprintShape[] = []
-  const { length: bodyL, width: bodyW } = pkg.body
-  shapes.push({ kind: 'rect', cx: 0, cy: 0, w: bodyW, h: bodyL, role: 'body' })
+  const bodyL = pkg?.body?.length
+  const bodyW = pkg?.body?.width
+  if (hasFiniteNumbers(bodyL, bodyW)) {
+    shapes.push({ kind: 'rect', cx: 0, cy: 0, w: bodyW!, h: bodyL!, role: 'body' })
+  }
 
-  const groups = pkg.generic.leadGroups ?? []
+  const groups = pkg.generic?.leadGroups ?? []
   if (!Array.isArray(groups) || groups.length === 0) return shapes
 
   const normAngle = (md: number) => {

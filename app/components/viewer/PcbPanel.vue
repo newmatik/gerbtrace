@@ -210,23 +210,16 @@
             />
           </div>
 
-          <!-- Board Area (computed) -->
-          <div class="space-y-0.5">
-            <label class="text-[10px] text-neutral-400">Board Area</label>
-            <div class="text-xs tabular-nums text-neutral-500 dark:text-neutral-400 px-2 py-1">
-              {{ localData.sizeX && localData.sizeY ? ((localData.sizeX * localData.sizeY) / 100).toFixed(1) + ' cm²' : '—' }}
-            </div>
-          </div>
         </div>
       </div>
 
-      <!-- Section 2: Gerber & Drill Files -->
+      <!-- Section 2: Gerber, Drill, and Unmatched Files -->
       <div class="px-3 py-2 border-t border-neutral-200 dark:border-neutral-800">
-        <div v-if="gerberDrillGroups.length === 0" class="text-xs text-neutral-400 py-4 text-center">
-          No Gerber or drill files loaded
+        <div v-if="pcbLayerGroups.length === 0" class="text-xs text-neutral-400 py-4 text-center">
+          No Gerber, drill, or unmatched files loaded
         </div>
         <div class="space-y-0.5">
-          <template v-for="group in gerberDrillGroups" :key="group.key">
+          <template v-for="group in pcbLayerGroups" :key="group.key">
             <!-- Group header -->
             <div
               class="flex items-center gap-1.5 w-full px-2 py-1 mt-1 first:mt-0 text-[10px] font-semibold uppercase tracking-wider text-neutral-400 rounded"
@@ -263,6 +256,7 @@
                 <LayerToggle
                   :layer="entry.layer"
                   :is-edited="editedLayers?.has(entry.layer.file.fileName) ?? false"
+                  :used-singleton-types="usedSingletonTypes"
                   @toggle-visibility="$emit('toggleVisibility', entry.flatIndex)"
                   @color-change="(color: string) => $emit('changeColor', entry.flatIndex, color)"
                   @type-change="(type: string) => $emit('changeType', entry.flatIndex, type)"
@@ -290,7 +284,7 @@ import {
 } from '~/utils/pcb-pricing'
 import type { SurfaceFinish, CopperWeight, PcbThicknessMm, PcbMaterial } from '~/utils/pcb-pricing'
 import type { LayerInfo } from '~/utils/gerber-helpers'
-import { getLayerGroup, LAYER_GROUP_LABELS, type LayerGroupKey } from '~/utils/gerber-helpers'
+import { getLayerGroup, LAYER_GROUP_LABELS, SINGLETON_LAYER_TYPES, type LayerGroupKey } from '~/utils/gerber-helpers'
 import { SOLDER_MASK_COLOR_OPTIONS, type SolderMaskColor } from '~/utils/pcb-presets'
 
 interface PcbData {
@@ -406,7 +400,7 @@ const panelizationOptions: { label: string; value: 'single' | 'panelized' }[] = 
   { label: 'Panelized PCB', value: 'panelized' },
 ]
 
-// Collapsible groups — only gerber and drill
+// Collapsible groups shown in the PCB tab.
 const collapsed = ref(new Set<LayerGroupKey>())
 
 function toggleGroup(key: LayerGroupKey) {
@@ -419,9 +413,19 @@ function toggleGroup(key: LayerGroupKey) {
   collapsed.value = next
 }
 
-const PCB_LAYER_GROUPS: LayerGroupKey[] = ['gerber', 'drill']
+const usedSingletonTypes = computed<ReadonlySet<string>>(() => {
+  const used = new Set<string>()
+  for (const layer of props.layers) {
+    if (SINGLETON_LAYER_TYPES.has(layer.type)) {
+      used.add(layer.type)
+    }
+  }
+  return used
+})
 
-const gerberDrillGroups = computed<LayerGroupData[]>(() => {
+const PCB_LAYER_GROUPS: LayerGroupKey[] = ['gerber', 'drill', 'unknown']
+
+const pcbLayerGroups = computed<LayerGroupData[]>(() => {
   const buckets = new Map<LayerGroupKey, { layer: LayerInfo; flatIndex: number }[]>()
   for (const key of PCB_LAYER_GROUPS) {
     buckets.set(key, [])

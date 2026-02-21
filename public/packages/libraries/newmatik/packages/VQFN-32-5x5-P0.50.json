@@ -1,0 +1,93 @@
+{
+  "name": "VQFN-32-5x5-P0.50",
+  "aliases": [
+    "VQFN-32-13",
+    "VQFN-32-16",
+    "VQFN-32-20",
+    "VQFN-32-21",
+    "VQFN-32-23",
+    "VQFN-32-24",
+    "VQFN-32-27",
+    "VQFN-32-28",
+    "VQFN-32-29",
+    "VQFN-32-5x5",
+    "VQFN-32-800",
+    "VQFN-32-801",
+    "VQFN-32-802",
+    "VQFN-32-803",
+    "VQFN-32-806",
+    "VQFN-32-807",
+    "VQFN-32-809",
+    "VQFN-32-810",
+    "VQFN-32-811",
+    "VQFN-32-813",
+    "VQFN-32-901",
+    "VQFN-32-902"
+  ],
+  "body": {
+    "length": 5.0,
+    "width": 5.0
+  },
+  "type": "PT_GENERIC",
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "FLAT",
+        "numLeads": 8,
+        "distFromCenter": -2.3,
+        "ccHalf": 1.75,
+        "angleMilliDeg": 180000,
+        "padLength": 0.4,
+        "padWidth": 0.25
+      },
+      {
+        "shape": "FLAT",
+        "numLeads": 8,
+        "distFromCenter": 1.75,
+        "ccHalf": -2.3,
+        "angleMilliDeg": 90000,
+        "padLength": 0.4,
+        "padWidth": 0.25
+      },
+      {
+        "shape": "FLAT",
+        "numLeads": 8,
+        "distFromCenter": 2.3,
+        "ccHalf": -1.75,
+        "angleMilliDeg": 0,
+        "padLength": 0.4,
+        "padWidth": 0.25
+      },
+      {
+        "shape": "FLAT",
+        "numLeads": 8,
+        "distFromCenter": -1.75,
+        "ccHalf": 2.3,
+        "angleMilliDeg": 270000,
+        "padLength": 0.4,
+        "padWidth": 0.25
+      },
+      {
+        "shape": "FLAT",
+        "numLeads": 1,
+        "distFromCenter": 0,
+        "ccHalf": 0,
+        "angleMilliDeg": 0,
+        "padLength": 3.3,
+        "padWidth": 3.3
+      }
+    ]
+  },
+  "height": {
+    "nominal": 0.826,
+    "max": 1,
+    "min": 0.6
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/VQFN-32-5x5-P0.50.json",
+    "sourceFootprint": "VQFN-32-5x5-P0.50"
+  }
+}

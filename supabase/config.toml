@@ -1,12 +1,14 @@
 # Gerbtrace Supabase configuration
 # Used by `supabase` CLI for local development.
-# Production settings live in Docker Compose .env on the DigitalOcean Droplet.
+# Production settings live in Supabase Cloud (Dashboard / project config).
 
 project_id = "gerbtrace"
 
 [api]
 enabled = true
 port = 54321
+# Required for local Azure OAuth (Azure rejects 127.0.0.1 redirect hosts).
+external_url = "http://localhost:54321"
 schemas = ["public", "storage"]
 extra_search_path = ["public"]
 max_rows = 1000
@@ -53,6 +55,19 @@ enabled = true
 client_id = "env(GITHUB_CLIENT_ID)"
 secret = "env(GITHUB_CLIENT_SECRET)"
 redirect_uri = "http://localhost:54321/auth/v1/callback"
+
+[auth.external.google]
+enabled = false
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET)"
+redirect_uri = "http://localhost:54321/auth/v1/callback"
+
+[auth.external.azure]
+enabled = false
+client_id = "env(SUPABASE_AUTH_EXTERNAL_AZURE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_AZURE_CLIENT_SECRET)"
+redirect_uri = "http://localhost:54321/auth/v1/callback"
+url = "https://login.microsoftonline.com/common"
 
 [storage]
 enabled = true

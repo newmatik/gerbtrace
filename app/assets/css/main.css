@@ -4,3 +4,10 @@
 :root {
   --ui-header-height: 2.75rem;
 }
+
+/* Promote canvas elements to their own GPU-composited layer for smoother
+   drawImage blits and reduced main-thread compositing cost. */
+.gpu-canvas {
+  will-change: contents;
+  contain: strict;
+}

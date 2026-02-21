@@ -3,7 +3,7 @@
     class="rounded-md bg-neutral-50/60 dark:bg-neutral-900/40 p-2"
     @click="focusInput"
   >
-    <div class="flex flex-wrap items-center gap-1.5">
+    <div class="flex flex-nowrap items-center gap-1.5">
       <UBadge
         v-for="qty in quantities"
         :key="qty"
@@ -32,7 +32,7 @@
         autocomplete="off"
         placeholder="Add qty..."
         :disabled="locked"
-        class="min-w-[110px] max-w-[160px]"
+        class="w-24 min-w-0"
         @keydown="onInputKeydown"
         @blur="commitInput"
         @paste="handlePaste"

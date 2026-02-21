@@ -1,18 +1,35 @@
 {
   "name": "SMAF",
-  "type": "PT_TWO_POLE",
+  "type": "PT_GENERIC",
   "aliases": [
     "DO-219AB",
     "SMA-F"
   ],
   "body": {
-    "length": 3.5,
-    "width": 1.8
+    "length": 1.8,
+    "width": 3.5
   },
-  "chip": {
-    "chipLength": 3.5,
-    "leadWidth": 1.8,
-    "leadLength": 0.3
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "J_LEAD",
+        "numLeads": 1,
+        "distFromCenter": -1.45,
+        "ccHalf": 0,
+        "angleMilliDeg": 180000,
+        "padLength": 0.6,
+        "padWidth": 1
+      },
+      {
+        "shape": "J_LEAD",
+        "numLeads": 1,
+        "distFromCenter": 1.45,
+        "ccHalf": 0,
+        "angleMilliDeg": 0,
+        "padLength": 0.6,
+        "padWidth": 1
+      }
+    ]
   },
   "height": {
     "nominal": 0.98,

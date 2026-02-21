@@ -1,120 +1,120 @@
 <template>
-  <div class="h-full overflow-y-auto p-3">
+  <div class="h-full flex flex-col overflow-hidden">
     <div v-if="!line" class="h-full flex items-center justify-center text-sm text-neutral-400">
       Select a BOM line to see details
     </div>
 
-    <div v-else class="space-y-3">
-      <!-- Header -->
-      <div class="flex items-center gap-2">
-        <span class="flex-1 min-w-0 text-sm font-semibold text-neutral-900 dark:text-white truncate">
-          {{ line.description || '(no description)' }}
-        </span>
-        <UBadge v-if="isLineChanged" size="xs" variant="subtle" color="warning">Edited</UBadge>
-        <UBadge v-if="line.dnp" size="xs" variant="subtle" color="error">DNP</UBadge>
-        <UButton size="xs" color="error" variant="ghost" icon="i-lucide-trash-2" title="Delete BOM line" :disabled="props.locked" @click="emit('removeLine', line.id)" />
-      </div>
-
-      <div v-if="missingInPnP.length > 0" class="flex items-start gap-1.5 px-2 py-1.5 text-[10px] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded border border-amber-200 dark:border-amber-800">
-        <UIcon name="i-lucide-triangle-alert" class="text-xs shrink-0 mt-0.5" />
-        <div>
-          <span class="font-medium">Not found in Pick &amp; Place:</span>
-          {{ missingInPnP.join(', ') }}
-        </div>
-      </div>
-
-      <!-- Editable fields -->
-      <fieldset class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-2.5 space-y-2 border-0 m-0 min-w-0" :disabled="props.locked">
-        <div>
-          <div class="text-[10px] text-neutral-400 mb-1">Description</div>
+    <template v-else>
+      <!-- Pinned header -->
+      <div class="shrink-0 px-3 pt-3 space-y-2">
+        <div class="flex items-start gap-2">
           <UInput
             :model-value="line.description"
             size="sm"
-            placeholder="e.g. 1uF Ceramic Capacitor"
-            :class="fieldClass('description')"
+            :disabled="props.locked"
+            placeholder="(no description)"
+            :ui="fieldInputUi('description')"
+            class="flex-1 min-w-0 [&_input]:text-sm [&_input]:font-semibold"
             @update:model-value="(v) => emitUpdate({ description: String(v ?? '') })"
           />
-        </div>
-        <div>
-          <div class="text-[10px] text-neutral-400 mb-1">Comment</div>
-          <UTextarea
-            :model-value="line.comment"
-            size="sm"
-            placeholder="(optional)"
-            :rows="1"
-            autoresize
-            :class="fieldClass('comment')"
-            @update:model-value="(v) => emitUpdate({ comment: String(v ?? '') })"
-          />
-        </div>
-
-        <div class="grid grid-cols-3 gap-2 items-end">
-          <div>
-            <div class="text-[10px] text-neutral-400 mb-1">Type</div>
-            <USelect
-              :model-value="line.type"
-              :items="bomLineTypeItems"
-              size="sm"
-              @update:model-value="(v: any) => emitUpdate({ type: v })"
-            />
+          <div class="flex items-center gap-2 shrink-0 pt-1">
+            <span
+              v-if="isLineChanged"
+              class="text-[9px] px-1.5 py-0.5 rounded-full border shrink-0"
+              :class="editedBadgeClass"
+              title="This line differs from the original customer BOM"
+            >
+              Edited
+            </span>
+            <UBadge v-if="line.dnp" size="xs" variant="subtle" color="error">DNP</UBadge>
+            <UButton size="xs" color="error" variant="ghost" icon="i-lucide-trash-2" title="Delete BOM line" :disabled="props.locked" @click="emit('removeLine', line.id)" />
           </div>
-          <label class="flex items-center gap-1.5 text-xs text-neutral-600 dark:text-neutral-300 pb-1">
-            <USwitch
-              :model-value="line.customerProvided"
-              size="xs"
-              @update:model-value="(v: boolean) => emitUpdate({ customerProvided: v })"
-            />
-            Customer provided
-          </label>
-          <label class="flex items-center gap-1.5 text-xs text-neutral-600 dark:text-neutral-300 pb-1">
-            <USwitch
-              :model-value="line.dnp"
-              size="xs"
-              @update:model-value="(v: boolean) => emitUpdate({ dnp: v })"
-            />
-            DNP
-          </label>
         </div>
 
+        <!-- Spark: Description suggestion -->
+        <div v-if="aiSuggestion?.description && aiSuggestion.description !== line.description" class="rounded-md border-l-2 border-violet-500 bg-violet-50/60 dark:bg-violet-900/15 border border-violet-200 dark:border-violet-800 px-2.5 py-1.5">
+          <div class="flex items-start gap-1.5">
+            <UIcon name="i-lucide-sparkles" class="text-[10px] text-violet-500 shrink-0 mt-0.5" />
+            <div class="flex-1 min-w-0">
+              <div class="text-[9px] font-medium text-violet-600 dark:text-violet-400 uppercase tracking-wider mb-0.5">Spark suggestion</div>
+              <div class="text-xs text-violet-900 dark:text-violet-200">{{ aiSuggestion.description }}</div>
+            </div>
+            <div class="flex items-center gap-0.5 shrink-0">
+              <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" :disabled="props.locked" @click="emit('acceptAiSuggestion', line.id, 'description')" />
+              <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" :disabled="props.locked" @click="emit('dismissAiSuggestion', line.id, 'description')" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Spark: Accept/Dismiss all -->
+        <div v-if="hasAnySuggestion" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border-l-2 border-violet-500 bg-violet-50 dark:bg-violet-900/10 border border-violet-200 dark:border-violet-800">
+          <UIcon name="i-lucide-sparkles" class="text-sm text-violet-500 shrink-0" />
+          <span class="text-[11px] font-medium text-violet-700 dark:text-violet-300 flex-1">Spark has suggestions for this line</span>
+          <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" title="Accept all suggestions" :disabled="props.locked" @click="emit('acceptAllAi', line.id)">
+            Accept All
+          </UButton>
+          <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" title="Dismiss all suggestions" :disabled="props.locked" @click="emit('dismissAllAi', line.id)">
+            Dismiss
+          </UButton>
+        </div>
+      </div>
+
+      <!-- Scrollable content -->
+      <div class="flex-1 min-h-0 overflow-y-auto px-3 pb-3 pt-2 space-y-3">
+        <div v-if="missingInPnP.length > 0" class="flex items-start gap-1.5 px-2 py-1.5 text-[10px] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded border border-amber-200 dark:border-amber-800">
+          <UIcon name="i-lucide-triangle-alert" class="text-xs shrink-0 mt-0.5" />
+          <div>
+            <span class="font-medium">Not found in Pick &amp; Place:</span>
+            {{ missingInPnP.join(', ') }}
+          </div>
+        </div>
+
+        <!-- Editable fields -->
+      <fieldset class="border-0 m-0 p-0 min-w-0 space-y-2.5" :disabled="props.locked">
+        <!-- Comment + Group row (2/3 + 1/3) -->
         <div class="grid grid-cols-3 gap-2">
-          <div>
-            <div class="text-[10px] text-neutral-400 mb-1">Package</div>
+          <div class="col-span-2 min-w-0">
+            <div class="text-[10px] text-neutral-400 mb-1">Comment</div>
             <UInput
-              :model-value="line.package"
-              size="sm"
-              placeholder="e.g. 0603"
-              :class="fieldClass('package')"
-              @update:model-value="(v) => emitUpdate({ package: String(v ?? '') })"
-            />
-          </div>
-          <div>
-            <div class="text-[10px] text-neutral-400 mb-1">Customer item</div>
-            <UInput
-              :model-value="line.customerItemNo"
+              :model-value="line.comment"
               size="sm"
               placeholder="(optional)"
-              :class="fieldClass('customerItemNo')"
-              @update:model-value="(v) => emitUpdate({ customerItemNo: String(v ?? '') })"
+              :ui="fieldInputUi('comment')"
+              class="w-full"
+              @update:model-value="(v) => emitUpdate({ comment: String(v ?? '') })"
             />
           </div>
-          <div>
-            <div class="text-[10px] text-neutral-400 mb-1">Qty / board</div>
-            <UInput
-              :model-value="String(line.quantity)"
+          <div class="col-span-1 min-w-0">
+            <div class="text-[10px] text-neutral-400 mb-1">Group</div>
+            <USelect
+              :model-value="line.groupId || GROUP_NONE"
+              :items="groupItems"
               size="sm"
-              type="number"
-              min="0"
-              :class="fieldClass('quantity')"
-              @update:model-value="(v) => emitUpdate({ quantity: Math.max(0, Number(v ?? 0) || 0) })"
+              :disabled="props.locked"
+              class="w-full"
+              @update:model-value="(v: any) => emit('assignGroup', line!.id, v === GROUP_NONE ? null : v)"
             />
           </div>
         </div>
 
-        <div>
-          <div class="flex items-center justify-between mb-1">
-            <div class="text-[10px] text-neutral-400">References</div>
-            <span class="text-[10px] text-neutral-400 tabular-nums">{{ refList.length }}</span>
+        <!-- Spark: Group suggestion -->
+        <div v-if="aiSuggestion?.group" class="rounded-md border-l-2 border-violet-500 bg-violet-50/60 dark:bg-violet-900/15 border border-violet-200 dark:border-violet-800 px-2.5 py-1.5">
+          <div class="flex items-start gap-1.5">
+            <UIcon name="i-lucide-sparkles" class="text-[10px] text-violet-500 shrink-0 mt-0.5" />
+            <div class="flex-1 min-w-0">
+              <div class="text-[9px] font-medium text-violet-600 dark:text-violet-400 uppercase tracking-wider mb-0.5">Suggested group</div>
+              <div class="text-xs text-violet-900 dark:text-violet-200">{{ aiSuggestion.group }}</div>
+            </div>
+            <div class="flex items-center gap-0.5 shrink-0">
+              <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" :disabled="props.locked" @click="emit('acceptAiGroup', line.id, aiSuggestion!.group!)" />
+              <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" :disabled="props.locked" @click="emit('dismissAiGroup', line.id)" />
+            </div>
           </div>
+        </div>
+
+        <!-- References (full width, compact) -->
+        <div>
+          <div class="text-[10px] text-neutral-400 mb-1">References ({{ refList.length }})</div>
 
           <div
             class="rounded-md border border-neutral-200 dark:border-neutral-800 p-2"
@@ -159,9 +159,148 @@
             </div>
           </div>
         </div>
+
+        <!-- One-line 4-column row: Type + Classification + Package + PnP Package -->
+        <div class="grid grid-cols-4 gap-2">
+          <div class="min-w-0">
+            <div class="text-[10px] text-neutral-400 mb-1">Type</div>
+            <USelect
+              :model-value="line.type || 'SMD'"
+              :items="bomLineTypeItems"
+              size="sm"
+              class="w-full"
+              @update:model-value="(v: any) => emitUpdate({ type: v })"
+            />
+          </div>
+          <div v-if="line.type === 'SMD' || aiSuggestion?.smdClassification != null" class="min-w-0">
+            <div class="text-[10px] text-neutral-400 mb-1">SMD Classification</div>
+            <USelect
+              :model-value="line.smdClassification || SMD_CLASS_NONE"
+              :items="smdClassItems"
+              size="sm"
+              class="w-full"
+              @update:model-value="(v: any) => emitUpdate({ smdClassification: v === SMD_CLASS_NONE ? null : v })"
+            />
+          </div>
+          <div v-else-if="line.type === 'THT' || aiSuggestion?.pinCount != null" class="min-w-0">
+            <div class="text-[10px] text-neutral-400 mb-1">THT Classification</div>
+            <UInput
+              :model-value="line.pinCount != null ? String(line.pinCount) : ''"
+              size="sm"
+              type="number"
+              min="1"
+              placeholder="Pin count"
+              class="w-full"
+              @update:model-value="(v) => emitUpdate({ pinCount: v ? Number(v) : null })"
+            />
+          </div>
+          <div v-else class="min-w-0">
+            <div class="text-[10px] text-neutral-400 mb-1">Classification</div>
+            <div class="h-8 flex items-center px-2 text-xs rounded-md border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50 text-neutral-400">
+              —
+            </div>
+          </div>
+          <div class="min-w-0">
+            <div class="text-[10px] text-neutral-400 mb-1">Package</div>
+            <UInput
+              :model-value="line.package"
+              size="sm"
+              placeholder="e.g. 0603"
+              :ui="fieldInputUi('package')"
+              @update:model-value="(v) => emitUpdate({ package: String(v ?? '') })"
+            />
+          </div>
+          <div class="min-w-0">
+            <div class="text-[10px] text-neutral-400 mb-1">PnP Package</div>
+            <div class="h-8 flex items-center px-2 text-xs rounded-md border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50" :class="pnpPackage ? 'text-neutral-700 dark:text-neutral-300' : 'text-neutral-400'">
+              {{ pnpPackage || '—' }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Spark suggestions for Type / Classification / Pin Count -->
+        <div v-if="aiSuggestion?.type || aiSuggestion?.smdClassification || aiSuggestion?.pinCount != null" class="grid gap-2" :class="(aiSuggestion?.type && (aiSuggestion?.smdClassification || aiSuggestion?.pinCount != null)) ? 'grid-cols-2' : 'grid-cols-1'">
+          <div v-if="aiSuggestion?.type && aiSuggestion.type !== line.type" class="flex items-center gap-1.5 px-2 py-1 rounded border-l-2 border-violet-500 bg-violet-50/60 dark:bg-violet-900/15 border border-violet-200 dark:border-violet-800">
+            <UIcon name="i-lucide-sparkles" class="text-[9px] text-violet-500 shrink-0" />
+            <span class="text-[10px] text-violet-800 dark:text-violet-200 flex-1">{{ aiSuggestion.type }}</span>
+            <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" :disabled="props.locked" @click="emit('acceptAiSuggestion', line.id, 'type')" />
+            <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" :disabled="props.locked" @click="emit('dismissAiSuggestion', line.id, 'type')" />
+          </div>
+          <div v-if="aiSuggestion?.smdClassification && aiSuggestion.smdClassification !== line.smdClassification" class="flex items-center gap-1.5 px-2 py-1 rounded border-l-2 border-violet-500 bg-violet-50/60 dark:bg-violet-900/15 border border-violet-200 dark:border-violet-800">
+            <UIcon name="i-lucide-sparkles" class="text-[9px] text-violet-500 shrink-0" />
+            <span class="text-[10px] text-violet-800 dark:text-violet-200 flex-1">{{ aiSuggestion.smdClassification }}</span>
+            <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" :disabled="props.locked" @click="emit('acceptAiSuggestion', line.id, 'smdClassification')" />
+            <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" :disabled="props.locked" @click="emit('dismissAiSuggestion', line.id, 'smdClassification')" />
+          </div>
+          <div v-if="aiSuggestion?.pinCount != null && aiSuggestion.pinCount !== line.pinCount" class="flex items-center gap-1.5 px-2 py-1 rounded border-l-2 border-violet-500 bg-violet-50/60 dark:bg-violet-900/15 border border-violet-200 dark:border-violet-800">
+            <UIcon name="i-lucide-sparkles" class="text-[9px] text-violet-500 shrink-0" />
+            <span class="text-[10px] text-violet-800 dark:text-violet-200 flex-1">{{ aiSuggestion.pinCount }} pins</span>
+            <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" :disabled="props.locked" @click="emit('acceptAiSuggestion', line.id, 'pinCount')" />
+            <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" :disabled="props.locked" @click="emit('dismissAiSuggestion', line.id, 'pinCount')" />
+          </div>
+        </div>
+
+        <!-- One-line 4-column row: Qty + Customer item + Customer provided + DNP -->
+        <div class="grid grid-cols-4 gap-2">
+          <div class="min-w-0">
+            <div class="text-[10px] text-neutral-400 mb-1">Qty / board</div>
+            <UInput
+              :model-value="String(line.quantity)"
+              size="sm"
+              type="number"
+              min="0"
+              :ui="fieldInputUi('quantity')"
+              @update:model-value="(v) => emitUpdate({ quantity: Math.max(0, Number(v ?? 0) || 0) })"
+            />
+          </div>
+          <div class="min-w-0">
+            <div class="text-[10px] text-neutral-400 mb-1">Customer item</div>
+            <UInput
+              :model-value="line.customerItemNo"
+              size="sm"
+              placeholder="(optional)"
+              :ui="fieldInputUi('customerItemNo')"
+              @update:model-value="(v) => emitUpdate({ customerItemNo: String(v ?? '') })"
+            />
+          </div>
+          <div class="min-w-0">
+            <div class="text-[10px] text-neutral-400 mb-1">Customer provided</div>
+            <div class="h-8 rounded-md border border-neutral-200 dark:border-neutral-800 px-2 flex items-center">
+              <USwitch
+                :model-value="line.customerProvided"
+                size="xs"
+                @update:model-value="(v: boolean) => emitUpdate({ customerProvided: v })"
+              />
+            </div>
+          </div>
+          <div class="min-w-0">
+            <div class="text-[10px] text-neutral-400 mb-1">DNP</div>
+            <div class="h-8 rounded-md border border-neutral-200 dark:border-neutral-800 px-2 flex items-center">
+              <USwitch
+                :model-value="line.dnp"
+                size="xs"
+                @update:model-value="(v: boolean) => emitUpdate({ dnp: v })"
+              />
+            </div>
+          </div>
+        </div>
       </fieldset>
 
-      <fieldset class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-2.5 space-y-2 border-0 m-0 min-w-0" :class="manufacturersClass" :disabled="props.locked">
+      <div v-if="extraEntries.length > 0" class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-2.5 space-y-1.5">
+        <button class="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors" @click="extraExpanded = !extraExpanded">
+          <UIcon :name="extraExpanded ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right'" class="text-[10px]" />
+          Additional Data
+          <UBadge size="xs" color="neutral" variant="subtle" class="ml-1">{{ extraEntries.length }}</UBadge>
+        </button>
+        <div v-if="extraExpanded" class="space-y-1">
+          <div v-for="[key, value] in extraEntries" :key="key" class="flex items-baseline gap-2">
+            <span class="text-[10px] text-neutral-400 shrink-0">{{ key }}</span>
+            <span class="text-xs text-neutral-700 dark:text-neutral-200 break-words min-w-0">{{ value }}</span>
+          </div>
+        </div>
+      </div>
+
+      <fieldset class="space-y-2 border-0 m-0 p-0 min-w-0" :class="manufacturersClass" :disabled="props.locked">
         <div class="flex items-center justify-between">
           <div class="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">Manufacturers</div>
           <UButton
@@ -169,15 +308,16 @@
             size="xs"
             color="neutral"
             variant="outline"
-            icon="i-lucide-refresh-cw"
-            :disabled="isFetchingAnyForLine"
+            class="!px-1.5 !py-0.5 text-[10px]"
+            :icon="isFetchingAnyForLine ? 'i-lucide-loader-2' : 'i-lucide-refresh-cw'"
+            :loading="isFetchingAnyForLine"
             @click="refreshAllForLine"
           >
-            Refresh
+            Fetch Prices
           </UButton>
         </div>
 
-        <div v-if="line.manufacturers.length === 0" class="text-xs text-neutral-400 py-3 text-center">
+        <div v-if="line.manufacturers.length === 0 && !(aiSuggestion?.manufacturers?.length)" class="text-xs text-neutral-400 py-3 text-center">
           No manufacturers added.
         </div>
 
@@ -188,7 +328,7 @@
             class="rounded border p-2 space-y-1.5"
             :class="[
               isManufacturerNew(mfr)
-                ? 'border-amber-300/70 bg-amber-50/30 dark:border-amber-700/40 dark:bg-amber-900/10'
+                ? editedCardClass
                 : 'border-neutral-100 dark:border-neutral-800',
               { 'opacity-60': line.dnp },
             ]"
@@ -205,7 +345,7 @@
                 <UInput
                   :model-value="mfr.manufacturerPart"
                   size="sm"
-                  placeholder="Manufacturer part number"
+                  placeholder="Manufacturer Part"
                   class="min-w-0 font-mono text-sm"
                   @update:model-value="(v) => updateManufacturer(idx, { manufacturerPart: String(v ?? '') })"
                 />
@@ -261,17 +401,18 @@
                     {{ offers.length }} suppliers
                   </button>
                   <div v-if="expandedPriceTables.has(mfr.manufacturerPart)" class="rounded border border-neutral-100 dark:border-neutral-800 overflow-hidden">
-                    <div class="grid grid-cols-[1fr_60px_60px_70px_70px] gap-1 px-2 py-0.5 bg-neutral-50 dark:bg-neutral-800/80 text-[9px] text-neutral-400 uppercase tracking-wide font-medium">
+                    <div class="grid grid-cols-[1fr_60px_60px_60px_70px_70px] gap-1 px-2 py-0.5 bg-neutral-50 dark:bg-neutral-800/80 text-[9px] text-neutral-400 uppercase tracking-wide font-medium">
                       <span>Supplier</span>
                       <span class="text-right">Stock</span>
                       <span class="text-right">MOQ</span>
+                      <span class="text-right">Break</span>
                       <span class="text-right">Unit</span>
                       <span class="text-right">Total</span>
                     </div>
                     <div
                       v-for="(offer, oi) in offers"
                       :key="oi"
-                      class="grid grid-cols-[1fr_60px_60px_70px_70px] gap-1 px-2 py-0.5 text-[10px] border-t border-neutral-50 dark:border-neutral-800/50"
+                      class="grid grid-cols-[1fr_60px_60px_60px_70px_70px] gap-1 px-2 py-0.5 text-[10px] border-t border-neutral-50 dark:border-neutral-800/50"
                       :class="{
                         'bg-green-50/30 dark:bg-green-900/5': offer.stock >= line.quantity * boardQuantity && oi === 0,
                         'opacity-40': offer.stock < line.quantity * boardQuantity,
@@ -285,6 +426,9 @@
                       </span>
                       <span class="text-right tabular-nums text-neutral-500">
                         {{ formatNumber(offer.moq) }}
+                      </span>
+                      <span class="text-right tabular-nums text-neutral-500">
+                        {{ formatNumber(offer.breakQty) }}
                       </span>
                       <template v-for="display in [getDisplayOffer(offer)]" :key="`${offer.supplier}-${oi}-${display.currency}`">
                         <span class="text-right tabular-nums font-medium" :class="offer.stock >= line.quantity * boardQuantity && oi === 0 ? 'text-green-600 dark:text-green-400' : 'text-neutral-600 dark:text-neutral-300'">
@@ -305,6 +449,30 @@
           </div>
         </div>
 
+        <!-- Spark: Suggested manufacturers -->
+        <div v-if="aiSuggestion?.manufacturers?.length" class="space-y-2">
+          <div
+            v-for="(mfr, idx) in aiSuggestion.manufacturers"
+            :key="`ai-${idx}`"
+            class="rounded border-l-2 border-violet-500 bg-violet-50/60 dark:bg-violet-900/15 border border-violet-200 dark:border-violet-800 p-2"
+          >
+            <div class="flex items-start gap-2">
+              <UIcon name="i-lucide-sparkles" class="text-[10px] text-violet-500 shrink-0 mt-1.5" />
+              <div class="flex-1 min-w-0">
+                <div class="text-[9px] font-medium text-violet-600 dark:text-violet-400 uppercase tracking-wider mb-1">Suggested manufacturer</div>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                  <span class="text-violet-900 dark:text-violet-200 font-medium">{{ mfr.manufacturer }}</span>
+                  <span class="text-violet-900 dark:text-violet-200 font-mono">{{ mfr.manufacturerPart }}</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-0.5 shrink-0">
+                <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" :disabled="props.locked" @click="emit('acceptAiManufacturer', line.id, mfr)" />
+                <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" :disabled="props.locked" @click="emit('dismissAiManufacturer', line.id, mfr)" />
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div
           v-if="inlineAddOpen"
           class="rounded border border-neutral-100 dark:border-neutral-800 p-2 space-y-1.5"
@@ -322,7 +490,7 @@
               <UInput
                 v-model="inlineAddMpn"
                 size="sm"
-                placeholder="MPN"
+                placeholder="Manufacturer Part"
                 class="min-w-0 font-mono text-sm"
                 @keydown.enter="confirmInlineAdd"
               />
@@ -338,13 +506,14 @@
         </UButton>
       </fieldset>
 
-    </div>
+      </div>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { BomLine, BomPricingCache, BomManufacturer } from '~/utils/bom-types'
-import { BOM_LINE_TYPES } from '~/utils/bom-types'
+import type { BomLine, BomPricingCache, BomManufacturer, AiSuggestion, BomGroup } from '~/utils/bom-types'
+import { BOM_LINE_TYPES, SMD_CLASSIFICATIONS } from '~/utils/bom-types'
 import type { ExchangeRateSnapshot, PricingQueueItem } from '~/composables/useElexessApi'
 import { formatCurrency, normalizeCurrencyCode } from '~/utils/currency'
 
@@ -359,7 +528,10 @@ const props = defineProps<{
   teamCurrency: 'USD' | 'EUR'
   exchangeRate: ExchangeRateSnapshot | null
   pnpDesignators: Set<string>
+  pnpPackages: Map<string, string>
   locked?: boolean
+  aiSuggestion?: AiSuggestion | null
+  groups: BomGroup[]
 }>()
 
 const emit = defineEmits<{
@@ -368,10 +540,59 @@ const emit = defineEmits<{
   removeManufacturer: [lineId: string, index: number]
   addManufacturer: [lineId: string, mfr: { manufacturer: string; manufacturerPart: string }]
   fetchSinglePricing: [partNumber: string]
-  fetchAllPricing: []
+  acceptAiSuggestion: [lineId: string, field: string]
+  dismissAiSuggestion: [lineId: string, field: string]
+  acceptAllAi: [lineId: string]
+  dismissAllAi: [lineId: string]
+  acceptAiManufacturer: [lineId: string, mfr: { manufacturer: string; manufacturerPart: string }]
+  dismissAiManufacturer: [lineId: string, mfr: { manufacturer: string; manufacturerPart: string }]
+  acceptAiGroup: [lineId: string, groupName: string]
+  dismissAiGroup: [lineId: string]
+  assignGroup: [lineId: string, groupId: string | null]
 }>()
 
 const bomLineTypeItems = [...BOM_LINE_TYPES]
+const SMD_CLASS_NONE = '__none__'
+const smdClassItems = [
+  { label: '(none)', value: SMD_CLASS_NONE },
+  ...SMD_CLASSIFICATIONS.map(c => ({ label: c, value: c })),
+]
+
+const GROUP_NONE = '__none__'
+const groupItems = computed(() => [
+  { label: '(none)', value: GROUP_NONE },
+  ...props.groups.map(g => ({ label: g.name, value: g.id })),
+])
+
+const pnpPackage = computed(() => {
+  if (!props.line || props.pnpPackages.size === 0) return ''
+  const refs = parseRefs(props.line.references)
+  for (const r of refs) {
+    const pkg = props.pnpPackages.get(r)
+    if (pkg) return pkg
+  }
+  return ''
+})
+
+const hasAnySuggestion = computed(() => {
+  const s = props.aiSuggestion
+  if (!s) return false
+  return !!(
+    (s.description && s.description !== props.line?.description)
+    || (s.type && s.type !== props.line?.type)
+    || (s.pinCount != null && s.pinCount !== props.line?.pinCount)
+    || (s.smdClassification && s.smdClassification !== props.line?.smdClassification)
+    || (s.manufacturers && s.manufacturers.length > 0)
+    || s.group
+  )
+})
+
+const extraExpanded = ref(true)
+const extraEntries = computed<[string, string][]>(() => {
+  const extra = props.line?.extra
+  if (!extra) return []
+  return Object.entries(extra).filter(([, v]) => v !== null && v !== undefined && String(v).trim() !== '')
+})
 
 const expandedPriceTables = ref(new Set<string>())
 function togglePriceTable(mpn: string) {
@@ -404,26 +625,25 @@ function manufacturerKey(m: BomManufacturer): string {
   return `${String(m.manufacturer ?? '').trim().toLowerCase()}|${String(m.manufacturerPart ?? '').trim().toLowerCase()}`
 }
 
-const customerBaselineByLineId = shallowRef(new Map<string, BomLine | null>())
-watchEffect(() => {
-  const line = props.line
-  if (!line) return
-  const map = customerBaselineByLineId.value
-  if (map.has(line.id)) return
-
-  const direct = props.customerBomLines.find(l => l.id === line.id)
-  if (direct) {
-    map.set(line.id, direct)
-    return
-  }
-
+const customerBaselineByLineId = computed(() => {
+  const byId = new Map(props.customerBomLines.map(l => [l.id, l]))
   const byRefs = new Map<string, BomLine>()
   for (const l of props.customerBomLines) {
     const k = refsKey(l.references)
     if (k && !byRefs.has(k)) byRefs.set(k, l)
   }
+
+  const map = new Map<string, BomLine | null>()
+  const line = props.line
+  if (!line) return map
+  const direct = byId.get(line.id)
+  if (direct) {
+    map.set(line.id, direct)
+    return map
+  }
   const rk = refsKey(line.references)
   map.set(line.id, rk ? (byRefs.get(rk) ?? null) : null)
+  return map
 })
 
 const baselineLine = computed(() => {
@@ -438,12 +658,14 @@ const isLineChanged = computed(() => {
   if (!line) return false
   if (!base) return true
 
+  const typeMatches = base.type === 'Other' || line.type === base.type
+
   const fieldsEqual =
     String(line.description ?? '').trim() === String(base.description ?? '').trim()
     && String(line.comment ?? '').trim() === String(base.comment ?? '').trim()
     && String(line.package ?? '').trim() === String(base.package ?? '').trim()
     && refsKey(line.references) === refsKey(base.references)
-    && line.type === base.type
+    && typeMatches
     && line.quantity === base.quantity
     && !!line.dnp === !!base.dnp
     && !!line.customerProvided === !!base.customerProvided
@@ -467,23 +689,30 @@ function emitUpdate(updates: Partial<BomLine>) {
 }
 
 type FieldKey = 'description' | 'comment' | 'package' | 'references' | 'customerItemNo' | 'quantity'
-function fieldClass(key: FieldKey) {
+function isFieldChanged(key: FieldKey): boolean {
   const line = props.line
   const base = baselineLine.value
-  if (!line) return ''
-  if (!base) return 'ring-1 ring-amber-400/40'
-  const changed = (() => {
-    switch (key) {
-      case 'description': return String(line.description ?? '').trim() !== String(base.description ?? '').trim()
-      case 'comment': return String(line.comment ?? '').trim() !== String(base.comment ?? '').trim()
-      case 'package': return String(line.package ?? '').trim() !== String(base.package ?? '').trim()
-      case 'references': return refsKey(line.references) !== refsKey(base.references)
-      case 'customerItemNo': return String(line.customerItemNo ?? '').trim() !== String(base.customerItemNo ?? '').trim()
-      case 'quantity': return Number(line.quantity ?? 0) !== Number(base.quantity ?? 0)
-    }
-  })()
-  return changed ? 'ring-1 ring-amber-400/40 bg-amber-50/40 dark:bg-amber-900/10' : ''
+  if (!line) return false
+  if (!base) return true
+  switch (key) {
+    case 'description': return String(line.description ?? '').trim() !== String(base.description ?? '').trim()
+    case 'comment': return String(line.comment ?? '').trim() !== String(base.comment ?? '').trim()
+    case 'package': return String(line.package ?? '').trim() !== String(base.package ?? '').trim()
+    case 'references': return refsKey(line.references) !== refsKey(base.references)
+    case 'customerItemNo': return String(line.customerItemNo ?? '').trim() !== String(base.customerItemNo ?? '').trim()
+    case 'quantity': return Number(line.quantity ?? 0) !== Number(base.quantity ?? 0)
+  }
 }
+function fieldClass(key: FieldKey) {
+  return isFieldChanged(key) ? editedCardClass : ''
+}
+function fieldInputUi(key: FieldKey) {
+  return isFieldChanged(key) ? editedInputUi : undefined
+}
+
+const editedCardClass = 'border-amber-300/70 dark:border-amber-700/40 bg-amber-50/30 dark:bg-amber-900/10'
+const editedInputUi = { base: 'ring-amber-300/70 dark:ring-amber-700/40 bg-amber-50/30 dark:bg-amber-900/10' }
+const editedBadgeClass = 'border-yellow-300/70 dark:border-yellow-700/50 text-yellow-700 dark:text-yellow-300 bg-yellow-50/70 dark:bg-yellow-900/20'
 
 const baselineManufacturerKeys = computed(() => {
   const base = baselineLine.value
@@ -497,16 +726,6 @@ function isManufacturerNew(mfr: BomManufacturer): boolean {
 }
 
 const manufacturersClass = computed(() => {
-  const line = props.line
-  const base = baselineLine.value
-  if (!line) return ''
-  if (!base) return 'ring-1 ring-amber-400/40'
-  const a = (line.manufacturers ?? []).map(manufacturerKey).sort()
-  const b = (base.manufacturers ?? []).map(manufacturerKey).sort()
-  if (a.length !== b.length) return 'ring-1 ring-amber-400/40 bg-amber-50/20 dark:bg-amber-900/10'
-  for (let i = 0; i < a.length; i++) {
-    if (a[i] !== b[i]) return 'ring-1 ring-amber-400/40 bg-amber-50/20 dark:bg-amber-900/10'
-  }
   return ''
 })
 
@@ -529,8 +748,12 @@ const isFetchingAnyForLine = computed(() => {
 })
 
 function refreshAllForLine() {
-  if (props.locked) return
-  emit('fetchAllPricing')
+  if (props.locked || !props.line) return
+  for (const mfr of props.line.manufacturers) {
+    if (mfr.manufacturerPart) {
+      emit('fetchSinglePricing', mfr.manufacturerPart)
+    }
+  }
 }
 
 // Pricing helpers (copied from BomPanel)
@@ -539,6 +762,7 @@ interface SupplierOffer {
   country: string
   stock: number
   moq: number
+  breakQty: number
   leadtime: number | null
   unitPrice: number
   currency: string
@@ -557,16 +781,24 @@ interface PriceBreak {
   currency?: string
 }
 
-function pickTierPrice(pricebreaks: PriceBreak[], totalQty: number): { price: number; currency: string } | null {
+function pickTierPrice(pricebreaks: PriceBreak[], totalQty: number): { price: number; currency: string; quantity: number } | null {
   if (!pricebreaks || pricebreaks.length === 0) return null
-  const sorted = [...pricebreaks].sort((a, b) => (a.quantity ?? 0) - (b.quantity ?? 0))
-  let best = sorted[0]
-  for (const tier of sorted) {
-    if ((tier.quantity ?? 0) <= totalQty) best = tier
-    else break
-  }
-  if (best?.price === undefined) return null
-  return { price: Number(best.price), currency: best.currency || 'EUR' }
+  const eligible = pricebreaks
+    .map(tier => ({
+      quantity: Number(tier.quantity),
+      price: Number(tier.price),
+      currency: tier.currency || 'EUR',
+    }))
+    .filter(tier =>
+      Number.isFinite(tier.quantity)
+      && tier.quantity > 0
+      && tier.quantity <= totalQty
+      && Number.isFinite(tier.price)
+      && tier.price >= 0,
+    )
+  if (!eligible.length) return null
+  const best = eligible.sort((a, b) => a.quantity - b.quantity)[eligible.length - 1]
+  return { price: best.price, currency: best.currency, quantity: best.quantity }
 }
 
 function conversionRate(from: string, to: string): number | null {
@@ -607,13 +839,16 @@ function getSupplierOffers(mpn: string, totalQty: number): SupplierOffer[] {
   const seenSuppliers = new Set<string>()
   for (const r of results) {
     if (!r.pricebreaks || r.pricebreaks.length === 0) continue
+    const moq = Math.max(0, Number(r.moq ?? 0) || 0)
+    if (moq > totalQty) continue
     const tier = pickTierPrice(r.pricebreaks, totalQty)
     if (!tier) continue
     candidates.push({
       supplier: r.supplier || 'Unknown',
       country: r.country || '',
       stock: r.current_stock ?? 0,
-      moq: r.moq ?? 0,
+      moq,
+      breakQty: tier.quantity,
       leadtime: r.current_leadtime ?? null,
       unitPrice: tier.price,
       currency: tier.currency,

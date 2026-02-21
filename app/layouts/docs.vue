@@ -51,7 +51,7 @@ provide('docs-search-files', searchFiles)
     <footer class="border-t border-neutral-200 dark:border-neutral-800">
       <UContainer>
         <div class="flex items-center justify-between py-4 text-sm text-neutral-500 dark:text-neutral-400">
-          <span>Built with <a href="https://ui.nuxt.com" target="_blank" class="hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors">Nuxt UI</a></span>
+          <span><a href="https://www.newmatik.com" target="_blank" rel="noopener noreferrer" class="hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors">Gerbtrace by Newmatik</a></span>
           <span>&copy; {{ new Date().getFullYear() }} Newmatik GmbH</span>
         </div>
       </UContainer>

@@ -58,9 +58,9 @@ interface ProjectRecord {
   /** Per-component user notes keyed by stable component key */
   pnpComponentNotes?: Record<string, string> | null
   /** Per-component field overrides (designator, value, x, y) */
-  pnpFieldOverrides?: Record<string, { designator?: string; value?: string; x?: number; y?: number }> | null
+  pnpFieldOverrides?: Record<string, { designator?: string; value?: string; description?: string; x?: number; y?: number }> | null
   /** User-added manual components */
-  pnpManualComponents?: { id: string; designator: string; value: string; package: string; x: number; y: number; rotation: number; side: 'top' | 'bottom'; componentType?: 'smd' | 'tht' }[] | null
+  pnpManualComponents?: { id: string; designator: string; value: string; description?: string; package: string; x: number; y: number; rotation: number; side: 'top' | 'bottom'; componentType?: 'smd' | 'tht' }[] | null
   /** Component keys deleted by the user (parsed components removed from view) */
   pnpDeletedComponents?: string[] | null
   /** Persisted sort state for SMD component table */
@@ -83,6 +83,10 @@ interface ProjectRecord {
   bomPricingCache?: BomPricingCache | null
   /** Board quantity for BOM pricing calculation */
   bomBoardQuantity?: number | null
+  /** BOM groups (sections) */
+  bomGroups?: { id: string; name: string; comment: string; collapsed: boolean }[] | null
+  /** AI (Spark) suggestions keyed by BOM line ID */
+  bomAiSuggestions?: Record<string, any> | null
   /** PCB board parameters for pricing estimation */
   pcbData?: {
     sizeX?: number            // mm
@@ -106,10 +110,10 @@ interface ProjectRecord {
   layerOrder?: string[] | null
   /** Persisted document ordering by file name */
   documentOrder?: string[] | null
-  /** Per-file BOM import options (header skip + mapping) */
-  bomFileImportOptions?: Record<string, { skipRows?: number; mapping?: BomColumnMapping }> | null
-  /** Per-file PnP import options (header skip + mapping + unit override) */
-  pnpFileImportOptions?: Record<string, { skipRows?: number; mapping?: PnPColumnMapping; unitOverride?: 'auto' | PnPCoordUnit }> | null
+  /** Per-file BOM import options (header skip + mapping + delimiter/decimal + fixed markers + extra columns) */
+  bomFileImportOptions?: Record<string, { skipRows?: number; skipBottomRows?: number; mapping?: BomColumnMapping; fixedColumns?: readonly number[]; delimiter?: ',' | ';' | '\t' | 'fixed'; decimal?: '.' | ','; extraColumns?: readonly string[] }> | null
+  /** Per-file PnP import options (header skip + mapping + unit override + delimiter/decimal + fixed markers + extra columns) */
+  pnpFileImportOptions?: Record<string, { skipRows?: number; skipBottomRows?: number; mapping?: PnPColumnMapping; unitOverride?: 'auto' | PnPCoordUnit; fixedColumns?: readonly number[]; delimiter?: ',' | ';' | '\t' | 'fixed'; decimal?: '.' | ','; extraColumns?: readonly string[] }> | null
   /** Small PNG thumbnail of the rendered PCB board */
   previewImage?: Blob | null
 }
@@ -425,11 +429,11 @@ export function useProject() {
     await db.projects.update(id, { pnpComponentNotes: toIndexedDbSafe(notes), updatedAt: new Date() })
   }
 
-  async function updateProjectFieldOverrides(id: number, overrides: Record<string, { designator?: string; value?: string; x?: number; y?: number }>) {
+  async function updateProjectFieldOverrides(id: number, overrides: Record<string, { designator?: string; value?: string; description?: string; x?: number; y?: number }>) {
     await db.projects.update(id, { pnpFieldOverrides: toIndexedDbSafe(overrides), updatedAt: new Date() })
   }
 
-  async function updateProjectManualComponents(id: number, components: { id: string; designator: string; value: string; package: string; x: number; y: number; rotation: number; side: 'top' | 'bottom'; componentType?: 'smd' | 'tht' }[]) {
+  async function updateProjectManualComponents(id: number, components: { id: string; designator: string; value: string; description?: string; package: string; x: number; y: number; rotation: number; side: 'top' | 'bottom'; componentType?: 'smd' | 'tht' }[]) {
     await db.projects.update(id, { pnpManualComponents: toIndexedDbSafe(components), updatedAt: new Date() })
   }
 
@@ -469,6 +473,10 @@ export function useProject() {
     await db.projects.update(id, { bomLines: toIndexedDbSafe(lines), updatedAt: new Date() })
   }
 
+  async function updateBomGroups(id: number, groups: { id: string; name: string; comment: string; collapsed: boolean }[]) {
+    await db.projects.update(id, { bomGroups: toIndexedDbSafe(groups), updatedAt: new Date() })
+  }
+
   async function updateBomPricingCache(id: number, cache: BomPricingCache) {
     await db.projects.update(id, { bomPricingCache: toIndexedDbSafe(cache), updatedAt: new Date() })
   }
@@ -499,14 +507,14 @@ export function useProject() {
 
   async function updateBomFileImportOptions(
     id: number,
-    options: Record<string, { skipRows?: number; mapping?: BomColumnMapping }>,
+    options: Record<string, { skipRows?: number; skipBottomRows?: number; mapping?: BomColumnMapping; fixedColumns?: readonly number[]; delimiter?: ',' | ';' | '\t' | 'fixed'; decimal?: '.' | ','; extraColumns?: readonly string[] }>,
   ) {
     await db.projects.update(id, { bomFileImportOptions: toIndexedDbSafe(options), updatedAt: new Date() })
   }
 
   async function updatePnpFileImportOptions(
     id: number,
-    options: Record<string, { skipRows?: number; mapping?: PnPColumnMapping; unitOverride?: 'auto' | PnPCoordUnit }>,
+    options: Record<string, { skipRows?: number; skipBottomRows?: number; mapping?: PnPColumnMapping; unitOverride?: 'auto' | PnPCoordUnit; fixedColumns?: readonly number[]; delimiter?: ',' | ';' | '\t' | 'fixed'; decimal?: '.' | ','; extraColumns?: readonly string[] }>,
   ) {
     await db.projects.update(id, { pnpFileImportOptions: toIndexedDbSafe(options), updatedAt: new Date() })
   }
@@ -658,6 +666,7 @@ export function useProject() {
     updateProjectGroupAssignments,
     updatePnpAssemblyTypes,
     updateBomLines,
+    updateBomGroups,
     updateBomPricingCache,
     updateBomBoardQuantity,
     updatePcbData,

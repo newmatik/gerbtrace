@@ -293,35 +293,40 @@ function dotsForPath(
       const len = Math.sqrt(dx * dx + dy * dy)
 
       if (len < spacing * 0.01) {
-        // Zero-length flash: circular pad
-        results.push(...dotsInCircle(x1, y1, halfW, spacing, dotR, pattern))
+        results.push(...dotsInRect(x1 - halfW, y1 - halfW, w, w, 0, spacing, dotR, pattern))
       } else {
-        // Line with width: compute the swept rectangle as a polygon
-        const nx = -dy / len * halfW
-        const ny = dx / len * halfW
+        const ux = dx / len
+        const uy = dy / len
+        const nx = -uy * halfW
+        const ny = ux * halfW
+        const ex = ux * halfW
+        const ey = uy * halfW
         const poly: [number, number][] = [
-          [x1 + nx, y1 + ny],
-          [x2 + nx, y2 + ny],
-          [x2 - nx, y2 - ny],
-          [x1 - nx, y1 - ny],
+          [x1 - ex + nx, y1 - ey + ny],
+          [x2 + ex + nx, y2 + ey + ny],
+          [x2 + ex - nx, y2 + ey - ny],
+          [x1 - ex - nx, y1 - ey - ny],
         ]
         results.push(...dotsInPolygon(poly, spacing, dotR, pattern))
       }
     } else {
-      // Arc segment: approximate the swept area with the line from start→end
       const dx = x2 - x1
       const dy = y2 - y1
       const len = Math.sqrt(dx * dx + dy * dy)
       if (len < spacing * 0.01) {
-        results.push(...dotsInCircle(x1, y1, halfW, spacing, dotR, pattern))
+        results.push(...dotsInRect(x1 - halfW, y1 - halfW, w, w, 0, spacing, dotR, pattern))
       } else {
-        const nx = -dy / len * halfW
-        const ny = dx / len * halfW
+        const ux = dx / len
+        const uy = dy / len
+        const nx = -uy * halfW
+        const ny = ux * halfW
+        const ex = ux * halfW
+        const ey = uy * halfW
         const poly: [number, number][] = [
-          [x1 + nx, y1 + ny],
-          [x2 + nx, y2 + ny],
-          [x2 - nx, y2 - ny],
-          [x1 - nx, y1 - ny],
+          [x1 - ex + nx, y1 - ey + ny],
+          [x2 + ex + nx, y2 + ey + ny],
+          [x2 + ex - nx, y2 + ey - ny],
+          [x1 - ex - nx, y1 - ey - ny],
         ]
         results.push(...dotsInPolygon(poly, spacing, dotR, pattern))
       }

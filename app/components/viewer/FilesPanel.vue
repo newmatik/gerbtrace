@@ -71,6 +71,13 @@
                     </span>
                   </div>
 
+                  <UIcon
+                    v-if="props.editedLayers?.has(entry.layer.file.fileName)"
+                    name="i-lucide-pencil"
+                    class="text-amber-400 text-[11px] shrink-0"
+                    title="Layer has been modified"
+                  />
+
                   <UDropdownMenu :items="[layerMenuItems(entry.flatIndex)]" :content="{ side: 'bottom', align: 'end', sideOffset: 6 }">
                     <button
                       class="shrink-0 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors opacity-0 group-hover:opacity-100"
@@ -192,6 +199,7 @@ const selectedDocId = defineModel<string | null>('selectedDocId', { default: nul
 const props = defineProps<{
   layers: LayerInfo[]
   documents: ProjectDocument[]
+  editedLayers?: Set<string>
   locked?: boolean
 }>()
 
@@ -423,7 +431,12 @@ function docMenuItems(id: string) {
 }
 
 function isLayerSelected(fileName: string, index: number) {
-  if (selectedLayerIndex.value != null) return selectedLayerIndex.value === index
+  if (selectedLayerIndex.value != null) {
+    const selectedLayer = props.layers[selectedLayerIndex.value]
+    if (selectedLayer?.file.fileName) {
+      return selectedLayer.file.fileName === fileName
+    }
+  }
   return selectedLayerFileName.value === fileName
 }
 

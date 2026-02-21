@@ -1,0 +1,46 @@
+{
+  "name": "DO-214BA",
+  "type": "PT_GENERIC",
+  "aliases": [
+    "DO214BA",
+    "GF1"
+  ],
+  "body": {
+    "length": 2.77,
+    "width": 5.58
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "J_LEAD",
+        "numLeads": 1,
+        "distFromCenter": -2.49,
+        "ccHalf": 0,
+        "angleMilliDeg": 180000,
+        "padLength": 1.14,
+        "padWidth": 1.68
+      },
+      {
+        "shape": "J_LEAD",
+        "numLeads": 1,
+        "distFromCenter": 2.49,
+        "ccHalf": 0,
+        "angleMilliDeg": 0,
+        "padLength": 1.14,
+        "padWidth": 1.68
+      }
+    ]
+  },
+  "height": {
+    "nominal": 2.615,
+    "max": 2.74,
+    "min": 2.49
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/DO-214BA.json",
+    "sourceFootprint": "DO-214BA"
+  }
+}

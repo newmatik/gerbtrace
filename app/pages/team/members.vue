@@ -2,107 +2,139 @@
   <div class="min-h-screen flex flex-col">
     <AppHeader />
     <main class="flex-1 px-4 py-10">
-      <div class="w-full max-w-2xl mx-auto">
+      <div class="w-full max-w-4xl mx-auto">
         <NuxtLink to="/" class="text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 flex items-center gap-1 mb-4">
           <UIcon name="i-lucide-arrow-left" class="text-sm" />
           Back to projects
         </NuxtLink>
 
-        <div class="flex items-center justify-between mb-4">
-          <h1 class="text-2xl font-bold">Team Members</h1>
-          <UButton
-            v-if="isAdmin"
-            size="sm"
-            icon="i-lucide-user-plus"
-            @click="inviteModalOpen = true"
-          >
-            Invite
-          </UButton>
-        </div>
-        <p v-if="passwordActionMessage" class="mb-4 text-xs" :class="passwordActionError ? 'text-red-500' : 'text-green-600 dark:text-green-400'">
-          {{ passwordActionMessage }}
-        </p>
+        <h1 class="text-2xl font-bold mb-6">Team</h1>
 
-        <!-- Search -->
-        <div class="mb-4">
-          <UInput
-            v-model="search"
-            icon="i-lucide-search"
-            placeholder="Search members..."
-            size="sm"
-            class="w-full"
-          />
-        </div>
-
-        <!-- Members list -->
-        <div v-if="membersLoading" class="text-center py-8 text-sm text-neutral-400">
-          Loading...
-        </div>
-
-        <div v-else-if="filteredMembers.length === 0" class="text-center py-8 text-sm text-neutral-400">
-          {{ search ? 'No members match your search.' : 'No team members yet.' }}
-        </div>
-
-        <div v-else class="space-y-2">
-          <div
-            v-for="member in filteredMembers"
-            :key="member.id"
-            class="flex items-center gap-3 p-3 rounded-lg border border-neutral-200 dark:border-neutral-800"
-            :class="{ 'opacity-50': member.status === 'disabled' }"
-          >
-            <div class="size-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary shrink-0">
-              {{ initials(member.profile?.name ?? member.profile?.email) }}
+        <div class="grid gap-8 lg:grid-cols-[220px_minmax(0,1fr)]">
+          <aside>
+            <div class="text-xs font-semibold tracking-wide uppercase text-neutral-400 mb-3">
+              Team
             </div>
-            <div class="flex-1 min-w-0">
-              <div class="text-sm font-medium truncate">
-                {{ member.profile?.name ?? 'Unknown' }}
-                <span v-if="member.status === 'disabled'" class="text-xs text-neutral-400">(disabled)</span>
-              </div>
-              <div class="text-xs text-neutral-500 truncate">{{ member.profile?.email }}</div>
-            </div>
-            <UBadge
-              :color="roleBadgeColor(member.role)"
-              size="xs"
-              variant="subtle"
-            >
-              {{ member.role }}
-            </UBadge>
-            <UDropdownMenu v-if="isAdmin && member.user_id !== currentUser?.id" :items="memberActions(member)">
-              <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-more-vertical" />
-            </UDropdownMenu>
-          </div>
-        </div>
+            <nav class="space-y-1">
+              <NuxtLink
+                v-for="item in navItems"
+                :key="item.label"
+                :to="item.to"
+                class="flex items-center gap-2 rounded-md px-3 py-2 text-sm border transition-colors"
+                :class="isActive(item)
+                  ? 'border-primary/30 bg-primary/10 text-primary'
+                  : 'border-transparent text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'"
+              >
+                <UIcon :name="item.icon" class="text-sm" />
+                {{ item.label }}
+              </NuxtLink>
+            </nav>
+          </aside>
 
-        <!-- Pending invitations -->
-        <div v-if="filteredInvitations.length > 0" class="mt-8">
-          <h2 class="text-xs font-semibold text-neutral-400 uppercase tracking-wide mb-3">
-            Pending Invitations
-          </h2>
-          <div class="space-y-2">
-            <div
-              v-for="inv in filteredInvitations"
-              :key="inv.id"
-              class="flex items-center gap-3 p-3 rounded-lg border border-dashed border-neutral-200 dark:border-neutral-800"
-            >
-              <UIcon name="i-lucide-mail" class="text-lg text-neutral-400 shrink-0" />
-              <div class="flex-1 min-w-0">
-                <div class="text-sm truncate">{{ inv.email }}</div>
-                <div class="text-xs text-neutral-400">Expires {{ formatDate(inv.expires_at) }}</div>
-              </div>
-              <UBadge :color="roleBadgeColor(inv.role)" size="xs" variant="subtle">
-                {{ inv.role }}
-              </UBadge>
+          <section>
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-lg font-semibold">Members</h2>
               <UButton
                 v-if="isAdmin"
-                size="xs"
-                variant="ghost"
-                color="error"
-                icon="i-lucide-x"
-                title="Cancel invitation"
-                @click="handleCancelInvitation(inv.id)"
+                size="sm"
+                icon="i-lucide-user-plus"
+                @click="handleInviteClick"
+              >
+                Invite
+              </UButton>
+            </div>
+            <p v-if="passwordActionMessage" class="mb-4 text-xs" :class="passwordActionError ? 'text-red-500' : 'text-green-600 dark:text-green-400'">
+              {{ passwordActionMessage }}
+            </p>
+
+            <!-- Search -->
+            <div class="mb-4">
+              <UInput
+                v-model="search"
+                icon="i-lucide-search"
+                placeholder="Search members..."
+                size="sm"
+                class="w-full"
               />
             </div>
-          </div>
+
+            <!-- Members list -->
+            <div v-if="membersLoading" class="text-center py-8 text-sm text-neutral-400">
+              Loading...
+            </div>
+
+            <div v-else-if="filteredMembers.length === 0" class="text-center py-8 text-sm text-neutral-400">
+              {{ search ? 'No members match your search.' : 'No team members yet.' }}
+            </div>
+
+            <div v-else class="space-y-2">
+              <div
+                v-for="member in filteredMembers"
+                :key="member.id"
+                class="flex items-center gap-3 p-3 rounded-lg border border-neutral-200 dark:border-neutral-800"
+                :class="{ 'opacity-50': member.status === 'disabled' }"
+              >
+            <img
+              v-if="member.profile?.avatar_url"
+              :src="member.profile.avatar_url"
+              alt="Avatar"
+              class="size-8 rounded-full object-cover shrink-0"
+            >
+            <div v-else class="size-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary shrink-0">
+                  {{ initials(member.profile?.name ?? member.profile?.email) }}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm font-medium truncate">
+                    {{ member.profile?.name ?? 'Unknown' }}
+                    <span v-if="member.status === 'disabled'" class="text-xs text-neutral-400">(disabled)</span>
+                  </div>
+                  <div class="text-xs text-neutral-500 truncate">{{ member.profile?.email }}</div>
+                </div>
+                <UBadge
+                  :color="roleBadgeColor(member.role)"
+                  size="xs"
+                  variant="subtle"
+                >
+                  {{ member.role }}
+                </UBadge>
+                <UDropdownMenu v-if="isAdmin && member.user_id !== currentUser?.id" :items="memberActions(member)">
+                  <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-more-vertical" />
+                </UDropdownMenu>
+              </div>
+            </div>
+
+            <!-- Pending invitations -->
+            <div v-if="filteredInvitations.length > 0" class="mt-8">
+              <h3 class="text-xs font-semibold text-neutral-400 uppercase tracking-wide mb-3">
+                Pending Invitations
+              </h3>
+              <div class="space-y-2">
+                <div
+                  v-for="inv in filteredInvitations"
+                  :key="inv.id"
+                  class="flex items-center gap-3 p-3 rounded-lg border border-dashed border-neutral-200 dark:border-neutral-800"
+                >
+                  <UIcon name="i-lucide-mail" class="text-lg text-neutral-400 shrink-0" />
+                  <div class="flex-1 min-w-0">
+                    <div class="text-sm truncate">{{ inv.email }}</div>
+                    <div class="text-xs text-neutral-400">Expires {{ formatDate(inv.expires_at) }}</div>
+                  </div>
+                  <UBadge :color="roleBadgeColor(inv.role)" size="xs" variant="subtle">
+                    {{ inv.role }}
+                  </UBadge>
+                  <UButton
+                    v-if="isAdmin"
+                    size="xs"
+                    variant="ghost"
+                    color="error"
+                    icon="i-lucide-x"
+                    title="Cancel invitation"
+                    @click="handleCancelInvitation(inv.id)"
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
       </div>
     </main>
@@ -237,6 +269,8 @@
         </div>
       </template>
     </UModal>
+
+    <UpgradeModal v-model:open="upgradeModalOpen" :feature="upgradeFeature" :plan="upgradePlan" />
   </div>
 </template>
 
@@ -244,8 +278,10 @@
 import type { TeamMember } from '~/composables/useTeamMembers'
 
 const router = useRouter()
+const route = useRoute()
 const { isAuthenticated, user: currentUser } = useAuth()
-const { isAdmin } = useTeam()
+const { isAdmin, currentTeamRole } = useTeam()
+const { isAtMemberLimit, canInviteGuests, suggestedUpgrade } = useTeamPlan()
 const {
   members,
   invitations,
@@ -262,6 +298,27 @@ const {
 watch(isAuthenticated, (authed) => {
   if (!authed) router.replace('/auth/login')
 }, { immediate: true })
+
+watch(currentTeamRole, (role) => {
+  if (role === 'guest') router.replace('/')
+}, { immediate: true })
+
+const navItems = [
+  { label: 'Spaces', icon: 'i-lucide-folders', to: '/team/spaces' },
+  { label: 'General', icon: 'i-lucide-settings-2', to: '/team/settings' },
+  { label: 'Defaults', icon: 'i-lucide-sliders-horizontal', to: '/team/settings?section=defaults' },
+  { label: 'Integrations', icon: 'i-lucide-plug-zap', to: '/team/settings?section=integrations' },
+  { label: 'Billing', icon: 'i-lucide-credit-card', to: '/team/settings?section=billing' },
+  { label: 'Members', icon: 'i-lucide-users', to: '/team/members' },
+]
+
+function isActive(item: { to: string }) {
+  if (item.to === '/team/spaces') return route.path === '/team/spaces'
+  if (item.to === '/team/members') return route.path === '/team/members'
+  if (item.to.includes('section=defaults')) return route.path === '/team/settings' && route.query.section === 'defaults'
+  if (item.to.includes('section=integrations')) return route.path === '/team/settings' && route.query.section === 'integrations'
+  return route.path === '/team/settings' && !route.query.section
+}
 
 // ── Search ──────────────────────────────────────────────────────────
 const search = ref('')
@@ -283,6 +340,11 @@ const filteredInvitations = computed(() => {
   )
 })
 
+// ── Upgrade modal ────────────────────────────────────────────────────
+const upgradeModalOpen = ref(false)
+const upgradeFeature = ref('')
+const upgradePlan = ref<'Pro' | 'Team' | undefined>(undefined)
+
 // ── Invite ──────────────────────────────────────────────────────────
 const inviteModalOpen = ref(false)
 const inviteEmail = ref('')
@@ -295,6 +357,16 @@ const roleOptions = [
   { label: 'Editor', value: 'editor' },
   { label: 'Admin', value: 'admin' },
 ]
+
+function handleInviteClick() {
+  if (isAtMemberLimit.value && suggestedUpgrade.value) {
+    upgradeFeature.value = 'more team members'
+    upgradePlan.value = suggestedUpgrade.value
+    upgradeModalOpen.value = true
+    return
+  }
+  inviteModalOpen.value = true
+}
 
 // ── Edit Name ───────────────────────────────────────────────────────
 const editNameModalOpen = ref(false)

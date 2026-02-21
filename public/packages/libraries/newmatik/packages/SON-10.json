@@ -1,0 +1,25 @@
+{
+  "name": "SON-10",
+  "type": "PT_TWO_SYM",
+  "aliases": [
+    "SON10"
+  ],
+  "body": {
+    "length": 2.5,
+    "width": 2.5
+  },
+  "twoSymmetric": {
+    "numberOfLeads": 10,
+    "widthOverLeads": 3.25,
+    "leadPitch": 0.5,
+    "leadWidth": 0.25,
+    "leadLength": 0.825
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/SON-10.json",
+    "sourceFootprint": "SON-10"
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "name": "VQFN-56-8x8-P0.50",
+  "aliases": [
+    "VQFN-56-10",
+    "VQFN-56-7",
+    "VQFN-56-802",
+    "VQFN-56-803",
+    "VQFN-56-806",
+    "VQFN-56-807",
+    "VQFN-56-850",
+    "VQFN-56-901"
+  ],
+  "body": {
+    "length": 8.0,
+    "width": 8.0
+  },
+  "type": "PT_GENERIC",
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "FLAT",
+        "numLeads": 14,
+        "distFromCenter": -3.8,
+        "ccHalf": 3.25,
+        "angleMilliDeg": 180000,
+        "padLength": 0.4,
+        "padWidth": 0.25
+      },
+      {
+        "shape": "FLAT",
+        "numLeads": 14,
+        "distFromCenter": 3.25,
+        "ccHalf": -3.8,
+        "angleMilliDeg": 90000,
+        "padLength": 0.4,
+        "padWidth": 0.25
+      },
+      {
+        "shape": "FLAT",
+        "numLeads": 14,
+        "distFromCenter": 3.8,
+        "ccHalf": -3.25,
+        "angleMilliDeg": 0,
+        "padLength": 0.4,
+        "padWidth": 0.25
+      },
+      {
+        "shape": "FLAT",
+        "numLeads": 14,
+        "distFromCenter": -3.25,
+        "ccHalf": 3.8,
+        "angleMilliDeg": 270000,
+        "padLength": 0.4,
+        "padWidth": 0.25
+      },
+      {
+        "shape": "FLAT",
+        "numLeads": 1,
+        "distFromCenter": 0,
+        "ccHalf": 0,
+        "angleMilliDeg": 0,
+        "padLength": 6.0,
+        "padWidth": 6.0
+      }
+    ]
+  },
+  "height": {
+    "nominal": 0.95,
+    "max": 1,
+    "min": 0.85
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/VQFN-56-8x8-P0.50.json",
+    "sourceFootprint": "VQFN-56-8x8-P0.50"
+  }
+}

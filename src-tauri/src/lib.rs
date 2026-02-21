@@ -35,6 +35,18 @@ fn consume_post_update_info(app: AppHandle) -> Option<String> {
   Some(data)
 }
 
+#[tauri::command]
+fn save_file_bytes(path: String, bytes: Vec<u8>) -> Result<(), String> {
+  let path_buf = PathBuf::from(path);
+  if let Some(parent) = path_buf.parent() {
+    if !parent.as_os_str().is_empty() {
+      fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+  }
+  fs::write(path_buf, bytes).map_err(|e| e.to_string())?;
+  Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   // Sentry: init when DSN is set (build-time SENTRY_DSN or runtime env). Guard must live for app lifetime.
@@ -59,7 +71,7 @@ pub fn run() {
     .plugin(tauri_plugin_window_state::Builder::new().build())
     .plugin(tauri_plugin_dialog::init())
     .plugin(tauri_plugin_fs::init())
-    .invoke_handler(tauri::generate_handler![save_post_update_info, consume_post_update_info])
+    .invoke_handler(tauri::generate_handler![save_post_update_info, consume_post_update_info, save_file_bytes])
     .setup(|app| {
       // Build native application menu with About metadata
       let about_metadata = AboutMetadata {

@@ -422,7 +422,7 @@ function graphicToSvg(graphic: ImageGraphic, color: string): string {
     case 'shape':
       return shapeToSvg(graphic.shape, color, isErase)
     case 'path':
-      return pathToSvg(graphic.segments, graphic.width, color, isErase)
+      return pathToSvg(graphic.segments, graphic.width, color, isErase, graphic.cap)
     case 'region':
       return regionToSvg(graphic.segments, color, isErase)
     default:
@@ -477,12 +477,14 @@ function shapeToSvg(shape: Shape, color: string, erase?: boolean): string {
   }
 }
 
-function pathToSvg(segments: PathSegment[], width: number, color: string, erase?: boolean): string {
+function pathToSvg(segments: PathSegment[], width: number, color: string, erase?: boolean, cap?: 'round' | 'square'): string {
   if (segments.length === 0 || width <= 0) return ''
   const d = segmentsToPathD(segments)
   if (!d) return ''
   const stroke = erase ? 'black' : color
-  return `<path d="${d}" fill="none" stroke="${stroke}" stroke-width="${fmt(width)}" stroke-linecap="round" stroke-linejoin="round"/>`
+  const linecap = cap === 'square' ? 'square' : 'round'
+  const linejoin = cap === 'square' ? 'miter' : 'round'
+  return `<path d="${d}" fill="none" stroke="${stroke}" stroke-width="${fmt(width)}" stroke-linecap="${linecap}" stroke-linejoin="${linejoin}"/>`
 }
 
 function regionToSvg(segments: PathSegment[], color: string, erase?: boolean): string {

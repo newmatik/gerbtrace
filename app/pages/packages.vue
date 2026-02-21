@@ -19,6 +19,23 @@
             THT Generic
           </button>
         </div>
+        <USelect
+          v-model="packageScope"
+          size="xs"
+          class="w-36"
+          :items="packageScopeOptions"
+          value-key="value"
+          label-key="label"
+        />
+        <USelectMenu
+          v-if="packageScope === 'space'"
+          v-model="selectedSpaceId"
+          size="xs"
+          class="w-44"
+          :items="spaceSelectItems"
+          value-key="value"
+          label-key="label"
+        />
       </div>
     </AppHeader>
 
@@ -104,19 +121,20 @@
                   color="primary"
                   variant="subtle"
                 >
-                  Team
+                  {{ selectedSmdTeamRecord?.space_id ? 'Space' : 'Team' }}
                 </UBadge>
               </div>
               <div class="flex items-center gap-1.5">
                 <UButton
-                  v-if="selectedItem?.source === 'builtin'"
+                  v-if="selectedItem && (selectedItem.source === 'builtin' || selectedItem.source === 'team')"
                   size="xs"
                   variant="outline"
                   color="neutral"
                   icon="i-lucide-copy"
-                  @click="duplicateBuiltin"
+                  :disabled="!isEditor || !hasTeam"
+                  @click="copySelectedSmdToTeam"
                 >
-                  Duplicate
+                  {{ selectedItem?.source === 'team' ? 'Duplicate' : (packageScope === 'space' ? 'Copy to Space' : 'Copy to Team') }}
                 </UButton>
                 <UButton
                   size="xs"
@@ -137,7 +155,7 @@
                   Export .pck
                 </UButton>
                 <UButton
-                  v-if="selectedItem?.source === 'team' && isAdmin"
+                  v-if="selectedItem?.source === 'team' && canDeleteSelectedSmd"
                   size="xs"
                   variant="outline"
                   color="error"
@@ -150,7 +168,7 @@
             </div>
 
             <PackageForm
-              v-if="selectedItem?.source === 'team' && editPkg"
+              v-if="selectedItem?.source === 'team' && editPkg && canEditSelectedSmd"
               :model-value="editPkg"
               :library-attribution="currentPackageLibraryAttribution"
               @update:model-value="onFormUpdate"
@@ -163,7 +181,7 @@
             />
 
             <!-- Save button for custom packages -->
-            <div v-if="selectedItem?.source === 'team' && isDirty" class="mt-4 flex justify-end">
+            <div v-if="selectedItem?.source === 'team' && isDirty && canEditSelectedSmd" class="mt-4 flex justify-end">
               <UButton
                 size="sm"
                 icon="i-lucide-save"
@@ -229,7 +247,10 @@
         </div>
       </div>
       <div class="flex-1 flex flex-col overflow-hidden">
-        <div class="h-72 shrink-0 border-b border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-950">
+        <div
+          v-if="!isEditableThtPackage"
+          class="h-72 shrink-0 border-b border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-950"
+        >
           <THTPackagePreview v-if="currentThtPkg" :package="currentThtPkg" />
           <div v-else class="h-full flex items-center justify-center text-sm text-neutral-400">Select or create a THT package</div>
         </div>
@@ -243,17 +264,17 @@
                 @update:model-value="onThtNameUpdate"
               />
               <UBadge size="xs" :color="selectedThtItem?.source === 'team' ? 'primary' : 'neutral'" variant="subtle">
-                {{ selectedThtItem?.source === 'team' ? 'Team' : 'Built-in' }}
+                {{ selectedThtItem?.source === 'team' ? (selectedThtTeamRecord?.space_id ? 'Space' : 'Team') : 'Built-in' }}
               </UBadge>
             </div>
             <UTabs :items="thtEditorTabs" :unmount-on-hide="false" size="sm" variant="link" color="neutral" class="flex-1 flex flex-col overflow-hidden min-h-0">
               <template #editor>
                 <div class="flex-1 overflow-hidden pt-3">
-                  <div v-if="selectedThtItem?.source === 'team'" class="h-full border border-neutral-200 dark:border-neutral-700 rounded overflow-hidden">
+                  <div v-if="selectedThtItem?.source === 'team' && canEditSelectedTht" class="h-full border border-neutral-200 dark:border-neutral-700 rounded overflow-hidden">
                     <THTPackageEditor :model-value="currentThtPkg" @update:model-value="onThtEditorUpdate" />
                   </div>
                   <div v-else class="h-full rounded border border-neutral-200 dark:border-neutral-700 p-3 text-sm text-neutral-500 dark:text-neutral-400">
-                    Built-in library package is read-only. Copy it to team packages to edit.
+                    This package is read-only in the current scope.
                   </div>
                 </div>
               </template>
@@ -268,18 +289,18 @@
             </UTabs>
             <div class="flex justify-end gap-2">
               <UButton
-                v-if="selectedThtItem?.source === 'builtin'"
+                v-if="selectedThtItem && (selectedThtItem.source === 'builtin' || selectedThtItem.source === 'team')"
                 size="sm"
                 variant="outline"
                 color="neutral"
                 icon="i-lucide-copy"
                 :disabled="!isEditor || !hasTeam"
-                @click="copyBuiltinThtToTeam"
+                @click="copySelectedThtToTeam"
               >
-                Copy to Team
+                {{ selectedThtItem?.source === 'team' ? 'Duplicate' : (packageScope === 'space' ? 'Copy to Space' : 'Copy to Team') }}
               </UButton>
               <UButton
-                v-if="selectedThtItem?.source === 'team' && isAdmin"
+                v-if="selectedThtItem?.source === 'team' && canDeleteSelectedTht"
                 size="sm"
                 variant="outline"
                 color="error"
@@ -288,7 +309,7 @@
               >
                 Delete
               </UButton>
-              <UButton v-if="selectedThtItem?.source === 'team'" size="sm" icon="i-lucide-save" @click="saveTht">Save Changes</UButton>
+              <UButton v-if="selectedThtItem?.source === 'team' && canEditSelectedTht" size="sm" icon="i-lucide-save" @click="saveTht">Save Changes</UButton>
             </div>
           </div>
           <div v-else class="h-full flex items-center justify-center text-sm text-neutral-400">Select or create a THT package</div>
@@ -362,15 +383,37 @@ const {
   setSelectedLibraries: setSelectedThtLibraries,
   loadPackages: loadThtPackages,
 } = useThtPackageLibrary()
-const { isEditor, isAdmin, hasTeam } = useTeam()
+const { isEditor, isAdmin, hasTeam, currentTeamRole } = useTeam()
+const { user } = useAuth()
+const { spaces, fetchSpaces } = useSpaces()
 
 const packageMode = ref<'smd' | 'tht'>('smd')
+const packageScope = ref<'team' | 'space'>('team')
+const selectedSpaceId = ref<string | undefined>(undefined)
+const packageScopeOptions = [
+  { label: 'Team Package', value: 'team' as const },
+  { label: 'Space Package', value: 'space' as const },
+]
+const spaceSelectItems = computed(() => spaces.value.map(space => ({ label: space.name, value: space.id })))
 const smdSelectedLibraryIdsUi = ref<string[]>([])
 
 // Load built-in packages
 onMounted(() => {
   loadPackages()
   loadThtPackages()
+  fetchSpaces({ background: true })
+})
+
+const visibleTeamPackages = computed(() => {
+  if (packageScope.value === 'team') return teamPackages.value.filter(record => !record.space_id)
+  if (!selectedSpaceId.value) return []
+  return teamPackages.value.filter(record => record.space_id === selectedSpaceId.value)
+})
+
+const visibleTeamThtPackages = computed(() => {
+  if (packageScope.value === 'team') return teamThtPackages.value.filter(record => !record.space_id)
+  if (!selectedSpaceId.value) return []
+  return teamThtPackages.value.filter(record => record.space_id === selectedSpaceId.value)
 })
 
 // Build combined list
@@ -390,14 +433,14 @@ const allPackageItems = computed<PackageListItem[]>(() => {
     })
   }
 
-  for (const record of teamPackages.value) {
+  for (const record of visibleTeamPackages.value) {
     items.push({
       key: `team-${record.id}`,
       pkg: record.data as PackageDefinition,
       source: 'team',
       teamId: record.id,
       libraryId: 'team',
-      libraryName: 'Team Library',
+      libraryName: record.space_id ? 'Space Library' : 'Team Library',
     })
   }
 
@@ -408,6 +451,10 @@ const allPackageItems = computed<PackageListItem[]>(() => {
 const selectedKey = ref<string | null>(null)
 const selectedLibraryNode = ref<string | null>(null)
 const selectedItem = computed(() => allPackageItems.value.find(i => i.key === selectedKey.value) ?? null)
+const selectedSmdTeamRecord = computed(() => {
+  if (!selectedItem.value?.teamId) return null
+  return teamPackages.value.find(record => record.id === selectedItem.value?.teamId) ?? null
+})
 /** For display: use editPkg if editing a custom package, otherwise the stored definition */
 const currentPkg = computed(() => {
   if (selectedItem.value?.source === 'team' && editPkg.value) return editPkg.value
@@ -456,19 +503,23 @@ function onFormUpdate(pkg: PackageDefinition) {
 
 async function saveChanges() {
   if (!editPkg.value || !selectedItem.value) return
+  if (!canEditSelectedSmd.value) return
   if (selectedItem.value.source === 'team' && selectedItem.value.teamId) {
     await updateTeamPackage(selectedItem.value.teamId, editPkg.value)
   }
   isDirty.value = false
 }
 
-// Duplicate built-in
-async function duplicateBuiltin() {
+// Copy selected SMD package into team library (builtin or team duplicate)
+async function copySelectedSmdToTeam() {
+  if (!hasTeam.value) return
+  if (!(isEditor.value || (currentTeamRole.value === 'guest' && packageScope.value === 'space' && !!selectedSpaceId.value))) return
+  if (!selectedItem.value || (selectedItem.value.source !== 'builtin' && selectedItem.value.source !== 'team')) return
   if (!currentPkg.value) return
   const clone: PackageDefinition = JSON.parse(JSON.stringify(currentPkg.value))
   clone.name = `${clone.name} (copy)`
   clone.aliases = []
-  const { data } = await addTeamPackage(clone)
+  const { data } = await addTeamPackage(clone, { spaceId: packageScope.value === 'space' ? selectedSpaceId.value : null })
   await nextTick()
   const newKey = data?.id ? `team-${data.id}` : null
   if (!newKey) return
@@ -503,6 +554,7 @@ function confirmDelete() {
 
 async function performDelete() {
   if (!selectedItem.value) return
+  if (!canDeleteSelectedSmd.value) return
   if (selectedItem.value.source === 'team' && selectedItem.value.teamId) {
     await removeTeamPackage(selectedItem.value.teamId)
   } else {
@@ -518,10 +570,10 @@ const smdSelectableLibraries = computed(() => {
   const out = [...builtinLibraries.value]
   out.push({
     id: 'team',
-    name: 'Team Library',
+    name: packageScope.value === 'space' ? 'Space Library' : 'Team Library',
     owner: 'team',
     sourceType: 'Team',
-    packageCount: teamPackages.value.length,
+    packageCount: visibleTeamPackages.value.length,
   })
   return out
 })
@@ -564,14 +616,14 @@ const thtItems = computed<ThtListItem[]>(() => {
       libraryName: (pkg as any).libraryName,
     })
   }
-  for (const rec of teamThtPackages.value) {
+  for (const rec of visibleTeamThtPackages.value) {
     out.push({
       key: `team-${rec.id}`,
       pkg: rec.data as THTPackageDefinition,
       source: 'team',
       teamId: rec.id,
       libraryId: 'team',
-      libraryName: 'Team Library',
+      libraryName: rec.space_id ? 'Space Library' : 'Team Library',
     })
   }
   return out
@@ -580,8 +632,8 @@ const thtSelectableLibraries = computed(() => {
   const out = [...thtLibraries.value]
   out.push({
     id: 'team',
-    name: 'Team Library',
-    packageCount: teamThtPackages.value.length,
+    name: packageScope.value === 'space' ? 'Space Library' : 'Team Library',
+    packageCount: visibleTeamThtPackages.value.length,
   })
   return out
 })
@@ -597,7 +649,44 @@ const filteredThtItems = computed(() => {
   })
 })
 const selectedThtItem = computed(() => thtItems.value.find((i) => i.key === selectedThtKey.value) ?? null)
+const selectedThtTeamRecord = computed(() => {
+  if (!selectedThtItem.value?.teamId) return null
+  return teamThtPackages.value.find(record => record.id === selectedThtItem.value?.teamId) ?? null
+})
 const currentThtPkg = computed(() => thtEditPkg.value ?? selectedThtItem.value?.pkg ?? null)
+const isEditableThtPackage = computed(() => selectedThtItem.value?.source === 'team')
+
+const canEditSelectedSmd = computed(() => {
+  const record = selectedSmdTeamRecord.value
+  if (!record) return false
+  if (!record.space_id) return isEditor.value
+  if (isEditor.value) return true
+  return currentTeamRole.value === 'guest' && record.created_by === user.value?.id
+})
+
+const canDeleteSelectedSmd = computed(() => {
+  const record = selectedSmdTeamRecord.value
+  if (!record) return false
+  if (!record.space_id) return isAdmin.value
+  if (isEditor.value) return true
+  return currentTeamRole.value === 'guest' && record.created_by === user.value?.id
+})
+
+const canEditSelectedTht = computed(() => {
+  const record = selectedThtTeamRecord.value
+  if (!record) return false
+  if (!record.space_id) return isEditor.value
+  if (isEditor.value) return true
+  return currentTeamRole.value === 'guest' && record.created_by === user.value?.id
+})
+
+const canDeleteSelectedTht = computed(() => {
+  const record = selectedThtTeamRecord.value
+  if (!record) return false
+  if (!record.space_id) return isAdmin.value
+  if (isEditor.value) return true
+  return currentTeamRole.value === 'guest' && record.created_by === user.value?.id
+})
 
 const thtEditorTabs = [
   { label: 'Editor', icon: 'i-lucide-pen-tool', slot: 'editor' },
@@ -629,6 +718,7 @@ function onThtNameUpdate(name: string | number) {
 
 async function saveTht() {
   if (!thtEditPkg.value || !selectedThtItem.value) return
+  if (!canEditSelectedTht.value) return
   if (selectedThtItem.value.source === 'team' && selectedThtItem.value.teamId) {
     await updateTeamThtPackage(selectedThtItem.value.teamId, thtEditPkg.value)
   }
@@ -636,16 +726,19 @@ async function saveTht() {
 
 async function deleteTeamTht() {
   if (!selectedThtItem.value || selectedThtItem.value.source !== 'team' || !selectedThtItem.value.teamId) return
+  if (!canDeleteSelectedTht.value) return
   await removeTeamThtPackage(selectedThtItem.value.teamId)
   selectedThtKey.value = null
   thtEditPkg.value = null
 }
 
-async function copyBuiltinThtToTeam() {
-  if (!selectedThtItem.value || selectedThtItem.value.source !== 'builtin') return
+async function copySelectedThtToTeam() {
+  if (!hasTeam.value) return
+  if (!(isEditor.value || (currentTeamRole.value === 'guest' && packageScope.value === 'space' && !!selectedSpaceId.value))) return
+  if (!selectedThtItem.value || (selectedThtItem.value.source !== 'builtin' && selectedThtItem.value.source !== 'team')) return
   const clone = JSON.parse(JSON.stringify(selectedThtItem.value.pkg)) as THTPackageDefinition
   clone.name = `${clone.name} (copy)`
-  const { data } = await addTeamThtPackage(clone)
+  const { data } = await addTeamThtPackage(clone, { spaceId: packageScope.value === 'space' ? selectedSpaceId.value : null })
   if (data?.id) {
     await nextTick()
     const item = thtItems.value.find((i) => i.key === `team-${data.id}`)
@@ -668,12 +761,20 @@ async function onSelectedThtLibrariesUpdate(ids: string[]) {
 }
 
 const canAddSmdPackage = computed(() => {
-  if (!isEditor.value || !hasTeam.value) return false
+  if (!hasTeam.value) return false
+  const canManageScope = packageScope.value === 'team'
+    ? isEditor.value
+    : (isEditor.value || currentTeamRole.value === 'guest') && !!selectedSpaceId.value
+  if (!canManageScope) return false
   return smdSelectedLibraryIdsUi.value.length === 1 && smdSelectedLibraryIdsUi.value[0] === 'team'
 })
 
 const canAddThtPackage = computed(() => {
-  if (!isEditor.value || !hasTeam.value) return false
+  if (!hasTeam.value) return false
+  const canManageScope = packageScope.value === 'team'
+    ? isEditor.value
+    : (isEditor.value || currentTeamRole.value === 'guest') && !!selectedSpaceId.value
+  if (!canManageScope) return false
   return thtSelectedLibraryIdsUi.value.length === 1 && thtSelectedLibraryIdsUi.value[0] === 'team'
 })
 
@@ -727,7 +828,7 @@ function buildDefaultSmd(type: PackageDefinition['type']): PackageDefinition {
 async function confirmCreateSmdPackage() {
   if (!canAddSmdPackage.value) return
   const def = buildDefaultSmd(createSmdType.value)
-  const { data } = await addTeamPackage(def)
+  const { data } = await addTeamPackage(def, { spaceId: packageScope.value === 'space' ? selectedSpaceId.value : null })
   createSmdModalOpen.value = false
   await nextTick()
   if (data?.id) {
@@ -738,11 +839,26 @@ async function confirmCreateSmdPackage() {
 
 async function createThtPackage() {
   if (!canAddThtPackage.value) return
-  const { data } = await addTeamThtPackage(createEmptyThtPackage('New THT Package'))
+  const { data } = await addTeamThtPackage(createEmptyThtPackage('New THT Package'), { spaceId: packageScope.value === 'space' ? selectedSpaceId.value : null })
   await nextTick()
   if (data?.id) {
     const item = thtItems.value.find((i) => i.key === `team-${data.id}`)
     if (item) selectTht(item)
   }
 }
+
+watch(spaces, (list) => {
+  if (!selectedSpaceId.value && list.length > 0) {
+    selectedSpaceId.value = list[0]!.id
+  }
+}, { immediate: true })
+
+watch([packageScope, selectedSpaceId], () => {
+  selectedKey.value = null
+  selectedThtKey.value = null
+  selectedLibraryNode.value = null
+  editPkg.value = null
+  thtEditPkg.value = null
+  isDirty.value = false
+})
 </script>

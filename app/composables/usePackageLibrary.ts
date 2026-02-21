@@ -26,62 +26,101 @@ type PackageWithLibrary = PackageDefinition & {
   sourceType?: string
 }
 
-export function usePackageLibrary() {
-  const packageCache = ref<Record<string, PackageWithLibrary[]>>({})
-  const packages = computed<PackageDefinition[]>(() => {
-    const ids = selectedLibraryIds.value.length
-      ? selectedLibraryIds.value
-      : libraries.value.map((l) => l.id)
-    const out: PackageDefinition[] = []
-    for (const id of ids) {
-      const fromLib = packageCache.value[id] ?? []
-      out.push(...fromLib)
+interface SmdTreePackageEntry {
+  file: string
+  name: string
+  type?: string
+  aliases?: string[]
+  libraryId: string
+  libraryName: string
+  owner: string
+  attribution?: BuiltinLibraryAttribution
+  sourceType?: string
+}
+
+const FETCH_CONCURRENCY = 6
+
+async function fetchConcurrentSmd<T>(
+  tasks: (() => Promise<T>)[],
+  concurrency: number,
+): Promise<T[]> {
+  const results: T[] = new Array(tasks.length)
+  let idx = 0
+  async function worker() {
+    while (idx < tasks.length) {
+      const i = idx++
+      results[i] = await tasks[i]!()
     }
-    return out
-  })
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, tasks.length) }, () => worker()))
+  return results
+}
+
+export function usePackageLibrary() {
+  const treeEntries = ref<SmdTreePackageEntry[]>([])
+  const fullPackageCache = ref<Record<string, PackageWithLibrary>>({})
   const customPackages = ref<PackageDefinition[]>([])
   const teamPackages = ref<PackageDefinition[]>([])
   const loaded = ref(false)
   const loading = ref(false)
   const selectedLibraryIds = ref<string[]>([])
   const libraries = ref<BuiltinLibraryInfo[]>([])
-  const treeManifest = ref<any>(null)
 
-  /** All packages: local custom first (highest), then team, then built-in */
-  const allPackages = computed(() => [...customPackages.value, ...teamPackages.value, ...packages.value])
+  const selectedTreeEntries = computed(() => {
+    if (selectedLibraryIds.value.length === 0) return treeEntries.value
+    const ids = new Set(selectedLibraryIds.value)
+    return treeEntries.value.filter((e) => ids.has(e.libraryId))
+  })
 
-  /** Map from normalised package name -> PackageDefinition */
+  const packages = computed<PackageWithLibrary[]>(() => {
+    return selectedTreeEntries.value
+      .map((entry) => fullPackageCache.value[smdCacheKey(entry.libraryId, entry.file)])
+      .filter((p): p is PackageWithLibrary => p != null)
+  })
+
+  /** Lightweight list of all packages (stubs for unloaded, full for loaded) for dropdown options */
+  const allPackageEntries = computed(() => {
+    return selectedTreeEntries.value.map((entry) => {
+      const cached = fullPackageCache.value[smdCacheKey(entry.libraryId, entry.file)]
+      if (cached) return cached
+      return {
+        name: entry.name,
+        type: entry.type,
+        aliases: entry.aliases,
+        libraryId: entry.libraryId,
+        libraryName: entry.libraryName,
+        owner: entry.owner,
+        sourceType: entry.sourceType,
+        attribution: entry.attribution,
+      } as PackageWithLibrary
+    })
+  })
+
+  const allPackages = computed(() => [...customPackages.value, ...teamPackages.value, ...allPackageEntries.value])
+
   const lookupMap = computed(() => {
     const map = new Map<string, PackageDefinition>()
-    // Built-in first, then team overwrites, then local custom overwrites (highest priority)
-    for (const pkg of packages.value) {
+    for (const pkg of allPackageEntries.value) {
       map.set(normalise(pkg.name), pkg)
       if (pkg.aliases) {
-        for (const alias of pkg.aliases) {
-          map.set(normalise(alias), pkg)
-        }
+        for (const alias of pkg.aliases) map.set(normalise(alias), pkg)
       }
     }
     for (const pkg of teamPackages.value) {
       map.set(normalise(pkg.name), pkg)
       if (pkg.aliases) {
-        for (const alias of pkg.aliases) {
-          map.set(normalise(alias), pkg)
-        }
+        for (const alias of pkg.aliases) map.set(normalise(alias), pkg)
       }
     }
     for (const pkg of customPackages.value) {
       map.set(normalise(pkg.name), pkg)
       if (pkg.aliases) {
-        for (const alias of pkg.aliases) {
-          map.set(normalise(alias), pkg)
-        }
+        for (const alias of pkg.aliases) map.set(normalise(alias), pkg)
       }
     }
     return map
   })
 
-  /** Look up a package definition by a PnP file package name */
   function matchPackage(packageName: string): PackageDefinition | undefined {
     if (!packageName) return undefined
     for (const candidate of normaliseCandidates(packageName)) {
@@ -91,85 +130,104 @@ export function usePackageLibrary() {
     return undefined
   }
 
-  /** Set custom packages (from IndexedDB) to be merged into the lookup */
   function setCustomPackages(pkgs: PackageDefinition[]) {
     customPackages.value = pkgs
   }
 
-  /** Set team packages (from Supabase) to be merged into the lookup */
   function setTeamPackages(pkgs: PackageDefinition[]) {
     teamPackages.value = pkgs
+  }
+
+  function setSelectedLibraries(ids: string[]) {
+    selectedLibraryIds.value = [...new Set(ids)]
+  }
+
+  /**
+   * Fetch full geometry for packages matching the given names.
+   * Only fetches packages not already cached. Uses concurrency limiting.
+   */
+  async function prefetchPackagesForBoard(packageNames: string[]) {
+    const needed = new Map<string, SmdTreePackageEntry>()
+    for (const name of packageNames) {
+      for (const candidate of normaliseCandidates(name)) {
+        for (const entry of selectedTreeEntries.value) {
+          const key = smdCacheKey(entry.libraryId, entry.file)
+          if (fullPackageCache.value[key]) continue
+          const entryNames = [normalise(entry.name), ...(entry.aliases ?? []).map(normalise)]
+          if (entryNames.includes(candidate) && !needed.has(key)) {
+            needed.set(key, entry)
+          }
+        }
+      }
+    }
+
+    if (needed.size === 0) return
+
+    const entries = [...needed.entries()]
+    const tasks = entries.map(([, entry]) => async () => {
+      try {
+        const res = await fetch(`/packages/libraries/${entry.libraryId}/packages/${entry.file}`)
+        if (!res.ok) return null
+        const pkg = (await res.json()) as PackageWithLibrary
+        pkg.libraryId = entry.libraryId
+        pkg.libraryName = entry.libraryName
+        pkg.owner = entry.owner
+        pkg.attribution = entry.attribution
+        pkg.sourceType = entry.sourceType
+        return pkg
+      } catch {
+        return null
+      }
+    })
+
+    const results = await fetchConcurrentSmd(tasks, FETCH_CONCURRENCY)
+    const next = { ...fullPackageCache.value }
+    for (let i = 0; i < entries.length; i++) {
+      const pkg = results[i]
+      if (pkg) next[entries[i]![0]] = pkg
+    }
+    fullPackageCache.value = next
   }
 
   async function loadLegacyFlatManifest() {
     const manifestRes = await fetch('/packages/_manifest.json')
     if (!manifestRes.ok) return
     const filenames: string[] = await manifestRes.json()
-    const results = await Promise.all(
-      filenames.map(async (fname) => {
-        try {
-          const res = await fetch(`/packages/${fname}`)
-          if (!res.ok) return null
-          return (await res.json()) as PackageDefinition
-        } catch {
-          return null
-        }
-      }),
-    )
-    packageCache.value = {
-      legacy: results.filter((p): p is PackageWithLibrary => p !== null),
+    const tasks = filenames.map((fname) => async () => {
+      try {
+        const res = await fetch(`/packages/${fname}`)
+        if (!res.ok) return null
+        return (await res.json()) as PackageWithLibrary
+      } catch {
+        return null
+      }
+    })
+    const results = await fetchConcurrentSmd(tasks, FETCH_CONCURRENCY)
+    const cache: Record<string, PackageWithLibrary> = {}
+    for (const pkg of results) {
+      if (pkg) cache[`legacy/${pkg.name}.json`] = pkg
     }
+    fullPackageCache.value = cache
     libraries.value = [{
       id: 'legacy',
       name: 'Built-in',
       owner: 'newmatik',
       sourceType: 'TPSys',
-      packageCount: packageCache.value.legacy.length,
+      packageCount: Object.keys(cache).length,
     }]
     selectedLibraryIds.value = ['legacy']
+    treeEntries.value = Object.values(cache).map((pkg) => ({
+      file: `${pkg.name}.json`,
+      name: pkg.name,
+      type: pkg.type,
+      aliases: pkg.aliases,
+      libraryId: 'legacy',
+      libraryName: 'Built-in',
+      owner: 'newmatik',
+      sourceType: 'TPSys',
+    }))
   }
 
-  async function ensureLibrariesLoaded(ids: string[]) {
-    if (!treeManifest.value?.libraries) return
-    const misses = ids.filter((id) => !(id in packageCache.value))
-    if (misses.length === 0) return
-
-    const nextCache: Record<string, PackageWithLibrary[]> = { ...packageCache.value }
-    for (const id of misses) {
-      const entry = treeManifest.value.libraries.find((l: any) => l.id === id)
-      if (!entry) continue
-      const files = Array.isArray(entry.packages) ? entry.packages : []
-      const loadedPkgs = await Promise.all(
-        files.map(async (p: any) => {
-          const rel = `/packages/libraries/${id}/packages/${p.file}`
-          try {
-            const res = await fetch(rel)
-            if (!res.ok) return null
-            const pkg = (await res.json()) as PackageWithLibrary
-            pkg.libraryId = id
-            pkg.libraryName = entry.library?.displayName ?? id
-            pkg.owner = entry.library?.owner ?? 'newmatik'
-            pkg.attribution = entry.library?.attribution
-            pkg.sourceType = entry.library?.sourceType
-            return pkg
-          } catch {
-            return null
-          }
-        }),
-      )
-      nextCache[id] = loadedPkgs.filter((p): p is PackageWithLibrary => p !== null)
-    }
-    packageCache.value = nextCache
-  }
-
-  async function setSelectedLibraries(ids: string[]) {
-    const unique = [...new Set(ids)]
-    selectedLibraryIds.value = unique
-    const targetIds = unique.length ? unique : libraries.value.map((l) => l.id)
-    await ensureLibrariesLoaded(targetIds)
-  }
-
-  /** Load package tree from /packages/libraries/_tree.json */
   async function loadPackages() {
     if (loaded.value || loading.value) return
     loading.value = true
@@ -182,8 +240,8 @@ export function usePackageLibrary() {
         return
       }
       const tree = await treeRes.json()
-      treeManifest.value = tree
       const libs = Array.isArray(tree?.libraries) ? tree.libraries : []
+
       libraries.value = libs.map((l: any) => ({
         id: l.id,
         name: l.library?.displayName ?? l.id,
@@ -195,10 +253,24 @@ export function usePackageLibrary() {
         packageCount: l.packageCount ?? (Array.isArray(l.packages) ? l.packages.length : 0),
       }))
 
-      const defaultSelection = libraries.value.some((l) => l.id === 'newmatik')
-        ? ['newmatik']
-        : libraries.value.slice(0, 1).map((l) => l.id)
-      await setSelectedLibraries(defaultSelection)
+      const entries: SmdTreePackageEntry[] = []
+      for (const lib of libs) {
+        const pkgs = Array.isArray(lib.packages) ? lib.packages : []
+        for (const p of pkgs) {
+          entries.push({
+            file: p.file,
+            name: p.name,
+            type: p.type,
+            aliases: Array.isArray(p.aliases) ? p.aliases : undefined,
+            libraryId: lib.id,
+            libraryName: lib.library?.displayName ?? lib.id,
+            owner: lib.library?.owner ?? 'newmatik',
+            attribution: lib.library?.attribution,
+            sourceType: lib.library?.sourceType,
+          })
+        }
+      }
+      treeEntries.value = entries
       loaded.value = true
     } catch (err) {
       console.warn('[PackageLibrary] Failed to load package manifest', err)
@@ -221,8 +293,13 @@ export function usePackageLibrary() {
     setCustomPackages,
     setTeamPackages,
     setSelectedLibraries,
+    prefetchPackagesForBoard,
     loadPackages,
   }
+}
+
+function smdCacheKey(libraryId: string, file: string) {
+  return `${libraryId}/${file}`
 }
 
 /** Normalise a package name for case-insensitive matching */

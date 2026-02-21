@@ -6,6 +6,10 @@
 export const BOM_LINE_TYPES = ['SMD', 'THT', 'Mounting', 'Other'] as const
 export type BomLineType = (typeof BOM_LINE_TYPES)[number]
 
+/** SMD placement classification */
+export const SMD_CLASSIFICATIONS = ['Fast', 'Slow', 'Finepitch', 'BGA'] as const
+export type SmdClassification = (typeof SMD_CLASSIFICATIONS)[number]
+
 /** A manufacturer entry for a BOM line */
 export interface BomManufacturer {
   manufacturer: string
@@ -36,6 +40,22 @@ export interface BomLine {
   dnp: boolean
   /** One or more manufacturer + part number entries */
   manufacturers: BomManufacturer[]
+  /** Values from unmapped columns selected by the user (header name → cell value) */
+  extra?: Record<string, string>
+  /** Pin count (primarily for THT components) */
+  pinCount?: number | null
+  /** SMD placement classification */
+  smdClassification?: SmdClassification | null
+  /** Group ID this line belongs to */
+  groupId?: string | null
+}
+
+/** A named BOM group (section header) */
+export interface BomGroup {
+  id: string
+  name: string
+  comment: string
+  collapsed: boolean
 }
 
 /** Cached Elexess pricing data for a single manufacturer part */
@@ -62,3 +82,16 @@ export interface BomColumnMapping {
   manufacturer?: number
   manufacturerPart?: number
 }
+
+/** AI-suggested enrichment for a single BOM line */
+export interface AiSuggestion {
+  description?: string
+  type?: BomLineType
+  pinCount?: number | null
+  smdClassification?: SmdClassification | null
+  manufacturers?: BomManufacturer[]
+  group?: string
+}
+
+/** AI suggestions keyed by BomLine.id */
+export type BomAiSuggestions = Record<string, AiSuggestion>

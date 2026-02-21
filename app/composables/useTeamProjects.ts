@@ -23,13 +23,16 @@ export interface ViewerPageLockState {
 export interface TeamProject {
   id: string
   team_id: string
+  space_id: string | null
   name: string
   assignee_user_id: string | null
   mode: 'viewer' | 'compare'
-  status: 'draft' | 'approved'
+  status: 'draft' | 'in_progress' | 'for_approval' | 'approved'
+  approver_user_id: string | null
   approved_by: string | null
   approved_at: string | null
   created_by: string
+  updated_by: string | null
   pnp_origin_x: number | null
   pnp_origin_y: number | null
   pnp_convention: string | null
@@ -50,6 +53,8 @@ export interface TeamProject {
   bom_lines: BomLine[] | null
   bom_pricing_cache: BomPricingCache | null
   bom_board_quantity: number | null
+  bom_groups: { id: string; name: string; comment: string; collapsed: boolean }[] | null
+  bom_ai_suggestions: Record<string, any> | null
   pcb_data: {
     sizeX?: number
     sizeY?: number
@@ -69,8 +74,8 @@ export interface TeamProject {
   paste_settings: PasteSettings | null
   layer_order: string[] | null
   document_order: string[] | null
-  bom_file_import_options: Record<string, { skipRows?: number; mapping?: BomColumnMapping }> | null
-  pnp_file_import_options: Record<string, { skipRows?: number; mapping?: PnPColumnMapping; unitOverride?: 'auto' | PnPCoordUnit }> | null
+  bom_file_import_options: Record<string, { skipRows?: number; skipBottomRows?: number; mapping?: BomColumnMapping; fixedColumns?: number[]; delimiter?: ',' | ';' | '\t' | 'fixed'; decimal?: '.' | ','; extraColumns?: string[] }> | null
+  pnp_file_import_options: Record<string, { skipRows?: number; skipBottomRows?: number; mapping?: PnPColumnMapping; unitOverride?: 'auto' | PnPCoordUnit; fixedColumns?: number[]; delimiter?: ',' | ';' | '\t' | 'fixed'; decimal?: '.' | ','; extraColumns?: string[] }> | null
   preview_image_path: string | null
   created_at: string
   updated_at: string
@@ -212,7 +217,7 @@ export function useTeamProjects() {
   }
 
   /** Create a new team project */
-  async function createProject(mode: 'viewer' | 'compare', name?: string) {
+  async function createProject(mode: 'viewer' | 'compare', name?: string, spaceId?: string | null) {
     const teamId = currentTeamId.value
     if (!teamId) return { project: null, error: new Error('No team selected') }
 
@@ -223,6 +228,7 @@ export function useTeamProjects() {
       .from('projects')
       .insert({
         team_id: teamId,
+        space_id: spaceId ?? null,
         name: name ?? `New ${mode === 'viewer' ? 'Viewer' : 'Compare'} Project`,
         mode,
         created_by: userId,
@@ -287,7 +293,36 @@ export function useTeamProjects() {
     return { error }
   }
 
-  /** Approve a project (admin only) */
+  async function setWorkflowStatus(
+    projectId: string,
+    action: 'set_in_progress' | 'request_approval' | 'approve' | 'request_changes',
+    options?: { approverUserId?: string | null; message?: string | null },
+  ) {
+    const { data, error } = await supabase.rpc('transition_project_workflow', {
+      p_project_id: projectId,
+      p_action: action,
+      p_approver_user_id: options?.approverUserId ?? null,
+      p_message: options?.message ?? null,
+    })
+
+    if (!error && data) {
+      const next = data as TeamProject
+      projectByIdCache.set(projectId, next)
+      const idx = projects.value.findIndex(p => p.id === projectId)
+      if (idx >= 0) {
+        const nextProjects = [...projects.value]
+        nextProjects[idx] = next
+        if (currentTeamId.value) {
+          setProjectsForTeam(currentTeamId.value, nextProjects)
+        }
+      }
+      return { data: next, error: null }
+    }
+
+    return { data: null, error }
+  }
+
+  /** Approve a project (selected approver/admin) */
   async function approveProject(projectId: string) {
     const { error } = await supabase.rpc('approve_project', { p_project_id: projectId })
     if (!error) {
@@ -298,6 +333,18 @@ export function useTeamProjects() {
       }
     }
     return { error }
+  }
+
+  async function requestApproval(projectId: string, approverUserId: string) {
+    return setWorkflowStatus(projectId, 'request_approval', { approverUserId })
+  }
+
+  async function requestChanges(projectId: string, message: string) {
+    return setWorkflowStatus(projectId, 'request_changes', { message })
+  }
+
+  async function moveToInProgress(projectId: string) {
+    return setWorkflowStatus(projectId, 'set_in_progress')
   }
 
   /** Revert project to draft (admin only) */
@@ -674,7 +721,11 @@ export function useTeamProjects() {
     createProject,
     updateProject,
     deleteProject,
+    setWorkflowStatus,
+    moveToInProgress,
+    requestApproval,
     approveProject,
+    requestChanges,
     revertToDraft,
     getProjectFiles,
     uploadFile,

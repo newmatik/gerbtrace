@@ -106,3 +106,50 @@ export function findNearestSnap(
 
   return nearest
 }
+
+/**
+ * Snap a coordinate to the nearest grid point.
+ */
+export function snapToGrid(x: number, y: number, spacing: number): { x: number; y: number } {
+  if (spacing <= 0) return { x, y }
+  return {
+    x: Math.round(x / spacing) * spacing,
+    y: Math.round(y / spacing) * spacing,
+  }
+}
+
+export interface DrawSnapResult {
+  x: number
+  y: number
+  kind: 'pad' | 'endpoint' | 'center' | 'grid'
+}
+
+/**
+ * Find the best snap point for the draw tool, preferring object snaps over grid snaps.
+ * Object snaps are tested in screen space; grid snaps in Gerber space.
+ */
+export function findBestDrawSnap(
+  gerberX: number,
+  gerberY: number,
+  objectSnaps: AlignSnapPoint[],
+  gridSpacing: number,
+  enableGrid: boolean,
+  maxGerberDistance: number,
+): DrawSnapResult | null {
+  const objSnap = findNearestSnap(gerberX, gerberY, objectSnaps, maxGerberDistance)
+  if (objSnap) {
+    return { x: objSnap.x, y: objSnap.y, kind: objSnap.kind }
+  }
+
+  if (enableGrid && gridSpacing > 0) {
+    const gridPt = snapToGrid(gerberX, gerberY, gridSpacing)
+    const dx = gridPt.x - gerberX
+    const dy = gridPt.y - gerberY
+    const dist = Math.sqrt(dx * dx + dy * dy)
+    if (dist < maxGerberDistance) {
+      return { x: gridPt.x, y: gridPt.y, kind: 'grid' }
+    }
+  }
+
+  return null
+}

@@ -1,0 +1,44 @@
+{
+  "name": "MOLEX-527450497",
+  "type": "PT_GENERIC",
+  "aliases": [
+    "MOLEX-0527450497",
+    "0527450497",
+    "052745-0497",
+    "52745-0497",
+    "CON_527450497_MOL"
+  ],
+  "body": {
+    "length": 8.099984,
+    "width": 5
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "FLAT",
+        "numLeads": 4,
+        "distFromCenter": -2.4,
+        "ccHalf": 0.75,
+        "angleMilliDeg": 180000,
+        "padLength": 0.8,
+        "padWidth": 0.3
+      },
+      {
+        "shape": "FLAT",
+        "numLeads": 2,
+        "distFromCenter": 0.475,
+        "ccHalf": 2.649999,
+        "angleMilliDeg": 0,
+        "padLength": 3.049999,
+        "padWidth": 1.3
+      }
+    ]
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": ".local/packages/0527450497/footprints.pretty/CON_527450497_MOL.kicad_mod",
+    "sourceFootprint": "CON_527450497_MOL"
+  }
+}

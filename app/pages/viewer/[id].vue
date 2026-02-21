@@ -34,6 +34,7 @@
         :show-pn-p="effectiveShowPnP"
         :show-bom="effectiveShowBom"
         :show-docs="effectiveShowDocs"
+        :show-conversation="isTeamProject"
         :locked-tabs="lockedTabsForNav"
       />
 
@@ -47,7 +48,13 @@
             :class="u.mode === 'editing' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' : 'bg-neutral-100 text-neutral-500 dark:bg-neutral-700 dark:text-neutral-300'"
             :title="`${u.name} (${u.role}, ${u.mode})`"
           >
-            {{ u.name.split(' ').map((p: string) => p[0]).join('').toUpperCase().slice(0, 2) }}
+            <img
+              v-if="u.avatarUrl"
+              :src="u.avatarUrl"
+              alt=""
+              class="size-full rounded-full object-cover"
+            >
+            <span v-else>{{ u.name.split(' ').map((p: string) => p[0]).join('').toUpperCase().slice(0, 2) }}</span>
           </div>
           <div
             v-if="presentUsers.length > 5"
@@ -59,63 +66,92 @@
       </template>
 
       <template #right>
-        <template v-if="downloadMenuItems.length > 0">
-          <UDropdownMenu :items="[downloadMenuItems]">
+        <template v-if="exportMenuItems.length > 0">
+          <UDropdownMenu :items="[exportMenuItems]">
             <UButton
               size="xs"
               color="neutral"
               variant="ghost"
               icon="i-lucide-download"
               :class="[tbBtnBase, tbBtnIdle]"
-              title="Downloads"
+              title="Exports"
             />
           </UDropdownMenu>
         </template>
 
         <template v-if="isTeamProject">
-          <UBadge
-            v-if="isApproved"
-            color="success"
-            size="xs"
-            variant="subtle"
-            class="gap-1"
-          >
-            <UIcon name="i-lucide-lock" class="text-xs" />
-            Approved
-          </UBadge>
-          <UBadge
-            v-else
-            color="warning"
-            size="xs"
-            variant="subtle"
-          >
-            Draft
-          </UBadge>
-          <UButton
-            v-if="isApproved && isTeamAdmin"
-            size="xs"
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-lock-open"
-            title="Revert to Draft"
-            @click="handleRevertToDraft"
-          >
-            Revert
-          </UButton>
-          <UButton
-            v-if="!isApproved && isTeamAdmin"
-            size="xs"
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-check-circle"
-            title="Approve project"
-            @click="handleApproveProject"
-          >
-            Approve
-          </UButton>
+          <UDropdownMenu :items="workflowMenuItems">
+            <UButton
+              size="xs"
+              color="neutral"
+              variant="ghost"
+              :icon="workflowIcon"
+              trailing-icon="i-lucide-chevron-down"
+            >
+              {{ workflowLabel }}
+            </UButton>
+          </UDropdownMenu>
         </template>
       </template>
     </AppHeader>
+
+    <UModal v-model:open="requestApprovalModalOpen">
+      <template #content>
+        <div class="p-4 space-y-3">
+          <h3 class="text-sm font-semibold">Request Approval</h3>
+          <p class="text-xs text-neutral-500">
+            Select who should approve this project.
+          </p>
+          <USelectMenu
+            v-model="selectedApproverUserId"
+            size="sm"
+            :items="workflowApproverOptions"
+            placeholder="Select approver"
+            value-key="value"
+            label-key="label"
+            searchable
+          />
+          <div class="flex justify-end gap-2">
+            <UButton size="sm" color="neutral" variant="outline" @click="requestApprovalModalOpen = false">
+              Cancel
+            </UButton>
+            <UButton
+              size="sm"
+              color="primary"
+              :disabled="!selectedApproverUserId"
+              @click="handleRequestApproval"
+            >
+              Request
+            </UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <UModal v-model:open="requestChangesModalOpen">
+      <template #content>
+        <div class="p-4 space-y-3">
+          <h3 class="text-sm font-semibold">Request Changes</h3>
+          <p class="text-xs text-neutral-500">
+            A message is required and will be posted in Conversation.
+          </p>
+          <UTextarea v-model="requestChangesMessage" :rows="5" placeholder="Describe required changes..." />
+          <div class="flex justify-end gap-2">
+            <UButton size="sm" color="neutral" variant="outline" @click="requestChangesModalOpen = false">
+              Cancel
+            </UButton>
+            <UButton
+              size="sm"
+              color="warning"
+              :disabled="!requestChangesMessage.trim()"
+              @click="handleRequestChanges"
+            >
+              Submit
+            </UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
 
     <ViewerControlsBar
       v-if="showControlsBar"
@@ -137,8 +173,8 @@
       v-model:pnp-auto-focus-on-select="pnpAutoFocusOnSelect"
       v-model:pnp-show-minimap="pnpShowMinimap"
       v-model:measure-constraint-mode="measureTool.constraintMode.value"
-      :page="sidebarTab"
-      :users-in-tab="isTeamProject && isCanvasPage ? presentUsersInTab(sidebarTab) : []"
+      :page="controlsBarPage"
+      :users-in-tab="controlsBarUsersInTab"
       :has-outline="hasOutline"
       :layers-count="layers.length"
       :active-filter-options="activeFilterOptions"
@@ -154,6 +190,12 @@
       :rotate-c-w="rotateCW"
       :rotate-c-c-w="rotateCCW"
       :set-board-rotation="setBoardRotation"
+    />
+    <DrawEditorBar
+      v-if="activeMode === 'draw' && isCanvasPage"
+      :draw="drawTool"
+      :layers="layers.map(l => ({ fileName: l.file.fileName, type: l.type, color: l.color }))"
+      :active-filter="activeFilter"
     />
 
     <div class="flex-1 flex overflow-hidden">
@@ -300,6 +342,7 @@
             :paste-settings="pasteSettings"
             :locked="!canEditTab('paste')"
             @update:paste-settings="pasteSettings = $event"
+            @export-jpsys="showJpsysExport = true"
           />
         </aside>
 
@@ -357,6 +400,7 @@
               :measure="measureTool"
               :info="infoTool"
               :delete-tool="deleteTool"
+              :draw-tool="drawTool"
               :view-mode="viewMode"
               :preset="viewMode === 'realistic' ? selectedPreset : undefined"
               :paste-settings="pasteSettings"
@@ -376,8 +420,17 @@
               @pnp-click="handleCanvasComponentClick($event)"
               @pnp-dblclick="handlePnPDblClick"
               @align-click="handleAlignClick"
+              @draw-commit="handleDrawCommit"
+            />
+            <MiniPerfOverlay
+              v-if="appSettings.miniPerfOverlay"
+              :fps="miniPerfData.fps"
+              :frame-ms="miniPerfData.frameMs"
+              :heap-used-bytes="miniPerfData.heapUsedBytes"
+              @open-full="showPerformanceMonitor = true"
             />
             <MeasureOverlay :measure="measureTool" :transform="canvasInteraction.transform.value" />
+            <DrawPreviewOverlay :draw="drawTool" :transform="canvasInteraction.transform.value" />
             <InfoOverlay v-if="sidebarTab !== 'panel'" :info="infoTool" />
             <DeleteOverlay v-if="sidebarTab !== 'panel'" :delete-tool="deleteTool" @confirm-delete="handleConfirmDelete" />
 
@@ -393,8 +446,12 @@
                 v-if="undoToastVisible"
                 class="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3.5 py-2 rounded-lg bg-neutral-800/90 dark:bg-neutral-700/95 backdrop-blur-sm shadow-lg text-white text-xs"
               >
-                <UIcon name="i-lucide-trash-2" class="text-red-400 text-sm shrink-0" />
-                <span>Deletion applied</span>
+                <UIcon
+                  :name="editHistory.lastDescription.value.startsWith('Deleted') ? 'i-lucide-trash-2' : 'i-lucide-pen-tool'"
+                  :class="editHistory.lastDescription.value.startsWith('Deleted') ? 'text-red-400' : 'text-emerald-400'"
+                  class="text-sm shrink-0"
+                />
+                <span>{{ editHistory.lastDescription.value }}</span>
                 <button class="ml-1 px-2 py-0.5 rounded font-medium bg-white/15 hover:bg-white/25 transition-colors" @click="handleUndo">
                   Undo
                 </button>
@@ -495,6 +552,7 @@
             v-model:selected-doc-id="filesSelectedDocId"
             :layers="layers"
             :documents="documents"
+            :edited-layers="editedLayers"
             :locked="!canEditTab('files')"
             @select-layer="handleFilesLayerSelect"
             @select-doc="handleFilesDocSelect"
@@ -526,8 +584,18 @@
                 <UIcon name="i-lucide-file" class="text-sm text-blue-500 shrink-0" />
                 <span class="text-xs font-medium text-neutral-700 dark:text-neutral-200 truncate">{{ filesSelectedLayer.file.fileName }}</span>
                 <UBadge size="xs" variant="subtle" color="neutral" class="shrink-0">{{ filesSelectedLayer.type }}</UBadge>
+                <UBadge
+                  v-if="editedLayers.has(filesSelectedLayer.file.fileName)"
+                  size="xs"
+                  variant="subtle"
+                  color="warning"
+                  class="shrink-0"
+                >
+                  Edited
+                </UBadge>
                 <template v-if="isSelectedLayerImportConfigurable">
                   <div class="flex items-center gap-1.5 ml-1">
+                    <span v-if="isSelectedLayerPnp" class="text-[11px] text-neutral-500 dark:text-neutral-400">Unit</span>
                     <USelect
                       v-if="isSelectedLayerPnp"
                       :model-value="selectedLayerPnpUnit"
@@ -535,11 +603,41 @@
                       value-key="value"
                       label-key="label"
                       size="xs"
-                      class="w-28"
+                      class="w-24"
                       @update:model-value="updateSelectedLayerPnpUnit($event)"
                     />
                   </div>
                 </template>
+                <div v-if="filesSelectedLayer" class="flex items-center gap-1 ml-1">
+                  <UButton
+                    v-if="canSelectedLayerUseTablePreview"
+                    size="xs"
+                    color="neutral"
+                    variant="ghost"
+                    :class="filesPreviewMode === 'table' ? previewBtnActive : previewBtnIdle"
+                    @click="filesPreviewMode = 'table'"
+                  >
+                    Table
+                  </UButton>
+                  <UButton
+                    size="xs"
+                    color="neutral"
+                    variant="ghost"
+                    :class="filesPreviewMode === 'text' ? previewBtnActive : previewBtnIdle"
+                    @click="filesPreviewMode = 'text'"
+                  >
+                    Text
+                  </UButton>
+                  <UButton
+                    size="xs"
+                    color="neutral"
+                    variant="ghost"
+                    :class="filesPreviewMode === 'diff' ? previewBtnActive : previewBtnIdle"
+                    @click="filesPreviewMode = 'diff'"
+                  >
+                    Diff
+                  </UButton>
+                </div>
                 <div class="flex-1" />
                 <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-download" @click="downloadSelectedLayer">
                   Download
@@ -591,19 +689,35 @@
             <div class="flex-1 min-h-0 overflow-hidden">
               <div v-if="filesSelectedLayer" class="h-full">
                 <FileTablePreview
-                  v-if="isTabularPreviewFileName(filesSelectedLayer.file.fileName)"
+                  v-if="canSelectedLayerUseTablePreview && filesPreviewMode === 'table'"
                   :key="`layer-${filesPreviewSelectionNonce}-${filesSelectedLayerIndex ?? 'na'}-${filesSelectedLayer.file.fileName}`"
                   :file-name="filesSelectedLayer.file.fileName"
                   :text-content="filesSelectedLayer.file.content"
                   :skip-rows="selectedLayerSkipRows"
+                  :skip-bottom-rows="selectedLayerSkipBottomRows"
                   :mapping="selectedLayerMappingByField"
                   :mapping-fields="selectedLayerMappingFields"
+                  :fixed-columns="selectedLayerFixedColumns"
+                  :delimiter="selectedLayerDelimiter"
+                  :decimal="selectedLayerDecimal"
+                  :extra-columns="selectedLayerExtraColumns"
                   @update:skip-rows="updateSelectedLayerSkipRows"
+                  @update:skip-bottom-rows="updateSelectedLayerSkipBottomRows"
                   @update:mapping="updateSelectedLayerMappingByField"
+                  @update:fixed-columns="updateSelectedLayerFixedColumns"
+                  @update:delimiter="updateSelectedLayerDelimiter"
+                  @update:decimal="updateSelectedLayerDecimal"
+                  @update:extra-columns="updateSelectedLayerExtraColumns"
                 />
-                <div v-else class="h-full overflow-auto p-4">
-                  <pre class="text-[11px] leading-relaxed font-mono whitespace-pre-wrap break-words text-neutral-700 dark:text-neutral-200">{{ filesSelectedLayer.file.content }}</pre>
-                </div>
+                <FileTextEditorPreview
+                  v-else
+                  :key="`layer-text-${filesPreviewSelectionNonce}-${filesSelectedLayer.file.fileName}`"
+                  :model-value="filesSelectedLayer.file.content"
+                  :original-text="selectedLayerOriginalText"
+                  :editable="canEditTab('files')"
+                  :mode="filesPreviewMode === 'diff' ? 'diff' : 'text'"
+                  @update:model-value="updateSelectedLayerText"
+                />
               </div>
               <div v-else-if="filesSelectedDoc" class="h-full">
                 <FileTablePreview
@@ -630,13 +744,13 @@
       <!-- BOM: 50/50 split (table + details), resizable -->
       <template v-else-if="sidebarTab === 'bom'">
         <div class="flex-1 min-w-0 flex flex-col overflow-hidden">
-          <div class="px-3 py-1.5 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 flex items-center gap-3">
-            <div class="flex items-center gap-2">
-              <span class="text-[10px] text-neutral-400">Pricing qty</span>
+          <div class="px-3 py-1.5 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 flex items-center gap-2 min-h-[36px] overflow-x-auto">
+            <div class="flex items-center gap-1.5 shrink-0">
+              <span class="text-[10px] text-neutral-400 whitespace-nowrap">Pricing qty</span>
               <USelect
                 :model-value="bom.boardQuantity.value"
                 size="xs"
-                class="w-28"
+                class="w-24"
                 :items="pricingQtySelectItems"
                 value-key="value"
                 label-key="label"
@@ -644,25 +758,109 @@
                 @update:model-value="handleBomBoardQuantityUpdate(($event as number))"
               />
             </div>
-            <div class="min-w-[320px] max-w-[520px] flex-1">
+            <div class="min-w-[200px] max-w-[420px] flex-1 shrink">
               <PricingQuantityTags
                 :model-value="pricingQuantities"
                 :locked="!canEditTab('bom')"
                 @update:model-value="handlePricingQuantitiesFromBom($event)"
               />
             </div>
-            <div class="flex-1" />
-            <UButton
-              v-if="bomCpLines.length > 0"
-              size="xs"
-              :color="bomCpCopied ? 'success' : 'neutral'"
-              :variant="bomCpCopied ? 'soft' : 'outline'"
-              :icon="bomCpCopied ? 'i-lucide-check' : 'i-lucide-clipboard-copy'"
-              :title="`Copy ${bomCpLines.length} customer-provided items to clipboard`"
-              @click="copyBomCpItems"
-            >
-              {{ bomCpCopied ? 'Copied' : 'Copy CP List' }}
-            </UButton>
+            <div class="flex-1 min-w-0" />
+            <div class="flex items-center gap-1.5 shrink-0">
+              <UButton
+                v-if="elexess.hasCredentials.value"
+                size="xs"
+                :color="elexess.isFetching.value ? 'warning' : 'neutral'"
+                :variant="elexess.isFetching.value ? 'soft' : 'outline'"
+                :icon="elexess.isFetching.value ? 'i-lucide-x' : undefined"
+                :disabled="!canEditTab('bom') || (bom.bomLines.value as BomLine[]).length === 0"
+                :title="elexess.isFetching.value ? 'Cancel pricing fetch' : 'Fetch pricing for all manufacturer parts'"
+                @click="elexess.isFetching.value ? handleCancelPricing() : handleFetchAllPricing()"
+              >
+                <template v-if="!elexess.isFetching.value" #leading>
+                  <ElexessIcon class="size-4" />
+                </template>
+                <template v-if="elexess.isFetching.value">Cancel</template>
+                <template v-else>Fetch Prices</template>
+              </UButton>
+              <UButton
+                v-else
+                size="xs"
+                color="neutral"
+                variant="outline"
+                :disabled="(bom.bomLines.value as BomLine[]).length === 0"
+                title="Fetch live component pricing via Elexess"
+                @click="handleFetchPricesUpsell"
+              >
+                <template #leading>
+                  <ElexessIcon class="size-4" />
+                </template>
+                Fetch Prices
+              </UButton>
+              <UButton
+                v-if="spark.isAiEnabled.value"
+                size="xs"
+                color="secondary"
+                :variant="spark.isEnriching.value ? 'solid' : spark.pendingSuggestionCount.value > 0 ? 'soft' : 'outline'"
+                icon="i-lucide-sparkles"
+                :loading="spark.isEnriching.value"
+                :disabled="(bom.bomLines.value as BomLine[]).length === 0 || spark.isEnriching.value || spark.pendingSuggestionCount.value > 0 || !canEditTab('bom')"
+                :title="spark.pendingSuggestionCount.value > 0 ? `Review ${spark.pendingSuggestionCount.value} pending suggestion${spark.pendingSuggestionCount.value === 1 ? '' : 's'} before running Spark again` : 'Enrich BOM with AI suggestions'"
+                @click="handleSparkEnrich"
+              >
+                <template v-if="spark.isEnriching.value">Analyzing {{ (bom.bomLines.value as BomLine[]).filter(l => !l.dnp).length }} lines...</template>
+                <template v-else>
+                  Spark
+                  <UBadge v-if="spark.pendingSuggestionCount.value > 0" size="xs" color="secondary" variant="solid" class="ml-1">{{ spark.pendingSuggestionCount.value }}</UBadge>
+                </template>
+              </UButton>
+              <UButton
+                v-else-if="!canUseSparkAi"
+                size="xs"
+                color="secondary"
+                variant="outline"
+                icon="i-lucide-sparkles"
+                :disabled="(bom.bomLines.value as BomLine[]).length === 0"
+                title="Spark AI enriches your BOM automatically"
+                @click="showUpgradeModal('Spark AI', 'Pro')"
+              >
+                Spark
+              </UButton>
+              <div v-if="spark.pendingSuggestionCount.value > 0" class="flex items-center gap-0.5">
+                <span class="text-[10px] text-secondary-600 dark:text-secondary-400 tabular-nums px-1">{{ sparkReviewPosition }} / {{ spark.pendingSuggestionCount.value }}</span>
+                <UButton
+                  size="xs"
+                  color="secondary"
+                  variant="ghost"
+                  icon="i-lucide-chevron-up"
+                  :disabled="spark.pendingSuggestionCount.value === 0"
+                  title="Previous suggestion"
+                  class="!p-0.5"
+                  @click="sparkReviewNav(-1)"
+                />
+                <UButton
+                  size="xs"
+                  color="secondary"
+                  variant="ghost"
+                  icon="i-lucide-chevron-down"
+                  :disabled="spark.pendingSuggestionCount.value === 0"
+                  title="Next suggestion"
+                  class="!p-0.5"
+                  @click="sparkReviewNav(1)"
+                />
+              </div>
+              <UButton
+                v-if="bomCpLines.length > 0"
+                size="xs"
+                :color="bomCpCopied ? 'success' : 'neutral'"
+                :variant="bomCpCopied ? 'soft' : 'outline'"
+                :icon="bomCpCopied ? 'i-lucide-check' : 'i-lucide-clipboard-copy'"
+                :title="`Copy ${bomCpLines.length} customer-provided items to clipboard`"
+                @click="copyBomCpItems"
+              >
+                {{ bomCpCopied ? 'Copied' : 'Copy CP List' }}
+              </UButton>
+            </div>
             <template v-if="isTeamProject && presentUsersInTab('bom').length > 0">
               <div class="flex items-center -space-x-1" :title="presentUsersInTab('bom').map(u => u.name).join(', ')">
                 <div
@@ -725,14 +923,21 @@
               :pnp-designators="pnpDesignators"
               :selected-line-id="selectedBomLineId"
               :locked="!canEditTab('bom')"
+              :ai-suggestions="(spark.aiSuggestions.value as BomAiSuggestions)"
+              :groups="(bom.bomGroups.value as BomGroup[])"
               @select-line="selectedBomLineId = $event"
               @update:search-query="bom.searchQuery.value = $event"
               @add-line="handleBomAddLine"
               @update-line="handleBomUpdateLine"
               @remove-line="handleBomRemoveLine"
               @add-manufacturer="handleBomAddManufacturer"
-              @fetch-all-pricing="handleFetchAllPricing"
               @fetch-single-pricing="handleFetchSinglePricing"
+              @add-group="handleBomAddGroup"
+              @remove-group="handleBomRemoveGroup"
+              @update-group="handleBomUpdateGroup"
+              @assign-group="handleBomAssignGroup"
+              @move-line-before="handleBomMoveLineBefore"
+              @move-line-to-end="handleBomMoveLineToEnd"
             />
           </section>
 
@@ -754,17 +959,41 @@
               :team-currency="stableTeamCurrency"
               :exchange-rate="elexess.exchangeRate.value"
               :pnp-designators="pnpDesignators"
+              :pnp-packages="pnpPackages"
               :locked="!canEditTab('bom')"
+              :ai-suggestion="selectedBomLine ? spark.getSuggestion(selectedBomLine.id) : null"
+              :groups="(bom.bomGroups.value as BomGroup[])"
               @update-line="handleBomUpdateLine"
               @remove-line="handleBomRemoveLine"
               @remove-manufacturer="handleBomRemoveManufacturer"
               @add-manufacturer="handleBomAddManufacturer"
-              @fetch-all-pricing="handleFetchAllPricing"
               @fetch-single-pricing="handleFetchSinglePricing"
+              @accept-ai-suggestion="handleAcceptAiSuggestion"
+              @dismiss-ai-suggestion="handleDismissAiSuggestion"
+              @accept-all-ai="handleAcceptAllAi"
+              @dismiss-all-ai="handleDismissAllAi"
+              @accept-ai-manufacturer="handleAcceptAiManufacturer"
+              @dismiss-ai-manufacturer="handleDismissAiManufacturer"
+              @accept-ai-group="handleAcceptAiGroup"
+              @dismiss-ai-group="handleDismissAiGroup"
+              @assign-group="handleBomAssignGroup"
             />
           </section>
           </div>
         </div>
+      </template>
+
+      <!-- Conversation: full width threaded discussion -->
+      <template v-else-if="sidebarTab === 'conversation'">
+        <main class="flex-1 min-w-0 overflow-y-auto bg-neutral-50 dark:bg-neutral-950">
+          <div class="mx-auto w-full max-w-5xl p-4 h-full">
+            <ConversationPanel
+              :project-id="teamProjectIdRef"
+              :reference-items="conversationReferenceItems"
+              @navigate-reference="handleConversationNavigateRef"
+            />
+          </div>
+        </main>
       </template>
 
       <!-- Summary: full width (no canvas) -->
@@ -891,10 +1120,14 @@
       </template>
     </div>
 
+    <!-- Upgrade modal (freemium upsell) -->
+    <UpgradeModal v-model:open="upgradeModalOpen" :feature="upgradeModalFeature" :plan="upgradeModalPlan" />
+
     <!-- Settings modal -->
     <AppSettingsModal v-model:open="showSettings" />
     <PerformanceMonitorModal
       v-model:open="showPerformanceMonitor"
+      :context="perfContext"
       :snapshot="performanceSnapshot"
       @refresh="refreshPerformanceSnapshot"
     />
@@ -910,6 +1143,16 @@
       @export="handleExportPnP"
     />
 
+    <!-- JPSys export modal -->
+    <LazyJetprintExportModal
+      v-model:open="showJpsysExport"
+      :paste-tree="activePasteTree ?? null"
+      :board-width-mm="boardSizeMm?.width ?? 100"
+      :board-height-mm="boardSizeMm?.height ?? 100"
+      :board-rotation="boardRotation"
+      :project-name="project?.name"
+    />
+
     <!-- Image export modal -->
     <LazyImageExportModal
       v-model:open="showImageExport"
@@ -917,6 +1160,11 @@
       :board-size-mm="imageExportTarget === 'panel' ? (panelDimensionsMm ?? undefined) : boardSizeMm"
       :svg-format-note="imageExportTarget === 'panel' ? 'Panel SVG exports embed a rasterized PNG. They preserve panel size, but scaling quality is lower and files can be larger than vector SVG.' : undefined"
       @export="handleExportImage"
+    />
+    <LazyDxfExportModal
+      v-model:open="showDxfExport"
+      :layers="dxfExportableLayers"
+      @export="handleExportDxf"
     />
 
     <!-- Component edit modal -->
@@ -965,7 +1213,7 @@ import type { GerberFile, LayerInfo, LayerFilter } from '~/utils/gerber-helpers'
 import type { SourceRange, ImageTree, BoundingBox } from '@lib/gerber/types'
 import { mergeBounds, emptyBounds, isEmpty } from '@lib/gerber/bounding-box'
 import { sortLayersByPcbOrder, isTopLayer, isBottomLayer, isSharedLayer, getColorForType, isPnPLayer } from '~/utils/gerber-helpers'
-import type { BomLine, BomColumnMapping } from '~/utils/bom-types'
+import type { BomLine, BomColumnMapping, BomAiSuggestions, AiSuggestion, BomGroup } from '~/utils/bom-types'
 import type { PricingQueueItem } from '~/composables/useElexessApi'
 import type { ViewMode } from '~/components/viewer/BoardCanvas.vue'
 import { getPresetForAppearance } from '~/utils/pcb-presets'
@@ -975,16 +1223,27 @@ import type { PnPConvention } from '~/utils/pnp-conventions'
 import type { PnPExportFormat, PnPExportSideMode } from '~/utils/pnp-export'
 import { generatePnPExport, getPnPExportExtension, getPnPExportMimeType } from '~/utils/pnp-export'
 import { removeSourceRanges } from '@lib/gerber/editor'
+import {
+  parseFormatFromSource,
+  formatCoordinate,
+  findNextApertureCode,
+  generateRect,
+  generateText,
+  injectGerberCommands,
+  mmToFileUnits,
+} from '@lib/gerber/generator'
 import { parseBomFile } from '~/utils/bom-parser'
 import { parsePnPPreview, type PnPColumnMapping, type PnPCoordUnit } from '~/utils/pnp-parser'
 import { saveBlobFile } from '~/utils/file-download'
+import type { ConversationReferenceItem } from '~/utils/conversation-references'
 
 const route = useRoute()
+const { settings: appSettings } = useAppSettings()
 const rawId = route.params.id as string
 const isTeamProject = rawId.startsWith('team-')
 const projectId = isTeamProject ? 0 : Number(rawId) // local projects use numeric IDs
 const teamProjectId = isTeamProject ? rawId.replace('team-', '') : null
-const { getProject, getFiles, addFiles, upsertFiles, clearFiles, renameFile, removeFile, getOriginalFiles, storeOriginalFiles, renameOriginalFile, removeOriginalFile, renameProject, updateFileLayerType, updateFileContent, updateProjectOrigin, updateProjectConvention, updateProjectRotationOverrides, updateProjectDnp, updateProjectCadPackageMap, updateProjectPolarizedOverrides, updateProjectComponentNotes, updateProjectFieldOverrides, updateProjectManualComponents, updateProjectDeletedComponents, updateProjectSortSmd, updateProjectSortTht, updateProjectManualOrderSmd, updateProjectManualOrderTht, updateProjectComponentGroups, updateProjectGroupAssignments, updatePnpAssemblyTypes, updateBomLines, updateBomPricingCache, updateBomBoardQuantity, updatePcbData, updatePanelData, updatePasteSettings: updateLocalPasteSettings, updateLayerOrder: updateLocalLayerOrder, updateDocumentOrder: updateLocalDocumentOrder, updateBomFileImportOptions: updateLocalBomFileImportOptions, updatePnpFileImportOptions: updateLocalPnpFileImportOptions, updateProjectPreview, getDocuments, addDocument, removeDocument: removeDocumentFromDb, updateDocumentType: updateDocumentTypeInDb } = useProject()
+const { getProject, getFiles, addFiles, upsertFiles, clearFiles, renameFile, removeFile, getOriginalFiles, storeOriginalFiles, renameOriginalFile, removeOriginalFile, renameProject, updateFileLayerType, updateFileContent, updateProjectOrigin, updateProjectConvention, updateProjectRotationOverrides, updateProjectDnp, updateProjectCadPackageMap, updateProjectPolarizedOverrides, updateProjectComponentNotes, updateProjectFieldOverrides, updateProjectManualComponents, updateProjectDeletedComponents, updateProjectSortSmd, updateProjectSortTht, updateProjectManualOrderSmd, updateProjectManualOrderTht, updateProjectComponentGroups, updateProjectGroupAssignments, updatePnpAssemblyTypes, updateBomLines, updateBomGroups, updateBomPricingCache, updateBomBoardQuantity, updatePcbData, updatePanelData, updatePasteSettings: updateLocalPasteSettings, updateLayerOrder: updateLocalLayerOrder, updateDocumentOrder: updateLocalDocumentOrder, updateBomFileImportOptions: updateLocalBomFileImportOptions, updatePnpFileImportOptions: updateLocalPnpFileImportOptions, updateProjectPreview, getDocuments, addDocument, removeDocument: removeDocumentFromDb, updateDocumentType: updateDocumentTypeInDb } = useProject()
 
 // ── Team project support ──
 const teamProjectIdRef = ref(teamProjectId)
@@ -1011,6 +1270,8 @@ const { presentUsers, presentUsersInTab, updatePresence } = presence
 const projectSync = isTeamProject ? useProjectSync(teamProjectIdRef) : null
 const { user } = useAuth()
 const { profile } = useCurrentUser()
+const { reportError } = useErrorReporting()
+const { members: teamMembers, fetchMembers: fetchTeamMembers } = useTeamMembers()
 
 /** Whether this is an approved (frozen) team project */
 const isApproved = computed(() => {
@@ -1018,10 +1279,127 @@ const isApproved = computed(() => {
   return projectSync?.project.value?.status === 'approved'
 })
 
+const currentWorkflowStatus = computed(() => {
+  if (!isTeamProject) return 'draft'
+  return projectSync?.project.value?.status ?? 'draft'
+})
+
+const currentApproverUserId = computed(() => {
+  if (!isTeamProject) return null
+  return projectSync?.project.value?.approver_user_id ?? null
+})
+
+const workflowLabel = computed(() => {
+  if (currentWorkflowStatus.value === 'in_progress') return 'Progress'
+  if (currentWorkflowStatus.value === 'for_approval') return 'For Approval'
+  if (currentWorkflowStatus.value === 'approved') return 'Approved'
+  return 'Draft'
+})
+
+const workflowIcon = computed(() => {
+  if (currentWorkflowStatus.value === 'in_progress') return 'i-lucide-circle-dot'
+  if (currentWorkflowStatus.value === 'for_approval') return 'i-lucide-clipboard-check'
+  if (currentWorkflowStatus.value === 'approved') return 'i-lucide-check'
+  return 'i-lucide-file-pen'
+})
+
+const selectedApproverUserId = ref<string | undefined>(undefined)
+const requestApprovalModalOpen = ref(false)
+const requestChangesModalOpen = ref(false)
+const requestChangesMessage = ref('')
+
+const workflowApproverOptions = computed(() =>
+  teamMembers.value
+    .filter(m => m.status === 'active' && (m.role === 'admin' || m.role === 'editor'))
+    .map(m => ({
+      label: m.profile?.name ?? m.profile?.email ?? 'Unknown',
+      value: m.user_id,
+    })),
+)
+
+const canMoveToInProgress = computed(() => {
+  if (!isTeamProject || !user.value?.id) return false
+  const status = currentWorkflowStatus.value
+  const isActor = user.value.id === (projectSync?.project.value?.created_by ?? '') || user.value.id === (projectSync?.project.value?.assignee_user_id ?? '')
+  return isActor && (status === 'draft' || status === 'for_approval')
+})
+
+const canRequestApproval = computed(() => {
+  if (!isTeamProject || !user.value?.id) return false
+  const status = currentWorkflowStatus.value
+  const isActor = user.value.id === (projectSync?.project.value?.created_by ?? '') || user.value.id === (projectSync?.project.value?.assignee_user_id ?? '')
+  return isActor && (status === 'draft' || status === 'in_progress')
+})
+
+const canApproveWorkflow = computed(() => {
+  if (!isTeamProject || !user.value?.id) return false
+  if (currentWorkflowStatus.value !== 'for_approval') return false
+  return isTeamAdmin.value || user.value.id === currentApproverUserId.value
+})
+
+const canRequestChangesWorkflow = computed(() => canApproveWorkflow.value)
+
+const workflowMenuItems = computed(() => {
+  const items: { label: string; icon: string; color?: 'error' | 'warning'; disabled?: boolean; onSelect: () => void }[] = []
+  if (canMoveToInProgress.value) {
+    items.push({
+      label: 'Set In Progress',
+      icon: 'i-lucide-circle-dot',
+      onSelect: () => { handleMoveToInProgress() },
+    })
+  }
+  if (canRequestApproval.value) {
+    items.push({
+      label: 'Request Approval',
+      icon: 'i-lucide-clipboard-check',
+      onSelect: () => {
+        requestApprovalModalOpen.value = true
+      },
+    })
+  }
+  if (canApproveWorkflow.value) {
+    items.push({
+      label: 'Approve',
+      icon: 'i-lucide-check',
+      onSelect: () => { handleApproveProject() },
+    })
+  }
+  if (canRequestChangesWorkflow.value) {
+    items.push({
+      label: 'Request Changes',
+      icon: 'i-lucide-message-square',
+      color: 'warning',
+      onSelect: () => {
+        requestChangesModalOpen.value = true
+      },
+    })
+  }
+  if (isApproved.value && isTeamAdmin.value) {
+    items.push({
+      label: 'Revert to Draft',
+      icon: 'i-lucide-rotate-ccw',
+      onSelect: () => { handleRevertToDraft() },
+    })
+  }
+  if (items.length === 0) {
+    items.push({
+      label: 'No actions available',
+      icon: 'i-lucide-minus-circle',
+      disabled: true,
+      onSelect: () => {},
+    })
+  }
+  return [items]
+})
+
+watch(currentApproverUserId, (next) => {
+  selectedApproverUserId.value = next ?? undefined
+}, { immediate: true })
+
 /** Whether the current user can edit this project */
 const canEdit = computed(() => {
   if (!isTeamProject) return true // local projects are always editable
-  if (isApproved.value) return false // approved = frozen
+  if (isApproved.value || currentWorkflowStatus.value === 'for_approval') return false // frozen states
   // Viewers can't edit, editors and admins can
   return currentTeamRole.value === 'editor' || currentTeamRole.value === 'admin'
 })
@@ -1079,6 +1457,7 @@ const canvasInteraction = useCanvasInteraction()
 const measureTool = useMeasureTool()
 const infoTool = useInfoTool()
 const deleteTool = useDeleteTool()
+const drawTool = useDrawTool()
 const editHistory = useEditHistory()
 const isMac = computed(() => typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.userAgent))
 const { backgroundColor, isLight: isBgLight } = useBackgroundColor()
@@ -1115,9 +1494,9 @@ function onSidebarDragStart(e: MouseEvent) {
   activeSidebar.value.onDragStart(e)
 }
 
-// ── Sidebar tab (Files / PCB / Panel / SMD / THT / BOM / Pricing / Docs) ──
-type SidebarTab = 'files' | 'pcb' | 'panel' | 'paste' | 'smd' | 'tht' | 'bom' | 'pricing' | 'docs' | 'summary'
-const VALID_TABS: SidebarTab[] = ['files', 'pcb', 'panel', 'paste', 'smd', 'tht', 'bom', 'docs', 'summary', 'pricing']
+// ── Sidebar tab (Files / PCB / Panel / SMD / THT / BOM / Pricing / Docs / Conversation) ──
+type SidebarTab = 'files' | 'pcb' | 'panel' | 'paste' | 'smd' | 'tht' | 'bom' | 'pricing' | 'docs' | 'summary' | 'conversation'
+const VALID_TABS: SidebarTab[] = ['files', 'pcb', 'panel', 'paste', 'smd', 'tht', 'bom', 'docs', 'conversation', 'summary', 'pricing']
 
 const router = useRouter()
 const initialTabRaw = (route.query.tab as string) || 'files'
@@ -1226,6 +1605,7 @@ watch(() => projectSync?.project.value?.document_order, (next) => {
 
 watch(() => projectSync?.project.value?.pnp_file_import_options, (next) => {
   const remoteSnapshot = toPnpImportOptionsSnapshot(next)
+  if (hasImportOptions(remoteSnapshot)) saveTeamImportOptionsBackup('pnp', remoteSnapshot)
   if (pendingLocalPnpFileImportOptions && !arePnpImportOptionsEqual(remoteSnapshot, pendingLocalPnpFileImportOptions)) {
     // Ignore stale realtime rows while a local write is still in flight.
     return
@@ -1233,18 +1613,27 @@ watch(() => projectSync?.project.value?.pnp_file_import_options, (next) => {
   if (pendingLocalPnpFileImportOptions && arePnpImportOptionsEqual(remoteSnapshot, pendingLocalPnpFileImportOptions)) {
     pendingLocalPnpFileImportOptions = null
   }
+  if (!hasImportOptions(remoteSnapshot) && hasImportOptions(toPnpImportOptionsSnapshot(pnp.fileImportOptions.value))) {
+    // Defensive guard: never wipe in-memory mappings from an empty realtime payload.
+    return
+  }
   if (arePnpImportOptionsEqual(remoteSnapshot, toPnpImportOptionsSnapshot(pnp.fileImportOptions.value))) return
   pnp.setFileImportOptionsMap(remoteSnapshot)
 }, { deep: true })
 
 watch(() => projectSync?.project.value?.bom_file_import_options, (next) => {
   const remoteSnapshot = toBomImportOptionsSnapshot(next)
+  if (hasImportOptions(remoteSnapshot)) saveTeamImportOptionsBackup('bom', remoteSnapshot)
   if (pendingLocalBomFileImportOptions && !areBomImportOptionsEqual(remoteSnapshot, pendingLocalBomFileImportOptions)) {
     // Ignore stale realtime rows while a local write is still in flight.
     return
   }
   if (pendingLocalBomFileImportOptions && areBomImportOptionsEqual(remoteSnapshot, pendingLocalBomFileImportOptions)) {
     pendingLocalBomFileImportOptions = null
+  }
+  if (!hasImportOptions(remoteSnapshot) && hasImportOptions(toBomImportOptionsSnapshot(bom.fileImportOptions.value))) {
+    // Defensive guard: never wipe in-memory mappings from an empty realtime payload.
+    return
   }
   if (areBomImportOptionsEqual(remoteSnapshot, toBomImportOptionsSnapshot(bom.fileImportOptions.value))) return
   bom.setFileImportOptionsMap(remoteSnapshot)
@@ -1269,17 +1658,28 @@ onMounted(() => {
   if (VALID_TABS.includes(clientTab as SidebarTab) && clientTab !== sidebarTab.value) {
     sidebarTab.value = clientTab as SidebarTab
   }
+  if (!isTeamProject && sidebarTab.value === 'conversation') {
+    sidebarTab.value = 'files'
+  }
 })
 
-// Sync sidebar tab to URL query parameter
+// Sync sidebar tab and selected file/bomLine to URL query parameters
 watch(sidebarTab, (tab) => {
   const query = { ...route.query }
-  // Keep URLs clean for first-load defaults, but persist an explicit "layers" tab
-  // once the user is already using the `tab` query param (so reload preserves Files).
   if (tab === 'files') {
     if (route.query.tab) query.tab = 'files'
     else delete query.tab
-  } else query.tab = tab
+    if (filesSelectedLayerFileName.value) query.file = filesSelectedLayerFileName.value
+    else delete query.file
+  } else {
+    query.tab = tab
+    delete query.file
+  }
+  if (tab === 'bom' && selectedBomLineId.value) {
+    query.bomLine = selectedBomLineId.value
+  } else {
+    delete query.bomLine
+  }
   router.replace({ query })
 })
 
@@ -1291,6 +1691,24 @@ watch(sidebarTab, (tab) => {
 
 const isCanvasPage = computed(() => {
   return sidebarTab.value === 'pcb' || sidebarTab.value === 'panel' || sidebarTab.value === 'paste' || sidebarTab.value === 'smd' || sidebarTab.value === 'tht'
+})
+
+const controlsBarPage = computed<'pcb' | 'panel' | 'paste' | 'smd' | 'tht'>(() => {
+  if (
+    sidebarTab.value === 'pcb'
+    || sidebarTab.value === 'panel'
+    || sidebarTab.value === 'paste'
+    || sidebarTab.value === 'smd'
+    || sidebarTab.value === 'tht'
+  ) {
+    return sidebarTab.value
+  }
+  return 'pcb'
+})
+
+const controlsBarUsersInTab = computed(() => {
+  if (!isTeamProject || !isCanvasPage.value) return []
+  return presentUsersInTab(controlsBarPage.value)
 })
 
 const showControlsBar = isCanvasPage
@@ -1363,6 +1781,7 @@ function toPasteSettingsSnapshot(settings: typeof pasteSettings.value) {
     pattern: settings.pattern,
     dynamicDots: settings.dynamicDots,
     highlightDots: settings.highlightDots,
+    showJetPath: settings.showJetPath,
   }
 }
 
@@ -1377,6 +1796,7 @@ function arePasteSettingsEqual(
     && a.pattern === b.pattern
     && a.dynamicDots === b.dynamicDots
     && a.highlightDots === b.highlightDots
+    && a.showJetPath === b.showJetPath
   )
 }
 
@@ -1452,8 +1872,107 @@ function arePcbDataEqual(a: PcbDataSnapshot | null, b: PcbDataSnapshot | null): 
   return JSON.stringify(a ?? null) === JSON.stringify(b ?? null)
 }
 
-type BomImportOptionsSnapshot = Record<string, { skipRows?: number; mapping?: BomColumnMapping }>
-type PnpImportOptionsSnapshot = Record<string, { skipRows?: number; mapping?: PnPColumnMapping; unitOverride?: 'auto' | PnPCoordUnit }>
+type BomImportOptionEntry = {
+  skipRows?: number
+  skipBottomRows?: number
+  mapping?: BomColumnMapping
+  fixedColumns?: number[]
+  delimiter?: ',' | ';' | '\t' | 'fixed'
+  decimal?: '.' | ','
+  extraColumns?: string[]
+}
+type PnpImportOptionEntry = {
+  skipRows?: number
+  skipBottomRows?: number
+  mapping?: PnPColumnMapping
+  unitOverride?: 'auto' | PnPCoordUnit
+  fixedColumns?: number[]
+  delimiter?: ',' | ';' | '\t' | 'fixed'
+  decimal?: '.' | ','
+  extraColumns?: string[]
+}
+type BomImportOptionsSnapshot = Record<string, BomImportOptionEntry>
+type PnpImportOptionsSnapshot = Record<string, PnpImportOptionEntry>
+
+function hasImportOptions(snapshot: Record<string, unknown>): boolean {
+  return Object.keys(snapshot).length > 0
+}
+
+function teamImportOptionsBackupKey(kind: 'bom' | 'pnp'): string | null {
+  if (!import.meta.client || !isTeamProject || !teamProjectId) return null
+  return `viewer:${teamProjectId}:import-options:${kind}`
+}
+
+function loadTeamImportOptionsBackup(kind: 'bom' | 'pnp'): unknown {
+  const key = teamImportOptionsBackupKey(kind)
+  if (!key) return null
+  try {
+    const raw = localStorage.getItem(key)
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
+function saveTeamImportOptionsBackup(kind: 'bom' | 'pnp', snapshot: Record<string, unknown>) {
+  const key = teamImportOptionsBackupKey(kind)
+  if (!key || !hasImportOptions(snapshot)) return
+  try {
+    localStorage.setItem(key, JSON.stringify(snapshot))
+  } catch {
+    // Ignore quota/serialization failures; remote DB is still the source of truth.
+  }
+}
+
+function sanitizeFixedColumns(value: unknown): number[] | undefined {
+  if (!Array.isArray(value)) return undefined
+  const next = [...new Set(value
+    .map(v => Number(v))
+    .filter(v => Number.isFinite(v))
+    .map(v => Math.max(1, Math.floor(v))))]
+    .sort((a, b) => a - b)
+  return next.length ? next : undefined
+}
+
+function sanitizeDelimiter(value: unknown): ',' | ';' | '\t' | 'fixed' | undefined {
+  if (value === ',' || value === ';' || value === '\t' || value === 'fixed') return value
+  return undefined
+}
+
+function sanitizeDecimal(value: unknown): '.' | ',' | undefined {
+  if (value === '.' || value === ',') return value
+  return undefined
+}
+
+function sanitizeExtraColumns(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined
+  const out = value.filter((v): v is string => typeof v === 'string' && v.trim().length > 0)
+  return out.length > 0 ? out : undefined
+}
+
+function normalizeImportKey(name: string): string {
+  return name.toLowerCase().replace(/\.[^.]+$/, '').replace(/[^a-z0-9]/g, '')
+}
+
+function hasEquivalentImportKey(a: string, b: string): boolean {
+  return a.toLowerCase() === b.toLowerCase() || normalizeImportKey(a) === normalizeImportKey(b)
+}
+
+function buildCanonicalImportOptionMap<T>(
+  currentMap: Record<string, T>,
+  activeFileName: string,
+  nextOptions: T,
+): Record<string, T> {
+  const nextMap: Record<string, T> = {
+    ...currentMap,
+    [activeFileName]: nextOptions,
+  }
+  for (const key of Object.keys(nextMap)) {
+    if (key === activeFileName) continue
+    if (hasEquivalentImportKey(key, activeFileName)) delete nextMap[key]
+  }
+  return nextMap
+}
 
 function toBomImportOptionsSnapshot(input: unknown): BomImportOptionsSnapshot {
   if (!input || typeof input !== 'object') return {}
@@ -1462,6 +1981,7 @@ function toBomImportOptionsSnapshot(input: unknown): BomImportOptionsSnapshot {
     if (!opts || typeof opts !== 'object') continue
     const rawOpts = toRaw(opts) as Record<string, unknown>
     const skipRows = Number(rawOpts.skipRows)
+    const skipBottomRows = Number(rawOpts.skipBottomRows)
     const mappingRaw = rawOpts.mapping
     let mapping: BomColumnMapping | undefined
     if (mappingRaw && typeof mappingRaw === 'object') {
@@ -1474,7 +1994,12 @@ function toBomImportOptionsSnapshot(input: unknown): BomImportOptionsSnapshot {
     }
     out[fileName] = {
       skipRows: Number.isFinite(skipRows) ? Math.max(0, Math.floor(skipRows)) : undefined,
+      skipBottomRows: Number.isFinite(skipBottomRows) ? Math.max(0, Math.floor(skipBottomRows)) : undefined,
       mapping,
+      fixedColumns: sanitizeFixedColumns(rawOpts.fixedColumns),
+      delimiter: sanitizeDelimiter(rawOpts.delimiter),
+      decimal: sanitizeDecimal(rawOpts.decimal),
+      extraColumns: sanitizeExtraColumns(rawOpts.extraColumns),
     }
   }
   return out
@@ -1487,6 +2012,7 @@ function toPnpImportOptionsSnapshot(input: unknown): PnpImportOptionsSnapshot {
     if (!opts || typeof opts !== 'object') continue
     const rawOpts = toRaw(opts) as Record<string, unknown>
     const skipRows = Number(rawOpts.skipRows)
+    const skipBottomRows = Number(rawOpts.skipBottomRows)
     const mappingRaw = rawOpts.mapping
     let mapping: PnPColumnMapping | undefined
     if (mappingRaw && typeof mappingRaw === 'object') {
@@ -1502,8 +2028,13 @@ function toPnpImportOptionsSnapshot(input: unknown): PnpImportOptionsSnapshot {
       : undefined
     out[fileName] = {
       skipRows: Number.isFinite(skipRows) ? Math.max(0, Math.floor(skipRows)) : undefined,
+      skipBottomRows: Number.isFinite(skipBottomRows) ? Math.max(0, Math.floor(skipBottomRows)) : undefined,
       mapping,
       unitOverride,
+      fixedColumns: sanitizeFixedColumns(rawOpts.fixedColumns),
+      delimiter: sanitizeDelimiter(rawOpts.delimiter),
+      decimal: sanitizeDecimal(rawOpts.decimal),
+      extraColumns: sanitizeExtraColumns(rawOpts.extraColumns),
     }
   }
   return out
@@ -1519,7 +2050,7 @@ function arePnpImportOptionsEqual(a: PnpImportOptionsSnapshot, b: PnpImportOptio
 
 // ── Interaction mode management ──
 
-type InteractionMode = 'cursor' | 'measure' | 'info' | 'delete'
+type InteractionMode = 'cursor' | 'measure' | 'info' | 'delete' | 'draw'
 
 const activeMode = prefs.activeMode
 
@@ -1528,6 +2059,7 @@ const modeOptions: { label: string; value: InteractionMode; icon: string; title:
   { label: 'Measure', value: 'measure', icon: 'i-lucide-ruler', title: 'Measure distance between points' },
   { label: 'Info', value: 'info', icon: 'i-lucide-info', title: 'Inspect objects at click position' },
   { label: 'Delete', value: 'delete', icon: 'i-lucide-eraser', title: 'Select and delete objects from Gerber files' },
+  { label: 'Draw', value: 'draw', icon: 'i-lucide-pen-tool', title: 'Draw shapes on a Gerber layer' },
 ]
 
 function setMode(mode: InteractionMode) {
@@ -1545,11 +2077,16 @@ function setMode(mode: InteractionMode) {
     deleteTool.active.value = false
     deleteTool.clear()
   }
+  if (activeMode.value === 'draw') {
+    drawTool.active.value = false
+    drawTool.clear()
+  }
   activeMode.value = mode
   // Activate new tool
   if (mode === 'measure') measureTool.active.value = true
   if (mode === 'info') infoTool.active.value = true
   if (mode === 'delete') deleteTool.active.value = true
+  if (mode === 'draw') drawTool.active.value = true
 }
 
 // Sync back when tools deactivate themselves (e.g. via Escape handler)
@@ -1563,8 +2100,16 @@ watch(() => deleteTool.active.value, (isActive) => {
     activeMode.value = 'cursor'
   }
 })
+watch(() => drawTool.active.value, (isActive) => {
+  if (!isActive && activeMode.value === 'draw') {
+    activeMode.value = 'cursor'
+  }
+})
+watch(activeFilter, (filter) => {
+  if (filter === 'all') drawTool.cancelQuickPlacement()
+})
 
-// Panel view does not support info/delete tools; fall back to cursor.
+// Keep tool modes valid for the active tab.
 watch(sidebarTab, (tab) => {
   if (tab !== 'docs' && selectedDocumentId.value) {
     selectedDocumentId.value = null
@@ -1572,7 +2117,13 @@ watch(sidebarTab, (tab) => {
   if (tab === 'docs' && !selectedDocumentId.value && documents.value.length) {
     selectedDocumentId.value = documents.value[0].id
   }
-  if (tab === 'panel' && (activeMode.value === 'info' || activeMode.value === 'delete')) {
+  if (tab === 'panel' && (activeMode.value === 'info' || activeMode.value === 'delete' || activeMode.value === 'draw')) {
+    setMode('cursor')
+  }
+  if (tab === 'paste' && (activeMode.value === 'delete' || activeMode.value === 'draw')) {
+    setMode('cursor')
+  }
+  if (tab !== 'pcb' && activeMode.value === 'delete') {
     setMode('cursor')
   }
 })
@@ -1608,6 +2159,8 @@ function handleKeyDown(e: KeyboardEvent) {
     }
   } else if (activeMode.value === 'delete') {
     deleteTool.handleKeyDown(e)
+  } else if (activeMode.value === 'draw') {
+    drawTool.handleKeyDown(e)
   }
 }
 
@@ -1643,6 +2196,7 @@ function startAddComponent(componentType: import('~/composables/usePickAndPlace'
     id,
     designator,
     value: '',
+    description: '',
     package: '',
     x: 0,
     y: 0,
@@ -1728,7 +2282,7 @@ function handleAssemblyTypeUpdate(payload: { key: string; type: string | undefin
   pnp.setAssemblyType(payload.key, payload.type as any)
 }
 
-function handleComponentFieldsUpdate(payload: { key: string; designator?: string; value?: string; x?: number; y?: number }) {
+function handleComponentFieldsUpdate(payload: { key: string; designator?: string; value?: string; description?: string; x?: number; y?: number }) {
   if (!ensureTabEditable(sidebarTab.value === 'tht' ? 'tht' : 'smd')) return
   pnp.setFieldOverride(payload.key, payload)
 }
@@ -2247,7 +2801,34 @@ function handlePanelDataUpdate(data: PanelConfig) {
 }
 
 // ── Original content tracking (for edit detection + reset) ──
-const originalContent = new Map<string, string>()
+const originalContent = reactive(new Map<string, string>())
+const TEAM_ORIGINALS_STORAGE_PREFIX = 'gerbtrace:team:file-originals:'
+
+function teamOriginalsStorageKey(): string | null {
+  if (!import.meta.client || !isTeamProject || !teamProjectId) return null
+  return `${TEAM_ORIGINALS_STORAGE_PREFIX}${teamProjectId}:1`
+}
+
+function loadTeamOriginalsFromStorage(): Map<string, string> {
+  const key = teamOriginalsStorageKey()
+  if (!key) return new Map<string, string>()
+  try {
+    const raw = localStorage.getItem(key)
+    if (!raw) return new Map<string, string>()
+    const parsed = JSON.parse(raw) as Record<string, string>
+    return new Map<string, string>(Object.entries(parsed))
+  } catch {
+    return new Map<string, string>()
+  }
+}
+
+function saveTeamOriginalsToStorage() {
+  const key = teamOriginalsStorageKey()
+  if (!key) return
+  const payload: Record<string, string> = {}
+  for (const [fileName, content] of originalContent.entries()) payload[fileName] = content
+  localStorage.setItem(key, JSON.stringify(payload))
+}
 
 const editedLayers = computed(() => {
   const edited = new Set<string>()
@@ -2273,6 +2854,13 @@ const isPanelizedMode = computed(() => pcbData.value?.panelizationMode !== 'sing
 const hasPasteLayers = computed(() =>
   layers.value.some(l => l.type === 'Top Paste' || l.type === 'Bottom Paste'),
 )
+const activePasteTree = computed(() => {
+  const canvas = boardCanvasRef.value
+  if (!canvas) return null
+  const pasteLayer = layers.value.find(l => l.type === 'Top Paste' || l.type === 'Bottom Paste')
+  if (!pasteLayer) return null
+  return canvas.getImageTree(pasteLayer) as import('@lib/gerber/types').ImageTree | null
+})
 const boardCanvasRef = ref<any>(null)
 const panelCanvasRef = ref<any>(null)
 
@@ -2291,6 +2879,8 @@ const showSettings = ref(false)
 const showPerformanceMonitor = ref(false)
 const showPnPExport = ref(false)
 const showImageExport = ref(false)
+const showDxfExport = ref(false)
+const showJpsysExport = ref(false)
 const imageExportTarget = ref<'board' | 'panel'>('board')
 const filesLockPopoverOpen = ref(false)
 const bomLockPopoverOpen = ref(false)
@@ -2318,6 +2908,20 @@ const performanceSnapshot = ref<{
   board?: { sceneCacheBytes?: number, canvasPoolSize?: number, draws?: number }
   panel?: { tileBytesTotal?: number, canvasPoolSize?: number, draws?: number }
 } | null>(null)
+
+const perfContext = computed(() => {
+  const userName = profile.value?.name?.trim()
+    || profile.value?.email?.trim()
+    || user.value?.email
+    || undefined
+  return {
+    projectName: project.value?.name || undefined,
+    projectId: teamProjectId || projectId || undefined,
+    url: typeof window !== 'undefined' ? window.location.href : undefined,
+    userName,
+    teamName: currentTeam.value?.name || undefined,
+  }
+})
 
 const documentSizeById = ref<Record<string, number>>({})
 let perfFrameReq = 0
@@ -2458,14 +3062,53 @@ async function refreshPerformanceSnapshot() {
   }
 }
 
+// Mini performance overlay live data (lightweight — only FPS/heap/pool)
+const miniPerfData = reactive({
+  fps: 0,
+  frameMs: 0,
+  heapUsedBytes: null as number | null,
+})
+let miniPerfTimer: ReturnType<typeof setInterval> | null = null
+
+function refreshMiniPerf() {
+  miniPerfData.fps = perfFrameMs > 0 ? 1000 / perfFrameMs : 0
+  miniPerfData.frameMs = perfFrameMs
+  const mem = ((performance as any).memory ?? null) as { usedJSHeapSize: number } | null
+  miniPerfData.heapUsedBytes = mem?.usedJSHeapSize ?? null
+}
+
+function startMiniPerfPolling() {
+  if (miniPerfTimer) return
+  startPerfFrameLoop()
+  miniPerfTimer = setInterval(refreshMiniPerf, 500)
+}
+
+function stopMiniPerfPolling() {
+  if (miniPerfTimer) { clearInterval(miniPerfTimer); miniPerfTimer = null }
+  if (!showPerformanceMonitor.value) {
+    stopPerfFrameLoop()
+  }
+}
+
+watch(() => appSettings.miniPerfOverlay, (on) => {
+  if (on) startMiniPerfPolling()
+  else stopMiniPerfPolling()
+})
+
+onMounted(() => {
+  if (appSettings.miniPerfOverlay) startMiniPerfPolling()
+})
+
 watch(showPerformanceMonitor, (open) => {
   if (!open) {
     if (perfRefreshTimer) {
       clearInterval(perfRefreshTimer)
       perfRefreshTimer = null
     }
-    stopPerfFrameLoop()
-    stopLongTaskObserver()
+    if (!appSettings.miniPerfOverlay) {
+      stopPerfFrameLoop()
+      stopLongTaskObserver()
+    }
     return
   }
   startPerfFrameLoop()
@@ -2612,7 +3255,18 @@ const detectedLayerCount = computed<number | null>(() => {
   return count > 0 ? count : null
 })
 
-const downloadMenuItems = computed(() => {
+const dxfExportableLayers = computed<Array<{ index: number; fileName: string; type: string }>>(() => {
+  return layers.value
+    .map((layer, index) => ({ layer, index }))
+    .filter(({ layer }) => !isPnPLayer(layer.type) && layer.type !== 'BOM')
+    .map(({ layer, index }) => ({
+      index,
+      fileName: layer.file.fileName,
+      type: layer.type,
+    }))
+})
+
+const exportMenuItems = computed(() => {
   const items: { label: string; icon: string; onSelect: () => void }[] = []
   if (layers.value.length > 0) {
     items.push({
@@ -2639,7 +3293,10 @@ const downloadMenuItems = computed(() => {
     })
   }
   if (layers.value.length > 0) {
-    items.push({ label: 'Download Gerber', icon: 'i-lucide-file-archive', onSelect: () => { handleDownloadGerber() } })
+    items.push({ label: 'Export Gerber', icon: 'i-lucide-file-archive', onSelect: () => { handleDownloadGerber() } })
+  }
+  if (dxfExportableLayers.value.length > 0) {
+    items.push({ label: 'Export DXF', icon: 'i-lucide-file-code', onSelect: () => { showDxfExport.value = true } })
   }
   if (pnp.hasPnP.value) {
     items.push({ label: 'Export PnP', icon: 'i-lucide-table', onSelect: () => { showPnPExport.value = true } })
@@ -2991,6 +3648,29 @@ watch(
   { immediate: true },
 )
 
+// Prefetch full package geometry for packages actually referenced in PnP data
+watch(
+  () => ({
+    smd: pnp.smdActiveComponents.value.map(c => c.matchedPackage),
+    tht: pnp.thtActiveComponents.value.map(c => c.matchedPackage),
+    smdReady: pkgLib.loaded.value,
+    thtReady: thtPkgLib.loaded.value,
+  }),
+  async ({ smd, tht, smdReady, thtReady }) => {
+    const smdNames = [...new Set(smd.filter(Boolean))]
+    const thtNames = [...new Set(tht.filter(Boolean))]
+    if (smdReady && smdNames.length) {
+      await pkgLib.prefetchPackagesForBoard(smdNames)
+      _pkgLibVersion.value++
+    }
+    if (thtReady && thtNames.length) {
+      await thtPkgLib.prefetchPackagesForBoard(thtNames)
+      _pkgLibVersion.value++
+    }
+  },
+  { immediate: true },
+)
+
 // ── Documents (PDF) ──
 import type { DocumentType, ProjectDocument } from '~/utils/document-types'
 
@@ -3002,10 +3682,20 @@ const hasDocuments = computed(() => documents.value.length > 0)
 const selectedDocument = computed(() => documents.value.find(d => d.id === selectedDocumentId.value) ?? null)
 
 // Files page selection (raw file/doc preview)
+const initialFileQuery = (route.query.file as string) || null
 const filesSelectedLayerFileName = ref<string | null>(null)
 const filesSelectedLayerIndex = ref<number | null>(null)
 const filesSelectedDocId = ref<string | null>(null)
 const filesPreviewSelectionNonce = ref(0)
+const filesPreviewMode = ref<'table' | 'text' | 'diff'>('text')
+
+const previewBtnActive =
+  '!border !border-blue-500/70 !text-blue-700 !bg-blue-50/90 ' +
+  'dark:!border-blue-400/70 dark:!text-blue-200 dark:!bg-blue-500/15'
+const previewBtnIdle =
+  '!border !border-transparent hover:!border-neutral-300/80 hover:!bg-neutral-200/70 ' +
+  'dark:!text-neutral-200 dark:hover:!bg-neutral-800/70 dark:hover:!border-neutral-600/70'
+const filesSaveTimers = new Map<string, ReturnType<typeof setTimeout>>()
 const filesSelectedLayer = computed(() => {
   const selectedIndex = filesSelectedLayerIndex.value
   if (typeof selectedIndex === 'number' && selectedIndex >= 0 && selectedIndex < layers.value.length) {
@@ -3017,6 +3707,17 @@ const filesSelectedLayer = computed(() => {
   return layers.value.find(l => l.file.fileName === filesSelectedLayerFileName.value) ?? null
 })
 const filesSelectedDoc = computed(() => documents.value.find(d => d.id === filesSelectedDocId.value) ?? null)
+const selectedLayerOriginalText = computed(() => {
+  const layer = filesSelectedLayer.value
+  if (!layer) return ''
+  return originalContent.get(layer.file.fileName) ?? layer.file.content
+})
+const canSelectedLayerUseTablePreview = computed(() => {
+  const layer = filesSelectedLayer.value
+  if (!layer) return false
+  if (layer.type === 'Drill') return false
+  return isTabularPreviewFileName(layer.file.fileName)
+})
 const isSelectedLayerBom = computed(() => !!filesSelectedLayer.value && filesSelectedLayer.value.type === 'BOM')
 const isSelectedLayerPnp = computed(() => !!filesSelectedLayer.value && isPnPLayer(filesSelectedLayer.value.type))
 const isSelectedLayerImportConfigurable = computed(() => isSelectedLayerBom.value || isSelectedLayerPnp.value)
@@ -3040,43 +3741,86 @@ const pnpMappingFields: { key: keyof PnPColumnMapping; label: string }[] = [
   { key: 'value', label: 'Value' },
   { key: 'package', label: 'Package' },
   { key: 'side', label: 'Side' },
+  { key: 'description', label: 'Description' },
 ]
 const pnpUnitItems = [
-  { label: 'Unit: Auto', value: 'auto' as const },
-  { label: 'Unit: mm', value: 'mm' as const },
-  { label: 'Unit: mils', value: 'mils' as const },
-  { label: 'Unit: inches', value: 'inches' as const },
+  { label: 'Auto', value: 'auto' as const },
+  { label: 'mm', value: 'mm' as const },
+  { label: 'mils', value: 'mils' as const },
+  { label: 'inches', value: 'inches' as const },
 ]
 const selectedLayerSkipRows = computed(() => {
   const layer = filesSelectedLayer.value
   if (!layer) return 0
-  if (isSelectedLayerBom.value) return bom.fileImportOptions.value[layer.file.fileName]?.skipRows ?? 0
-  if (isSelectedLayerPnp.value) return pnp.fileImportOptions.value[layer.file.fileName]?.skipRows ?? 0
+  if (isSelectedLayerBom.value) return bom.resolveFileImportOptions(layer.file.fileName)?.skipRows ?? 0
+  if (isSelectedLayerPnp.value) return pnp.resolveFileImportOptions(layer.file.fileName)?.skipRows ?? 0
   return 0
+})
+const selectedLayerSkipBottomRows = computed(() => {
+  const layer = filesSelectedLayer.value
+  if (!layer) return 0
+  if (isSelectedLayerBom.value) return bom.resolveFileImportOptions(layer.file.fileName)?.skipBottomRows ?? 0
+  if (isSelectedLayerPnp.value) return pnp.resolveFileImportOptions(layer.file.fileName)?.skipBottomRows ?? 0
+  return 0
+})
+const selectedLayerFixedColumns = computed<readonly number[] | undefined>(() => {
+  const layer = filesSelectedLayer.value
+  if (!layer) return undefined
+  if (isSelectedLayerBom.value) return bom.resolveFileImportOptions(layer.file.fileName)?.fixedColumns
+  if (isSelectedLayerPnp.value) return pnp.resolveFileImportOptions(layer.file.fileName)?.fixedColumns
+  return undefined
+})
+const selectedLayerDelimiter = computed<',' | ';' | '\t' | 'fixed' | undefined>(() => {
+  const layer = filesSelectedLayer.value
+  if (!layer) return undefined
+  if (isSelectedLayerBom.value) return bom.resolveFileImportOptions(layer.file.fileName)?.delimiter
+  if (isSelectedLayerPnp.value) return pnp.resolveFileImportOptions(layer.file.fileName)?.delimiter
+  return undefined
+})
+const selectedLayerDecimal = computed<'.' | ',' | undefined>(() => {
+  const layer = filesSelectedLayer.value
+  if (!layer) return undefined
+  if (isSelectedLayerBom.value) return bom.resolveFileImportOptions(layer.file.fileName)?.decimal
+  if (isSelectedLayerPnp.value) return pnp.resolveFileImportOptions(layer.file.fileName)?.decimal
+  return undefined
+})
+const selectedLayerExtraColumns = computed(() => {
+  const layer = filesSelectedLayer.value
+  if (!layer || !isSelectedLayerImportConfigurable.value) return undefined
+  const cols = isSelectedLayerBom.value
+    ? bom.resolveFileImportOptions(layer.file.fileName)?.extraColumns
+    : pnp.resolveFileImportOptions(layer.file.fileName)?.extraColumns
+  return cols ? [...cols] : undefined
 })
 const selectedLayerPnpUnit = computed<'auto' | PnPCoordUnit>(() => {
   const layer = filesSelectedLayer.value
   if (!layer || !isSelectedLayerPnp.value) return 'auto'
-  return pnp.fileImportOptions.value[layer.file.fileName]?.unitOverride ?? 'auto'
+  return pnp.resolveFileImportOptions(layer.file.fileName)?.unitOverride ?? 'auto'
 })
 const selectedLayerBomMapping = computed<BomColumnMapping>(() => {
   const layer = filesSelectedLayer.value
   if (!layer || !isSelectedLayerBom.value) return {}
   const fileName = layer.file.fileName
-  const opts = bom.fileImportOptions.value[fileName]
+  const opts = bom.resolveFileImportOptions(fileName)
   if (opts?.mapping) return opts.mapping
-  const auto = parseBomFile(fileName, layer.file.content, { skipRows: opts?.skipRows }).mapping
+  const auto = parseBomFile(fileName, layer.file.content, {
+    skipRows: opts?.skipRows,
+    skipBottomRows: opts?.skipBottomRows,
+    fixedColumns: opts?.fixedColumns,
+  }).mapping
   return auto ?? {}
 })
 const selectedLayerPnpMapping = computed<PnPColumnMapping>(() => {
   const layer = filesSelectedLayer.value
   if (!layer || !isSelectedLayerPnp.value) return {}
   const fileName = layer.file.fileName
-  const opts = pnp.fileImportOptions.value[fileName]
+  const opts = pnp.resolveFileImportOptions(fileName)
   if (opts?.mapping) return opts.mapping
   const auto = parsePnPPreview(layer.file.content, {
     skipRows: opts?.skipRows,
+    skipBottomRows: opts?.skipBottomRows,
     unitOverride: resolveSelectedPnpUnitOverride(fileName),
+    fixedColumns: opts?.fixedColumns,
   }, fileName).mapping
   return auto ?? {}
 })
@@ -3108,14 +3852,91 @@ function isTabularPreviewFileName(fileName: string): boolean {
   return /\.(csv|tsv|txt|xlsx|xls)$/i.test(fileName)
 }
 
+async function persistLayerTextContent(fileName: string) {
+  const layer = layers.value.find(l => l.file.fileName === fileName)
+  if (!layer) return
+  const nextContent = layer.file.content
+  try {
+    if (isTeamProject && teamProjectId) {
+      const teamId = currentTeamId.value || await waitForTeamId()
+      const { error } = await uploadTeamFile(teamProjectId, teamId, 1, layer.file.fileName, nextContent, layer.type)
+      if (error) throw error
+    } else {
+      await updateFileContent(projectId, 1, layer.file.fileName, nextContent)
+    }
+    const canvas = boardCanvasRef.value
+    if (canvas) canvas.invalidateCache(layer.file.fileName)
+  } catch (err) {
+    console.warn('[files] failed to persist edited layer content', err)
+    toast.add({
+      title: 'Save failed',
+      description: `Could not save ${layer.file.fileName}.`,
+      color: 'error',
+    })
+  }
+}
+
+function queueLayerTextPersist(fileName: string) {
+  const existing = filesSaveTimers.get(fileName)
+  if (existing) clearTimeout(existing)
+  const timer = setTimeout(() => {
+    filesSaveTimers.delete(fileName)
+    void persistLayerTextContent(fileName)
+  }, 350)
+  filesSaveTimers.set(fileName, timer)
+}
+
+function updateSelectedLayerText(nextContent: string) {
+  if (!ensureTabEditable('files')) return
+  const layer = filesSelectedLayer.value
+  if (!layer || layer.file.content === nextContent) return
+  layer.file.content = nextContent
+  // PnP parser caches by file name/options; invalidate so edits are reflected.
+  pnp.invalidateCache(layer.file.fileName)
+  queueLayerTextPersist(layer.file.fileName)
+}
+
+function mutateSelectedBomImportOptions(
+  fileName: string,
+  mutator: (prev: BomImportOptionEntry) => BomImportOptionEntry,
+) {
+  const currentMap = { ...bom.fileImportOptions.value } as BomImportOptionsSnapshot
+  const resolved = bom.resolveFileImportOptions(fileName) ?? currentMap[fileName] ?? {}
+  const previous: BomImportOptionEntry = {
+    ...resolved,
+    fixedColumns: resolved.fixedColumns ? [...resolved.fixedColumns] : undefined,
+    extraColumns: resolved.extraColumns ? [...resolved.extraColumns] : undefined,
+  }
+  const nextOptions = mutator(previous)
+  const nextMap = buildCanonicalImportOptionMap(currentMap, fileName, nextOptions)
+  if (areBomImportOptionsEqual(toBomImportOptionsSnapshot(currentMap), toBomImportOptionsSnapshot(nextMap))) return
+  bom.setFileImportOptionsMap(nextMap)
+}
+
+function mutateSelectedPnpImportOptions(
+  fileName: string,
+  mutator: (prev: PnpImportOptionEntry) => PnpImportOptionEntry,
+) {
+  const currentMap = { ...pnp.fileImportOptions.value } as PnpImportOptionsSnapshot
+  const resolved = pnp.resolveFileImportOptions(fileName) ?? currentMap[fileName] ?? {}
+  const previous: PnpImportOptionEntry = {
+    ...resolved,
+    fixedColumns: resolved.fixedColumns ? [...resolved.fixedColumns] : undefined,
+    extraColumns: resolved.extraColumns ? [...resolved.extraColumns] : undefined,
+  }
+  const nextOptions = mutator(previous)
+  const nextMap = buildCanonicalImportOptionMap(currentMap, fileName, nextOptions)
+  if (arePnpImportOptionsEqual(toPnpImportOptionsSnapshot(currentMap), toPnpImportOptionsSnapshot(nextMap))) return
+  pnp.setFileImportOptionsMap(nextMap)
+}
+
 function updateSelectedLayerPnpUnit(value: unknown) {
   const layer = filesSelectedLayer.value
   if (!layer || !isSelectedLayerPnp.value) return
   const raw = String(value ?? 'auto')
   const unitOverride: 'auto' | PnPCoordUnit =
     raw === 'mm' || raw === 'mils' || raw === 'inches' ? raw : 'auto'
-  const prev = pnp.fileImportOptions.value[layer.file.fileName] ?? {}
-  pnp.setFileImportOptions(layer.file.fileName, { ...prev, unitOverride })
+  mutateSelectedPnpImportOptions(layer.file.fileName, prev => ({ ...prev, unitOverride }))
 }
 
 function updateSelectedLayerSkipRows(value: number) {
@@ -3123,13 +3944,24 @@ function updateSelectedLayerSkipRows(value: number) {
   if (!layer) return
   const skipRows = Math.max(0, Number(value) || 0)
   if (isSelectedLayerBom.value) {
-    const prev = bom.fileImportOptions.value[layer.file.fileName] ?? {}
-    bom.setFileImportOptions(layer.file.fileName, { ...prev, skipRows })
+    mutateSelectedBomImportOptions(layer.file.fileName, prev => ({ ...prev, skipRows }))
     return
   }
   if (isSelectedLayerPnp.value) {
-    const prev = pnp.fileImportOptions.value[layer.file.fileName] ?? {}
-    pnp.setFileImportOptions(layer.file.fileName, { ...prev, skipRows })
+    mutateSelectedPnpImportOptions(layer.file.fileName, prev => ({ ...prev, skipRows }))
+  }
+}
+
+function updateSelectedLayerSkipBottomRows(value: number) {
+  const layer = filesSelectedLayer.value
+  if (!layer) return
+  const skipBottomRows = Math.max(0, Number(value) || 0)
+  if (isSelectedLayerBom.value) {
+    mutateSelectedBomImportOptions(layer.file.fileName, prev => ({ ...prev, skipBottomRows }))
+    return
+  }
+  if (isSelectedLayerPnp.value) {
+    mutateSelectedPnpImportOptions(layer.file.fileName, prev => ({ ...prev, skipBottomRows }))
   }
 }
 
@@ -3137,23 +3969,99 @@ function updateSelectedLayerMappingByField(next: Record<string, number | undefin
   const layer = filesSelectedLayer.value
   if (!layer) return
   if (isSelectedLayerBom.value) {
-    const prev = bom.fileImportOptions.value[layer.file.fileName] ?? {}
-    bom.setFileImportOptions(layer.file.fileName, { ...prev, mapping: next as BomColumnMapping })
+    mutateSelectedBomImportOptions(layer.file.fileName, prev => ({ ...prev, mapping: next as BomColumnMapping }))
     return
   }
   if (isSelectedLayerPnp.value) {
-    const prev = pnp.fileImportOptions.value[layer.file.fileName] ?? {}
-    pnp.setFileImportOptions(layer.file.fileName, { ...prev, mapping: next as PnPColumnMapping })
+    mutateSelectedPnpImportOptions(layer.file.fileName, prev => ({ ...prev, mapping: next as PnPColumnMapping }))
+  }
+}
+
+function updateSelectedLayerFixedColumns(next: number[]) {
+  const layer = filesSelectedLayer.value
+  if (!layer) return
+  const fixedColumns = sanitizeFixedColumns(next)
+
+  const arraysEqual = (a?: readonly number[], b?: readonly number[]) => {
+    const aa = a ?? []
+    const bb = b ?? []
+    if (aa.length !== bb.length) return false
+    for (let i = 0; i < aa.length; i++) {
+      if (aa[i] !== bb[i]) return false
+    }
+    return true
+  }
+
+  if (isSelectedLayerBom.value) {
+    const prev = bom.resolveFileImportOptions(layer.file.fileName)
+    if (arraysEqual(prev?.fixedColumns, fixedColumns)) return
+    mutateSelectedBomImportOptions(layer.file.fileName, opts => ({ ...opts, fixedColumns }))
+    return
+  }
+  if (isSelectedLayerPnp.value) {
+    const prev = pnp.resolveFileImportOptions(layer.file.fileName)
+    if (arraysEqual(prev?.fixedColumns, fixedColumns)) return
+    mutateSelectedPnpImportOptions(layer.file.fileName, opts => ({ ...opts, fixedColumns }))
+  }
+}
+
+function updateSelectedLayerDelimiter(next: ',' | ';' | '\t' | 'fixed') {
+  const layer = filesSelectedLayer.value
+  if (!layer) return
+  if (isSelectedLayerBom.value) {
+    const prev = bom.resolveFileImportOptions(layer.file.fileName)
+    if (prev?.delimiter === next) return
+    mutateSelectedBomImportOptions(layer.file.fileName, opts => ({ ...opts, delimiter: next }))
+    return
+  }
+  if (isSelectedLayerPnp.value) {
+    const prev = pnp.resolveFileImportOptions(layer.file.fileName)
+    if (prev?.delimiter === next) return
+    mutateSelectedPnpImportOptions(layer.file.fileName, opts => ({ ...opts, delimiter: next }))
+  }
+}
+
+function updateSelectedLayerDecimal(next: '.' | ',') {
+  const layer = filesSelectedLayer.value
+  if (!layer) return
+  if (isSelectedLayerBom.value) {
+    const prev = bom.resolveFileImportOptions(layer.file.fileName)
+    if (prev?.decimal === next) return
+    mutateSelectedBomImportOptions(layer.file.fileName, opts => ({ ...opts, decimal: next }))
+    return
+  }
+  if (isSelectedLayerPnp.value) {
+    const prev = pnp.resolveFileImportOptions(layer.file.fileName)
+    if (prev?.decimal === next) return
+    mutateSelectedPnpImportOptions(layer.file.fileName, opts => ({ ...opts, decimal: next }))
+  }
+}
+
+function updateSelectedLayerExtraColumns(next: string[]) {
+  const layer = filesSelectedLayer.value
+  if (!layer) return
+  if (isSelectedLayerBom.value) {
+    mutateSelectedBomImportOptions(layer.file.fileName, prev => ({
+      ...prev,
+      extraColumns: next.length > 0 ? next : undefined,
+    }))
+    return
+  }
+  if (isSelectedLayerPnp.value) {
+    mutateSelectedPnpImportOptions(layer.file.fileName, prev => ({
+      ...prev,
+      extraColumns: next.length > 0 ? next : undefined,
+    }))
   }
 }
 
 function resolveSelectedPnpUnitOverride(layerFileName: string): PnPCoordUnit | undefined {
-  const fileOverride = pnp.fileImportOptions.value[layerFileName]?.unitOverride
+  const fileOverride = pnp.resolveFileImportOptions(layerFileName)?.unitOverride
   if (fileOverride && fileOverride !== 'auto') return fileOverride
   return pnp.coordUnitOverride.value === 'auto' ? undefined : pnp.coordUnitOverride.value
 }
 
-watch(sidebarTab, (tab) => {
+watch([sidebarTab, () => layers.value.length], ([tab]) => {
   if (tab !== 'files') return
   if (filesSelectedLayerFileName.value || filesSelectedDocId.value) return
   if (layers.value.length > 0) {
@@ -3166,6 +4074,42 @@ watch(sidebarTab, (tab) => {
     filesSelectedLayerFileName.value = null
   }
 }, { immediate: true })
+
+// Restore file selection from URL query param — uses a one-time watcher that
+// waits until the requested file appears in the layers array (files load
+// incrementally, so BOM/PnP layers may arrive after gerber layers).
+if (initialFileQuery) {
+  const stopInitialFileWatch = watch(
+    () => layers.value.map(l => l.file.fileName),
+    (fileNames) => {
+      const idx = fileNames.indexOf(initialFileQuery!)
+      if (idx < 0) return
+      filesSelectedLayerIndex.value = idx
+      filesSelectedLayerFileName.value = initialFileQuery!
+      filesSelectedDocId.value = null
+      filesPreviewSelectionNonce.value++
+      stopInitialFileWatch()
+    },
+    { immediate: true },
+  )
+}
+
+watch(
+  () => filesSelectedLayer.value?.file.fileName,
+  () => {
+    filesPreviewMode.value = canSelectedLayerUseTablePreview.value ? 'table' : 'text'
+  },
+  { immediate: true },
+)
+
+// Sync selected file name to URL so reload/share restores the same file
+watch(filesSelectedLayerFileName, (fileName) => {
+  if (sidebarTab.value !== 'files') return
+  const query = { ...route.query }
+  if (fileName) query.file = fileName
+  else delete query.file
+  router.replace({ query })
+})
 
 /** Try to guess document type from filename. */
 function guessDocumentType(fileName: string): DocumentType {
@@ -3303,16 +4247,32 @@ function handleDocumentTypeUpdate(id: string, type: DocumentType) {
 
 // Clean up all blob URLs on unmount
 onUnmounted(() => {
+  for (const timer of filesSaveTimers.values()) clearTimeout(timer)
+  filesSaveTimers.clear()
   for (const doc of documents.value) URL.revokeObjectURL(doc.blobUrl)
   if (perfRefreshTimer) clearInterval(perfRefreshTimer)
+  if (miniPerfTimer) clearInterval(miniPerfTimer)
   if (gerberPrewarmTimer) clearTimeout(gerberPrewarmTimer)
   stopPerfFrameLoop()
   stopLongTaskObserver()
+  gerberTreeCache.clearAll()
 })
 
 // ── BOM ──
 const bom = useBom(layers)
 const elexess = useElexessApi()
+const spark = useAiEnrichment()
+const toast = useToast()
+const { canUseSparkAi, canUseElexess, isAtElexessLimit, suggestedUpgrade } = useTeamPlan()
+const upgradeModalOpen = ref(false)
+const upgradeModalFeature = ref('')
+const upgradeModalPlan = ref<'Pro' | 'Team' | undefined>(undefined)
+
+function showUpgradeModal(feature: string, plan?: 'Pro' | 'Team') {
+  upgradeModalFeature.value = feature
+  upgradeModalPlan.value = plan
+  upgradeModalOpen.value = true
+}
 
 watch(pricingQuantities, (list) => {
   if (!list.includes(bom.boardQuantity.value)) {
@@ -3342,7 +4302,8 @@ function copyBomCpItems() {
   })
 }
 
-const selectedBomLineId = ref<string | null>(null)
+const initialBomLineId = (route.query.bomLine as string) || null
+const selectedBomLineId = ref<string | null>(initialBomLineId)
 const selectedBomLine = computed(() => {
   const id = selectedBomLineId.value
   if (!id) return null
@@ -3360,12 +4321,50 @@ watch([sidebarTab, () => (bom.filteredLines.value as BomLine[])], ([tab, filtere
   }
 }, { immediate: true })
 
+watch(selectedBomLineId, (lineId) => {
+  if (sidebarTab.value !== 'bom') return
+  const query = { ...route.query }
+  if (lineId) query.bomLine = lineId
+  else delete query.bomLine
+  router.replace({ query })
+})
+
 function onBomDragStart(e: MouseEvent) {
   if (!bomSplitEl.value) return
   bomSplit.onDragStart(e, bomSplitEl.value)
 }
 
 // ── BOM ↔ PnP cross-reference designator sets ──
+
+function normalizeDesignator(value: string): string {
+  return String(value ?? '').trim().toUpperCase()
+}
+
+function parseBomRefs(refs: string): string[] {
+  if (!refs) return []
+  return refs
+    .split(/[,;\s]+/)
+    .map(normalizeDesignator)
+    .filter(Boolean)
+}
+
+/** Designators present in SMD PnP, excluding DNP components */
+const pnpSmdDesignators = computed(() => {
+  const s = new Set<string>()
+  for (const c of pnp.smdActiveComponents.value) {
+    if (!c.dnp) s.add(normalizeDesignator(c.designator))
+  }
+  return s
+})
+
+/** Designators present in THT PnP, excluding DNP components */
+const pnpThtDesignators = computed(() => {
+  const s = new Set<string>()
+  for (const c of pnp.thtActiveComponents.value) {
+    if (!c.dnp) s.add(normalizeDesignator(c.designator))
+  }
+  return s
+})
 
 /** Designators present in PnP (SMD + THT), excluding DNP components */
 const pnpDesignators = computed(() => {
@@ -3379,16 +4378,48 @@ const pnpDesignators = computed(() => {
   return s
 })
 
+const pnpPackages = computed(() => {
+  const m = new Map<string, string>()
+  for (const c of pnp.smdActiveComponents.value) {
+    if (c.matchedPackage) m.set(c.designator, c.matchedPackage)
+    else if (c.cadPackage) m.set(c.designator, c.cadPackage)
+  }
+  for (const c of pnp.thtActiveComponents.value) {
+    if (c.matchedPackage) m.set(c.designator, c.matchedPackage)
+    else if (c.cadPackage) m.set(c.designator, c.cadPackage)
+  }
+  return m
+})
+
+function inferBomLineTypeFromReferences(references: string): BomLine['type'] | null {
+  const refs = parseBomRefs(references)
+  if (refs.length === 0) return null
+  const hasSmd = refs.some(ref => pnpSmdDesignators.value.has(ref))
+  const hasTht = refs.some(ref => pnpThtDesignators.value.has(ref))
+  if (hasSmd && !hasTht) return 'SMD'
+  if (hasTht && !hasSmd) return 'THT'
+  return null
+}
+
 /** Designators present in BOM (all non-DNP lines, split from comma-separated refs) */
 const bomDesignators = computed(() => {
   const s = new Set<string>()
   for (const line of bom.bomLines.value) {
     if (line.dnp) continue
-    const refs = (line.references || '').split(/[,;\s]+/).map(r => r.trim()).filter(Boolean)
+    const refs = parseBomRefs(line.references || '')
     for (const r of refs) s.add(r)
   }
   return s
 })
+
+watch([() => bom.bomLines.value, pnpSmdDesignators, pnpThtDesignators], () => {
+  if (!canEditTab('bom')) return
+  for (const line of bom.bomLines.value) {
+    const inferred = inferBomLineTypeFromReferences(line.references)
+    if (!inferred || inferred === line.type) continue
+    bom.updateLine(line.id, { type: inferred })
+  }
+}, { deep: false })
 
 
 // Auto-switch to SMD tab when PnP layers appear for the first time
@@ -3512,7 +4543,7 @@ let pendingLocalPnpFileImportOptions: PnpImportOptionsSnapshot | null = null
 
 function persistToProject(updates: Record<string, any>): Promise<void> {
   if (!isTeamProject || !teamProjectId) return Promise.resolve()
-  if (!hasLoadedProjectData.value) {
+  if (!hasLoadedProjectData.value || !currentTeamId.value) {
     pendingTeamUpdates = { ...pendingTeamUpdates, ...updates }
     return Promise.resolve()
   }
@@ -3572,12 +4603,22 @@ function persistToProject(updates: Record<string, any>): Promise<void> {
   return teamPersistQueue
 }
 
-watch(hasLoadedProjectData, (loaded) => {
-  if (!loaded || !isTeamProject || !teamProjectId) return
+function flushPendingTeamUpdates() {
+  if (!isTeamProject || !teamProjectId) return
+  if (!hasLoadedProjectData.value || !currentTeamId.value) return
   if (Object.keys(pendingTeamUpdates).length === 0) return
   const buffered = { ...pendingTeamUpdates }
   pendingTeamUpdates = {}
   persistToProject(buffered)
+}
+
+watch(hasLoadedProjectData, (loaded) => {
+  if (!loaded) return
+  flushPendingTeamUpdates()
+})
+
+watch(currentTeamId, () => {
+  flushPendingTeamUpdates()
 })
 
 // Persist PnP origin to database when it changes
@@ -3735,6 +4776,102 @@ watch(() => pnp.assemblyTypeOverridesRecord.value, (types) => {
   }
 }, { deep: true })
 
+// ── Conversation context references ──
+
+const conversationReferenceItems = computed<ConversationReferenceItem[]>(() => {
+  const items: ConversationReferenceItem[] = []
+
+  for (const layer of layers.value) {
+    items.push({
+      type: 'file',
+      id: layer.file.fileName,
+      label: layer.file.fileName,
+      sublabel: layer.type,
+      icon: 'i-lucide-file',
+    })
+  }
+
+  for (const line of bom.bomLines.value as BomLine[]) {
+    const refs = line.references ? line.references.split(',').map(r => r.trim()).filter(Boolean).slice(0, 3).join(', ') : ''
+    const refsStr = refs ? `${refs} - ` : ''
+    items.push({
+      type: 'bom',
+      id: line.id,
+      label: `${refsStr}${line.description || line.package || 'BOM Line'}`,
+      sublabel: line.quantity > 1 ? `x${line.quantity} ${line.type}` : line.type,
+      icon: 'i-lucide-list',
+    })
+  }
+
+  for (const comp of pnp.smdActiveComponents.value) {
+    items.push({
+      type: 'pnp',
+      id: comp.designator,
+      label: comp.designator,
+      sublabel: [comp.value, comp.matchedPackage || comp.cadPackage].filter(Boolean).join(' - ') || 'SMD',
+      icon: 'i-lucide-cpu',
+    })
+  }
+  for (const comp of pnp.thtActiveComponents.value) {
+    items.push({
+      type: 'pnp',
+      id: comp.designator,
+      label: comp.designator,
+      sublabel: [comp.value, comp.matchedPackage || comp.cadPackage].filter(Boolean).join(' - ') || 'THT',
+      icon: 'i-lucide-cpu',
+    })
+  }
+
+  for (const doc of documents.value) {
+    items.push({
+      type: 'doc',
+      id: doc.id,
+      label: doc.name,
+      sublabel: doc.type,
+      icon: 'i-lucide-file-text',
+    })
+  }
+
+  return items
+})
+
+function handleConversationNavigateRef(type: string, id: string) {
+  switch (type) {
+    case 'file': {
+      const layerIdx = layers.value.findIndex(l => l.file.fileName === id)
+      if (layerIdx >= 0) {
+        sidebarTab.value = 'files'
+        filesSelectedLayerFileName.value = id
+        filesSelectedLayerIndex.value = layerIdx
+        filesSelectedDocId.value = null
+      }
+      break
+    }
+    case 'bom': {
+      sidebarTab.value = 'bom'
+      selectedBomLineId.value = id
+      break
+    }
+    case 'pnp': {
+      const smd = (pnp.smdActiveComponents.value as any[]).find((c: any) => c.designator === id)
+      if (smd) {
+        sidebarTab.value = 'smd'
+      }
+      else {
+        const tht = (pnp.thtActiveComponents.value as any[]).find((c: any) => c.designator === id)
+        if (tht) sidebarTab.value = 'tht'
+      }
+      pnp.selectedDesignator.value = id
+      break
+    }
+    case 'doc': {
+      sidebarTab.value = 'docs'
+      selectedDocumentId.value = id
+      break
+    }
+  }
+}
+
 // ── Persist BOM data ──
 
 watch(bom.bomLinesRecord, (lines) => {
@@ -3743,6 +4880,15 @@ watch(bom.bomLinesRecord, (lines) => {
     persistToProject({ bomLines: lines })
   } else {
     updateBomLines(projectId, lines)
+  }
+}, { deep: true })
+
+watch(bom.bomGroupsRecord, (groups) => {
+  if (!hasLoadedProjectData.value) return
+  if (isTeamProject) {
+    persistToProject({ bomGroups: groups })
+  } else {
+    updateBomGroups(projectId, groups)
   }
 }, { deep: true })
 
@@ -3764,9 +4910,17 @@ watch(() => bom.boardQuantity.value, (qty) => {
   }
 })
 
+watch(() => spark.aiSuggestions.value, (suggestions) => {
+  if (!hasLoadedProjectData.value) return
+  if (isTeamProject) {
+    persistToProject({ bomAiSuggestions: suggestions })
+  }
+}, { deep: true })
+
 watch(bom.fileImportOptionsRecord, (options) => {
   if (!hasLoadedProjectData.value) return
   const snapshot = toBomImportOptionsSnapshot(options)
+  if (hasImportOptions(snapshot)) saveTeamImportOptionsBackup('bom', snapshot)
   if (isTeamProject) {
     pendingLocalBomFileImportOptions = snapshot
     void persistToProject({ bomFileImportOptions: snapshot }).finally(() => {
@@ -3782,6 +4936,7 @@ watch(bom.fileImportOptionsRecord, (options) => {
 watch(pnp.fileImportOptionsRecord, (options) => {
   if (!hasLoadedProjectData.value) return
   const snapshot = toPnpImportOptionsSnapshot(options)
+  if (hasImportOptions(snapshot)) saveTeamImportOptionsBackup('pnp', snapshot)
   if (isTeamProject) {
     pendingLocalPnpFileImportOptions = snapshot
     void persistToProject({ pnpFileImportOptions: snapshot }).finally(() => {
@@ -3868,6 +5023,22 @@ async function handleFetchAllPricing() {
   if (isTeamProject) {
     await persistToProject({ bomPricingCache: updatedCache })
   }
+  if (isAtElexessLimit.value && suggestedUpgrade.value) {
+    showUpgradeModal('Elexess Price Search', suggestedUpgrade.value)
+  }
+}
+
+function handleCancelPricing() {
+  elexess.cancelFetching()
+}
+
+function handleFetchPricesUpsell() {
+  if (!canUseElexess.value) {
+    showUpgradeModal('Elexess Price Search', 'Pro')
+  } else {
+    toast.add({ title: 'Configure Elexess credentials in Team Settings to fetch pricing', color: 'warning' })
+    navigateTo('/team/settings?section=integrations')
+  }
 }
 
 async function handleFetchSinglePricing(partNumber: string) {
@@ -3883,16 +5054,23 @@ async function handleFetchSinglePricing(partNumber: string) {
 
 function handleBomAddLine(line?: Partial<BomLine>) {
   if (!ensureTabEditable('bom')) return
+  const baseLine: Partial<BomLine> = line ?? {}
+  const inferredType = inferBomLineTypeFromReferences(String(baseLine.references ?? ''))
+  const nextLine: Partial<BomLine> = inferredType ? { ...baseLine, type: inferredType } : baseLine
   if (line?.id) {
-    bom.updateLine(line.id, line)
+    bom.updateLine(line.id, nextLine)
   } else {
-    bom.addLine(line)
+    bom.addLine(Object.keys(nextLine).length > 0 ? nextLine : undefined)
   }
 }
 
 function handleBomUpdateLine(id: string, updates: Partial<BomLine>) {
   if (!ensureTabEditable('bom')) return
-  bom.updateLine(id, updates)
+  const current = bom.bomLines.value.find(l => l.id === id)
+  const nextRefs = updates.references ?? current?.references ?? ''
+  const inferredType = inferBomLineTypeFromReferences(String(nextRefs))
+  const nextUpdates = inferredType ? { ...updates, type: inferredType } : updates
+  bom.updateLine(id, nextUpdates)
 }
 
 function handleBomRemoveLine(id: string) {
@@ -3910,6 +5088,36 @@ function handleBomRemoveManufacturer(lineId: string, idx: number) {
   bom.removeManufacturer(lineId, idx)
 }
 
+function handleBomAddGroup(name: string) {
+  if (!ensureTabEditable('bom')) return
+  bom.addGroup(name)
+}
+
+function handleBomRemoveGroup(groupId: string) {
+  if (!ensureTabEditable('bom')) return
+  bom.removeGroup(groupId)
+}
+
+function handleBomUpdateGroup(groupId: string, updates: Partial<Omit<BomGroup, 'id'>>) {
+  if (!ensureTabEditable('bom')) return
+  bom.updateGroup(groupId, updates)
+}
+
+function handleBomAssignGroup(lineId: string, groupId: string | null) {
+  if (!ensureTabEditable('bom')) return
+  bom.assignGroup(lineId, groupId)
+}
+
+function handleBomMoveLineBefore(draggedId: string, targetId: string) {
+  if (!ensureTabEditable('bom')) return
+  bom.moveLineBefore(draggedId, targetId)
+}
+
+function handleBomMoveLineToEnd(draggedId: string) {
+  if (!ensureTabEditable('bom')) return
+  bom.moveLineToEnd(draggedId)
+}
+
 function handleBomBoardQuantityUpdate(qty: number) {
   if (!ensureTabEditable('bom')) return
   bom.boardQuantity.value = qty
@@ -3922,6 +5130,143 @@ function handlePricingQuantitiesFromBom(next: number[]) {
 
 function handlePricingQuantitiesFromPricing(next: number[]) {
   handlePricingQuantitiesUpdate(next)
+}
+
+// ── Spark AI handlers ──
+
+async function handleSparkEnrich() {
+  if (!canEditTab('bom')) return
+  try {
+    const result = await spark.enrichBom(
+      bom.bomLines.value as BomLine[],
+      pnp.smdActiveComponents.value,
+      pnp.thtActiveComponents.value,
+      (bom.bomGroups.value as BomGroup[]).map(g => ({ id: g.id, name: g.name })),
+    )
+    const count = Object.keys(result).length
+    toast.add({
+      title: count > 0 ? `Spark returned suggestions for ${count} BOM line${count === 1 ? '' : 's'}` : 'Spark found no suggestions to make',
+      color: count > 0 ? 'success' : 'neutral',
+    })
+  } catch (err: any) {
+    console.error('[Spark] Enrichment failed:', err)
+    toast.add({
+      title: 'Spark enrichment failed',
+      description: spark.enrichError.value ?? undefined,
+      color: 'error',
+    })
+  }
+}
+
+function sparkCleanup() {
+  nextTick(() => spark.cleanMatchingSuggestions(bom.bomLines.value as BomLine[]))
+}
+
+function handleAcceptAiSuggestion(lineId: string, field: string) {
+  if (!ensureTabEditable('bom')) return
+  spark.acceptSuggestion(lineId, field as keyof AiSuggestion, (id, updates) => {
+    handleBomUpdateLine(id, updates)
+  })
+  sparkCleanup()
+}
+
+function handleDismissAiSuggestion(lineId: string, field: string) {
+  spark.dismissSuggestion(lineId, field as keyof AiSuggestion)
+  sparkCleanup()
+}
+
+function handleAcceptAiGroup(lineId: string, groupName: string) {
+  if (!ensureTabEditable('bom')) return
+  const group = bom.addGroup(groupName)
+  bom.assignGroup(lineId, group.id)
+  spark.dismissSuggestion(lineId, 'group')
+  sparkCleanup()
+}
+
+function handleDismissAiGroup(lineId: string) {
+  spark.dismissSuggestion(lineId, 'group')
+  sparkCleanup()
+}
+
+function handleAcceptAllAi(lineId: string) {
+  if (!ensureTabEditable('bom')) return
+  spark.acceptAll(lineId, (id, updates) => {
+    handleBomUpdateLine(id, updates)
+  }, (id, mfr) => {
+    handleBomAddManufacturer(id, mfr)
+  }, (id, groupName) => {
+    const group = bom.addGroup(groupName)
+    bom.assignGroup(id, group.id)
+  })
+  sparkCleanup()
+  sparkAdvanceAfterReview(lineId)
+}
+
+function handleDismissAllAi(lineId: string) {
+  spark.dismissAll(lineId)
+  sparkCleanup()
+  sparkAdvanceAfterReview(lineId)
+}
+
+function handleAcceptAiManufacturer(lineId: string, mfr: { manufacturer: string; manufacturerPart: string }) {
+  if (!ensureTabEditable('bom')) return
+  handleBomAddManufacturer(lineId, mfr)
+  spark.removeSuggestedManufacturer(lineId, mfr)
+  sparkCleanup()
+}
+
+function handleDismissAiManufacturer(lineId: string, mfr: { manufacturer: string; manufacturerPart: string }) {
+  spark.removeSuggestedManufacturer(lineId, mfr)
+  sparkCleanup()
+}
+
+// ── Spark review navigation ──
+
+const sparkReviewLineIds = computed(() => {
+  const pending = spark.pendingLineIds.value
+  if (pending.length === 0) return []
+  const bomOrder = (bom.bomLines.value as BomLine[]).map(l => l.id)
+  const pendingSet = new Set(pending)
+  return bomOrder.filter(id => pendingSet.has(id))
+})
+
+const sparkReviewPosition = computed(() => {
+  const ids = sparkReviewLineIds.value
+  if (ids.length === 0) return 0
+  const idx = ids.indexOf(selectedBomLineId.value ?? '')
+  return idx >= 0 ? idx + 1 : 0
+})
+
+function sparkReviewNav(direction: 1 | -1) {
+  const ids = sparkReviewLineIds.value
+  if (ids.length === 0) return
+  const currentIdx = ids.indexOf(selectedBomLineId.value ?? '')
+  let nextIdx: number
+  if (currentIdx < 0) {
+    nextIdx = direction === 1 ? 0 : ids.length - 1
+  } else {
+    nextIdx = currentIdx + direction
+    if (nextIdx < 0) nextIdx = ids.length - 1
+    else if (nextIdx >= ids.length) nextIdx = 0
+  }
+  selectedBomLineId.value = ids[nextIdx]!
+}
+
+function sparkAdvanceAfterReview(reviewedLineId: string) {
+  nextTick(() => {
+    const ids = sparkReviewLineIds.value
+    if (ids.length === 0) return
+    if (ids.includes(reviewedLineId)) return
+    const bomOrder = (bom.bomLines.value as BomLine[]).map(l => l.id)
+    const reviewedBomIdx = bomOrder.indexOf(reviewedLineId)
+    let best: string | null = null
+    let bestDist = Infinity
+    for (const id of ids) {
+      const dist = bomOrder.indexOf(id) - reviewedBomIdx
+      if (dist > 0 && dist < bestDist) { best = id; bestDist = dist }
+    }
+    selectedBomLineId.value = best ?? ids[0]!
+  })
 }
 
 function handleManualOrderUpdate(type: 'smd' | 'tht', value: string[]) {
@@ -3953,6 +5298,9 @@ const filterOptions: { label: string; value: LayerFilter }[] = [
 ]
 
 const activeFilterOptions = computed(() => {
+  if (viewMode.value === 'realistic') {
+    return filterOptions.filter(option => option.value !== 'all')
+  }
   return filterOptions
 })
 
@@ -3991,7 +5339,25 @@ function cancelEdit() {
 }
 
 // ── Team project actions (approve / revert) ──
-const { getProject: getTeamProject, approveProject: doApprove, revertToDraft: doRevert, updateProject: updateTeamProject, getProjectFiles: getTeamFiles, downloadFile: downloadTeamFile, uploadFile: uploadTeamFile, deleteFile: deleteTeamFile, getProjectDocuments: getTeamDocuments, uploadDocument: uploadTeamDocument, downloadDocument: downloadTeamDocument, updateDocumentType: updateTeamDocumentType, deleteDocument: deleteTeamDocument, uploadPreviewImage } = useTeamProjects()
+const {
+  getProject: getTeamProject,
+  approveProject: doApprove,
+  revertToDraft: doRevert,
+  moveToInProgress: doMoveToInProgress,
+  requestApproval: doRequestApproval,
+  requestChanges: doRequestChanges,
+  updateProject: updateTeamProject,
+  getProjectFiles: getTeamFiles,
+  downloadFile: downloadTeamFile,
+  uploadFile: uploadTeamFile,
+  deleteFile: deleteTeamFile,
+  getProjectDocuments: getTeamDocuments,
+  uploadDocument: uploadTeamDocument,
+  downloadDocument: downloadTeamDocument,
+  updateDocumentType: updateTeamDocumentType,
+  deleteDocument: deleteTeamDocument,
+  uploadPreviewImage,
+} = useTeamProjects()
 
 async function toggleCurrentTabLock() {
   if (!teamProjectId || !isLockableTab(sidebarTab.value) || !canToggleCurrentTabLock.value) return
@@ -4020,7 +5386,7 @@ async function toggleCurrentTabLock() {
 
   const { error } = await updateTeamProject(teamProjectId, { page_locks: next })
   if (error) {
-    console.warn('Failed to update page lock:', error)
+    reportError(error, { title: 'Failed to update page lock', context: 'viewer.page_lock.update' })
     pendingLocalPageLocks = null
     pageLocksOverride.value = before
     if (project.value) project.value.pageLocks = before
@@ -4033,13 +5399,56 @@ async function toggleCurrentTabLock() {
 async function handleApproveProject() {
   if (!teamProjectId) return
   const { error } = await doApprove(teamProjectId)
-  if (error) console.warn('Failed to approve project:', error)
+  if (error) reportError(error, { title: 'Failed to approve project', context: 'viewer.workflow.approve' })
+}
+
+async function handleMoveToInProgress() {
+  if (!teamProjectId) return
+  const { error } = await doMoveToInProgress(teamProjectId)
+  // Force refresh to avoid stale UI status when realtime delivery lags.
+  await projectSync?.fetchProject()
+  if (error) {
+    const message = typeof error.message === 'string' ? error.message : ''
+    // Treat as success if the backend already moved the project and this call raced.
+    if (message.includes('Project must be draft or for_approval') && projectSync?.project.value?.status === 'in_progress') {
+      return
+    }
+    reportError(error, { title: 'Failed to update workflow', context: 'viewer.workflow.in_progress' })
+  }
+}
+
+async function handleRequestApproval() {
+  if (!teamProjectId) return
+  if (!selectedApproverUserId.value) {
+    useToast().add({ title: 'Select an approver first', color: 'warning' })
+    return
+  }
+  const { error } = await doRequestApproval(teamProjectId, selectedApproverUserId.value)
+  if (error) {
+    reportError(error, { title: 'Failed to request approval', context: 'viewer.workflow.request_approval' })
+    return
+  }
+  selectedApproverUserId.value = undefined
+  requestApprovalModalOpen.value = false
+}
+
+async function handleRequestChanges() {
+  if (!teamProjectId) return
+  const message = requestChangesMessage.value.trim()
+  if (!message) return
+  const { error } = await doRequestChanges(teamProjectId, message)
+  if (error) {
+    reportError(error, { title: 'Failed to request changes', context: 'viewer.workflow.request_changes' })
+    return
+  }
+  requestChangesMessage.value = ''
+  requestChangesModalOpen.value = false
 }
 
 async function handleRevertToDraft() {
   if (!teamProjectId) return
   const { error } = await doRevert(teamProjectId)
-  if (error) console.warn('Failed to revert project:', error)
+  if (error) reportError(error, { title: 'Failed to revert project', context: 'viewer.workflow.revert' })
 }
 
 function setViewMode(mode: ViewMode) {
@@ -4081,10 +5490,19 @@ function applyFilterVisibility(filter: LayerFilter) {
 }
 
 function setFilter(filter: LayerFilter) {
+  if (viewMode.value === 'realistic' && filter === 'all') {
+    filter = 'top'
+  }
   activeFilter.value = filter
   applyFilterVisibility(filter)
   mirrored.value = filter === 'bot'
 }
+
+watch(viewMode, (mode) => {
+  if (mode === 'realistic' && activeFilter.value === 'all') {
+    setFilter('top')
+  }
+}, { immediate: true })
 
 // ── Board rotation ──
 
@@ -4117,6 +5535,7 @@ function applyDefaultCropToOutline() {
 
 onMounted(async () => {
   if (isTeamProject && teamProjectId) {
+    await fetchTeamMembers()
     // Always refresh from DB to avoid stale in-memory cache after collaborative writes.
     const tp = await getTeamProject(teamProjectId, { force: true })
     if (tp) {
@@ -4143,8 +5562,10 @@ onMounted(async () => {
         pnpComponentGroups: tp.pnp_component_groups,
         pnpGroupAssignments: tp.pnp_group_assignments,
         bomLines: tp.bom_lines,
+        bomGroups: tp.bom_groups,
         bomPricingCache: tp.bom_pricing_cache,
         bomBoardQuantity: tp.bom_board_quantity,
+        bomAiSuggestions: tp.bom_ai_suggestions,
         pcbData: tp.pcb_data,
         panelData: tp.panel_data,
         pageLocks: tp.page_locks,
@@ -4187,6 +5608,8 @@ onMounted(async () => {
     }
   }))
 
+  originalContent.clear()
+
   // Load persisted original content from DB (survives page reloads)
   if (!isTeamProject) {
     const storedOriginals = await getOriginalFiles(projectId, 1)
@@ -4209,10 +5632,20 @@ onMounted(async () => {
       await storeOriginalFiles(projectId, 1, layers.value.map(l => ({ fileName: l.file.fileName, content: l.file.content })))
     }
   } else {
-    // Team projects: in-memory only (team sync handles version tracking)
+    // Team projects: persist "original baseline" in browser storage so
+    // edit markers + diff survive route reloads.
+    const storedOriginals = loadTeamOriginalsFromStorage()
+    let updatedStorage = false
     for (const layer of layers.value) {
-      originalContent.set(layer.file.fileName, layer.file.content)
+      const stored = storedOriginals.get(layer.file.fileName)
+      if (stored !== undefined) {
+        originalContent.set(layer.file.fileName, stored)
+      } else {
+        originalContent.set(layer.file.fileName, layer.file.content)
+        updatedStorage = true
+      }
     }
+    if (updatedStorage || storedOriginals.size === 0) saveTeamOriginalsToStorage()
   }
 
   // Restore persisted layer visibility (filter) without overriding persisted mirrored
@@ -4223,6 +5656,7 @@ onMounted(async () => {
   if (activeMode.value === 'measure') measureTool.active.value = true
   if (activeMode.value === 'info') infoTool.active.value = true
   if (activeMode.value === 'delete') deleteTool.active.value = true
+  if (activeMode.value === 'draw') drawTool.active.value = true
 
   // Restore persisted PnP origin
   if (project.value?.pnpOriginX != null && project.value?.pnpOriginY != null) {
@@ -4299,6 +5733,7 @@ onMounted(async () => {
 
   // Restore persisted BOM data
   bom.setBomLines(project.value?.bomLines)
+  bom.setBomGroups(project.value?.bomGroups as any)
   const restoredCache = project.value?.bomPricingCache
   try {
     if (restoredCache) elexess.cleanPricingCache(restoredCache)
@@ -4307,8 +5742,31 @@ onMounted(async () => {
   }
   bom.setPricingCache(restoredCache)
   bom.setBoardQuantity(project.value?.bomBoardQuantity)
-  bom.setFileImportOptionsMap(project.value?.bomFileImportOptions)
-  pnp.setFileImportOptionsMap(project.value?.pnpFileImportOptions)
+  const restoredAiSuggestions = project.value?.bomAiSuggestions
+  if (restoredAiSuggestions && typeof restoredAiSuggestions === 'object') {
+    spark.setSuggestions(restoredAiSuggestions as Record<string, any>)
+    nextTick(() => spark.cleanMatchingSuggestions(bom.bomLines.value as BomLine[]))
+  }
+  const restoredBomImportOptions = toBomImportOptionsSnapshot(project.value?.bomFileImportOptions)
+  const restoredPnpImportOptions = toPnpImportOptionsSnapshot(project.value?.pnpFileImportOptions)
+  const backupBomImportOptions = toBomImportOptionsSnapshot(loadTeamImportOptionsBackup('bom'))
+  const backupPnpImportOptions = toPnpImportOptionsSnapshot(loadTeamImportOptionsBackup('pnp'))
+  const effectiveBomImportOptions = hasImportOptions(restoredBomImportOptions)
+    ? restoredBomImportOptions
+    : backupBomImportOptions
+  const effectivePnpImportOptions = hasImportOptions(restoredPnpImportOptions)
+    ? restoredPnpImportOptions
+    : backupPnpImportOptions
+  bom.setFileImportOptionsMap(effectiveBomImportOptions)
+  pnp.setFileImportOptionsMap(effectivePnpImportOptions)
+  if (isTeamProject && teamProjectId) {
+    if (!hasImportOptions(restoredBomImportOptions) && hasImportOptions(effectiveBomImportOptions)) {
+      persistToProject({ bomFileImportOptions: effectiveBomImportOptions })
+    }
+    if (!hasImportOptions(restoredPnpImportOptions) && hasImportOptions(effectivePnpImportOptions)) {
+      persistToProject({ pnpFileImportOptions: effectivePnpImportOptions })
+    }
+  }
 
   // Restore persisted PCB data
   pcbData.value = project.value?.pcbData ?? null
@@ -4494,6 +5952,7 @@ async function doImport(newFiles: GerberFile[], sourceName: string) {
   for (const f of newFiles) {
     originalContent.set(f.fileName, f.content)
   }
+  saveTeamOriginalsToStorage()
   if (!isTeamProject) {
     await storeOriginalFiles(projectId, 1, newFiles.map(f => ({ fileName: f.fileName, content: f.content })))
   }
@@ -4607,6 +6066,20 @@ async function renameLayer(index: number, newName: string) {
   if (oldName === newName) return
   if (layers.value.some(l => l.file.fileName === newName)) return
 
+  // Migrate per-file import options so mapping/markers survive renames.
+  const bomOptions = { ...bom.fileImportOptions.value }
+  if (bomOptions[oldName] && !bomOptions[newName]) {
+    bomOptions[newName] = bomOptions[oldName]
+    delete bomOptions[oldName]
+    bom.setFileImportOptionsMap(bomOptions)
+  }
+  const pnpOptions = { ...pnp.fileImportOptions.value }
+  if (pnpOptions[oldName] && !pnpOptions[newName]) {
+    pnpOptions[newName] = pnpOptions[oldName]
+    delete pnpOptions[oldName]
+    pnp.setFileImportOptionsMap(pnpOptions)
+  }
+
   // Update in-memory
   layer.file.fileName = newName
 
@@ -4615,6 +6088,7 @@ async function renameLayer(index: number, newName: string) {
   if (orig !== undefined) {
     originalContent.delete(oldName)
     originalContent.set(newName, orig)
+    saveTeamOriginalsToStorage()
   }
   if (!isTeamProject) {
     await renameOriginalFile(projectId, 1, oldName, newName)
@@ -4691,6 +6165,7 @@ async function duplicateLayer(index: number) {
 
   // Track the duplicate's content as its original
   originalContent.set(copyName, newFile.content)
+  saveTeamOriginalsToStorage()
   if (!isTeamProject) {
     await storeOriginalFiles(projectId, 1, [{ fileName: copyName, content: newFile.content }])
   }
@@ -4719,6 +6194,7 @@ async function removeLayer(index: number) {
   layers.value = layers.value.filter(l => l.file.fileName !== fileName)
   syncLayerOrderFromLayers()
   originalContent.delete(fileName)
+  saveTeamOriginalsToStorage()
   if (!isTeamProject) {
     await removeOriginalFile(projectId, 1, fileName)
   }
@@ -4801,6 +6277,267 @@ async function handleConfirmDelete() {
   layers.value = [...layers.value]
 }
 
+// ── Draw handler ──
+
+type QuickSide = 'top' | 'bot'
+
+function getLayerByType(type: string): LayerInfo | null {
+  return layers.value.find(l => l.type === type) ?? null
+}
+
+async function persistLayerContentOrThrow(layer: LayerInfo, content: string) {
+  if (isTeamProject && teamProjectId) {
+    const teamId = currentTeamId.value || await waitForTeamId()
+    const { error } = await uploadTeamFile(teamProjectId, teamId, 1, layer.file.fileName, content, layer.type)
+    if (error) throw error
+  } else {
+    await updateFileContent(projectId, 1, layer.file.fileName, content)
+  }
+}
+
+function injectFilledCircleByMm(source: string, cx: number, cy: number, diameterMm: number): string {
+  const spec = parseFormatFromSource(source)
+  const d = mmToFileUnits(diameterMm, spec.units)
+  const nextCode = findNextApertureCode(source)
+  const fmtX = (v: number) => formatCoordinate(v, spec.format, spec.zeroSuppression)
+  const fmtY = (v: number) => formatCoordinate(v, spec.format, spec.zeroSuppression)
+  const apertureDef = `%ADD${nextCode}C,${d.toFixed(6).replace(/0+$/, '').replace(/\.$/, '')}*%`
+  const commands = [
+    `D${nextCode}*`,
+    `X${fmtX(cx)}Y${fmtY(cy)}D03*`,
+  ].join('\n')
+  return injectGerberCommands(source, apertureDef, commands)
+}
+
+function injectClearCircleByMm(source: string, cx: number, cy: number, diameterMm: number): string {
+  const spec = parseFormatFromSource(source)
+  const d = mmToFileUnits(diameterMm, spec.units)
+  const nextCode = findNextApertureCode(source)
+  const fmtX = (v: number) => formatCoordinate(v, spec.format, spec.zeroSuppression)
+  const fmtY = (v: number) => formatCoordinate(v, spec.format, spec.zeroSuppression)
+  const apertureDef = `%ADD${nextCode}C,${d.toFixed(6).replace(/0+$/, '').replace(/\.$/, '')}*%`
+  // Use clear-polarity flash for robust "copper cutout" behavior over existing copper.
+  const wrapped = [
+    `%LPC*%`,
+    `D${nextCode}*`,
+    `X${fmtX(cx)}Y${fmtY(cy)}D03*`,
+    `%LPD*%`,
+  ].join('\n')
+  return injectGerberCommands(source, apertureDef, wrapped)
+}
+
+function injectBcByMm(source: string, cx: number, cy: number, widthMm: number, heightMm: number): string {
+  const spec = parseFormatFromSource(source)
+  const w = mmToFileUnits(widthMm, spec.units)
+  const h = mmToFileUnits(heightMm, spec.units)
+  const strokeW = mmToFileUnits(0.1, spec.units)
+
+  const rectRes = generateRect({
+    x: cx - w / 2,
+    y: cy - h / 2,
+    w,
+    h,
+    filled: false,
+    strokeWidth: strokeW,
+  }, spec, findNextApertureCode(source))
+  let out = injectGerberCommands(source, rectRes.apertureDef, rectRes.commands)
+
+  const textH = Math.max(mmToFileUnits(1.0, spec.units), h * 0.35)
+  const approxTextW = textH * 1.45
+  const textRes = generateText({
+    text: 'BC',
+    x: cx - approxTextW / 2,
+    y: cy - textH / 2,
+    height: textH,
+    strokeWidth: strokeW,
+  }, spec, findNextApertureCode(out))
+  out = injectGerberCommands(out, textRes.apertureDef, textRes.commands)
+  return out
+}
+
+async function applyMultiLayerEdits(
+  edits: { layer: LayerInfo; newContent: string }[],
+  undoLabel: string,
+) {
+  if (edits.length === 0) return
+  const canvas = boardCanvasRef.value
+  if (!canvas) return
+
+  const snapshots = new Map<string, string>()
+  for (const { layer } of edits) snapshots.set(layer.file.fileName, layer.file.content)
+
+  try {
+    for (const { layer, newContent } of edits) {
+      layer.file.content = newContent
+      await persistLayerContentOrThrow(layer, newContent)
+      canvas.invalidateCache(layer.file.fileName)
+    }
+  } catch (err) {
+    // Best-effort rollback in memory + persistence
+    for (const [fileName, previousContent] of snapshots) {
+      const layer = layers.value.find(l => l.file.fileName === fileName)
+      if (!layer) continue
+      layer.file.content = previousContent
+      try {
+        await persistLayerContentOrThrow(layer, previousContent)
+      } catch {}
+      canvas.invalidateCache(fileName)
+    }
+    layers.value = [...layers.value]
+    toast.add({
+      title: 'Save failed',
+      description: 'Quick element could not be saved.',
+      color: 'error',
+    })
+    console.warn('[draw] failed to persist quick element', err)
+    return
+  }
+
+  editHistory.pushEntry(snapshots, undoLabel)
+  undoToastVisible.value = true
+  if (undoToastTimer) clearTimeout(undoToastTimer)
+  undoToastTimer = setTimeout(() => { undoToastVisible.value = false }, 5000)
+  layers.value = [...layers.value]
+}
+
+function resolveQuickSide(): QuickSide | null {
+  if (activeFilter.value === 'top') return 'top'
+  if (activeFilter.value === 'bot') return 'bot'
+  return null
+}
+
+async function placeQuickFiducial(payload: { side: QuickSide; x: number; y: number }) {
+  if (isCurrentTabLocked.value) return
+  if (activeMode.value !== 'draw') return
+
+  const copperType = payload.side === 'top' ? 'Top Copper' : 'Bottom Copper'
+  const maskType = payload.side === 'top' ? 'Top Solder Mask' : 'Bottom Solder Mask'
+  const copper = getLayerByType(copperType)
+  if (!copper) {
+    toast.add({ title: 'Layer missing', description: `${copperType} layer not found.`, color: 'warning' })
+    return
+  }
+
+  // Copper: clear 3.0mm around + 1.0mm filled fiducial at center
+  let copperContent = copper.file.content
+  copperContent = injectClearCircleByMm(copperContent, payload.x, payload.y, 3.0)
+  copperContent = injectFilledCircleByMm(copperContent, payload.x, payload.y, 1.0)
+
+  const edits: { layer: LayerInfo; newContent: string }[] = [{ layer: copper, newContent: copperContent }]
+
+  // Mask: open 2.0mm around fiducial
+  const mask = getLayerByType(maskType)
+  if (mask) {
+    const maskContent = injectFilledCircleByMm(mask.file.content, payload.x, payload.y, 2.0)
+    edits.push({ layer: mask, newContent: maskContent })
+  } else {
+    toast.add({ title: 'Mask layer missing', description: `${maskType} not found. Added copper fiducial only.`, color: 'warning' })
+  }
+
+  await applyMultiLayerEdits(edits, `Added fiducial (${payload.side.toUpperCase()})`)
+}
+
+async function placeQuickBc(payload: { side: QuickSide; widthMm: number; heightMm: number; x: number; y: number }) {
+  if (isCurrentTabLocked.value) return
+  if (activeMode.value !== 'draw') return
+
+  const silkType = payload.side === 'top' ? 'Top Silkscreen' : 'Bottom Silkscreen'
+  const silk = getLayerByType(silkType)
+  if (!silk) {
+    toast.add({ title: 'Layer missing', description: `${silkType} layer not found.`, color: 'warning' })
+    return
+  }
+
+  const silkContent = injectBcByMm(silk.file.content, payload.x, payload.y, payload.widthMm, payload.heightMm)
+  await applyMultiLayerEdits(
+    [{ layer: silk, newContent: silkContent }],
+    `Added BC ${payload.widthMm}x${payload.heightMm} (${payload.side.toUpperCase()})`,
+  )
+}
+
+async function handleDrawCommit(request: import('~/composables/useDrawTool').DrawCommitRequest) {
+  if (isCurrentTabLocked.value) return
+
+  if (request.kind === 'quick') {
+    const side = resolveQuickSide()
+    if (!side) {
+      toast.add({
+        title: 'Select side first',
+        description: 'Quick elements can only be placed in Top or Bot view.',
+        color: 'warning',
+      })
+      return
+    }
+    if (request.quick.kind === 'fiducial') {
+      await placeQuickFiducial({ side, x: request.quick.x, y: request.quick.y })
+      return
+    }
+    if (request.quick.kind === 'bc') {
+      await placeQuickBc({
+        side,
+        widthMm: request.quick.bcWidthMm ?? 7,
+        heightMm: request.quick.bcHeightMm ?? 7,
+        x: request.quick.x,
+        y: request.quick.y,
+      })
+      return
+    }
+  }
+
+  const canvas = boardCanvasRef.value
+  if (!canvas) return
+
+  if (request.kind !== 'shape') return
+
+  const layerName = request.targetLayerName
+  const layer = layers.value.find(l => l.file.fileName === layerName)
+  if (!layer) return
+
+  const previousContent = layer.file.content
+  const newContent = drawTool.generateAndInject(request.shape, previousContent)
+  if (!newContent) return
+
+  // Update in-memory content
+  layer.file.content = newContent
+
+  try {
+    // Persist to storage
+    if (isTeamProject && teamProjectId) {
+      const teamId = currentTeamId.value || await waitForTeamId()
+      const { error } = await uploadTeamFile(teamProjectId, teamId, 1, layer.file.fileName, newContent, layer.type)
+      if (error) throw error
+    } else {
+      await updateFileContent(projectId, 1, layer.file.fileName, newContent)
+    }
+  } catch (err) {
+    // Revert in-memory state when persistence fails.
+    layer.file.content = previousContent
+    layers.value = [...layers.value]
+    toast.add({
+      title: 'Save failed',
+      description: `Could not save ${layer.file.fileName}.`,
+      color: 'error',
+    })
+    console.warn('[draw] failed to persist edit', err)
+    return
+  }
+
+  // Invalidate the parsed tree cache so it gets re-parsed
+  canvas.invalidateCache(layer.file.fileName)
+
+  // Push undo entry
+  const snapshots = new Map<string, string>()
+  snapshots.set(layer.file.fileName, previousContent)
+  const toolLabel = request.shape.tool === 'drill' ? 'drill hit' : request.shape.tool
+  editHistory.pushEntry(snapshots, `Added ${toolLabel} to ${layer.type}`)
+  undoToastVisible.value = true
+  if (undoToastTimer) clearTimeout(undoToastTimer)
+  undoToastTimer = setTimeout(() => { undoToastVisible.value = false }, 5000)
+
+  // Force re-render
+  layers.value = [...layers.value]
+}
+
 // ── Undo handler ──
 
 const undoToastVisible = ref(false)
@@ -4863,6 +6600,18 @@ function loadSvgExporter(): Promise<SvgExporterModule> {
   return svgExporterPromise
 }
 
+type DxfExporterModule = typeof import('../../../lib/renderer/dxf-exporter')
+let dxfExporterPromise: Promise<DxfExporterModule> | null = null
+function loadDxfExporter(): Promise<DxfExporterModule> {
+  if (!dxfExporterPromise) {
+    dxfExporterPromise = import('../../../lib/renderer/dxf-exporter')
+  }
+  return dxfExporterPromise
+}
+
+type DxfExportMode = 'combined' | 'zip'
+type DxfExportVariant = 'r12' | 'r2000'
+
 async function handleDownloadGerber() {
   const JSZipCtor = await loadJsZipCtor()
   const zip = new JSZipCtor()
@@ -4873,6 +6622,65 @@ async function handleDownloadGerber() {
   }
   const blob = await zip.generateAsync({ type: 'blob' })
   await triggerDownload(blob, `${project.value?.name || 'gerber-files'}.zip`)
+}
+
+async function handleExportDxf(options: { selectedLayerIndices: number[]; mode: DxfExportMode; variant: DxfExportVariant }) {
+  if (!options.selectedLayerIndices.length) return
+  const dxfExporter = await loadDxfExporter()
+  const selectedLayers = options.selectedLayerIndices
+    .map(index => ({ index, layer: layers.value[index] }))
+    .filter((entry): entry is { index: number; layer: LayerInfo } => !!entry.layer)
+    .filter(({ layer }) => !isPnPLayer(layer.type) && layer.type !== 'BOM')
+
+  const buildLayerName = (layer: LayerInfo) => {
+    return layer.type
+      .replace(/[<>\/\\":;?*|=]/g, '_')
+      .replace(/\s+/g, '_')
+      .slice(0, 255)
+  }
+
+  const exportEntries = selectedLayers
+    .map(({ layer }) => {
+      const tree = gerberTreeCache.getOrParseSync(layer)
+      if (!tree || tree.children.length === 0) return null
+      return {
+        layer,
+        tree,
+        dxfLayerName: buildLayerName(layer),
+      }
+    })
+    .filter((entry): entry is { layer: LayerInfo; tree: ImageTree; dxfLayerName: string } => !!entry)
+
+  if (!exportEntries.length) return
+
+  const projectName = (project.value?.name || 'pcb').trim() || 'pcb'
+  const variantTag = options.variant === 'r12' ? 'r12' : 'r2000'
+
+  if (options.mode === 'combined') {
+    const dxfContent = dxfExporter.exportImageTreesToCombinedDxf(
+      exportEntries.map(entry => ({ name: entry.dxfLayerName, tree: entry.tree })),
+      { variant: options.variant },
+    )
+    const blob = new Blob([dxfContent], { type: 'application/dxf' })
+    await triggerDownload(blob, `${projectName}-${variantTag}-combined.dxf`)
+    return
+  }
+
+  const JSZipCtor = await loadJsZipCtor()
+  const zip = new JSZipCtor()
+  for (const entry of exportEntries) {
+    const baseName = entry.layer.file.fileName.replace(/\.[^/.]+$/, '') || entry.layer.file.fileName
+    const safeBaseName = baseName
+      .replace(/[<>\/\\":;?*|=]/g, '_')
+      .replace(/\s+/g, '_')
+    const dxfContent = dxfExporter.exportImageTreeToDxf(entry.tree, {
+      variant: options.variant,
+      layerName: entry.dxfLayerName,
+    })
+    zip.file(`${safeBaseName}-${variantTag}.dxf`, dxfContent)
+  }
+  const blob = await zip.generateAsync({ type: 'blob' })
+  await triggerDownload(blob, `${projectName}-${variantTag}-dxf-layers.zip`)
 }
 
 // ── Export handlers ──
