@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-02-18T18:25:06.659Z",
+  "generatedAt": "2026-02-20T18:35:09.178Z",
   "root": "public/packages/libraries",
   "libraries": [
     {
@@ -5887,7 +5887,7 @@
     {
       "id": "newmatik",
       "path": "libraries/newmatik",
-      "packageCount": 233,
+      "packageCount": 265,
       "library": {
         "id": "newmatik",
         "displayName": "Gerbtrace",
@@ -6380,7 +6380,7 @@
         {
           "file": "DO-213AA.json",
           "name": "DO-213AA",
-          "type": "PT_TWO_POLE",
+          "type": "PT_GENERIC",
           "aliases": [
             "DO213AA"
           ]
@@ -6388,9 +6388,45 @@
         {
           "file": "DO-213AB.json",
           "name": "DO-213AB",
-          "type": "PT_TWO_POLE",
+          "type": "PT_GENERIC",
           "aliases": [
             "DO213AB"
+          ]
+        },
+        {
+          "file": "DO-214AA.json",
+          "name": "DO-214AA",
+          "type": "PT_GENERIC",
+          "aliases": [
+            "DO214AA",
+            "SMB"
+          ]
+        },
+        {
+          "file": "DO-214AB.json",
+          "name": "DO-214AB",
+          "type": "PT_GENERIC",
+          "aliases": [
+            "DO214AB",
+            "SMC"
+          ]
+        },
+        {
+          "file": "DO-214AC.json",
+          "name": "DO-214AC",
+          "type": "PT_GENERIC",
+          "aliases": [
+            "DO214AC",
+            "SMA"
+          ]
+        },
+        {
+          "file": "DO-214BA.json",
+          "name": "DO-214BA",
+          "type": "PT_GENERIC",
+          "aliases": [
+            "DO214BA",
+            "GF1"
           ]
         },
         {
@@ -6719,6 +6755,30 @@
           "name": "MLF32",
           "type": "PT_FOUR_SYM",
           "aliases": []
+        },
+        {
+          "file": "MOLEX-527450497.json",
+          "name": "MOLEX-527450497",
+          "type": "PT_GENERIC",
+          "aliases": [
+            "MOLEX-0527450497",
+            "0527450497",
+            "052745-0497",
+            "52745-0497",
+            "CON_527450497_MOL"
+          ]
+        },
+        {
+          "file": "MOLEX-532610871.json",
+          "name": "MOLEX-532610871",
+          "type": "PT_GENERIC",
+          "aliases": [
+            "MOLEX-0532610871",
+            "53261-0871",
+            "0532610871",
+            "532610871",
+            "CONN_532610001-SD_08_MOL"
+          ]
         },
         {
           "file": "MSOP-10.json",
@@ -7227,45 +7287,18 @@
           ]
         },
         {
-          "file": "SMA.json",
-          "name": "SMA",
-          "type": "PT_TWO_POLE",
-          "aliases": [
-            "DO-214AC",
-            "DO214AC"
-          ]
-        },
-        {
           "file": "SMAF.json",
           "name": "SMAF",
-          "type": "PT_TWO_POLE",
+          "type": "PT_GENERIC",
           "aliases": [
             "DO-219AB",
             "SMA-F"
           ]
         },
         {
-          "file": "SMB.json",
-          "name": "SMB",
-          "type": "PT_TWO_POLE",
-          "aliases": [
-            "DO-214AA",
-            "DO214AA"
-          ]
-        },
-        {
-          "file": "SMC.json",
-          "name": "SMC",
-          "type": "PT_TWO_POLE",
-          "aliases": [
-            "DO-214AB",
-            "DO214AB"
-          ]
-        },
-        {
           "file": "SMF.json",
           "name": "SMF",
-          "type": "PT_TWO_POLE",
+          "type": "PT_GENERIC",
           "aliases": [
             "SMF (DO-219AB)"
           ]
@@ -7547,6 +7580,14 @@
           "type": "PT_TWO_SYM",
           "aliases": [
             "SOJ40"
+          ]
+        },
+        {
+          "file": "SON-10.json",
+          "name": "SON-10",
+          "type": "PT_TWO_SYM",
+          "aliases": [
+            "SON10"
           ]
         },
         {
@@ -7966,10 +8007,346 @@
           "aliases": []
         },
         {
-          "file": "VQFN16.json",
-          "name": "VQFN16",
-          "type": "PT_FOUR_SYM",
-          "aliases": []
+          "file": "VQFN-16-3x3-P0.50.json",
+          "name": "VQFN-16-3x3-P0.50",
+          "type": "PT_GENERIC",
+          "aliases": [
+            "VQFN-16-3x3",
+            "VQFN-16-5",
+            "VQFN16"
+          ]
+        },
+        {
+          "file": "VQFN-24-4x4-P0.50.json",
+          "name": "VQFN-24-4x4-P0.50",
+          "type": "PT_GENERIC",
+          "aliases": [
+            "VQFN-24-19",
+            "VQFN-24-20",
+            "VQFN-24-21",
+            "VQFN-24-800",
+            "VQFN-24-801",
+            "VQFN-24-802",
+            "VQFN-24-803",
+            "VQFN-24-804",
+            "VQFN-24-808",
+            "VQFN-24-809"
+          ]
+        },
+        {
+          "file": "VQFN-28-4x4-P0.40.json",
+          "name": "VQFN-28-4x4-P0.40",
+          "type": "PT_GENERIC",
+          "aliases": [
+            "VQFN-28-800",
+            "VQFN-28-901",
+            "VQFN-28-902"
+          ]
+        },
+        {
+          "file": "VQFN-28-5x5-P0.50.json",
+          "name": "VQFN-28-5x5-P0.50",
+          "type": "PT_GENERIC",
+          "aliases": [
+            "VQFN-28-802"
+          ]
+        },
+        {
+          "file": "VQFN-32-4x4-P0.40.json",
+          "name": "VQFN-32-4x4-P0.40",
+          "type": "PT_GENERIC",
+          "aliases": [
+            "VQFN-32-22"
+          ]
+        },
+        {
+          "file": "VQFN-32-5x5-P0.40.json",
+          "name": "VQFN-32-5x5-P0.40",
+          "type": "PT_GENERIC",
+          "aliases": [
+            "VQFN-32-804",
+            "VQFN-32-812"
+          ]
+        },
+        {
+          "file": "VQFN-32-5x5-P0.50.json",
+          "name": "VQFN-32-5x5-P0.50",
+          "type": "PT_GENERIC",
+          "aliases": [
+            "VQFN-32-13",
+            "VQFN-32-16",
+            "VQFN-32-20",
+            "VQFN-32-21",
+            "VQFN-32-23",
+            "VQFN-32-24",
+            "VQFN-32-27",
+            "VQFN-32-28",
+            "VQFN-32-29",
+            "VQFN-32-5x5",
+            "VQFN-32-800",
+            "VQFN-32-801",
+            "VQFN-32-802",
+            "VQFN-32-803",
+            "VQFN-32-806",
+            "VQFN-32-807",
+            "VQFN-32-809",
+            "VQFN-32-810",
+            "VQFN-32-811",
+            "VQFN-32-813",
+            "VQFN-32-901",
+            "VQFN-32-902"
+          ]
+        },
+        {
+          "file": "VQFN-32-6x6-P0.50.json",
+          "name": "VQFN-32-6x6-P0.50",
+          "type": "PT_GENERIC",
+          "aliases": [
+            "VQFN-32-25",
+            "VQFN-32-805"
+          ]
+        },
+        {
+          "file": "VQFN-32-7x7-P0.50.json",
+          "name": "VQFN-32-7x7-P0.50",
+          "type": "PT_GENERIC",
+          "aliases": [
+            "VQFN-32-900"
+          ]
+        },
+        {
+          "file": "VQFN-36-5x5-P0.50.json",
+          "name": "VQFN-36-5x5-P0.50",
+          "type": "PT_GENERIC",
+          "aliases": [
+            "VQFN-36-800"
+          ]
+        },
+        {
+          "file": "VQFN-40-5x5-P0.40.json",
+          "name": "VQFN-40-5x5-P0.40",
+          "type": "PT_GENERIC",
+          "aliases": [
+            "VQFN-40-13",
+            "VQFN-40-16",
+            "VQFN-40-17",
+            "VQFN-40-18",
+            "VQFN-40-25",
+            "VQFN-40-802",
+            "VQFN-40-901"
+          ]
+        },
+        {
+          "file": "VQFN-40-6x6-P0.40.json",
+          "name": "VQFN-40-6x6-P0.40",
+          "type": "PT_GENERIC",
+          "aliases": [
+            "VQFN-40-805"
+          ]
+        },
+        {
+          "file": "VQFN-40-6x6-P0.45.json",
+          "name": "VQFN-40-6x6-P0.45",
+          "type": "PT_GENERIC",
+          "aliases": [
+            "VQFN-40-804"
+          ]
+        },
+        {
+          "file": "VQFN-40-6x6-P0.50.json",
+          "name": "VQFN-40-6x6-P0.50",
+          "type": "PT_GENERIC",
+          "aliases": [
+            "VQFN-40-19",
+            "VQFN-40-27",
+            "VQFN-40-28",
+            "VQFN-40-29",
+            "VQFN-40-800",
+            "VQFN-40-801",
+            "VQFN-40-803",
+            "VQFN-40-806",
+            "VQFN-40-808",
+            "VQFN-40-810",
+            "VQFN-40-811",
+            "VQFN-40-812",
+            "VQFN-40-850"
+          ]
+        },
+        {
+          "file": "VQFN-44-5x5-P0.35.json",
+          "name": "VQFN-44-5x5-P0.35",
+          "type": "PT_GENERIC",
+          "aliases": [
+            "VQFN-44-800"
+          ]
+        },
+        {
+          "file": "VQFN-48-6x6-P0.40.json",
+          "name": "VQFN-48-6x6-P0.40",
+          "type": "PT_GENERIC",
+          "aliases": [
+            "VQFN-48-60",
+            "VQFN-48-63",
+            "VQFN-48-800",
+            "VQFN-48-802",
+            "VQFN-48-81",
+            "VQFN-48-810",
+            "VQFN-48-813",
+            "VQFN-48-900"
+          ]
+        },
+        {
+          "file": "VQFN-48-7x7-P0.50.json",
+          "name": "VQFN-48-7x7-P0.50",
+          "type": "PT_GENERIC",
+          "aliases": [
+            "VQFN-48-29",
+            "VQFN-48-31",
+            "VQFN-48-34",
+            "VQFN-48-35",
+            "VQFN-48-36",
+            "VQFN-48-37",
+            "VQFN-48-38",
+            "VQFN-48-39",
+            "VQFN-48-54",
+            "VQFN-48-70",
+            "VQFN-48-71",
+            "VQFN-48-73",
+            "VQFN-48-78",
+            "VQFN-48-79",
+            "VQFN-48-801",
+            "VQFN-48-803",
+            "VQFN-48-804",
+            "VQFN-48-806",
+            "VQFN-48-807",
+            "VQFN-48-808",
+            "VQFN-48-809",
+            "VQFN-48-811",
+            "VQFN-48-812",
+            "VQFN-48-814",
+            "VQFN-48-901",
+            "VQFN-48-903"
+          ]
+        },
+        {
+          "file": "VQFN-48-9x9-P0.65.json",
+          "name": "VQFN-48-9x9-P0.65",
+          "type": "PT_GENERIC",
+          "aliases": [
+            "VQFN-48-72"
+          ]
+        },
+        {
+          "file": "VQFN-52-6x6-P0.40.json",
+          "name": "VQFN-52-6x6-P0.40",
+          "type": "PT_GENERIC",
+          "aliases": [
+            "VQFN-52-4"
+          ]
+        },
+        {
+          "file": "VQFN-56-6x6-P0.35.json",
+          "name": "VQFN-56-6x6-P0.35",
+          "type": "PT_GENERIC",
+          "aliases": [
+            "VQFN-56-801",
+            "VQFN-56-809"
+          ]
+        },
+        {
+          "file": "VQFN-56-7x7-P0.40.json",
+          "name": "VQFN-56-7x7-P0.40",
+          "type": "PT_GENERIC",
+          "aliases": [
+            "VQFN-56-5",
+            "VQFN-56-6",
+            "VQFN-56-800",
+            "VQFN-56-804",
+            "VQFN-56-805",
+            "VQFN-56-9",
+            "VQFN-56-900"
+          ]
+        },
+        {
+          "file": "VQFN-56-8x8-P0.50.json",
+          "name": "VQFN-56-8x8-P0.50",
+          "type": "PT_GENERIC",
+          "aliases": [
+            "VQFN-56-10",
+            "VQFN-56-7",
+            "VQFN-56-802",
+            "VQFN-56-803",
+            "VQFN-56-806",
+            "VQFN-56-807",
+            "VQFN-56-850",
+            "VQFN-56-901"
+          ]
+        },
+        {
+          "file": "VQFN-60-7x7-P0.40.json",
+          "name": "VQFN-60-7x7-P0.40",
+          "type": "PT_GENERIC",
+          "aliases": [
+            "VQFN-60-1",
+            "VQFN-60-800"
+          ]
+        },
+        {
+          "file": "VQFN-64-8x8-P0.40.json",
+          "name": "VQFN-64-8x8-P0.40",
+          "type": "PT_GENERIC",
+          "aliases": [
+            "VQFN-64-10",
+            "VQFN-64-6"
+          ]
+        },
+        {
+          "file": "VQFN-64-9x9-P0.50.json",
+          "name": "VQFN-64-9x9-P0.50",
+          "type": "PT_GENERIC",
+          "aliases": [
+            "VQFN-64-8",
+            "VQFN-64-800",
+            "VQFN-64-801",
+            "VQFN-64-802"
+          ]
+        },
+        {
+          "file": "VQFN-68-10x10-P0.50.json",
+          "name": "VQFN-68-10x10-P0.50",
+          "type": "PT_GENERIC",
+          "aliases": [
+            "VQFN-68-804"
+          ]
+        },
+        {
+          "file": "VQFN-68-8x8-P0.40.json",
+          "name": "VQFN-68-8x8-P0.40",
+          "type": "PT_GENERIC",
+          "aliases": [
+            "VQFN-68-800",
+            "VQFN-68-801",
+            "VQFN-68-802",
+            "VQFN-68-803",
+            "VQFN-68-805"
+          ]
+        },
+        {
+          "file": "VQFN-76-9x9-P0.40.json",
+          "name": "VQFN-76-9x9-P0.40",
+          "type": "PT_GENERIC",
+          "aliases": [
+            "VQFN-76-800"
+          ]
+        },
+        {
+          "file": "VQFN-88-10x10-P0.40.json",
+          "name": "VQFN-88-10x10-P0.40",
+          "type": "PT_GENERIC",
+          "aliases": [
+            "VQFN-88-800",
+            "VQFN-88-801"
+          ]
         },
         {
           "file": "VSON-10.json",

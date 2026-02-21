@@ -11,6 +11,7 @@ import { normalizePackageType } from '~/utils/package-types'
 export interface TeamPackageRecord {
   id: string
   team_id: string
+  space_id: string | null
   data: PackageDefinition
   created_by: string
   created_at: string
@@ -59,7 +60,7 @@ export function useTeamPackages() {
   }
 
   /** Add a new team package */
-  async function addTeamPackage(packageDef: PackageDefinition) {
+  async function addTeamPackage(packageDef: PackageDefinition, options?: { spaceId?: string | null }) {
     if (!currentTeamId.value) return { error: new Error('No team selected') }
 
     const userId = (await supabase.auth.getUser()).data.user?.id
@@ -69,6 +70,7 @@ export function useTeamPackages() {
       .from('team_packages')
       .insert({
         team_id: currentTeamId.value,
+        space_id: options?.spaceId ?? null,
         data: packageDef as unknown as Record<string, unknown>,
         created_by: userId,
       })

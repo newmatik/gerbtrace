@@ -1,0 +1,44 @@
+{
+  "name": "MOLEX-532610871",
+  "type": "PT_GENERIC",
+  "aliases": [
+    "MOLEX-0532610871",
+    "53261-0871",
+    "0532610871",
+    "532610871",
+    "CONN_532610001-SD_08_MOL"
+  ],
+  "body": {
+    "length": 14.7574,
+    "width": 4.191
+  },
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "FLAT",
+        "numLeads": 8,
+        "distFromCenter": -2.9045,
+        "ccHalf": 4.375,
+        "angleMilliDeg": 180000,
+        "padLength": 1.7018,
+        "padWidth": 0.8128
+      },
+      {
+        "shape": "FLAT",
+        "numLeads": 2,
+        "distFromCenter": -0.004501,
+        "ccHalf": 6.925,
+        "angleMilliDeg": 0,
+        "padLength": 3.0988,
+        "padWidth": 2.2098
+      }
+    ]
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": ".local/packages/532610871 /footprints.pretty/CONN_532610001-SD_08_MOL.kicad_mod",
+    "sourceFootprint": "CONN_532610001-SD_08_MOL"
+  }
+}

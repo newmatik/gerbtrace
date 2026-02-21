@@ -16,18 +16,20 @@ export interface PasteSettings {
   pattern: DotPattern
   highlightDots: boolean
   dynamicDots: boolean
+  showJetPath: boolean
 }
 
 export const PASTE_DEFAULTS: Readonly<PasteSettings> = {
   mode: 'stencil',
-  dotDiameter: 0.40,
-  dotSpacing: 0.40,
+  dotDiameter: 0.52,
+  dotSpacing: 0.33,
   pattern: 'grid',
   highlightDots: false,
   dynamicDots: false,
+  showJetPath: false,
 }
 
-export const DOT_DIAMETER_MIN = 0.33
-export const DOT_DIAMETER_MAX = 0.52
-export const DOT_SPACING_MIN = 0.35
+export const DOT_DIAMETER_MIN = 0.22
+export const DOT_DIAMETER_MAX = 0.60
+export const DOT_SPACING_MIN = 0.12
 export const DOT_SPACING_MAX = 1.00

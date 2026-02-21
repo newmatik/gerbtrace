@@ -13,6 +13,7 @@
         v-show="t.visible"
         type="button"
         role="tab"
+        :aria-label="t.label"
         :aria-selected="page === t.value"
         :tabindex="page === t.value ? 0 : -1"
         class="flex items-center gap-1.5 h-7 px-2.5 text-xs select-none whitespace-nowrap rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
@@ -26,7 +27,7 @@
           class="text-sm shrink-0"
           :class="page === t.value ? 'opacity-100' : 'opacity-50'"
         />
-        <span class="leading-none">{{ t.label }}</span>
+        <span class="leading-none max-[1100px]:hidden">{{ t.label }}</span>
         <UIcon
           v-if="isTabLocked(t.value)"
           name="i-lucide-lock"
@@ -40,7 +41,7 @@
 </template>
 
 <script setup lang="ts">
-type ViewerPage = 'files' | 'pcb' | 'panel' | 'paste' | 'smd' | 'tht' | 'bom' | 'pricing' | 'docs' | 'summary'
+type ViewerPage = 'files' | 'pcb' | 'panel' | 'paste' | 'smd' | 'tht' | 'bom' | 'pricing' | 'docs' | 'summary' | 'conversation'
 
 const page = defineModel<ViewerPage>({ required: true })
 
@@ -50,6 +51,7 @@ const props = defineProps<{
   showPnP?: boolean
   showBom?: boolean
   showDocs?: boolean
+  showConversation?: boolean
   lockedTabs?: ViewerPage[]
 }>()
 
@@ -64,6 +66,7 @@ const allTabs = computed<TabDef[]>(() => [
   { label: 'THT', value: 'tht', icon: 'i-lucide-pin', visible: !!props.showPnP },
   { label: 'BOM', value: 'bom', icon: 'i-lucide-table', visible: !!props.showBom },
   { label: 'Docs', value: 'docs', icon: 'i-lucide-book-open-text', visible: !!props.showDocs },
+  { label: 'Conversation', value: 'conversation', icon: 'i-lucide-messages-square', visible: !!props.showConversation },
   { label: 'Summary', value: 'summary', icon: 'i-lucide-clipboard-list', visible: true },
   { label: 'Pricing', value: 'pricing', icon: 'i-lucide-dollar-sign', visible: true },
 ])

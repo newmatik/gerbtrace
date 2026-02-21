@@ -293,7 +293,8 @@ function flushPath(state: PlotterState, graphics: ImageGraphic[]): void {
   } else {
     const tool = state.currentPathTool
     const width = tool ? tool.shape.params[0] || 0 : 0
-    graphics.push({ type: 'path', width, segments: [...state.currentPath], erase, sourceRanges })
+    const cap = tool && tool.shape.type === 'rectangle' ? 'square' as const : undefined
+    graphics.push({ type: 'path', width, cap, segments: [...state.currentPath], erase, sourceRanges })
   }
 
   state.currentPath = []

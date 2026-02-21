@@ -8,20 +8,51 @@ export interface ThtLibraryInfo {
   attribution?: BuiltinLibraryAttribution
 }
 
+interface TreePackageEntry {
+  file: string
+  name: string
+  aliases?: string[]
+  libraryId: string
+  libraryName: string
+  attribution?: BuiltinLibraryAttribution
+}
+
+type BuiltinThtPackage = THTPackageDefinition & {
+  libraryId?: string
+  libraryName?: string
+  attribution?: BuiltinLibraryAttribution
+}
+
+const FETCH_CONCURRENCY = 6
+
+async function fetchConcurrent<T>(
+  tasks: (() => Promise<T>)[],
+  concurrency: number,
+): Promise<T[]> {
+  const results: T[] = new Array(tasks.length)
+  let idx = 0
+  async function worker() {
+    while (idx < tasks.length) {
+      const i = idx++
+      results[i] = await tasks[i]!()
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, tasks.length) }, () => worker()))
+  return results
+}
+
 /**
  * Composable that manages THT package definitions:
  * merges local custom THT packages + team THT packages, builds a lookup map,
  * and exposes a match function for THT component → library matching.
+ *
+ * Package geometry is loaded lazily: on init only tree metadata is fetched.
+ * Call prefetchPackagesForBoard() with the package names from PnP data
+ * to load only the packages actually needed.
  */
 export function useThtPackageLibrary() {
-  type BuiltinThtPackage = THTPackageDefinition & {
-    libraryId?: string
-    libraryName?: string
-    attribution?: BuiltinLibraryAttribution
-  }
-
-  const builtInPackages = ref<BuiltinThtPackage[]>([])
-  const builtInByLibrary = ref<Record<string, BuiltinThtPackage[]>>({})
+  const treeEntries = ref<TreePackageEntry[]>([])
+  const fullPackageCache = ref<Record<string, BuiltinThtPackage>>({})
   const customPackages = ref<THTPackageDefinition[]>([])
   const teamPackages = ref<THTPackageDefinition[]>([])
   const libraries = ref<ThtLibraryInfo[]>([])
@@ -29,52 +60,52 @@ export function useThtPackageLibrary() {
   const loaded = ref(false)
   const loading = ref(false)
 
-  async function safeFetchJson<T>(url: string): Promise<T | null> {
-    try {
-      const res = await fetch(url)
-      if (!res.ok) return null
-      return await res.json() as T
-    } catch {
-      return null
-    }
-  }
+  const selectedTreeEntries = computed(() => {
+    if (selectedLibraryIds.value.length === 0) return treeEntries.value
+    const ids = new Set(selectedLibraryIds.value)
+    return treeEntries.value.filter((e) => ids.has(e.libraryId))
+  })
 
-  /** All THT packages: local custom first (highest priority), then team */
+  const builtInPackages = computed<BuiltinThtPackage[]>(() => {
+    return selectedTreeEntries.value.map((entry) => {
+      const cached = fullPackageCache.value[cacheKey(entry.libraryId, entry.file)]
+      if (cached) return cached
+      return {
+        name: entry.name,
+        aliases: entry.aliases,
+        shapes: [],
+        libraryId: entry.libraryId,
+        libraryName: entry.libraryName,
+        attribution: entry.attribution,
+      } as BuiltinThtPackage
+    })
+  })
+
   const allThtPackages = computed(() => [...customPackages.value, ...teamPackages.value, ...builtInPackages.value])
 
-  /** Map from normalised package name -> THTPackageDefinition */
   const lookupMap = computed(() => {
     const map = new Map<string, THTPackageDefinition>()
-    // Built-in lowest priority
     for (const pkg of builtInPackages.value) {
       map.set(normalise(pkg.name), pkg)
       if (pkg.aliases) {
-        for (const alias of pkg.aliases) {
-          map.set(normalise(alias), pkg)
-        }
+        for (const alias of pkg.aliases) map.set(normalise(alias), pkg)
       }
     }
-    // Team first, then local custom overwrites (highest priority)
     for (const pkg of teamPackages.value) {
       map.set(normalise(pkg.name), pkg)
       if (pkg.aliases) {
-        for (const alias of pkg.aliases) {
-          map.set(normalise(alias), pkg)
-        }
+        for (const alias of pkg.aliases) map.set(normalise(alias), pkg)
       }
     }
     for (const pkg of customPackages.value) {
       map.set(normalise(pkg.name), pkg)
       if (pkg.aliases) {
-        for (const alias of pkg.aliases) {
-          map.set(normalise(alias), pkg)
-        }
+        for (const alias of pkg.aliases) map.set(normalise(alias), pkg)
       }
     }
     return map
   })
 
-  /** Look up a THT package definition by name */
   function matchThtPackage(packageName: string): THTPackageDefinition | undefined {
     if (!packageName) return undefined
     for (const candidate of normaliseCandidates(packageName)) {
@@ -84,75 +115,96 @@ export function useThtPackageLibrary() {
     return undefined
   }
 
-  /** Set local custom THT packages */
   function setCustomPackages(pkgs: THTPackageDefinition[]) {
     customPackages.value = pkgs
   }
 
-  /** Set team THT packages */
   function setTeamPackages(pkgs: THTPackageDefinition[]) {
     teamPackages.value = pkgs
   }
 
-  async function ensureLibrariesLoaded(ids: string[]) {
-    const target = ids.length ? ids : libraries.value.map((l) => l.id)
-    const misses = target.filter((id) => !(id in builtInByLibrary.value))
-    if (misses.length === 0) {
-      builtInPackages.value = target.flatMap((id) => builtInByLibrary.value[id] ?? [])
-      return
-    }
-
-    const next = { ...builtInByLibrary.value }
-    const tree = await safeFetchJson<any>('/packages/tht-libraries/_tree.json')
-    for (const id of misses) {
-      if (!tree) {
-        next[id] = []
-        continue
-      }
-      const entry = (tree?.libraries ?? []).find((l: any) => l.id === id)
-      if (!entry) {
-        next[id] = []
-        continue
-      }
-      const files = Array.isArray(entry.packages) ? entry.packages : []
-      const loadedPkgs = await Promise.all(files.map(async (p: any) => {
-        const pkg = await safeFetchJson<any>(`/packages/tht-libraries/${id}/packages/${p.file}`)
-        if (!pkg) return null
-        return {
-          ...pkg,
-          libraryId: id,
-          libraryName: entry.library?.displayName ?? id,
-          attribution: entry.library?.attribution,
-        } as BuiltinThtPackage
-      }))
-      next[id] = loadedPkgs.filter((p): p is BuiltinThtPackage => p !== null)
-    }
-    builtInByLibrary.value = next
-    builtInPackages.value = target.flatMap((id) => next[id] ?? [])
+  function setSelectedLibraries(ids: string[]) {
+    selectedLibraryIds.value = [...new Set(ids)]
   }
 
-  async function setSelectedLibraries(ids: string[]) {
-    selectedLibraryIds.value = [...new Set(ids)]
-    await ensureLibrariesLoaded(selectedLibraryIds.value)
+  /**
+   * Fetch full geometry for packages matching the given names.
+   * Only fetches packages not already cached. Uses concurrency limiting.
+   */
+  async function prefetchPackagesForBoard(packageNames: string[]) {
+    const needed = new Map<string, TreePackageEntry>()
+    for (const name of packageNames) {
+      for (const candidate of normaliseCandidates(name)) {
+        for (const entry of selectedTreeEntries.value) {
+          const key = cacheKey(entry.libraryId, entry.file)
+          if (fullPackageCache.value[key]) continue
+          const entryNames = [normalise(entry.name), ...(entry.aliases ?? []).map(normalise)]
+          if (entryNames.includes(candidate) && !needed.has(key)) {
+            needed.set(key, entry)
+          }
+        }
+      }
+    }
+
+    if (needed.size === 0) return
+
+    const entries = [...needed.entries()]
+    const tasks = entries.map(([, entry]) => async () => {
+      try {
+        const res = await fetch(`/packages/tht-libraries/${entry.libraryId}/packages/${entry.file}`)
+        if (!res.ok) return null
+        const pkg = await res.json() as THTPackageDefinition
+        return {
+          ...pkg,
+          libraryId: entry.libraryId,
+          libraryName: entry.libraryName,
+          attribution: entry.attribution,
+        } as BuiltinThtPackage
+      } catch {
+        return null
+      }
+    })
+
+    const results = await fetchConcurrent(tasks, FETCH_CONCURRENCY)
+    const next = { ...fullPackageCache.value }
+    for (let i = 0; i < entries.length; i++) {
+      const pkg = results[i]
+      if (pkg) next[entries[i]![0]] = pkg
+    }
+    fullPackageCache.value = next
   }
 
   async function loadPackages() {
     if (loaded.value || loading.value) return
     loading.value = true
     try {
-      const tree = await safeFetchJson<any>('/packages/tht-libraries/_tree.json')
-      if (!tree) {
-        loaded.value = true
-        return
-      }
+      const res = await fetch('/packages/tht-libraries/_tree.json')
+      if (!res.ok) { loaded.value = true; return }
+      const tree = await res.json()
       const libs = Array.isArray(tree?.libraries) ? tree.libraries : []
+
       libraries.value = libs.map((l: any) => ({
         id: l.id,
         name: l.library?.displayName ?? l.id,
         packageCount: l.packageCount ?? (Array.isArray(l.packages) ? l.packages.length : 0),
         attribution: l.library?.attribution,
       }))
-      await setSelectedLibraries([])
+
+      const entries: TreePackageEntry[] = []
+      for (const lib of libs) {
+        const pkgs = Array.isArray(lib.packages) ? lib.packages : []
+        for (const p of pkgs) {
+          entries.push({
+            file: p.file,
+            name: p.name,
+            aliases: Array.isArray(p.aliases) ? p.aliases : undefined,
+            libraryId: lib.id,
+            libraryName: lib.library?.displayName ?? lib.id,
+            attribution: lib.library?.attribution,
+          })
+        }
+      }
+      treeEntries.value = entries
       loaded.value = true
     } finally {
       loading.value = false
@@ -173,8 +225,13 @@ export function useThtPackageLibrary() {
     setCustomPackages,
     setTeamPackages,
     setSelectedLibraries,
+    prefetchPackagesForBoard,
     loadPackages,
   }
+}
+
+function cacheKey(libraryId: string, file: string) {
+  return `${libraryId}/${file}`
 }
 
 /** Normalise a THT package name for case-insensitive matching */

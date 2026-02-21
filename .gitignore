@@ -37,9 +37,10 @@ src-tauri/.tauri-private-key
 src-tauri/.tauri-private-key.pub
 
 # Generated output
-dist/
+dist
+
+# Supabase CLI local state
+supabase/.temp/
 
 .local
 public/mycenter-packages/
-# Sentry Config File
-.env.sentry-build-plugin

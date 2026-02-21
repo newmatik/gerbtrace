@@ -7,7 +7,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js'
  * Uses Supabase Realtime Presence.
  */
 
-export type PresenceTab = 'files' | 'pcb' | 'panel' | 'paste' | 'smd' | 'tht' | 'bom' | 'pricing' | 'docs' | 'summary'
+export type PresenceTab = 'files' | 'pcb' | 'panel' | 'paste' | 'smd' | 'tht' | 'bom' | 'pricing' | 'docs' | 'summary' | 'conversation'
 
 export interface PresenceUser {
   userId: string
@@ -71,7 +71,7 @@ export function usePresence(projectId: Ref<string | null>) {
           userId: user.value!.id,
           name: profile.value?.name ?? user.value!.email ?? 'Unknown',
           avatarUrl: profile.value?.avatar_url ?? null,
-          role: currentTeamRole.value ?? 'viewer',
+          role: currentTeamRole.value === 'guest' ? 'viewer' : (currentTeamRole.value ?? 'viewer'),
           mode: 'viewing',
           joinedAt,
         } satisfies PresenceUser)
@@ -89,7 +89,7 @@ export function usePresence(projectId: Ref<string | null>) {
       userId: user.value.id,
       name: profile.value?.name ?? user.value.email ?? 'Unknown',
       avatarUrl: profile.value?.avatar_url ?? null,
-      role: currentTeamRole.value ?? 'viewer',
+      role: currentTeamRole.value === 'guest' ? 'viewer' : (currentTeamRole.value ?? 'viewer'),
       mode,
       joinedAt,
       ...(currentTab !== undefined && { currentTab }),

@@ -4,7 +4,7 @@
       <div class="p-5 space-y-4">
         <!-- Header -->
         <div class="flex items-center justify-between">
-          <h3 class="text-sm font-semibold text-neutral-900 dark:text-white">Download Image</h3>
+          <h3 class="text-sm font-semibold text-neutral-900 dark:text-white">Export Image</h3>
           <UButton
             size="xs"
             variant="ghost"
@@ -120,19 +120,19 @@
 
         <!-- Summary -->
         <div class="text-xs text-neutral-500 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800/50 rounded-md px-3 py-2">
-          <span v-if="willZip">Will download as ZIP</span>
-          <span v-else>Will download a single file</span>
+          <span v-if="willZip">Will export as ZIP</span>
+          <span v-else>Will export a single file</span>
         </div>
 
-        <!-- Download button -->
+        <!-- Export button -->
         <div class="flex justify-end pt-1">
           <UButton
             size="sm"
             color="primary"
-            icon="i-lucide-download"
+            icon="i-lucide-file-output"
             @click="handleExport"
           >
-            Download
+            Export
           </UButton>
         </div>
       </div>

@@ -200,6 +200,7 @@ onMounted(async () => {
 async function handlePostAuth(session: any) {
   // Handle invitation token if present
   const invitationToken = route.query.invitation as string
+  const spaceInvitationToken = route.query.space_invitation as string
   if (invitationToken && session) {
     try {
       const { error: invError } = await supabase.rpc('accept_invitation', {
@@ -210,6 +211,19 @@ async function handlePostAuth(session: any) {
       }
     } catch (e) {
       console.warn('Invitation acceptance failed:', e)
+    }
+  }
+
+  if (spaceInvitationToken && session) {
+    try {
+      const { error: invError } = await supabase.rpc('accept_space_invitation', {
+        p_token: spaceInvitationToken,
+      })
+      if (invError) {
+        console.warn('Failed to accept space invitation:', invError.message)
+      }
+    } catch (e) {
+      console.warn('Space invitation acceptance failed:', e)
     }
   }
 

@@ -21,7 +21,7 @@
           </div>
 
           <p class="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">
-            Gerber PCB file viewer and comparison tool.
+            Gerber PCB file viewer and&#x200B;&#x200C;&#x200D;&#xFEFF; comparison tool.
           </p>
         </div>
 
@@ -59,7 +59,7 @@
         </div>
 
         <p class="text-[11px] text-neutral-400 dark:text-neutral-500">
-          MIT License
+          BUSL-1.1 License
         </p>
 
         <!-- Update check (only in Tauri desktop app) -->

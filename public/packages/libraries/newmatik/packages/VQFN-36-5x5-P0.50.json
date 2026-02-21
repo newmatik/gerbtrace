@@ -1,0 +1,72 @@
+{
+  "name": "VQFN-36-5x5-P0.50",
+  "aliases": [
+    "VQFN-36-800"
+  ],
+  "body": {
+    "length": 5.0,
+    "width": 5.0
+  },
+  "type": "PT_GENERIC",
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "FLAT",
+        "numLeads": 9,
+        "distFromCenter": -2.3,
+        "ccHalf": 2.0,
+        "angleMilliDeg": 180000,
+        "padLength": 0.4,
+        "padWidth": 0.25
+      },
+      {
+        "shape": "FLAT",
+        "numLeads": 9,
+        "distFromCenter": 2.0,
+        "ccHalf": -2.3,
+        "angleMilliDeg": 90000,
+        "padLength": 0.4,
+        "padWidth": 0.25
+      },
+      {
+        "shape": "FLAT",
+        "numLeads": 9,
+        "distFromCenter": 2.3,
+        "ccHalf": -2.0,
+        "angleMilliDeg": 0,
+        "padLength": 0.4,
+        "padWidth": 0.25
+      },
+      {
+        "shape": "FLAT",
+        "numLeads": 9,
+        "distFromCenter": -2.0,
+        "ccHalf": 2.3,
+        "angleMilliDeg": 270000,
+        "padLength": 0.4,
+        "padWidth": 0.25
+      },
+      {
+        "shape": "FLAT",
+        "numLeads": 1,
+        "distFromCenter": 0,
+        "ccHalf": 0,
+        "angleMilliDeg": 0,
+        "padLength": 3.4,
+        "padWidth": 3.4
+      }
+    ]
+  },
+  "height": {
+    "nominal": 0.6,
+    "max": 0.6,
+    "min": 0.6
+  },
+  "provenance": {
+    "owner": "newmatik",
+    "sourceLibrary": "newmatik",
+    "sourceType": "TPSys",
+    "sourceFile": "public/packages/VQFN-36-5x5-P0.50.json",
+    "sourceFootprint": "VQFN-36-5x5-P0.50"
+  }
+}

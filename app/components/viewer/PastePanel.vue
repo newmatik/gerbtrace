@@ -113,6 +113,32 @@
                 @update:model-value="toggleHighlight"
               />
             </div>
+
+            <!-- Show Jet Path -->
+            <div class="flex items-center justify-between">
+              <div class="min-w-0 mr-2">
+                <label class="text-[10px] text-neutral-400 leading-tight block">Show Jet Path</label>
+                <span class="text-[9px] text-neutral-500 leading-tight">Simulated head movement overlay</span>
+              </div>
+              <USwitch
+                :model-value="localSettings.showJetPath"
+                size="xs"
+                @update:model-value="toggleJetPath"
+              />
+            </div>
+          </div>
+
+          <!-- Export JPSys -->
+          <div class="pt-3 border-t border-neutral-200 dark:border-neutral-700 mt-3">
+            <UButton
+              block
+              size="sm"
+              variant="outline"
+              icon="i-lucide-download"
+              @click="$emit('exportJpsys')"
+            >
+              Export JPSys Program
+            </UButton>
           </div>
         </div>
       </Transition>
@@ -131,6 +157,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:pasteSettings', settings: PasteSettings): void
+  (e: 'exportJpsys'): void
 }>()
 
 const localSettings = computed(() => props.pasteSettings)
@@ -180,6 +207,10 @@ function toggleDynamic(v: boolean) {
 
 function toggleHighlight(v: boolean) {
   emit('update:pasteSettings', { ...localSettings.value, highlightDots: v })
+}
+
+function toggleJetPath(v: boolean) {
+  emit('update:pasteSettings', { ...localSettings.value, showJetPath: v })
 }
 
 function clamp(v: number, min: number, max: number): number {

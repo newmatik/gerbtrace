@@ -27,6 +27,7 @@ The core project tabs for working with your PCB data.
 - [THT](/docs/viewer/tht) – Through-hole component placement with assembly type assignment
 - [BOM](/docs/viewer/bom) – Bill of Materials with manufacturer tracking and supplier pricing
 - [Docs](/docs/viewer/docs) – PDF document viewer for schematics and drawings
+- [Conversation](/docs/viewer/conversation) – Threaded project discussions with mentions, references, and attachments
 - [Summary](/docs/viewer/summary) – Assembly overview with component counts, categories, and warnings
 - [Pricing](/docs/viewer/pricing) – Fabrication and assembly cost estimation with quantity tiers
 
@@ -34,17 +35,20 @@ The core project tabs for working with your PCB data.
 
 Supporting workflows and utilities.
 
-- [Exports](/docs/tools/exports) – Export Image, Export Panel Image, Download Gerber, and Export PnP
+- [Exports](/docs/tools/exports) – Export Image, Export Panel Image, Download Gerber, Export PnP, Export DXF, and Export JPSys
 - [Compare](/docs/tools/compare) – Side-by-side, overlay, pixel diff, and text diff comparison
-- [Package Manager](/docs/tools/package-manager) – Browse and manage SMD and THT package libraries
+- [Package Manager](/docs/tools/package-manager) – Browse and manage SMD and THT package libraries with team and space scoping
+- [Draw Tool](/docs/tools/draw-tool) – Draw shapes, place fiducials, and add drill holes on Gerber and Excellon layers
 
 ## Collaboration
 
-Team management and account settings.
+Team management, communication, and account settings.
 
-- [Team Settings](/docs/collaboration/team-settings) – Team name, currency, panel defaults, and Elexess API
-- [Team Members](/docs/collaboration/team-members) – Member management, roles, and invitations
-- [User Profile](/docs/collaboration/user-profile) – Account management and team switching
+- [Team Settings](/docs/collaboration/team-settings) – Team name, defaults, integrations (Elexess API, Spark AI), and panel defaults
+- [Team Members](/docs/collaboration/team-members) – Member management, roles (admin, editor, viewer, guest), and invitations
+- [User Profile](/docs/collaboration/user-profile) – Account management, avatar, and team switching
+- [Spaces](/docs/collaboration/spaces) – Organize projects and packages into workgroups for customers or product lines
+- [Notifications](/docs/collaboration/notifications) – Inbox for mentions, approvals, and project status updates
 
 ## App
 

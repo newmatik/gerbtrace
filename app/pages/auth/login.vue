@@ -19,18 +19,19 @@
           </div>
 
           <form @submit.prevent="handleOtpSubmit">
-            <UFormField label="Enter the 6-digit code from the email">
+            <UFormField :label="`Enter the ${emailOtpLength}-digit code from the email`">
               <UInput
                 v-model="otpCode"
                 type="text"
                 inputmode="numeric"
                 pattern="[0-9]*"
-                placeholder="000000"
+                :placeholder="otpPlaceholder"
                 required
                 autofocus
                 size="lg"
-                maxlength="6"
+                :maxlength="emailOtpLength"
                 class="w-full text-center text-xl tracking-[0.5em] font-mono"
+                @input="normalizeOtpInput"
               />
             </UFormField>
 
@@ -40,7 +41,7 @@
               size="lg"
               class="mt-4"
               :loading="otpLoading"
-              :disabled="otpCode.length !== 6"
+              :disabled="otpCode.length !== emailOtpLength"
             >
               Verify Code
             </UButton>
@@ -74,7 +75,19 @@
             <h1 class="text-2xl font-bold">Sign in to Gerbtrace</h1>
           </div>
 
-          <!-- GitHub OAuth -->
+          <!-- OAuth providers -->
+          <UButton
+            block
+            size="lg"
+            color="neutral"
+            variant="outline"
+            icon="i-simple-icons-microsoft"
+            class="mb-3"
+            :loading="microsoftLoading"
+            @click="handleMicrosoft"
+          >
+            Continue with Microsoft
+          </UButton>
           <UButton
             block
             size="lg"
@@ -183,14 +196,22 @@ import { useColorMode } from '#imports'
 const router = useRouter()
 const colorMode = useColorMode()
 const isDark = computed(() => colorMode.value === 'dark')
-const { signIn, signInWithMagicLink, signInWithGitHub, resetPassword, isAuthenticated } = useAuth()
+const { signIn, signInWithMagicLink, signInWithGitHub, signInWithMicrosoft, resetPassword, isAuthenticated } = useAuth()
 const supabase = useSupabase()
+const runtimeConfig = useRuntimeConfig()
+
+const emailOtpLength = computed(() => {
+  const value = Number(runtimeConfig.public.supabaseEmailOtpLength ?? 8)
+  return Number.isFinite(value) && value >= 4 && value <= 12 ? Math.trunc(value) : 8
+})
+const otpPlaceholder = computed(() => '0'.repeat(emailOtpLength.value))
 
 const mode = ref<'magic' | 'password'>('magic')
 const email = ref('')
 const password = ref('')
 const submitLoading = ref(false)
 const githubLoading = ref(false)
+const microsoftLoading = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 
@@ -239,13 +260,18 @@ async function handleSubmit() {
 
 async function handleOtpSubmit() {
   errorMessage.value = ''
+  otpCode.value = otpCode.value.replace(/\D/g, '').slice(0, emailOtpLength.value)
+  if (otpCode.value.length !== emailOtpLength.value) {
+    errorMessage.value = `Please enter the full ${emailOtpLength.value}-digit code.`
+    return
+  }
   otpLoading.value = true
 
   try {
     const { data, error } = await supabase.auth.verifyOtp({
       email: email.value,
       token: otpCode.value,
-      type: 'magiclink',
+      type: 'email',
     })
     if (error) {
       errorMessage.value = error.message
@@ -269,6 +295,16 @@ async function handleGitHub() {
   // OAuth redirects away; loading stays true
 }
 
+async function handleMicrosoft() {
+  microsoftLoading.value = true
+  errorMessage.value = ''
+  const { error } = await signInWithMicrosoft()
+  if (error) {
+    errorMessage.value = error.message
+    microsoftLoading.value = false
+  }
+}
+
 async function handleForgot() {
   if (!email.value) {
     errorMessage.value = 'Enter your email address first'
@@ -281,5 +317,11 @@ async function handleForgot() {
   } else {
     successMessage.value = 'Password reset email sent!'
   }
+}
+
+function normalizeOtpInput(event: Event) {
+  const target = event.target as HTMLInputElement | null
+  const next = (target?.value ?? '').replace(/\D/g, '').slice(0, emailOtpLength.value)
+  otpCode.value = next
 }
 </script>

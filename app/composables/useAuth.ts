@@ -79,12 +79,27 @@ export function useAuth() {
 
   /** Sign up with email + password */
   async function signUp(email: string, password: string, name?: string) {
+    const origin = webOrigin()
+    const redirectTo = `${origin}/auth/callback`
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: { name: name ?? email.split('@')[0] },
+        emailRedirectTo: redirectTo,
       },
+    })
+    return { data, error }
+  }
+
+  /** Resend sign-up confirmation email */
+  async function resendSignUpConfirmation(email: string) {
+    const origin = webOrigin()
+    const emailRedirectTo = `${origin}/auth/callback`
+    const { data, error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: { emailRedirectTo },
     })
     return { data, error }
   }
@@ -117,6 +132,20 @@ export function useAuth() {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'github',
       options: { redirectTo },
+    })
+    return { data, error }
+  }
+
+  /** Sign in with Microsoft (Azure/Entra ID) OAuth */
+  async function signInWithMicrosoft() {
+    const redirectTo = `${window.location.origin}/auth/callback`
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'azure',
+      options: {
+        redirectTo,
+        // Supabase requires Azure to return a valid email; request it explicitly.
+        scopes: 'email',
+      },
     })
     return { data, error }
   }
@@ -173,8 +202,10 @@ export function useAuth() {
     signIn,
     signInWithMagicLink,
     signInWithGitHub,
+    signInWithMicrosoft,
     signOut,
     resetPassword,
     updatePassword,
+    resendSignUpConfirmation,
   }
 }

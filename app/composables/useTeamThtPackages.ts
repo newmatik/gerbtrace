@@ -10,6 +10,7 @@ import type { THTPackageDefinition } from '~/utils/tht-package-types'
 export interface TeamThtPackageRecord {
   id: string
   team_id: string
+  space_id: string | null
   data: THTPackageDefinition
   created_by: string
   created_at: string
@@ -55,7 +56,7 @@ export function useTeamThtPackages() {
   }
 
   /** Add a new team THT package */
-  async function addTeamThtPackage(packageDef: THTPackageDefinition) {
+  async function addTeamThtPackage(packageDef: THTPackageDefinition, options?: { spaceId?: string | null }) {
     if (!currentTeamId.value) return { error: new Error('No team selected') }
 
     const userId = (await supabase.auth.getUser()).data.user?.id
@@ -65,6 +66,7 @@ export function useTeamThtPackages() {
       .from('team_tht_packages')
       .insert({
         team_id: currentTeamId.value,
+        space_id: options?.spaceId ?? null,
         data: packageDef as unknown as Record<string, unknown>,
         created_by: userId,
       })

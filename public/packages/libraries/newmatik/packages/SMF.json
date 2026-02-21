@@ -1,17 +1,34 @@
 {
   "name": "SMF",
-  "type": "PT_TWO_POLE",
+  "type": "PT_GENERIC",
   "aliases": [
     "SMF (DO-219AB)"
   ],
   "body": {
-    "length": 3.7,
-    "width": 1.8
+    "length": 1.8,
+    "width": 3.7
   },
-  "chip": {
-    "chipLength": 3.7,
-    "leadWidth": 1.8,
-    "leadLength": 0.3
+  "generic": {
+    "leadGroups": [
+      {
+        "shape": "J_LEAD",
+        "numLeads": 1,
+        "distFromCenter": -1.55,
+        "ccHalf": 0,
+        "angleMilliDeg": 180000,
+        "padLength": 0.6,
+        "padWidth": 1
+      },
+      {
+        "shape": "J_LEAD",
+        "numLeads": 1,
+        "distFromCenter": 1.55,
+        "ccHalf": 0,
+        "angleMilliDeg": 0,
+        "padLength": 0.6,
+        "padWidth": 1
+      }
+    ]
   },
   "provenance": {
     "owner": "newmatik",

@@ -12,6 +12,7 @@ const FRONTEND_URL = Deno.env.get('FRONTEND_URL') ?? 'https://gerbtrace.com'
 
 interface InvitationPayload {
   invitation_id: string
+  invitation_kind?: 'team' | 'space'
 }
 
 serve(async (req: Request) => {
@@ -24,7 +25,7 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { invitation_id } = (await req.json()) as InvitationPayload
+    const { invitation_id, invitation_kind = 'team' } = (await req.json()) as InvitationPayload
 
     if (!invitation_id) {
       return new Response(JSON.stringify({ error: 'invitation_id is required' }), {
@@ -39,14 +40,23 @@ serve(async (req: Request) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     )
 
-    // Fetch the invitation with team details
-    const { data: invitation, error: invError } = await supabase
-      .from('team_invitations')
-      .select(`
-        id, email, role, token, expires_at,
-        team:teams(name, slug),
-        inviter:profiles!invited_by(name, email)
-      `)
+    const invitationQuery = invitation_kind === 'space'
+      ? supabase
+          .from('space_invitations')
+          .select(`
+            id, email, token, expires_at,
+            space:spaces(name, team:teams(name, slug)),
+            inviter:profiles!invited_by(name, email)
+          `)
+      : supabase
+          .from('team_invitations')
+          .select(`
+            id, email, role, token, expires_at,
+            team:teams(name, slug),
+            inviter:profiles!invited_by(name, email)
+          `)
+
+    const { data: invitation, error: invError } = await invitationQuery
       .eq('id', invitation_id)
       .single()
 
@@ -57,12 +67,19 @@ serve(async (req: Request) => {
       })
     }
 
-    const team = invitation.team as { name: string; slug: string }
+    const team = invitation_kind === 'space'
+      ? (invitation.space as { name: string; team: { name: string; slug: string } }).team
+      : (invitation.team as { name: string; slug: string })
+    const spaceName = invitation_kind === 'space'
+      ? (invitation.space as { name: string }).name
+      : null
     const inviter = invitation.inviter as { name: string; email: string } | null
     const inviterName = inviter?.name ?? inviter?.email ?? 'A team admin'
 
     // Build the invitation accept URL
-    const acceptUrl = `${FRONTEND_URL}/auth/callback?invitation=${invitation.token}`
+    const acceptUrl = invitation_kind === 'space'
+      ? `${FRONTEND_URL}/auth/callback?space_invitation=${invitation.token}`
+      : `${FRONTEND_URL}/auth/callback?invitation=${invitation.token}`
 
     // Send email via Resend
     const emailResponse = await fetch('https://api.resend.com/emails', {
@@ -74,12 +91,16 @@ serve(async (req: Request) => {
       body: JSON.stringify({
         from: 'Gerbtrace <noreply@gerbtrace.com>',
         to: [invitation.email],
-        subject: `You've been invited to join ${team.name} on Gerbtrace`,
+        subject: invitation_kind === 'space'
+          ? `You've been invited to ${spaceName} on Gerbtrace`
+          : `You've been invited to join ${team.name} on Gerbtrace`,
         html: `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;">
-            <h2 style="color: #111; margin-bottom: 8px;">Join ${team.name} on Gerbtrace</h2>
+            <h2 style="color: #111; margin-bottom: 8px;">${invitation_kind === 'space' ? `Join ${spaceName}` : `Join ${team.name}`} on Gerbtrace</h2>
             <p style="color: #555; font-size: 15px; line-height: 1.6;">
-              ${inviterName} has invited you to join <strong>${team.name}</strong> as a <strong>${invitation.role}</strong>.
+              ${inviterName} has invited you to ${invitation_kind === 'space'
+                ? `access space <strong>${spaceName}</strong> in team <strong>${team.name}</strong> as a <strong>guest</strong>`
+                : `join <strong>${team.name}</strong> as a <strong>${(invitation as any).role}</strong>`}.
             </p>
             <p style="color: #555; font-size: 15px; line-height: 1.6;">
               Gerbtrace is a collaborative Gerber file viewer and comparator for PCB teams.

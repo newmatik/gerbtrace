@@ -19,7 +19,7 @@ interface TabVisibility {
 interface ViewerPrefs {
   viewMode: 'layers' | 'realistic'
   activeFilter: 'all' | 'top' | 'bot'
-  activeMode: 'cursor' | 'measure' | 'info' | 'delete'
+  activeMode: 'cursor' | 'measure' | 'info' | 'delete' | 'draw'
   cropToOutline: boolean
   mirrored: boolean
   presetId: string
@@ -62,6 +62,7 @@ function loadPasteSettings(raw: unknown): PasteSettings {
     pattern: VALID_DOT_PATTERNS.includes(p.pattern as DotPattern) ? p.pattern as DotPattern : PASTE_DEFAULTS.pattern,
     highlightDots: typeof p.highlightDots === 'boolean' ? p.highlightDots : PASTE_DEFAULTS.highlightDots,
     dynamicDots: typeof p.dynamicDots === 'boolean' ? p.dynamicDots : PASTE_DEFAULTS.dynamicDots,
+    showJetPath: typeof p.showJetPath === 'boolean' ? p.showJetPath : PASTE_DEFAULTS.showJetPath,
   }
 }
 
@@ -81,7 +82,7 @@ export function useViewerPreferences(projectId: number | string) {
           prefs: {
           viewMode: ['layers', 'realistic'].includes(p.viewMode) ? p.viewMode : DEFAULTS.viewMode,
           activeFilter: ['all', 'top', 'bot'].includes(p.activeFilter) ? p.activeFilter : DEFAULTS.activeFilter,
-          activeMode: ['cursor', 'measure', 'info', 'delete'].includes(p.activeMode) ? p.activeMode : DEFAULTS.activeMode,
+          activeMode: ['cursor', 'measure', 'info', 'delete', 'draw'].includes(p.activeMode) ? p.activeMode : DEFAULTS.activeMode,
           cropToOutline: typeof p.cropToOutline === 'boolean' ? p.cropToOutline : DEFAULTS.cropToOutline,
           mirrored: typeof p.mirrored === 'boolean' ? p.mirrored : DEFAULTS.mirrored,
           presetId: typeof p.presetId === 'string' ? p.presetId : DEFAULTS.presetId,

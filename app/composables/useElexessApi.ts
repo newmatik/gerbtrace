@@ -122,8 +122,15 @@ export function useElexessApi() {
 
   const baseUrl = computed(() => (config.public as any).elexessUrl as string || 'https://api.dev.elexess.com/api')
 
+  const isEnabled = computed(() => {
+    const team = currentTeam.value
+    if (!team) return false
+    if (typeof team.elexess_enabled === 'boolean') return team.elexess_enabled
+    return !!(team.elexess_username && team.elexess_password)
+  })
+
   const hasCredentials = computed(() => {
-    return !!(currentTeam.value?.elexess_username && currentTeam.value?.elexess_password)
+    return !!(isEnabled.value && currentTeam.value?.elexess_username && currentTeam.value?.elexess_password)
   })
 
   // ── Reactive queue state ──
@@ -131,6 +138,7 @@ export function useElexessApi() {
   const pricingQueue = ref<PricingQueueItem[]>([])
   const exchangeRate = ref<ExchangeRateSnapshot | null>(null)
   let clearTimer: ReturnType<typeof setTimeout> | null = null
+  let cancelRequested = false
 
   function authHeaders(): HeadersInit {
     if (!currentTeam.value?.elexess_username || !currentTeam.value?.elexess_password) return {}
@@ -402,10 +410,13 @@ export function useElexessApi() {
     // Build the queue with all items as pending
     pricingQueue.value = partsToFetch.map(partNumber => ({ partNumber, status: 'pending' as const }))
     isFetching.value = true
+    cancelRequested = false
 
     for (const part of partsToFetch) {
+      if (cancelRequested) break
       setQueueItemStatus(part, 'fetching')
       const data = await searchPart(part)
+      if (cancelRequested) break
       if (data !== null) {
         cache[part] = { data, fetchedAt: new Date().toISOString() }
         setQueueItemStatus(part, 'done')
@@ -415,9 +426,20 @@ export function useElexessApi() {
     }
 
     isFetching.value = false
+    cancelRequested = false
     scheduleClearQueue()
 
     return cache
+  }
+
+  function cancelFetching() {
+    cancelRequested = true
+    isFetching.value = false
+    pricingQueue.value = []
+    if (clearTimer) {
+      clearTimeout(clearTimer)
+      clearTimer = null
+    }
   }
 
   /**
@@ -425,14 +447,16 @@ export function useElexessApi() {
    * Returns the updated cache entry, or null on failure.
    */
   async function fetchSinglePricing(partNumber: string): Promise<BomPricingEntry | null> {
+    if (cancelRequested) {
+      cancelRequested = false
+      return null
+    }
     await ensureExchangeRateForToday()
-    // Cancel any pending clear timer
     if (clearTimer) {
       clearTimeout(clearTimer)
       clearTimer = null
     }
 
-    // Add to queue (or update existing entry)
     const existing = pricingQueue.value.find(i => i.partNumber === partNumber)
     if (existing) {
       setQueueItemStatus(partNumber, 'fetching')
@@ -442,6 +466,11 @@ export function useElexessApi() {
     isFetching.value = true
 
     const data = await searchPart(partNumber)
+
+    if (cancelRequested) {
+      cancelRequested = false
+      return null
+    }
 
     if (data !== null) {
       setQueueItemStatus(partNumber, 'done')
@@ -495,6 +524,7 @@ export function useElexessApi() {
   }, { immediate: true })
 
   return {
+    isEnabled,
     hasCredentials,
     isFetching: readonly(isFetching),
     pricingQueue: readonly(pricingQueue),
@@ -502,6 +532,7 @@ export function useElexessApi() {
     searchPart,
     fetchAllPricing,
     fetchSinglePricing,
+    cancelFetching,
     ensureExchangeRateForToday,
     cleanPricingCache,
   }

@@ -1,9 +1,9 @@
 <template>
   <canvas
     ref="canvasEl"
-    class="w-full h-full"
+    class="w-full h-full gpu-canvas"
     :class="{
-      'cursor-crosshair': measure?.active.value || info?.active.value || deleteTool?.active.value || (alignMode && alignMode !== 'idle'),
+      'cursor-crosshair': measure?.active.value || info?.active.value || deleteTool?.active.value || drawTool?.active.value || (alignMode && alignMode !== 'idle'),
     }"
     @wheel.prevent="onWheel"
     @mousedown="onMouseDown"
@@ -25,6 +25,10 @@ import { renderToCanvas, renderOutlineMask, computeAutoFitTransform, renderGraph
 import { renderRealisticView } from '@lib/renderer/realistic-renderer'
 import type { RealisticLayers } from '@lib/renderer/realistic-renderer'
 import { generateJetprintDots } from '@lib/renderer/jetprint-dots'
+import { extractPastePads } from '@lib/jetprint/paste-extractor'
+import { groupPadsIntoComponents, buildJetComponents } from '@lib/jetprint/component-builder'
+import { planPath } from '@lib/jetprint/path-planner'
+import { JPSYS_EXPORT_DEFAULTS } from '@lib/jetprint/jpsys-types'
 import type { PasteSettings } from '~/composables/usePasteSettings'
 import { mergeBounds, emptyBounds, isEmpty } from '@lib/gerber/bounding-box'
 import type { EditablePnPComponent } from '~/composables/usePickAndPlace'
@@ -49,6 +53,7 @@ const props = defineProps<{
   measure?: ReturnType<typeof useMeasureTool>
   info?: ReturnType<typeof useInfoTool>
   deleteTool?: ReturnType<typeof useDeleteTool>
+  drawTool?: ReturnType<typeof useDrawTool>
   /** View mode: 'layers' (default flat colors) or 'realistic' (photo-realistic compositing) */
   viewMode?: ViewMode
   /** PCB appearance preset (used when viewMode is 'realistic') */
@@ -88,6 +93,7 @@ const emit = defineEmits<{
   pnpClick: [designator: string | null]
   pnpDblclick: [designator: string]
   alignClick: [gerberX: number, gerberY: number]
+  drawCommit: [request: import('~/composables/useDrawTool').DrawCommitRequest]
 }>()
 
 const canvasEl = ref<HTMLCanvasElement | null>(null)
@@ -113,6 +119,8 @@ function markWheelActivity() {
 }
 
 const isInteracting = computed(() => props.interaction.isDragging.value || isZooming.value)
+const TRANSFORM_REDRAW_DEBOUNCE_MS = 16
+const MAX_CANVAS_POOL_SIZE = 8
 
 // ── Layer-composite cache ──
 // Stores the last fully-rendered gerber scene so pan/zoom can reproject it
@@ -152,6 +160,10 @@ function computeSceneCacheKey(): string {
   if (props.viewMode === 'realistic') {
     const al = props.allLayers ?? props.layers
     for (const l of al) parts.push(l.file.fileName, l.color)
+  }
+  const ps = props.pasteSettings
+  if (ps) {
+    parts.push(ps.mode, String(ps.dotDiameter), String(ps.dotSpacing), ps.pattern, ps.dynamicDots ? 'D' : '')
   }
   return parts.join('|')
 }
@@ -210,6 +222,7 @@ function rotateScreenPoint(sx: number, sy: number, cssWidth: number, cssHeight: 
 }
 
 function invalidateSceneCache() {
+  if (sceneCache) releaseCanvas(sceneCache.canvas)
   sceneCache = null
 }
 
@@ -323,7 +336,21 @@ function acquireCanvas(w: number, h: number): HTMLCanvasElement {
 }
 
 function releaseCanvas(c: HTMLCanvasElement) {
+  if (_canvasPool.length >= MAX_CANVAS_POOL_SIZE) {
+    // Drop oversized pooled canvases to let browser reclaim memory.
+    c.width = 0
+    c.height = 0
+    return
+  }
   _canvasPool.push(c)
+}
+
+function clearCanvasPool() {
+  for (const canvas of _canvasPool) {
+    canvas.width = 0
+    canvas.height = 0
+  }
+  _canvasPool.length = 0
 }
 
 const gerberTreeCache = useGerberImageTreeCache()
@@ -379,6 +406,11 @@ function onMouseDown(e: MouseEvent) {
       emit('alignClick', gerber.x, gerber.y)
       return
     }
+    if (props.drawTool?.active.value) {
+      const commitReq = props.drawTool.handleMouseDown(e, canvasEl.value, props.interaction.transform.value)
+      if (commitReq) emit('drawCommit', commitReq)
+      return
+    }
     if (props.deleteTool?.active.value) {
       props.deleteTool.handleMouseDown(e, canvasEl.value)
     } else if (props.measure?.active.value) {
@@ -410,7 +442,7 @@ function onMouseDown(e: MouseEvent) {
 function onDblClick(e: MouseEvent) {
   if (e.button !== 0 || !canvasEl.value) return
   if (props.alignMode && props.alignMode !== 'idle') return
-  if (props.measure?.active.value || props.info?.active.value || props.deleteTool?.active.value) return
+  if (props.measure?.active.value || props.info?.active.value || props.deleteTool?.active.value || props.drawTool?.active.value) return
   if (!props.pnpComponents || props.pnpComponents.length === 0) return
 
   const rect = canvasEl.value.getBoundingClientRect()
@@ -444,6 +476,9 @@ function onMouseMove(e: MouseEvent) {
   }
 
   // Route to active tool
+  if (props.drawTool?.active.value && canvasEl.value) {
+    props.drawTool.handleMouseMove(e, canvasEl.value, props.interaction.transform.value)
+  }
   if (props.deleteTool?.active.value && canvasEl.value) {
     props.deleteTool.handleMouseMove(e, canvasEl.value)
   }
@@ -454,6 +489,10 @@ function onMouseMove(e: MouseEvent) {
 
 function onMouseUp(e: MouseEvent) {
   props.interaction.handleMouseUp()
+  if (props.drawTool?.active.value && canvasEl.value) {
+    const commitReq = props.drawTool.handleMouseUp(e, canvasEl.value, props.interaction.transform.value)
+    if (commitReq) emit('drawCommit', commitReq)
+  }
   if (props.deleteTool?.active.value && canvasEl.value) {
     const layerData = buildLayerData()
     props.deleteTool.handleMouseUp(e, canvasEl.value, props.interaction.transform.value, layerData)
@@ -473,13 +512,13 @@ function onMouseLeave(e: MouseEvent) {
 watch(
   () => props.layers,
   () => {
-    if (!props.measure) return
     const trees: ImageTree[] = []
     for (const layer of props.layers) {
       const tree = getImageTree(layer)
       if (tree) trees.push(tree)
     }
-    props.measure.collectSnapPoints(trees)
+    if (props.measure) props.measure.collectSnapPoints(trees)
+    if (props.drawTool) props.drawTool.collectSnapTargets(trees)
   },
   { deep: true, immediate: true },
 )
@@ -1419,6 +1458,123 @@ function drawAlignOverlay(
 const DELETE_HIGHLIGHT_COLOR = '#ffffff'
 const DELETE_HIGHLIGHT_ALPHA = 0.55
 
+interface JetPathSegmentPrepared {
+  startUmX: number
+  startUmY: number
+  endUmX: number
+  endUmY: number
+}
+
+const jetPathSegmentCache = new WeakMap<ImageTree, JetPathSegmentPrepared[]>()
+
+function prepareJetSegments(
+  segments: import('@lib/jetprint/jpsys-types').SegmentOrder[],
+): JetPathSegmentPrepared[] {
+  return segments.map((seg) => {
+    const endUmX = seg.x + seg.vx * seg.dotPeriod * 1e6 * (seg.dotCount - 1)
+    const endUmY = seg.y + seg.vy * seg.dotPeriod * 1e6 * (seg.dotCount - 1)
+    return {
+      startUmX: seg.x,
+      startUmY: seg.y,
+      endUmX,
+      endUmY,
+    }
+  })
+}
+
+function getJetPathForPasteTree(pasteTree: ImageTree): JetPathSegmentPrepared[] {
+  const cached = jetPathSegmentCache.get(pasteTree)
+  if (cached) return cached
+
+  const pads = extractPastePads(pasteTree)
+  if (pads.length === 0) {
+    jetPathSegmentCache.set(pasteTree, [])
+    return []
+  }
+  const groups = groupPadsIntoComponents(pads)
+  const pcbId = 1
+  const { components } = buildJetComponents(groups, pcbId, JPSYS_EXPORT_DEFAULTS, 100)
+  const { segments } = planPath(components, pcbId, 'AG04', 10000)
+  const prepared = prepareJetSegments(segments)
+  jetPathSegmentCache.set(pasteTree, prepared)
+  return prepared
+}
+
+function getActivePasteLayersForPath(): LayerInfo[] {
+  const source = props.allLayers ?? props.layers
+  const side = props.activeFilter ?? 'all'
+  const types = side === 'all'
+    ? new Set(['Top Paste', 'Bottom Paste'])
+    : new Set([side === 'bot' ? 'Bottom Paste' : 'Top Paste'])
+  return source.filter(layer => layer.visible && types.has(layer.type))
+}
+
+/**
+ * Draw the simulated jetting path as a screen-space overlay.
+ * Called INSIDE the board-rotation context.  Converts segment µm
+ * coordinates to CSS screen pixels using the same formula as
+ * getProjectedPnPComponents: screenX = offsetX + gerberX * scale,
+ * screenY = offsetY - gerberY * scale.
+ */
+function drawJetPathOverlay(
+  ctx: CanvasRenderingContext2D,
+  cssWidth: number,
+  _cssHeight: number,
+  dpr: number,
+  transform: { offsetX: number; offsetY: number; scale: number },
+  mirrored: boolean,
+) {
+  const pasteLayers = getActivePasteLayersForPath()
+  if (!pasteLayers.length) return
+
+  const preparedLayers: { segments: JetPathSegmentPrepared[]; umPerUnit: number }[] = []
+  for (const layer of pasteLayers) {
+    const tree = getImageTree(layer) as ImageTree | null
+    if (!tree || tree.children.length === 0) continue
+    const segments = getJetPathForPasteTree(tree)
+    if (!segments.length) continue
+    preparedLayers.push({
+      segments,
+      umPerUnit: tree.units === 'in' ? 25400 : 1000,
+    })
+  }
+  if (!preparedLayers.length) return
+
+  ctx.save()
+  if (dpr !== 1) ctx.scale(dpr, dpr)
+
+  // Draw one polyline per visible paste side (top, bottom, or both in "all").
+  for (const prepared of preparedLayers) {
+    const toScreen = (umX: number, umY: number): [number, number] => {
+      const gx = umX / prepared.umPerUnit
+      const gy = umY / prepared.umPerUnit
+      let sx = transform.offsetX + gx * transform.scale
+      const sy = transform.offsetY - gy * transform.scale
+      if (mirrored) sx = cssWidth - sx
+      return [sx, sy]
+    }
+
+    ctx.beginPath()
+    ctx.strokeStyle = '#a855f7'
+    ctx.lineWidth = 1.5
+    ctx.lineJoin = 'round'
+    ctx.lineCap = 'round'
+
+    let isFirst = true
+    for (const seg of prepared.segments) {
+      const [sx, sy] = toScreen(seg.startUmX, seg.startUmY)
+      const [ex, ey] = toScreen(seg.endUmX, seg.endUmY)
+      if (isFirst) ctx.moveTo(sx, sy)
+      else ctx.lineTo(sx, sy)
+      ctx.lineTo(ex, ey)
+      isFirst = false
+    }
+    ctx.stroke()
+  }
+
+  ctx.restore()
+}
+
 /**
  * Draw a translucent white overlay on graphics that are pending deletion.
  * This gives the user a clear visual indicator of which objects are selected
@@ -1490,9 +1646,23 @@ function draw() {
   const layerTrees: { layer: LayerInfo; tree: ImageTree }[] = []
   let unifiedBounds: BoundingBox = emptyBounds()
 
+  const pasteLayerTypes = ['Top Paste', 'Bottom Paste']
+  const jetprintPs = props.pasteSettings
+  const jetprintActive = jetprintPs && jetprintPs.mode === 'jetprint'
+
   for (const layer of boundsSource) {
-    const tree = getImageTree(layer)
+    let tree = getImageTree(layer)
     if (!tree || tree.children.length === 0) continue
+
+    if (jetprintActive && pasteLayerTypes.includes(layer.type)) {
+      tree = generateJetprintDots(tree, {
+        dotDiameter: jetprintPs.dotDiameter,
+        dotSpacing: jetprintPs.dotSpacing,
+        pattern: jetprintPs.pattern,
+        dynamicDots: jetprintPs.dynamicDots,
+      })
+    }
+
     layerTrees.push({ layer, tree })
     unifiedBounds = mergeBounds(unifiedBounds, tree.bounds as BoundingBox)
   }
@@ -1588,9 +1758,11 @@ function draw() {
     })
   }
 
-  // ── Overscan: render 10 % extra on each side so panning doesn't
-  //    immediately expose bare background at the edges. ──
-  const OVERSCAN = 0.10
+  // ── Overscan: render extra on each side so panning doesn't immediately
+  //    expose bare background at the edges.
+  // Rotated scenes are more prone to edge exposure during interaction, so
+  // they need a larger overscan window.
+  const OVERSCAN = rotDeg === 0 ? 0.10 : 0.30
   const overscanW = Math.ceil(canvas.width * (1 + 2 * OVERSCAN))
   const overscanH = Math.ceil(canvas.height * (1 + 2 * OVERSCAN))
   const marginCssX = cssWidth * OVERSCAN
@@ -1618,14 +1790,34 @@ function draw() {
 
   // ── Layer composite with caching ──
   const cacheKey = computeSceneCacheKey()
-  const canUseCache = isInteracting.value
+  // During interaction (pan/zoom) we can cheaply re-project the cached scene
+  // via drawImage — but with board rotation the reprojection produces visible
+  // edge popping, so we skip the reprojection shortcut for rotated views.
+  //
+  // Even outside of interaction, if the cache key AND transform match exactly,
+  // the cached scene is pixel-identical — reuse it to skip the expensive
+  // realistic/layer render entirely (the biggest CPU win for idle redraws).
+  const exactTransformMatch = sceneCache
+    && Math.abs(sceneCache.transform.offsetX - (transform.offsetX + cssWidth * (rotDeg === 0 ? 0.10 : 0.30))) < 0.01
+    && Math.abs(sceneCache.transform.offsetY - (transform.offsetY + cssHeight * (rotDeg === 0 ? 0.10 : 0.30))) < 0.01
+    && Math.abs(sceneCache.transform.scale - transform.scale) < 0.0001
+
+  const canReprojectCache = isInteracting.value
+    && rotDeg === 0
     && sceneCache
     && sceneCache.key === cacheKey
     && sceneCache.width === canvas.width
     && sceneCache.height === canvas.height
     && sceneCache.dpr === dpr
 
-  if (canUseCache && sceneCache) {
+  const canReuseExact = sceneCache
+    && sceneCache.key === cacheKey
+    && sceneCache.width === canvas.width
+    && sceneCache.height === canvas.height
+    && sceneCache.dpr === dpr
+    && exactTransformMatch
+
+  if ((canReprojectCache || canReuseExact) && sceneCache) {
     blitScene(sceneCache.canvas, sceneCache.transform)
     boardPerf.sceneCacheHits++
   } else {
@@ -1646,6 +1838,10 @@ function draw() {
       sceneCanvas = acquireCanvas(overscanW, overscanH)
 
       const ps = props.pasteSettings
+      const realisticPoolOpts = {
+        acquireCanvas: (w: number, h: number) => acquireCanvas(w, h),
+        releaseCanvas: (c: HTMLCanvasElement) => releaseCanvas(c),
+      }
       if (side === 'all') {
         renderRealisticView(gatherRealisticLayers('top'), sceneCanvas, {
           preset: props.preset!,
@@ -1653,6 +1849,7 @@ function draw() {
           dpr,
           side: 'top',
           pasteColor: ps?.mode === 'jetprint' && ps.highlightDots ? '#00FF66' : undefined,
+          ...realisticPoolOpts,
         })
         const bottomCanvas = acquireCanvas(overscanW, overscanH)
         renderRealisticView(gatherRealisticLayers('bottom'), bottomCanvas, {
@@ -1661,6 +1858,7 @@ function draw() {
           dpr,
           side: 'bottom',
           pasteColor: ps?.mode === 'jetprint' && ps.highlightDots ? '#00FF66' : undefined,
+          ...realisticPoolOpts,
         })
         const sceneCtx = sceneCanvas.getContext('2d')!
         sceneCtx.save()
@@ -1676,6 +1874,7 @@ function draw() {
           dpr,
           side,
           pasteColor: ps?.mode === 'jetprint' && ps.highlightDots ? '#00FF66' : undefined,
+          ...realisticPoolOpts,
         })
       }
     } else {
@@ -1731,6 +1930,12 @@ function draw() {
     boardPerf.sceneCacheBuilds++
   }
 
+  // Jet path overlay (when enabled in paste settings)
+  const ps = props.pasteSettings
+  if (ps?.mode === 'jetprint' && ps.showJetPath && !isInteracting.value) {
+    drawJetPathOverlay(ctx, cssWidth, cssHeight, dpr, transform, !!props.mirrored)
+  }
+
   // Highlight selected objects (delete tool pending selection)
   drawDeleteHighlights(ctx, cssWidth, dpr, transform, !!props.mirrored)
 
@@ -1773,6 +1978,15 @@ function scheduleRedraw() {
     draw()
   })
 }
+let transformRedrawTimer: ReturnType<typeof setTimeout> | null = null
+
+function scheduleTransformRedraw() {
+  if (transformRedrawTimer) clearTimeout(transformRedrawTimer)
+  transformRedrawTimer = setTimeout(() => {
+    transformRedrawTimer = null
+    scheduleRedraw()
+  }, TRANSFORM_REDRAW_DEBOUNCE_MS)
+}
 
 // Redraw when interaction ends (to restore footprints/markers)
 watch(
@@ -1800,7 +2014,7 @@ watch(
     appSettings.gridSpacingMm,
     bgColor.value,
   ],
-  () => scheduleRedraw(),
+  () => scheduleTransformRedraw(),
 )
 
 watch(
@@ -1823,6 +2037,11 @@ watch(
     invalidateSceneCache()
     scheduleRedraw()
   },
+)
+
+watch(
+  () => props.pasteSettings?.showJetPath,
+  () => scheduleRedraw(),
 )
 
 watch(
@@ -1870,6 +2089,12 @@ onMounted(() => {
   onUnmounted(() => {
     observer.disconnect()
     if (rafId) { cancelAnimationFrame(rafId); rafId = 0 }
+    if (transformRedrawTimer) {
+      clearTimeout(transformRedrawTimer)
+      transformRedrawTimer = null
+    }
+    invalidateSceneCache()
+    clearCanvasPool()
   })
 })
 

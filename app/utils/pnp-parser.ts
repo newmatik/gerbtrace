@@ -10,6 +10,7 @@
  * and trailing blank lines.
  */
 import * as XLSX from 'xlsx'
+import { detectFixedWidthMarkers, splitFixedWidthLine } from './fixed-width'
 
 export interface PnPComponent {
   /** Component reference designator (e.g. "C1", "U3", "R5") */
@@ -24,8 +25,12 @@ export interface PnPComponent {
   value: string
   /** Package / footprint name (e.g. "C0603-ROUND", "SOT-23") */
   package: string
+  /** Free-text description from PnP export (if present). */
+  description: string
   /** Side the component belongs to */
   side: 'top' | 'bottom'
+  /** Optional values from selected unmapped columns, keyed by header name. */
+  extra?: Record<string, string>
 }
 
 export type PnPCoordUnit = 'mm' | 'mils' | 'inches'
@@ -38,15 +43,19 @@ export interface PnPColumnMapping {
   value?: number
   package?: number
   side?: number
+  description?: number
 }
 
 export interface ParsePnPOptions {
   unitOverride?: PnPCoordUnit
   skipRows?: number
+  skipBottomRows?: number
   mapping?: PnPColumnMapping
+  fixedColumns?: readonly number[]
+  extraColumns?: readonly string[]
 }
 
-type Delimiter = '\t' | ',' | ';'
+type Delimiter = '\t' | ',' | ';' | 'fixed'
 
 function isExcelFileName(fileName?: string): boolean {
   return !!fileName && /\.(xlsx|xls)$/i.test(fileName)
@@ -98,6 +107,11 @@ function detectDelimiter(content: string): Delimiter {
   for (const line of firstLines) {
     if (line.includes(';')) return ';'
   }
+  for (const line of firstLines) {
+    if (line.includes(',')) return ','
+  }
+  const fixed = detectFixedWidthMarkers(content)
+  if (fixed.markers.length >= 2 && fixed.confidence >= 0.45) return 'fixed'
   return ','
 }
 
@@ -180,8 +194,9 @@ function buildHeaderMap(fields: string[], unitOverride?: PnPCoordUnit): HeaderMa
     else if (!map.y && /^(posy|y|centery|midy|cy)/.test(h)) map.y = i
     else if (!map.rotation && /^(rot|rotation|angle|deg)/.test(h)) map.rotation = i
     else if (!map.value && /value|^val$|^comment$/.test(h)) map.value = i
-    else if (!map.package && /package|footprint|^pkg$/.test(h)) map.package = i
+    else if (!map.package && /^(package|footprint|pkg)$/.test(h)) map.package = i
     else if (!map.side && /^(side|layer|tb)$/.test(h)) map.side = i
+    else if (!map.description && /^(description|desc|details?|partdescription)$/.test(h)) map.description = i
   }
   return { map, coordScale }
 }
@@ -198,6 +213,7 @@ export interface PnPParsePreview {
   mapping: PnPColumnMapping | null
   headerRowIndex: number | null
   coordScale: number
+  fixedColumns?: readonly number[]
 }
 
 function countMappedColumns(map: PnPColumnMapping): number {
@@ -209,19 +225,30 @@ function countMappedColumns(map: PnPColumnMapping): number {
   if (map.value != null) count++
   if (map.package != null) count++
   if (map.side != null) count++
+  if (map.description != null) count++
   return count
 }
 
 export function parsePnPPreview(content: string, options?: ParsePnPOptions, fileName?: string): PnPParsePreview {
   const normalizedContent = isExcelFileName(fileName) ? excelContentToText(content) : content
   const lines = normalizedContent.split(/\r?\n/)
-  const delimiter = detectDelimiter(normalizedContent)
+  const autoDelimiter = detectDelimiter(normalizedContent)
+  const hasManualFixedColumns = (options?.fixedColumns?.length ?? 0) > 0
+  const delimiter = hasManualFixedColumns ? 'fixed' : autoDelimiter
+  const fixedColumns = delimiter === 'fixed'
+    ? (hasManualFixedColumns ? options?.fixedColumns : detectFixedWidthMarkers(normalizedContent).markers)
+    : undefined
   const skipRows = Math.max(0, options?.skipRows ?? 0)
+  const skipBottomRows = Math.max(0, options?.skipBottomRows ?? 0)
   const unitOverride = options?.unitOverride
   const manualMapping = options?.mapping
 
-  const dataLines = lines.slice(skipRows).filter(line => line.trim() !== '')
-  const tableRows = dataLines.map(line => splitLine(line, delimiter))
+  const rowsAfterTopSkip = lines.slice(skipRows).filter(line => line.trim() !== '')
+  const scanEnd = Math.max(0, rowsAfterTopSkip.length - skipBottomRows)
+  const dataLines = rowsAfterTopSkip.slice(0, scanEnd)
+  const tableRows = delimiter === 'fixed'
+    ? dataLines.map(line => splitFixedWidthLine(line, fixedColumns ?? []))
+    : dataLines.map(line => splitLine(line, delimiter))
 
   if (tableRows.length === 0) {
     return {
@@ -231,6 +258,7 @@ export function parsePnPPreview(content: string, options?: ParsePnPOptions, file
       mapping: null,
       headerRowIndex: null,
       coordScale: getCoordScale(unitOverride),
+      fixedColumns,
     }
   }
 
@@ -243,6 +271,7 @@ export function parsePnPPreview(content: string, options?: ParsePnPOptions, file
       mapping: { ...manualMapping },
       headerRowIndex: 0,
       coordScale: getCoordScale(unitOverride),
+      fixedColumns,
     }
   }
 
@@ -274,6 +303,7 @@ export function parsePnPPreview(content: string, options?: ParsePnPOptions, file
       mapping: bestMap,
       headerRowIndex: bestHeaderIdx,
       coordScale: bestCoordScale,
+      fixedColumns,
     }
   }
 
@@ -284,6 +314,7 @@ export function parsePnPPreview(content: string, options?: ParsePnPOptions, file
     mapping: null,
     headerRowIndex: null,
     coordScale: getCoordScale(unitOverride),
+    fixedColumns,
   }
 }
 
@@ -323,18 +354,29 @@ export function parsePnPFile(content: string, side: 'top' | 'bottom', options?: 
   const components: PnPComponent[] = []
   const headerMap = preview.mapping
   const coordScale = preview.coordScale
+  const mappedIndices = new Set<number>(Object.values(headerMap ?? {}).filter((idx): idx is number => Number.isFinite(idx)))
+  const extraIndices: Array<{ index: number; header: string }> = []
+  if (preview.headers.length > 0 && options?.extraColumns && options.extraColumns.length > 0) {
+    const selected = new Set(options.extraColumns)
+    for (let i = 0; i < preview.headers.length; i++) {
+      const header = (preview.headers[i] ?? '').trim()
+      if (!header || mappedIndices.has(i) || !selected.has(header)) continue
+      extraIndices.push({ index: i, header })
+    }
+  }
 
   for (const fields of preview.rows) {
     // Need at least 4 fields (designator, x, y, rotation) — value and package are optional
     if (fields.length < 4) continue
 
-    // Default fixed order (legacy): Designator, X, Y, Rotation, Value, Package
+    // Default fixed order (legacy): Designator, X, Y, Rotation, Value, Package, Description?
     const designator = headerMap ? getField(fields, headerMap.designator) : (fields[0] || '')
     const xStr = headerMap ? getField(fields, headerMap.x) : (fields[1] || '')
     const yStr = headerMap ? getField(fields, headerMap.y) : (fields[2] || '')
     const rotStr = headerMap ? getField(fields, headerMap.rotation) : (fields[3] || '')
     const value = headerMap ? getField(fields, headerMap.value) : (fields[4] || '')
     let pkg = headerMap ? getField(fields, headerMap.package) : (fields[5] || '')
+    const description = headerMap ? getField(fields, headerMap.description) : (fields[6] || '')
 
     const x = parseNumeric(xStr, delimiter) * coordScale
     const y = parseNumeric(yStr, delimiter) * coordScale
@@ -358,6 +400,19 @@ export function parsePnPFile(content: string, side: 'top' | 'bottom', options?: 
       else if (/(top|f\.cu)/.test(sideVal)) effectiveSide = 'top'
     }
 
+    let extra: Record<string, string> | undefined
+    if (extraIndices.length > 0) {
+      const bag: Record<string, string> = {}
+      let count = 0
+      for (const { index, header } of extraIndices) {
+        const value = (fields[index] ?? '').trim()
+        if (!value) continue
+        bag[header] = value
+        count++
+      }
+      if (count > 0) extra = bag
+    }
+
     components.push({
       designator: designator.trim(),
       x,
@@ -365,7 +420,9 @@ export function parsePnPFile(content: string, side: 'top' | 'bottom', options?: 
       rotation,
       value: value.trim(),
       package: pkg.trim(),
+      description: description.trim(),
       side: effectiveSide,
+      ...(extra ? { extra } : {}),
     })
   }
 

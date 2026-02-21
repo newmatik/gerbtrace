@@ -155,7 +155,7 @@ function renderGraphic(
       renderShape(ctx, graphic.shape, color)
       break
     case 'path':
-      renderPath(ctx, graphic.segments, graphic.width, color, scale)
+      renderPath(ctx, graphic.segments, graphic.width, color, scale, graphic.cap)
       break
     case 'region':
       renderRegion(ctx, graphic.segments, color)
@@ -230,6 +230,7 @@ function renderPath(
   width: number,
   color: string,
   scale: number,
+  cap?: 'round' | 'square',
 ): void {
   if (segments.length === 0) return
   // Canvas spec: lineWidth = 0 is ignored (keeps previous value).
@@ -241,11 +242,13 @@ function renderPath(
   const padding = 0.5 / scale
   const renderWidth = width + padding
 
+  const isSquare = cap === 'square'
+
   ctx.save()
   ctx.lineWidth = renderWidth
   ctx.strokeStyle = color
-  ctx.lineCap = 'round'
-  ctx.lineJoin = 'round'
+  ctx.lineCap = isSquare ? 'square' : 'round'
+  ctx.lineJoin = isSquare ? 'miter' : 'round'
 
   ctx.beginPath()
   drawSegments(ctx, segments)

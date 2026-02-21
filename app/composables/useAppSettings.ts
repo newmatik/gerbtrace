@@ -12,6 +12,8 @@ export interface AppSettings {
   gridSpacingMm: number
   /** DPI resolution for PNG image exports */
   exportDpi: number
+  /** Show compact performance indicators on the canvas */
+  miniPerfOverlay: boolean
 }
 
 /** Standard DPI presets for PNG export */
@@ -23,6 +25,7 @@ const defaults: AppSettings = {
   gridEnabled: true,
   gridSpacingMm: 10,
   exportDpi: 600,
+  miniPerfOverlay: false,
 }
 
 function loadSettings(): AppSettings {
@@ -39,6 +42,7 @@ function loadSettings(): AppSettings {
       exportDpi: typeof parsed.exportDpi === 'number' && parsed.exportDpi >= 72 && parsed.exportDpi <= 4800
         ? parsed.exportDpi
         : defaults.exportDpi,
+      miniPerfOverlay: typeof parsed.miniPerfOverlay === 'boolean' ? parsed.miniPerfOverlay : defaults.miniPerfOverlay,
     }
   } catch {
     return { ...defaults }

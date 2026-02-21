@@ -2,8 +2,8 @@
  * cleanup-packages.mjs
  *
  * Cleans up `public/packages/` to follow docs:
- * - `docs/package-canonical-naming-rules.md`
- * - `docs/packages.md`
+ * - content/docs/8.reference/3.package-naming.md
+ * - content/docs/8.reference/2.package-definitions.md
  *
  * What it does:
  * - Merges duplicate definitions that only differ by naming (e.g. `C0603` -> `0603`)

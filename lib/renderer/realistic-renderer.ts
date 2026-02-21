@@ -37,6 +37,9 @@ export interface RealisticRenderOptions {
   side: 'top' | 'bottom'
   /** Override solder paste color (e.g. bright green for dot visibility) */
   pasteColor?: string
+  /** Optional canvas pool functions to avoid per-frame allocations */
+  acquireCanvas?: (w: number, h: number) => HTMLCanvasElement
+  releaseCanvas?: (c: HTMLCanvasElement) => void
 }
 
 /**
@@ -57,202 +60,139 @@ export function renderRealisticView(
   const w = canvas.width
   const h = canvas.height
 
-  // Helper: create an offscreen canvas of the same size
-  function createOffscreen(): HTMLCanvasElement {
-    const c = document.createElement('canvas')
-    c.width = w
-    c.height = h
-    return c
+  const pool = options.acquireCanvas && options.releaseCanvas
+  const acquire = pool
+    ? () => options.acquireCanvas!(w, h)
+    : () => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c }
+  const release = pool
+    ? (c: HTMLCanvasElement) => options.releaseCanvas!(c)
+    : (_c: HTMLCanvasElement) => {}
+
+  // Render the outline mask once and reuse across all passes that need it.
+  let outlineMaskCanvas: HTMLCanvasElement | null = null
+  function getOutlineMask(): HTMLCanvasElement | null {
+    if (outlineMaskCanvas) return outlineMaskCanvas
+    if (!layers.outline) return null
+    outlineMaskCanvas = acquire()
+    renderOutlineMask(layers.outline!, outlineMaskCanvas, { color: '#ffffff', transform, dpr })
+    return outlineMaskCanvas
+  }
+
+  function clipToOutline(target: HTMLCanvasElement) {
+    const mask = getOutlineMask()
+    if (!mask) return
+    const tCtx = target.getContext('2d')!
+    tCtx.globalCompositeOperation = 'destination-in'
+    tCtx.drawImage(mask, 0, 0)
+    tCtx.globalCompositeOperation = 'source-over'
+  }
+
+  // Render solder mask openings once (reused by mask + surface finish steps).
+  let openingsCanvas: HTMLCanvasElement | null = null
+  function getOpenings(): HTMLCanvasElement | null {
+    if (openingsCanvas) return openingsCanvas
+    if (!layers.solderMask) return null
+    openingsCanvas = acquire()
+    renderToCanvas(layers.solderMask!, openingsCanvas, { color: '#ffffff', transform, dpr })
+    return openingsCanvas
   }
 
   // ── 1. Substrate fill (inside outline) ──
   if (layers.outline) {
-    const substrateCanvas = createOffscreen()
-    // Render the outline as a filled mask in the substrate color
-    renderOutlineMask(layers.outline, substrateCanvas, {
-      color: preset.substrate,
-      transform,
-      dpr,
-    })
-    // The outline mask renders white — we need to tint it to substrate color
+    const substrateCanvas = acquire()
+    const mask = getOutlineMask()!
     const subCtx = substrateCanvas.getContext('2d')!
+    subCtx.drawImage(mask, 0, 0)
     subCtx.globalCompositeOperation = 'source-in'
     subCtx.fillStyle = preset.substrate
     subCtx.fillRect(0, 0, w, h)
     subCtx.globalCompositeOperation = 'source-over'
-
     ctx.drawImage(substrateCanvas, 0, 0)
+    release(substrateCanvas)
   }
 
   // ── 2. Copper layer ──
   if (layers.copper) {
-    const copperCanvas = createOffscreen()
-    renderToCanvas(layers.copper, copperCanvas, {
-      color: preset.copper,
-      transform,
-      dpr,
-    })
-
-    // Clip copper to outline if available
-    if (layers.outline) {
-      const maskCanvas = createOffscreen()
-      renderOutlineMask(layers.outline, maskCanvas, { color: '#ffffff', transform, dpr })
-      const copperCtx = copperCanvas.getContext('2d')!
-      copperCtx.globalCompositeOperation = 'destination-in'
-      copperCtx.drawImage(maskCanvas, 0, 0)
-      copperCtx.globalCompositeOperation = 'source-over'
-    }
-
+    const copperCanvas = acquire()
+    renderToCanvas(layers.copper, copperCanvas, { color: preset.copper, transform, dpr })
+    clipToOutline(copperCanvas)
     ctx.drawImage(copperCanvas, 0, 0)
+    release(copperCanvas)
   }
 
   // ── 3. Solder mask ──
-  // The solder mask gerber shows OPENINGS (where mask is removed, i.e. pads).
-  // We need to render the inverse: fill the board area with mask color, then
-  // punch out the pad openings.
   if (layers.outline) {
-    const maskCanvas = createOffscreen()
+    const maskCanvas = acquire()
     const maskCtx = maskCanvas.getContext('2d')!
-
-    // Start with the board outline filled in solder mask color
-    renderOutlineMask(layers.outline, maskCanvas, { color: '#ffffff', transform, dpr })
+    const outlineMask = getOutlineMask()!
+    maskCtx.drawImage(outlineMask, 0, 0)
     maskCtx.globalCompositeOperation = 'source-in'
     maskCtx.fillStyle = preset.solderMask
     maskCtx.fillRect(0, 0, w, h)
     maskCtx.globalCompositeOperation = 'source-over'
 
-    // Punch out the solder mask openings
-    if (layers.solderMask) {
-      const openingsCanvas = createOffscreen()
-      renderToCanvas(layers.solderMask, openingsCanvas, {
-        color: '#ffffff',
-        transform,
-        dpr,
-      })
+    const openings = getOpenings()
+    if (openings) {
       maskCtx.globalCompositeOperation = 'destination-out'
-      maskCtx.drawImage(openingsCanvas, 0, 0)
+      maskCtx.drawImage(openings, 0, 0)
       maskCtx.globalCompositeOperation = 'source-over'
     }
 
-    // Draw the solder mask with opacity
     ctx.globalAlpha = preset.solderMaskOpacity
     ctx.drawImage(maskCanvas, 0, 0)
     ctx.globalAlpha = 1.0
+    release(maskCanvas)
   }
 
   // ── 4. Surface finish on exposed pads ──
-  // Render copper in the surface finish color, then mask to only the
-  // solder mask openings (where pads are exposed).
   if (layers.copper && layers.solderMask) {
-    const finishCanvas = createOffscreen()
-
-    // Render copper in surface finish color
-    renderToCanvas(layers.copper, finishCanvas, {
-      color: preset.surfaceFinish,
-      transform,
-      dpr,
-    })
-
-    // Create a mask from the solder mask openings
-    const openingsCanvas = createOffscreen()
-    renderToCanvas(layers.solderMask, openingsCanvas, {
-      color: '#ffffff',
-      transform,
-      dpr,
-    })
-
-    // Keep only the parts where pads are exposed
+    const finishCanvas = acquire()
+    renderToCanvas(layers.copper, finishCanvas, { color: preset.surfaceFinish, transform, dpr })
+    const openings = getOpenings()!
     const finishCtx = finishCanvas.getContext('2d')!
     finishCtx.globalCompositeOperation = 'destination-in'
-    finishCtx.drawImage(openingsCanvas, 0, 0)
+    finishCtx.drawImage(openings, 0, 0)
     finishCtx.globalCompositeOperation = 'source-over'
-
-    // Also clip to outline
-    if (layers.outline) {
-      const outlineMask = createOffscreen()
-      renderOutlineMask(layers.outline, outlineMask, { color: '#ffffff', transform, dpr })
-      finishCtx.globalCompositeOperation = 'destination-in'
-      finishCtx.drawImage(outlineMask, 0, 0)
-      finishCtx.globalCompositeOperation = 'source-over'
-    }
-
+    clipToOutline(finishCanvas)
     ctx.drawImage(finishCanvas, 0, 0)
+    release(finishCanvas)
   } else if (layers.copper && !layers.solderMask) {
-    // No solder mask data — show all copper in surface finish color
-    const finishCanvas = createOffscreen()
-    renderToCanvas(layers.copper, finishCanvas, {
-      color: preset.surfaceFinish,
-      transform,
-      dpr,
-    })
-    if (layers.outline) {
-      const outlineMask = createOffscreen()
-      renderOutlineMask(layers.outline, outlineMask, { color: '#ffffff', transform, dpr })
-      const finishCtx = finishCanvas.getContext('2d')!
-      finishCtx.globalCompositeOperation = 'destination-in'
-      finishCtx.drawImage(outlineMask, 0, 0)
-      finishCtx.globalCompositeOperation = 'source-over'
-    }
+    const finishCanvas = acquire()
+    renderToCanvas(layers.copper, finishCanvas, { color: preset.surfaceFinish, transform, dpr })
+    clipToOutline(finishCanvas)
     ctx.drawImage(finishCanvas, 0, 0)
+    release(finishCanvas)
   }
 
   // ── 5. Solder paste ──
-  // Paste deposits are rendered as a matte grey on the exposed pads.
   if (layers.paste) {
-    const pasteCanvas = createOffscreen()
-    renderToCanvas(layers.paste, pasteCanvas, {
-      color: options.pasteColor ?? SOLDER_PASTE_COLOR,
-      transform,
-      dpr,
-    })
-
-    // Clip paste to outline
-    if (layers.outline) {
-      const outlineMask = createOffscreen()
-      renderOutlineMask(layers.outline, outlineMask, { color: '#ffffff', transform, dpr })
-      const pasteCtx = pasteCanvas.getContext('2d')!
-      pasteCtx.globalCompositeOperation = 'destination-in'
-      pasteCtx.drawImage(outlineMask, 0, 0)
-      pasteCtx.globalCompositeOperation = 'source-over'
-    }
-
+    const pasteCanvas = acquire()
+    renderToCanvas(layers.paste, pasteCanvas, { color: options.pasteColor ?? SOLDER_PASTE_COLOR, transform, dpr })
+    clipToOutline(pasteCanvas)
     ctx.drawImage(pasteCanvas, 0, 0)
+    release(pasteCanvas)
   }
 
   // ── 6. Silkscreen ──
   if (layers.silkscreen) {
-    const silkCanvas = createOffscreen()
-    renderToCanvas(layers.silkscreen, silkCanvas, {
-      color: preset.silkscreen,
-      transform,
-      dpr,
-    })
-
-    // Clip silkscreen to outline
-    if (layers.outline) {
-      const outlineMask = createOffscreen()
-      renderOutlineMask(layers.outline, outlineMask, { color: '#ffffff', transform, dpr })
-      const silkCtx = silkCanvas.getContext('2d')!
-      silkCtx.globalCompositeOperation = 'destination-in'
-      silkCtx.drawImage(outlineMask, 0, 0)
-      silkCtx.globalCompositeOperation = 'source-over'
-    }
-
+    const silkCanvas = acquire()
+    renderToCanvas(layers.silkscreen, silkCanvas, { color: preset.silkscreen, transform, dpr })
+    clipToOutline(silkCanvas)
     ctx.drawImage(silkCanvas, 0, 0)
+    release(silkCanvas)
   }
 
   // ── 7. Drill holes ──
-  // Punch through everything — drill holes are transparent (show background)
   if (layers.drill) {
-    const drillCanvas = createOffscreen()
-    renderToCanvas(layers.drill, drillCanvas, {
-      color: '#ffffff',
-      transform,
-      dpr,
-    })
-
+    const drillCanvas = acquire()
+    renderToCanvas(layers.drill, drillCanvas, { color: '#ffffff', transform, dpr })
     ctx.globalCompositeOperation = 'destination-out'
     ctx.drawImage(drillCanvas, 0, 0)
     ctx.globalCompositeOperation = 'source-over'
+    release(drillCanvas)
   }
+
+  // Release cached intermediates
+  if (openingsCanvas) release(openingsCanvas)
+  if (outlineMaskCanvas) release(outlineMaskCanvas)
 }

@@ -112,7 +112,7 @@
 
 <script setup lang="ts">
 import type { LayerInfo } from '~/utils/gerber-helpers'
-import { ALL_LAYER_TYPES, isNonRenderableLayer } from '~/utils/gerber-helpers'
+import { ALL_LAYER_TYPES, SINGLETON_LAYER_TYPES, isNonRenderableLayer } from '~/utils/gerber-helpers'
 
 /**
  * Predefined colors chosen to be vibrant and legible on a black background.
@@ -131,6 +131,7 @@ const PRESET_COLORS = [
 const props = defineProps<{
   layer: LayerInfo
   isEdited?: boolean
+  usedSingletonTypes?: ReadonlySet<string>
 }>()
 
 const emit = defineEmits<{
@@ -200,7 +201,15 @@ const menuGroups = computed(() => {
 // ── Color picker ──
 
 const localColor = ref(props.layer.color)
-const layerTypeItems = ALL_LAYER_TYPES.map((t) => ({ label: t, value: t }))
+const layerTypeItems = computed(() =>
+  ALL_LAYER_TYPES
+    .filter(t =>
+      !SINGLETON_LAYER_TYPES.has(t)
+      || t === props.layer.type
+      || !props.usedSingletonTypes?.has(t),
+    )
+    .map(t => ({ label: t, value: t })),
+)
 
 watch(() => props.layer.color, (val) => {
   localColor.value = val

@@ -19,6 +19,8 @@ export function useCanvasInteraction() {
   const isDragging = ref(false)
   let lastX = 0
   let lastY = 0
+  let moveRafId = 0
+  let queuedMove: { x: number; y: number; options?: MouseMoveOptions } | null = null
 
   function resetView() {
     // Set to a sentinel that BoardCanvas/GerberCanvas will detect and auto-fit
@@ -119,17 +121,16 @@ export function useCanvasInteraction() {
       isDragging.value = true
       lastX = e.clientX
       lastY = e.clientY
+      queuedMove = null
     }
   }
 
-  function handleMouseMove(e: MouseEvent, options?: MouseMoveOptions) {
-    if (!isDragging.value) return
-    let dx = e.clientX - lastX
-    let dy = e.clientY - lastY
-    lastX = e.clientX
-    lastY = e.clientY
+  function applyQueuedMove(x: number, y: number, options?: MouseMoveOptions) {
+    let dx = x - lastX
+    let dy = y - lastY
+    lastX = x
+    lastY = y
 
-    // Un-rotate the pan delta so dragging follows the cursor in a rotated view
     if (options?.rotationDeg) {
       const r = unrotateDelta(dx, dy, options.rotationDeg)
       dx = r.dx
@@ -144,7 +145,28 @@ export function useCanvasInteraction() {
     }
   }
 
+  function handleMouseMove(e: MouseEvent, options?: MouseMoveOptions) {
+    if (!isDragging.value) return
+    queuedMove = { x: e.clientX, y: e.clientY, options }
+    if (moveRafId) return
+    moveRafId = requestAnimationFrame(() => {
+      moveRafId = 0
+      const move = queuedMove
+      queuedMove = null
+      if (!move || !isDragging.value) return
+      applyQueuedMove(move.x, move.y, move.options)
+    })
+  }
+
   function handleMouseUp() {
+    if (moveRafId) {
+      cancelAnimationFrame(moveRafId)
+      moveRafId = 0
+    }
+    if (queuedMove && isDragging.value) {
+      applyQueuedMove(queuedMove.x, queuedMove.y, queuedMove.options)
+    }
+    queuedMove = null
     isDragging.value = false
   }
 

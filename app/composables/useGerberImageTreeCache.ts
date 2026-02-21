@@ -26,6 +26,8 @@ interface WorkerResultErr {
 
 const imageTreeCache = new Map<string, ImageTree>()
 const prewarmPromises = new Map<string, Promise<ImageTree | null>>()
+const MAX_IMAGE_TREE_CACHE_SIZE = 64
+const WORKER_REQUEST_TIMEOUT_MS = 30000
 
 let worker: Worker | null = null
 let workerReqId = 0
@@ -42,6 +44,16 @@ function ensureWorker(): Worker | null {
     resolver(event.data)
   }
   return worker
+}
+
+function setCachedTree(key: string, tree: ImageTree) {
+  if (imageTreeCache.has(key)) imageTreeCache.delete(key)
+  imageTreeCache.set(key, tree)
+  while (imageTreeCache.size > MAX_IMAGE_TREE_CACHE_SIZE) {
+    const oldestKey = imageTreeCache.keys().next().value
+    if (oldestKey === undefined) break
+    imageTreeCache.delete(oldestKey)
+  }
 }
 
 function cacheKeyForLayer(layer: LayerLike): string {
@@ -75,16 +87,46 @@ async function parseInWorker(layer: LayerLike, key: string): Promise<ImageTree |
   }
   const id = ++workerReqId
   return await new Promise<ImageTree | null>((resolve) => {
+    const timeoutId = setTimeout(() => {
+      workerResolvers.delete(id)
+      resolve(null)
+    }, WORKER_REQUEST_TIMEOUT_MS)
     workerResolvers.set(id, (result) => {
+      clearTimeout(timeoutId)
       if (!result.ok) return resolve(null)
       resolve(result.tree)
     })
-    activeWorker.postMessage({
-      id,
-      key,
-      content: layer.file.content,
-    })
+    try {
+      activeWorker.postMessage({
+        id,
+        key,
+        content: layer.file.content,
+      })
+    } catch {
+      clearTimeout(timeoutId)
+      workerResolvers.delete(id)
+      resolve(null)
+    }
   })
+}
+
+function resetWorker() {
+  if (worker) {
+    worker.terminate()
+    worker = null
+  }
+  if (workerResolvers.size > 0) {
+    const pending = Array.from(workerResolvers.values())
+    workerResolvers.clear()
+    for (const resolvePending of pending) {
+      resolvePending({
+        id: -1,
+        key: '',
+        ok: false,
+        error: 'worker reset',
+      })
+    }
+  }
 }
 
 export function useGerberImageTreeCache() {
@@ -99,7 +141,7 @@ export function useGerberImageTreeCache() {
     if (cached) return cached
     try {
       const tree = parseSync(layer)
-      imageTreeCache.set(key, tree)
+      setCachedTree(key, tree)
       return tree
     } catch {
       return null
@@ -114,7 +156,7 @@ export function useGerberImageTreeCache() {
 
     const task = (async () => {
       const tree = await parseInWorker(layer, key)
-      if (tree) imageTreeCache.set(key, tree)
+      if (tree) setCachedTree(key, tree)
       return tree
     })()
     prewarmPromises.set(key, task)
@@ -144,6 +186,7 @@ export function useGerberImageTreeCache() {
   function clearAll() {
     imageTreeCache.clear()
     prewarmPromises.clear()
+    resetWorker()
   }
 
   return {
@@ -155,5 +198,6 @@ export function useGerberImageTreeCache() {
     clearByFileName,
     clearAll,
     getCacheSize: () => imageTreeCache.size,
+    resetWorker,
   }
 }
