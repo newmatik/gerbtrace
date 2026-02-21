@@ -13,12 +13,19 @@
             size="sm"
             :disabled="props.locked"
             placeholder="(no description)"
-            :class="fieldClass('description')"
+            :ui="fieldInputUi('description')"
             class="flex-1 min-w-0 [&_input]:text-sm [&_input]:font-semibold"
             @update:model-value="(v) => emitUpdate({ description: String(v ?? '') })"
           />
           <div class="flex items-center gap-2 shrink-0 pt-1">
-            <UBadge v-if="isLineChanged" size="xs" variant="subtle" color="warning">Edited</UBadge>
+            <span
+              v-if="isLineChanged"
+              class="text-[9px] px-1.5 py-0.5 rounded-full border shrink-0"
+              :class="editedBadgeClass"
+              title="This line differs from the original customer BOM"
+            >
+              Edited
+            </span>
             <UBadge v-if="line.dnp" size="xs" variant="subtle" color="error">DNP</UBadge>
             <UButton size="xs" color="error" variant="ghost" icon="i-lucide-trash-2" title="Delete BOM line" :disabled="props.locked" @click="emit('removeLine', line.id)" />
           </div>
@@ -72,7 +79,7 @@
               :model-value="line.comment"
               size="sm"
               placeholder="(optional)"
-              :class="fieldClass('comment')"
+              :ui="fieldInputUi('comment')"
               class="w-full"
               @update:model-value="(v) => emitUpdate({ comment: String(v ?? '') })"
             />
@@ -198,7 +205,7 @@
               :model-value="line.package"
               size="sm"
               placeholder="e.g. 0603"
-              :class="fieldClass('package')"
+              :ui="fieldInputUi('package')"
               @update:model-value="(v) => emitUpdate({ package: String(v ?? '') })"
             />
           </div>
@@ -241,7 +248,7 @@
               size="sm"
               type="number"
               min="0"
-              :class="fieldClass('quantity')"
+              :ui="fieldInputUi('quantity')"
               @update:model-value="(v) => emitUpdate({ quantity: Math.max(0, Number(v ?? 0) || 0) })"
             />
           </div>
@@ -251,7 +258,7 @@
               :model-value="line.customerItemNo"
               size="sm"
               placeholder="(optional)"
-              :class="fieldClass('customerItemNo')"
+              :ui="fieldInputUi('customerItemNo')"
               @update:model-value="(v) => emitUpdate({ customerItemNo: String(v ?? '') })"
             />
           </div>
@@ -320,7 +327,7 @@
             class="rounded border p-2 space-y-1.5"
             :class="[
               isManufacturerNew(mfr)
-                ? 'border-amber-300/70 bg-amber-50/30 dark:border-amber-700/40 dark:bg-amber-900/10'
+                ? editedCardClass
                 : 'border-neutral-100 dark:border-neutral-800',
               { 'opacity-60': line.dnp },
             ]"
@@ -681,23 +688,30 @@ function emitUpdate(updates: Partial<BomLine>) {
 }
 
 type FieldKey = 'description' | 'comment' | 'package' | 'references' | 'customerItemNo' | 'quantity'
-function fieldClass(key: FieldKey) {
+function isFieldChanged(key: FieldKey): boolean {
   const line = props.line
   const base = baselineLine.value
-  if (!line) return ''
-  if (!base) return 'ring-1 ring-amber-400/40'
-  const changed = (() => {
-    switch (key) {
-      case 'description': return String(line.description ?? '').trim() !== String(base.description ?? '').trim()
-      case 'comment': return String(line.comment ?? '').trim() !== String(base.comment ?? '').trim()
-      case 'package': return String(line.package ?? '').trim() !== String(base.package ?? '').trim()
-      case 'references': return refsKey(line.references) !== refsKey(base.references)
-      case 'customerItemNo': return String(line.customerItemNo ?? '').trim() !== String(base.customerItemNo ?? '').trim()
-      case 'quantity': return Number(line.quantity ?? 0) !== Number(base.quantity ?? 0)
-    }
-  })()
-  return changed ? 'ring-1 ring-amber-400/40 bg-amber-50/40 dark:bg-amber-900/10' : ''
+  if (!line) return false
+  if (!base) return true
+  switch (key) {
+    case 'description': return String(line.description ?? '').trim() !== String(base.description ?? '').trim()
+    case 'comment': return String(line.comment ?? '').trim() !== String(base.comment ?? '').trim()
+    case 'package': return String(line.package ?? '').trim() !== String(base.package ?? '').trim()
+    case 'references': return refsKey(line.references) !== refsKey(base.references)
+    case 'customerItemNo': return String(line.customerItemNo ?? '').trim() !== String(base.customerItemNo ?? '').trim()
+    case 'quantity': return Number(line.quantity ?? 0) !== Number(base.quantity ?? 0)
+  }
 }
+function fieldClass(key: FieldKey) {
+  return isFieldChanged(key) ? editedCardClass : ''
+}
+function fieldInputUi(key: FieldKey) {
+  return isFieldChanged(key) ? editedInputUi : undefined
+}
+
+const editedCardClass = 'border-amber-300/70 dark:border-amber-700/40 bg-amber-50/30 dark:bg-amber-900/10'
+const editedInputUi = { base: 'ring-amber-300/70 dark:ring-amber-700/40 bg-amber-50/30 dark:bg-amber-900/10' }
+const editedBadgeClass = 'border-yellow-300/70 dark:border-yellow-700/50 text-yellow-700 dark:text-yellow-300 bg-yellow-50/70 dark:bg-yellow-900/20'
 
 const baselineManufacturerKeys = computed(() => {
   const base = baselineLine.value
@@ -958,3 +972,4 @@ function confirmInlineAdd() {
   cancelInlineAdd()
 }
 </script>
+

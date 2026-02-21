@@ -25,24 +25,74 @@ export interface TeamInvitation {
   created_at: string
 }
 
+const TEAM_MEMBERS_CACHE_TTL_MS = 180_000
+const inFlightByTeam = new Map<string, Promise<{ members: TeamMember[]; invitations: TeamInvitation[] }>>()
+
 export function useTeamMembers() {
   const supabase = useSupabase()
   const { currentTeamId } = useTeam()
+  const { isAuthenticated } = useAuth()
 
-  const members = ref<TeamMember[]>([])
-  const invitations = ref<TeamInvitation[]>([])
-  const membersLoading = ref(false)
+  const members = useState<TeamMember[]>('team-members:list', () => [])
+  const invitations = useState<TeamInvitation[]>('team-members:invitations', () => [])
+  const membersLoading = useState<boolean>('team-members:loading', () => false)
+  const membersByTeam = useState<Record<string, TeamMember[]>>('team-members:by-team', () => ({}))
+  const invitationsByTeam = useState<Record<string, TeamInvitation[]>>('team-members:invitations-by-team', () => ({}))
+  const fetchedAtByTeam = useState<Record<string, number>>('team-members:fetched-at', () => ({}))
+
+  function setTeamData(teamId: string, nextMembers: TeamMember[], nextInvitations: TeamInvitation[]) {
+    membersByTeam.value = {
+      ...membersByTeam.value,
+      [teamId]: nextMembers,
+    }
+    invitationsByTeam.value = {
+      ...invitationsByTeam.value,
+      [teamId]: nextInvitations,
+    }
+    fetchedAtByTeam.value = {
+      ...fetchedAtByTeam.value,
+      [teamId]: Date.now(),
+    }
+    if (currentTeamId.value === teamId) {
+      members.value = nextMembers
+      invitations.value = nextInvitations
+    }
+  }
 
   /** Fetch members and pending invitations for the current team */
-  async function fetchMembers() {
-    if (!currentTeamId.value) {
+  async function fetchMembers(options?: { force?: boolean; background?: boolean }) {
+    const teamId = currentTeamId.value
+    if (!teamId) {
       members.value = []
       invitations.value = []
       return
     }
 
-    membersLoading.value = true
-    try {
+    const cachedMembers = membersByTeam.value[teamId]
+    const cachedInvitations = invitationsByTeam.value[teamId]
+    const fetchedAt = fetchedAtByTeam.value[teamId] ?? 0
+    const hasCached = Array.isArray(cachedMembers) && Array.isArray(cachedInvitations)
+    const isFresh = Date.now() - fetchedAt < TEAM_MEMBERS_CACHE_TTL_MS
+
+    if (!options?.force && hasCached && isFresh) {
+      if (currentTeamId.value === teamId) {
+        members.value = cachedMembers
+        invitations.value = cachedInvitations
+      }
+      return
+    }
+
+    const inFlight = inFlightByTeam.get(teamId)
+    if (inFlight) {
+      await inFlight
+      return
+    }
+
+    if (!options?.background || !hasCached) {
+      membersLoading.value = true
+    }
+
+    const request = (async () => {
       // Fetch members with profile info
       const { data: memberData, error: memError } = await supabase
         .from('team_members')
@@ -50,20 +100,23 @@ export function useTeamMembers() {
           id, team_id, user_id, role, status, created_at,
           profile:profiles(id, email, name, avatar_url, created_at, updated_at)
         `)
-        .eq('team_id', currentTeamId.value)
+        .eq('team_id', teamId)
         .order('created_at', { ascending: true })
 
+      let nextMembers: TeamMember[] = hasCached ? [...(cachedMembers ?? [])] : []
       if (memError) {
         console.warn('[useTeamMembers] Failed to fetch members:', memError.message)
       } else {
-        members.value = (memberData ?? []) as unknown as TeamMember[]
+        nextMembers = (memberData ?? []) as unknown as TeamMember[]
       }
+
+      let nextInvitations: TeamInvitation[] = hasCached ? [...(cachedInvitations ?? [])] : []
 
       // Fetch pending invitations
       const { data: invData, error: invError } = await supabase
         .from('team_invitations')
         .select('*')
-        .eq('team_id', currentTeamId.value)
+        .eq('team_id', teamId)
         .is('accepted_at', null)
         .gt('expires_at', new Date().toISOString())
         .order('created_at', { ascending: false })
@@ -71,10 +124,25 @@ export function useTeamMembers() {
       if (invError) {
         console.warn('[useTeamMembers] Failed to fetch invitations:', invError.message)
       } else {
-        invitations.value = (invData ?? []) as TeamInvitation[]
+        nextInvitations = (invData ?? []) as TeamInvitation[]
       }
+
+      setTeamData(teamId, nextMembers, nextInvitations)
+      return {
+        members: nextMembers,
+        invitations: nextInvitations,
+      }
+    })()
+
+    inFlightByTeam.set(teamId, request)
+
+    try {
+      await request
     } finally {
-      membersLoading.value = false
+      inFlightByTeam.delete(teamId)
+      if (currentTeamId.value === teamId) {
+        membersLoading.value = false
+      }
     }
   }
 
@@ -111,7 +179,7 @@ export function useTeamMembers() {
     }
 
     // Refresh the list
-    await fetchMembers()
+    await fetchMembers({ force: true })
     return { data: invitation, error: null }
   }
 
@@ -124,7 +192,12 @@ export function useTeamMembers() {
 
     if (!error) {
       const member = members.value.find(m => m.id === memberId)
-      if (member) member.role = newRole
+      if (member) {
+        member.role = newRole
+        if (currentTeamId.value) {
+          setTeamData(currentTeamId.value, [...members.value], [...invitations.value])
+        }
+      }
     }
 
     return { error }
@@ -143,6 +216,9 @@ export function useTeamMembers() {
 
     if (!error) {
       member.status = newStatus
+      if (currentTeamId.value) {
+        setTeamData(currentTeamId.value, [...members.value], [...invitations.value])
+      }
     }
 
     return { error }
@@ -157,6 +233,9 @@ export function useTeamMembers() {
 
     if (!error) {
       members.value = members.value.filter(m => m.id !== memberId)
+      if (currentTeamId.value) {
+        setTeamData(currentTeamId.value, [...members.value], [...invitations.value])
+      }
     }
 
     return { error }
@@ -171,6 +250,9 @@ export function useTeamMembers() {
 
     if (!error) {
       invitations.value = invitations.value.filter(i => i.id !== invitationId)
+      if (currentTeamId.value) {
+        setTeamData(currentTeamId.value, [...members.value], [...invitations.value])
+      }
     }
 
     return { error }
@@ -190,6 +272,9 @@ export function useTeamMembers() {
       const member = members.value.find(m => m.user_id === userId)
       if (member?.profile) {
         (member.profile as UserProfile).name = name.trim()
+        if (currentTeamId.value) {
+          setTeamData(currentTeamId.value, [...members.value], [...invitations.value])
+        }
       }
     }
 
@@ -256,7 +341,21 @@ export function useTeamMembers() {
       return
     }
 
-    await fetchMembers()
+    const cachedMembers = membersByTeam.value[teamId]
+    const cachedInvitations = invitationsByTeam.value[teamId]
+    const fetchedAt = fetchedAtByTeam.value[teamId] ?? 0
+    const hasCached = Array.isArray(cachedMembers) && Array.isArray(cachedInvitations)
+    const isFresh = Date.now() - fetchedAt < TEAM_MEMBERS_CACHE_TTL_MS
+
+    if (hasCached) {
+      members.value = cachedMembers
+      invitations.value = cachedInvitations
+      if (!isFresh) {
+        void fetchMembers({ background: true })
+      }
+    } else {
+      await fetchMembers()
+    }
 
     const channel = supabase.channel(`team-members:${teamId}`)
       .on('postgres_changes', {
@@ -265,7 +364,7 @@ export function useTeamMembers() {
         table: 'team_members',
         filter: `team_id=eq.${teamId}`,
       }, () => {
-        fetchMembers()
+        void fetchMembers({ force: true, background: true })
       })
       .on('postgres_changes', {
         event: '*',
@@ -273,7 +372,7 @@ export function useTeamMembers() {
         table: 'team_invitations',
         filter: `team_id=eq.${teamId}`,
       }, () => {
-        fetchMembers()
+        void fetchMembers({ force: true, background: true })
       })
 
     await channel.subscribe((status) => {
@@ -288,6 +387,17 @@ export function useTeamMembers() {
       supabase.removeChannel(channel)
     })
   }, { immediate: true })
+
+  watch(isAuthenticated, (authed) => {
+    if (!authed) {
+      inFlightByTeam.clear()
+      members.value = []
+      invitations.value = []
+      membersByTeam.value = {}
+      invitationsByTeam.value = {}
+      fetchedAtByTeam.value = {}
+    }
+  })
 
   return {
     members: readonly(members),

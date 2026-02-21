@@ -97,11 +97,11 @@
           <UButton
             size="sm"
             color="primary"
-            icon="i-lucide-download"
+            icon="i-lucide-file-output"
             :disabled="selectedCount === 0 || props.layers.length === 0"
             @click="handleExport"
           >
-            Download
+            Export
           </UButton>
         </div>
       </div>

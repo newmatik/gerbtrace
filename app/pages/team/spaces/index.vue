@@ -146,6 +146,6 @@ async function handleCreateSpace() {
 }
 
 onMounted(async () => {
-  await fetchSpaces()
+  await fetchSpaces({ background: true })
 })
 </script>

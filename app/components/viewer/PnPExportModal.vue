@@ -116,19 +116,19 @@
             ({{ dnpCount }} marked DNP)
           </span>
           <template v-if="willZip">
-            — will download as ZIP
+            — will export as ZIP
           </template>
         </div>
 
-        <!-- Download button -->
+        <!-- Export button -->
         <div class="flex justify-end pt-1">
           <UButton
             size="sm"
             color="primary"
-            icon="i-lucide-download"
+            icon="i-lucide-file-output"
             @click="handleExport"
           >
-            Download
+            Export
           </UButton>
         </div>
       </div>

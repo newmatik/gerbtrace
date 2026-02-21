@@ -8,6 +8,8 @@ definePageMeta({
 
 const route = useRoute()
 const navigation = inject<Ref<ContentNavigationItem[]>>('navigation')
+const DOCS_RESOLVE_RETRIES = 5
+const DOCS_RESOLVE_RETRY_DELAY_MS = 150
 
 async function loadDoc(path: string) {
   const trimmed = path.replace(/\/+$/, '')
@@ -16,12 +18,14 @@ async function loadDoc(path: string) {
   const stemWithDocs = `docs/${stem}`
   const candidates = Array.from(new Set([
     trimmed || '/docs',
+    '/docs/',
     path,
     stripped,
     trimmed === '/docs' ? '/docs/index' : trimmed,
     stripped === '/index' ? '/' : stripped,
     stem,
     stemWithDocs,
+    `/${stemWithDocs}`,
   ]))
 
   for (const candidate of candidates) {
@@ -34,7 +38,18 @@ async function loadDoc(path: string) {
   return null
 }
 
-const { data: page } = await useAsyncData(route.path, () => loadDoc(route.path))
+async function loadDocWithRetry(path: string) {
+  for (let attempt = 0; attempt < DOCS_RESOLVE_RETRIES; attempt++) {
+    const doc = await loadDoc(path)
+    if (doc) return doc
+    if (attempt < DOCS_RESOLVE_RETRIES - 1) {
+      await new Promise(resolve => setTimeout(resolve, DOCS_RESOLVE_RETRY_DELAY_MS))
+    }
+  }
+  return null
+}
+
+const { data: page } = await useAsyncData(route.path, () => loadDocWithRetry(route.path))
 if (!page.value) {
   throw createError({ statusCode: 404, statusMessage: 'Page not found', fatal: true })
 }
@@ -47,8 +62,8 @@ const { data: surround } = await useAsyncData(`${route.path}-surround`, () => {
   })
 })
 
-const title = page.value.seo?.title || page.value.title
-const description = page.value.seo?.description || page.value.description
+const title = computed(() => page.value?.seo?.title || page.value?.title || 'Gerbtrace Docs')
+const description = computed(() => page.value?.seo?.description || page.value?.description || 'Gerbtrace documentation')
 
 useSeoMeta({
   title,

@@ -35,8 +35,25 @@
             </div>
 
             <template v-else-if="selectedSpace">
+              <!-- Header: inline-editable name + delete -->
               <div class="flex items-center justify-between gap-3">
-                <h2 class="text-lg font-semibold truncate">{{ selectedSpace.name }}</h2>
+                <div class="flex items-center gap-2 min-w-0">
+                  <input
+                    v-if="isAdmin"
+                    ref="nameInputRef"
+                    v-model="spaceName"
+                    maxlength="15"
+                    class="text-lg font-semibold bg-transparent border-b border-transparent hover:border-neutral-300 dark:hover:border-neutral-600 focus:border-primary focus:outline-none truncate transition-colors py-0.5 w-full max-w-[240px]"
+                    @blur="saveNameIfChanged"
+                    @keydown.enter="($event.target as HTMLInputElement).blur()"
+                  />
+                  <h2 v-else class="text-lg font-semibold truncate">{{ selectedSpace.name }}</h2>
+                  <UIcon
+                    v-if="isAdmin && savingName"
+                    name="i-lucide-loader-2"
+                    class="text-sm text-neutral-400 animate-spin shrink-0"
+                  />
+                </div>
                 <UButton
                   v-if="isAdmin"
                   size="xs"
@@ -49,28 +66,23 @@
                 </UButton>
               </div>
 
-              <div v-if="isAdmin" class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-4 space-y-3">
-                <h3 class="text-sm font-semibold">Space Settings</h3>
-                <UFormField label="Space Name">
-                  <UInput
-                    v-model="spaceName"
-                    maxlength="15"
-                    :disabled="savingName"
-                    placeholder="Space name"
-                  />
-                </UFormField>
-                <div class="flex justify-end">
-                  <UButton
-                    size="sm"
-                    :loading="savingName"
-                    :disabled="!canSaveName"
-                    @click="handleSaveSpaceName"
-                  >
-                    Save Name
-                  </UButton>
-                </div>
+              <!-- Description -->
+              <div>
+                <textarea
+                  v-if="isAdmin"
+                  v-model="spaceDescription"
+                  rows="2"
+                  maxlength="500"
+                  placeholder="Add a description for this space..."
+                  class="w-full text-sm bg-transparent border border-neutral-200 dark:border-neutral-800 rounded-md px-3 py-2 placeholder-neutral-400 focus:border-primary focus:outline-none resize-none transition-colors"
+                  @blur="saveDescriptionIfChanged"
+                />
+                <p v-else-if="selectedSpace.description" class="text-sm text-neutral-500">
+                  {{ selectedSpace.description }}
+                </p>
               </div>
 
+              <!-- Members -->
               <div class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-4 space-y-3">
                 <h3 class="text-sm font-semibold">Members</h3>
                 <div class="space-y-2">
@@ -96,6 +108,7 @@
                 </div>
               </div>
 
+              <!-- Invite Guest -->
               <div v-if="isAdmin" class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-4 space-y-3">
                 <h3 class="text-sm font-semibold">Invite Guest</h3>
                 <div class="flex gap-2">
@@ -164,18 +177,14 @@ const selectedSpaceId = computed(() => String(route.params.spaceId || ''))
 const selectedSpace = computed(() => spaces.value.find(space => space.id === selectedSpaceId.value) ?? null)
 const spaceReady = ref(false)
 const spaceName = ref('')
+const spaceDescription = ref('')
 const savingName = ref(false)
 const guestInviteEmail = ref('')
+const nameInputRef = ref<HTMLInputElement | null>(null)
 
 const pendingInvitations = computed(() => {
   if (!selectedSpaceId.value) return []
   return invitationsBySpaceId.value[selectedSpaceId.value] ?? []
-})
-
-const canSaveName = computed(() => {
-  if (!selectedSpace.value || !isAdmin.value) return false
-  const nextName = spaceName.value.trim()
-  return nextName.length > 0 && nextName.length <= 15 && nextName !== selectedSpace.value.name
 })
 
 function formatDate(value: string) {
@@ -196,19 +205,32 @@ async function toggleMemberInSpace(userId: string) {
   }
 }
 
-async function handleSaveSpaceName() {
-  if (!selectedSpace.value || !canSaveName.value) return
+async function saveNameIfChanged() {
+  if (!selectedSpace.value || !isAdmin.value) return
+  const next = spaceName.value.trim()
+  if (!next || next.length > 15 || next === selectedSpace.value.name) {
+    spaceName.value = selectedSpace.value.name
+    return
+  }
   savingName.value = true
   try {
-    const { error } = await updateSpace(selectedSpace.value.id, spaceName.value)
+    const { error } = await updateSpace(selectedSpace.value.id, { name: next })
     if (error) {
-      reportError(error, { title: 'Failed to update space', context: 'team.space.update' })
-      return
+      reportError(error, { title: 'Failed to rename space', context: 'team.space.rename' })
+      spaceName.value = selectedSpace.value.name
     }
-    spaceName.value = spaceName.value.trim()
-    useToast().add({ title: 'Space updated', color: 'success' })
   } finally {
     savingName.value = false
+  }
+}
+
+async function saveDescriptionIfChanged() {
+  if (!selectedSpace.value || !isAdmin.value) return
+  if (spaceDescription.value === selectedSpace.value.description) return
+  const { error } = await updateSpace(selectedSpace.value.id, { description: spaceDescription.value })
+  if (error) {
+    reportError(error, { title: 'Failed to update description', context: 'team.space.description' })
+    spaceDescription.value = selectedSpace.value.description
   }
 }
 
@@ -240,7 +262,12 @@ async function handleDeleteSpace() {
 
 async function loadSpacePage() {
   spaceReady.value = false
-  await Promise.all([fetchSpaces(), fetchMembers()])
+  const preloadJobs: Promise<unknown>[] = []
+  if (spaces.value.length === 0) preloadJobs.push(fetchSpaces())
+  else preloadJobs.push(fetchSpaces({ background: true }))
+  if (members.value.length === 0) preloadJobs.push(fetchMembers())
+  else preloadJobs.push(fetchMembers({ background: true }))
+  await Promise.all(preloadJobs)
 
   if (!selectedSpace.value) {
     useToast().add({ title: 'Space not found', color: 'warning' })
@@ -249,18 +276,17 @@ async function loadSpacePage() {
   }
 
   spaceName.value = selectedSpace.value.name
-  await fetchSpaceMembers(selectedSpace.value.id)
-  if (isAdmin.value) {
+  spaceDescription.value = selectedSpace.value.description ?? ''
+  if (!membersBySpaceId.value[selectedSpace.value.id]) {
+    await fetchSpaceMembers(selectedSpace.value.id)
+  }
+  if (isAdmin.value && !invitationsBySpaceId.value[selectedSpace.value.id]) {
     await fetchSpaceInvitations(selectedSpace.value.id)
   }
   spaceReady.value = true
 }
 
 watch(selectedSpaceId, () => {
-  loadSpacePage()
-})
-
-onMounted(async () => {
-  await loadSpacePage()
-})
+  void loadSpacePage()
+}, { immediate: true })
 </script>

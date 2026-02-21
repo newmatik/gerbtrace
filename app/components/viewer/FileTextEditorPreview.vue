@@ -80,8 +80,7 @@
             <div
               v-for="lineNo in lineCount"
               :key="lineNo"
-              class="h-[1.375rem] px-2 min-w-[3.5rem] text-right text-[11px] leading-[1.375rem] tabular-nums"
-              :class="changedLineSet.has(lineNo) ? 'text-amber-600 dark:text-amber-400 bg-amber-200/70 dark:bg-amber-500/20' : 'text-neutral-400'"
+              class="h-[1.375rem] px-2 min-w-[3.5rem] text-right text-[11px] leading-[1.375rem] tabular-nums text-neutral-400"
             >
               {{ lineNo }}
             </div>
@@ -110,7 +109,6 @@
           <tr
             v-for="(line, idx) in currentLines"
             :key="`t-${idx}`"
-            :class="{ 'bg-amber-200/70 dark:bg-amber-500/20': changedLineSet.has(idx + 1) }"
           >
             <td class="w-14 px-2 align-top text-right border-r border-neutral-200 dark:border-neutral-800 text-neutral-500 tabular-nums select-none">
               {{ idx + 1 }}

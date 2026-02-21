@@ -164,7 +164,7 @@
                 class="group relative flex rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:border-primary-500/50 hover:ring-1 hover:ring-primary-500/50 transition-all cursor-pointer shadow-sm overflow-hidden"
                 @click="openTeamProject(project)"
               >
-                <div class="w-28 h-24 shrink-0 bg-gray-100 dark:bg-gray-800 flex items-center justify-center p-1.5">
+                <div class="w-32 shrink-0 bg-gray-100 dark:bg-gray-800 flex items-center justify-center p-1.5">
                   <img
                     v-if="teamPreviewUrls[project.id]"
                     :src="teamPreviewUrls[project.id]"
@@ -365,7 +365,7 @@
                 class="group relative flex rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-600 transition-all cursor-pointer shadow-sm overflow-hidden"
                 @click="openProject(project)"
               >
-                <div class="w-28 h-24 shrink-0 bg-gray-100 dark:bg-gray-800 flex items-center justify-center p-1.5">
+                <div class="w-32 shrink-0 bg-gray-100 dark:bg-gray-800 flex items-center justify-center p-1.5">
                   <img
                     v-if="project.id && localPreviewUrls[project.id]"
                     :src="localPreviewUrls[project.id]"
@@ -817,16 +817,16 @@ function resolveProjectSpaceValue(spaceId: string | null) {
 }
 
 function teamProjectStatusLabel(status: 'draft' | 'in_progress' | 'for_approval' | 'approved') {
-  if (status === 'in_progress') return 'In Progress'
+  if (status === 'in_progress') return 'Progress'
   if (status === 'for_approval') return 'For Approval'
   if (status === 'approved') return 'Approved'
   return 'Draft'
 }
 
 function teamProjectStatusIcon(status: 'draft' | 'in_progress' | 'for_approval' | 'approved') {
-  if (status === 'in_progress') return 'i-lucide-play'
-  if (status === 'for_approval') return 'i-lucide-hourglass'
-  if (status === 'approved') return 'i-lucide-lock'
+  if (status === 'in_progress') return 'i-lucide-circle-dot'
+  if (status === 'for_approval') return 'i-lucide-clipboard-check'
+  if (status === 'approved') return 'i-lucide-check'
   return 'i-lucide-file-pen'
 }
 
@@ -956,7 +956,7 @@ function formatTeamProjectTimestamp(date: Date | string): string {
 }
 
 onMounted(async () => {
-  await fetchSpaces()
+  await fetchSpaces({ background: true })
   const firstSpace = defaultSpace.value
   if (firstSpace) newProjectSpaceId.value = firstSpace.id
 })
