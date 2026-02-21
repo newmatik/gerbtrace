@@ -253,6 +253,6 @@ watch(() => profile.value?.name, (next) => {
 }, { immediate: true })
 
 onMounted(() => {
-  fetchSpaces()
+  fetchSpaces({ background: true })
 })
 </script>

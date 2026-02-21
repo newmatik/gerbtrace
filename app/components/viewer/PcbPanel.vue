@@ -210,13 +210,6 @@
             />
           </div>
 
-          <!-- Board Area (computed) -->
-          <div class="space-y-0.5">
-            <label class="text-[10px] text-neutral-400">Board Area</label>
-            <div class="text-xs tabular-nums text-neutral-500 dark:text-neutral-400 px-2 py-1">
-              {{ localData.sizeX && localData.sizeY ? ((localData.sizeX * localData.sizeY) / 100).toFixed(1) + ' cm²' : '—' }}
-            </div>
-          </div>
         </div>
       </div>
 

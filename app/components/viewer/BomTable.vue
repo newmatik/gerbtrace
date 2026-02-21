@@ -252,9 +252,7 @@
             :class="[
               selectedLineId === row.line.id
                 ? 'border-blue-400/40 bg-blue-50/70 dark:border-blue-500/30 dark:bg-blue-500/10'
-                : isLineChanged(row.line)
-                  ? 'border-amber-300/70 bg-amber-50/60 dark:border-amber-700/40 dark:bg-amber-900/10 hover:border-amber-300 dark:hover:border-amber-600'
-                  : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600',
+                : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600',
               dragOverTarget === row.line.id && dragLineId !== row.line.id ? 'ring-2 ring-primary/40' : '',
             ]"
             draggable="true"
@@ -271,7 +269,8 @@
               </span>
               <span
                 v-if="isLineChanged(row.line)"
-                class="text-[9px] px-1.5 py-0.5 rounded-full border shrink-0 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20"
+                class="text-[9px] px-1.5 py-0.5 rounded-full border shrink-0"
+                :class="editedBadgeClass"
                 title="This line differs from the original customer BOM"
               >
                 Edited
@@ -718,6 +717,7 @@ const filterDefs = computed(() => {
 })
 
 const dnpCount = computed(() => props.filteredLines.filter(l => l.dnp).length)
+const editedBadgeClass = 'border-yellow-300/70 dark:border-yellow-700/50 text-yellow-700 dark:text-yellow-300 bg-yellow-50/70 dark:bg-yellow-900/20'
 
 function applyFilters(lines: BomLine[]): BomLine[] {
   let result = lines

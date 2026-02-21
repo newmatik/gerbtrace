@@ -66,15 +66,15 @@
       </template>
 
       <template #right>
-        <template v-if="downloadMenuItems.length > 0">
-          <UDropdownMenu :items="[downloadMenuItems]">
+        <template v-if="exportMenuItems.length > 0">
+          <UDropdownMenu :items="[exportMenuItems]">
             <UButton
               size="xs"
               color="neutral"
               variant="ghost"
               icon="i-lucide-download"
               :class="[tbBtnBase, tbBtnIdle]"
-              title="Downloads"
+              title="Exports"
             />
           </UDropdownMenu>
         </template>
@@ -85,7 +85,7 @@
               size="xs"
               color="neutral"
               variant="ghost"
-              icon="i-lucide-git-pull-request-arrow"
+              :icon="workflowIcon"
               trailing-icon="i-lucide-chevron-down"
             >
               {{ workflowLabel }}
@@ -613,7 +613,8 @@
                     v-if="canSelectedLayerUseTablePreview"
                     size="xs"
                     color="neutral"
-                    :variant="filesPreviewMode === 'table' ? 'soft' : 'ghost'"
+                    variant="ghost"
+                    :class="filesPreviewMode === 'table' ? previewBtnActive : previewBtnIdle"
                     @click="filesPreviewMode = 'table'"
                   >
                     Table
@@ -621,15 +622,17 @@
                   <UButton
                     size="xs"
                     color="neutral"
-                    :variant="filesPreviewMode === 'text' ? 'soft' : 'ghost'"
+                    variant="ghost"
+                    :class="filesPreviewMode === 'text' ? previewBtnActive : previewBtnIdle"
                     @click="filesPreviewMode = 'text'"
                   >
                     Text
                   </UButton>
                   <UButton
                     size="xs"
-                    :color="filesPreviewMode !== 'diff' && editedLayers.has(filesSelectedLayer.file.fileName) ? 'warning' : 'neutral'"
-                    :variant="filesPreviewMode === 'diff' ? 'soft' : (editedLayers.has(filesSelectedLayer.file.fileName) ? 'soft' : 'ghost')"
+                    color="neutral"
+                    variant="ghost"
+                    :class="filesPreviewMode === 'diff' ? previewBtnActive : previewBtnIdle"
                     @click="filesPreviewMode = 'diff'"
                   >
                     Diff
@@ -954,91 +957,12 @@
       <!-- Conversation: full width threaded discussion -->
       <template v-else-if="sidebarTab === 'conversation'">
         <main class="flex-1 min-w-0 overflow-y-auto bg-neutral-50 dark:bg-neutral-950">
-          <div class="mx-auto w-full max-w-5xl p-4 space-y-4">
-            <div class="flex items-center justify-between gap-3">
-              <h2 class="text-sm font-semibold text-neutral-700 dark:text-neutral-200">
-                Conversation
-              </h2>
-              <UButton size="xs" icon="i-lucide-refresh-cw" variant="ghost" color="neutral" @click="fetchConversationMessages">
-                Refresh
-              </UButton>
-            </div>
-
-            <div class="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 space-y-4">
-              <div class="space-y-3">
-                <div
-                  v-for="message in topLevelConversationMessages"
-                  :key="message.id"
-                  class="rounded-md border border-neutral-200 dark:border-neutral-800 p-3"
-                >
-                  <div class="flex items-center justify-between gap-3 text-xs text-neutral-500">
-                    <span class="font-medium text-neutral-700 dark:text-neutral-200">
-                      {{ conversationAuthorLabel(message) }}
-                    </span>
-                    <span>{{ formatConversationDate(message.created_at) }}</span>
-                  </div>
-                  <p class="mt-2 whitespace-pre-wrap text-sm text-neutral-800 dark:text-neutral-100">
-                    {{ message.body }}
-                  </p>
-
-                  <div class="mt-3 border-t border-neutral-200 dark:border-neutral-800 pt-3 space-y-2">
-                    <div
-                      v-for="reply in conversationRepliesFor(message.id)"
-                      :key="reply.id"
-                      class="rounded-md bg-neutral-50 dark:bg-neutral-800/50 p-2"
-                    >
-                      <div class="flex items-center justify-between gap-2 text-[11px] text-neutral-500">
-                        <span class="font-medium text-neutral-700 dark:text-neutral-200">{{ conversationAuthorLabel(reply) }}</span>
-                        <span>{{ formatConversationDate(reply.created_at) }}</span>
-                      </div>
-                      <p class="mt-1 whitespace-pre-wrap text-sm">{{ reply.body }}</p>
-                    </div>
-                    <div class="flex gap-2">
-                      <UInput
-                        v-model="conversationReplyDrafts[message.id]"
-                        size="xs"
-                        placeholder="Reply to thread..."
-                        class="flex-1"
-                      />
-                      <UButton
-                        size="xs"
-                        :disabled="!conversationReplyDrafts[message.id]?.trim()"
-                        @click="submitConversationReply(message.id)"
-                      >
-                        Reply
-                      </UButton>
-                    </div>
-                  </div>
-                </div>
-
-                <div v-if="!conversationLoading && topLevelConversationMessages.length === 0" class="text-sm text-neutral-500 py-8 text-center">
-                  No conversation yet.
-                </div>
-              </div>
-
-              <div class="border-t border-neutral-200 dark:border-neutral-800 pt-4 space-y-2">
-                <UTextarea
-                  v-model="newConversationMessage"
-                  :rows="5"
-                  placeholder="Write a message. Use @john.doe or @jdoe to mention teammates."
-                />
-                <div class="flex items-center justify-between gap-3">
-                  <p class="text-xs text-neutral-500 truncate">
-                    Mention handles:
-                    <span class="text-neutral-700 dark:text-neutral-300">{{ conversationMentionHelpText }}</span>
-                  </p>
-                  <UButton
-                    :disabled="!newConversationMessage.trim()"
-                    :loading="postingConversationMessage"
-                    size="sm"
-                    icon="i-lucide-send"
-                    @click="submitConversationMessage"
-                  >
-                    Post message
-                  </UButton>
-                </div>
-              </div>
-            </div>
+          <div class="mx-auto w-full max-w-5xl p-4 h-full">
+            <ConversationPanel
+              :project-id="teamProjectIdRef"
+              :reference-items="conversationReferenceItems"
+              @navigate-reference="handleConversationNavigateRef"
+            />
           </div>
         </main>
       </template>
@@ -1279,6 +1203,7 @@ import {
 import { parseBomFile } from '~/utils/bom-parser'
 import { parsePnPPreview, type PnPColumnMapping, type PnPCoordUnit } from '~/utils/pnp-parser'
 import { saveBlobFile } from '~/utils/file-download'
+import type { ConversationReferenceItem } from '~/utils/conversation-references'
 
 const route = useRoute()
 const { settings: appSettings } = useAppSettings()
@@ -1315,16 +1240,6 @@ const { user } = useAuth()
 const { profile } = useCurrentUser()
 const { reportError } = useErrorReporting()
 const { members: teamMembers, fetchMembers: fetchTeamMembers } = useTeamMembers()
-const {
-  topLevelMessages: topLevelConversationMessages,
-  repliesFor: conversationRepliesFor,
-  postMessage: postConversationMessage,
-  fetchMessages: fetchConversationMessages,
-  loading: conversationLoading,
-} = useProjectConversation(teamProjectIdRef, currentTeamId)
-const newConversationMessage = ref('')
-const postingConversationMessage = ref(false)
-const conversationReplyDrafts = ref<Record<string, string>>({})
 
 /** Whether this is an approved (frozen) team project */
 const isApproved = computed(() => {
@@ -1343,10 +1258,17 @@ const currentApproverUserId = computed(() => {
 })
 
 const workflowLabel = computed(() => {
-  if (currentWorkflowStatus.value === 'in_progress') return 'In Progress'
+  if (currentWorkflowStatus.value === 'in_progress') return 'Progress'
   if (currentWorkflowStatus.value === 'for_approval') return 'For Approval'
   if (currentWorkflowStatus.value === 'approved') return 'Approved'
   return 'Draft'
+})
+
+const workflowIcon = computed(() => {
+  if (currentWorkflowStatus.value === 'in_progress') return 'i-lucide-circle-dot'
+  if (currentWorkflowStatus.value === 'for_approval') return 'i-lucide-clipboard-check'
+  if (currentWorkflowStatus.value === 'approved') return 'i-lucide-check'
+  return 'i-lucide-file-pen'
 })
 
 const selectedApproverUserId = ref<string | undefined>(undefined)
@@ -1361,19 +1283,6 @@ const workflowApproverOptions = computed(() =>
       label: m.profile?.name ?? m.profile?.email ?? 'Unknown',
       value: m.user_id,
     })),
-)
-
-const conversationMentionHelpText = computed(() =>
-  teamMembers.value
-    .slice(0, 6)
-    .map(member => {
-      const fromName = (member.profile?.name ?? '').trim().toLowerCase().replace(/\s+/g, '.')
-      const fromEmail = (member.profile?.email ?? '').trim().toLowerCase().split('@')[0]
-      return fromName || fromEmail || null
-    })
-    .filter((value): value is string => !!value)
-    .map(value => `@${value}`)
-    .join(', '),
 )
 
 const canMoveToInProgress = computed(() => {
@@ -1403,14 +1312,14 @@ const workflowMenuItems = computed(() => {
   if (canMoveToInProgress.value) {
     items.push({
       label: 'Set In Progress',
-      icon: 'i-lucide-play',
+      icon: 'i-lucide-circle-dot',
       onSelect: () => { handleMoveToInProgress() },
     })
   }
   if (canRequestApproval.value) {
     items.push({
       label: 'Request Approval',
-      icon: 'i-lucide-send',
+      icon: 'i-lucide-clipboard-check',
       onSelect: () => {
         requestApprovalModalOpen.value = true
       },
@@ -1419,14 +1328,14 @@ const workflowMenuItems = computed(() => {
   if (canApproveWorkflow.value) {
     items.push({
       label: 'Approve',
-      icon: 'i-lucide-check-circle',
+      icon: 'i-lucide-check',
       onSelect: () => { handleApproveProject() },
     })
   }
   if (canRequestChangesWorkflow.value) {
     items.push({
       label: 'Request Changes',
-      icon: 'i-lucide-message-square-warning',
+      icon: 'i-lucide-message-square',
       color: 'warning',
       onSelect: () => {
         requestChangesModalOpen.value = true
@@ -1436,14 +1345,14 @@ const workflowMenuItems = computed(() => {
   if (isApproved.value && isTeamAdmin.value) {
     items.push({
       label: 'Revert to Draft',
-      icon: 'i-lucide-lock-open',
+      icon: 'i-lucide-rotate-ccw',
       onSelect: () => { handleRevertToDraft() },
     })
   }
   if (items.length === 0) {
     items.push({
       label: 'No actions available',
-      icon: 'i-lucide-circle-slash',
+      icon: 'i-lucide-minus-circle',
       disabled: true,
       onSelect: () => {},
     })
@@ -3325,7 +3234,7 @@ const dxfExportableLayers = computed<Array<{ index: number; fileName: string; ty
     }))
 })
 
-const downloadMenuItems = computed(() => {
+const exportMenuItems = computed(() => {
   const items: { label: string; icon: string; onSelect: () => void }[] = []
   if (layers.value.length > 0) {
     items.push({
@@ -3352,7 +3261,7 @@ const downloadMenuItems = computed(() => {
     })
   }
   if (layers.value.length > 0) {
-    items.push({ label: 'Download Gerber', icon: 'i-lucide-file-archive', onSelect: () => { handleDownloadGerber() } })
+    items.push({ label: 'Export Gerber', icon: 'i-lucide-file-archive', onSelect: () => { handleDownloadGerber() } })
   }
   if (dxfExportableLayers.value.length > 0) {
     items.push({ label: 'Export DXF', icon: 'i-lucide-file-code', onSelect: () => { showDxfExport.value = true } })
@@ -3747,6 +3656,13 @@ const filesSelectedLayerIndex = ref<number | null>(null)
 const filesSelectedDocId = ref<string | null>(null)
 const filesPreviewSelectionNonce = ref(0)
 const filesPreviewMode = ref<'table' | 'text' | 'diff'>('text')
+
+const previewBtnActive =
+  '!border !border-blue-500/70 !text-blue-700 !bg-blue-50/90 ' +
+  'dark:!border-blue-400/70 dark:!text-blue-200 dark:!bg-blue-500/15'
+const previewBtnIdle =
+  '!border !border-transparent hover:!border-neutral-300/80 hover:!bg-neutral-200/70 ' +
+  'dark:!text-neutral-200 dark:hover:!bg-neutral-800/70 dark:hover:!border-neutral-600/70'
 const filesSaveTimers = new Map<string, ReturnType<typeof setTimeout>>()
 const filesSelectedLayer = computed(() => {
   const selectedIndex = filesSelectedLayerIndex.value
@@ -4818,6 +4734,102 @@ watch(() => pnp.assemblyTypeOverridesRecord.value, (types) => {
   }
 }, { deep: true })
 
+// ── Conversation context references ──
+
+const conversationReferenceItems = computed<ConversationReferenceItem[]>(() => {
+  const items: ConversationReferenceItem[] = []
+
+  for (const layer of layers.value) {
+    items.push({
+      type: 'file',
+      id: layer.file.fileName,
+      label: layer.file.fileName,
+      sublabel: layer.type,
+      icon: 'i-lucide-file',
+    })
+  }
+
+  for (const line of bom.bomLines.value as BomLine[]) {
+    const refs = line.references ? line.references.split(',').map(r => r.trim()).filter(Boolean).slice(0, 3).join(', ') : ''
+    const refsStr = refs ? `${refs} - ` : ''
+    items.push({
+      type: 'bom',
+      id: line.id,
+      label: `${refsStr}${line.description || line.package || 'BOM Line'}`,
+      sublabel: line.quantity > 1 ? `x${line.quantity} ${line.type}` : line.type,
+      icon: 'i-lucide-list',
+    })
+  }
+
+  for (const comp of pnp.smdActiveComponents.value) {
+    items.push({
+      type: 'pnp',
+      id: comp.designator,
+      label: comp.designator,
+      sublabel: [comp.value, comp.matchedPackage || comp.cadPackage].filter(Boolean).join(' - ') || 'SMD',
+      icon: 'i-lucide-cpu',
+    })
+  }
+  for (const comp of pnp.thtActiveComponents.value) {
+    items.push({
+      type: 'pnp',
+      id: comp.designator,
+      label: comp.designator,
+      sublabel: [comp.value, comp.matchedPackage || comp.cadPackage].filter(Boolean).join(' - ') || 'THT',
+      icon: 'i-lucide-cpu',
+    })
+  }
+
+  for (const doc of documents.value) {
+    items.push({
+      type: 'doc',
+      id: doc.id,
+      label: doc.name,
+      sublabel: doc.type,
+      icon: 'i-lucide-file-text',
+    })
+  }
+
+  return items
+})
+
+function handleConversationNavigateRef(type: string, id: string) {
+  switch (type) {
+    case 'file': {
+      const layerIdx = layers.value.findIndex(l => l.file.fileName === id)
+      if (layerIdx >= 0) {
+        sidebarTab.value = 'files'
+        filesSelectedLayerFileName.value = id
+        filesSelectedLayerIndex.value = layerIdx
+        filesSelectedDocId.value = null
+      }
+      break
+    }
+    case 'bom': {
+      sidebarTab.value = 'bom'
+      selectedBomLineId.value = id
+      break
+    }
+    case 'pnp': {
+      const smd = (pnp.smdActiveComponents.value as any[]).find((c: any) => c.designator === id)
+      if (smd) {
+        sidebarTab.value = 'smd'
+      }
+      else {
+        const tht = (pnp.thtActiveComponents.value as any[]).find((c: any) => c.designator === id)
+        if (tht) sidebarTab.value = 'tht'
+      }
+      pnp.selectedDesignator.value = id
+      break
+    }
+    case 'doc': {
+      sidebarTab.value = 'docs'
+      selectedDocumentId.value = id
+      break
+    }
+  }
+}
+
 // ── Persist BOM data ──
 
 watch(bom.bomLinesRecord, (lines) => {
@@ -5293,44 +5305,6 @@ const {
   uploadPreviewImage,
 } = useTeamProjects()
 
-function conversationAuthorLabel(message: {
-  author_profile?: { name: string | null; email: string } | null
-  message_type: 'comment' | 'system'
-}) {
-  if (message.message_type === 'system') return 'Workflow'
-  return message.author_profile?.name ?? message.author_profile?.email ?? 'Unknown user'
-}
-
-function formatConversationDate(value: string) {
-  return new Date(value).toLocaleString()
-}
-
-async function submitConversationMessage() {
-  if (!newConversationMessage.value.trim()) return
-  postingConversationMessage.value = true
-  try {
-    const { error } = await postConversationMessage(newConversationMessage.value)
-    if (error) {
-      reportError(error, { title: 'Failed to post message', context: 'viewer.conversation.post' })
-      return
-    }
-    newConversationMessage.value = ''
-  } finally {
-    postingConversationMessage.value = false
-  }
-}
-
-async function submitConversationReply(parentId: string) {
-  const body = conversationReplyDrafts.value[parentId]?.trim()
-  if (!body) return
-  const { error } = await postConversationMessage(body, parentId)
-  if (error) {
-    reportError(error, { title: 'Failed to post reply', context: 'viewer.conversation.reply' })
-    return
-  }
-  conversationReplyDrafts.value[parentId] = ''
-}
-
 async function toggleCurrentTabLock() {
   if (!teamProjectId || !isLockableTab(sidebarTab.value) || !canToggleCurrentTabLock.value) return
 
@@ -5377,7 +5351,14 @@ async function handleApproveProject() {
 async function handleMoveToInProgress() {
   if (!teamProjectId) return
   const { error } = await doMoveToInProgress(teamProjectId)
+  // Force refresh to avoid stale UI status when realtime delivery lags.
+  await projectSync?.fetchProject()
   if (error) {
+    const message = typeof error.message === 'string' ? error.message : ''
+    // Treat as success if the backend already moved the project and this call raced.
+    if (message.includes('Project must be draft or for_approval') && projectSync?.project.value?.status === 'in_progress') {
+      return
+    }
     reportError(error, { title: 'Failed to update workflow', context: 'viewer.workflow.in_progress' })
   }
 }

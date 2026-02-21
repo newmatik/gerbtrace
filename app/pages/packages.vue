@@ -401,7 +401,7 @@ const smdSelectedLibraryIdsUi = ref<string[]>([])
 onMounted(() => {
   loadPackages()
   loadThtPackages()
-  fetchSpaces()
+  fetchSpaces({ background: true })
 })
 
 const visibleTeamPackages = computed(() => {
