@@ -121,19 +121,14 @@ export function useElexessApi() {
   const { currentTeam } = useTeam()
   const { canUseElexess, isAtElexessLimit, elexessSearchesRemaining, logUsageEvent, maxElexessSearches, elexessSearchesUsed } = useTeamPlan()
 
-  const baseUrl = computed(() => (config.public as any).elexessUrl as string || 'https://api.dev.elexess.com/api')
-
   const isEnabled = computed(() => {
     if (!canUseElexess.value) return false
     const team = currentTeam.value
     if (!team) return false
-    if (typeof team.elexess_enabled === 'boolean') return team.elexess_enabled
-    return !!(team.elexess_username && team.elexess_password)
+    return team.elexess_enabled !== false
   })
 
-  const hasCredentials = computed(() => {
-    return !!(isEnabled.value && currentTeam.value?.elexess_username && currentTeam.value?.elexess_password)
-  })
+  const hasCredentials = computed(() => isEnabled.value)
 
   // ── Reactive queue state ──
   const isFetching = ref(false)
@@ -142,10 +137,11 @@ export function useElexessApi() {
   let clearTimer: ReturnType<typeof setTimeout> | null = null
   let cancelRequested = false
 
-  function authHeaders(): HeadersInit {
-    if (!currentTeam.value?.elexess_username || !currentTeam.value?.elexess_password) return {}
-    const encoded = btoa(`${currentTeam.value.elexess_username}:${currentTeam.value.elexess_password}`)
-    return { Authorization: `Basic ${encoded}` }
+  async function getAuthToken(): Promise<string> {
+    const { data } = await supabase.auth.getSession()
+    const token = data.session?.access_token
+    if (!token) throw new Error('Not authenticated')
+    return token
   }
 
   function setQueueItemStatus(partNumber: string, status: PricingQueueItem['status']) {
@@ -197,8 +193,9 @@ export function useElexessApi() {
   }
 
   async function fetchExchangeRateFromApi(): Promise<ExchangeRateSnapshot | null> {
+    const elexessBaseUrl = (config.public as any).elexessUrl as string || 'https://api.dev.elexess.com/api'
     const endpointUrls = [
-      `${baseUrl.value}/exchange-rate`,
+      `${elexessBaseUrl}/exchange-rate`,
       'https://r.jina.ai/http://api.dev.elexess.com/api/exchange-rate',
     ]
     try {
@@ -355,7 +352,6 @@ export function useElexessApi() {
     if (!hasCredentials.value) return null
 
     return enqueue(async () => {
-      // Check usage limit before each search
       const allowed = await logUsageEvent('elexess_search', { mpn: partNumber })
       if (!allowed) {
         console.warn(`[Elexess] Monthly search limit reached (${elexessSearchesUsed.value}/${maxElexessSearches.value})`)
@@ -363,21 +359,23 @@ export function useElexessApi() {
       }
 
       try {
-        const url = `${baseUrl.value}/search?searchterm=${encodeURIComponent(partNumber)}`
-        const response = await fetch(url, {
-          headers: {
-            ...authHeaders(),
-            Accept: 'application/json',
-          },
-        })
-        if (!response.ok) {
-          console.warn(`[Elexess] Search failed for "${partNumber}": ${response.status} ${response.statusText}`)
+        const token = await getAuthToken()
+        const teamId = currentTeam.value?.id
+        if (!teamId) {
+          console.warn('[Elexess] No team context available')
           return null
         }
-        const json = await response.json()
-        return stripBlockedSuppliers(json)
-      } catch (err) {
-        console.error(`[Elexess] Search error for "${partNumber}":`, err)
+        const result = await $fetch<any>('/api/elexess/search', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: {
+            teamId,
+            searchTerm: partNumber,
+          },
+        })
+        return result
+      } catch (err: any) {
+        console.warn(`[Elexess] Search failed for "${partNumber}":`, err?.data?.statusMessage ?? err?.message)
         return null
       }
     })

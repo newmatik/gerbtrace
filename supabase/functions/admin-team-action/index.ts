@@ -107,6 +107,53 @@ serve(async (req: Request) => {
         return json({ success: true, user_id, status: 'active' })
       }
 
+      case 'get_platform_config': {
+        const { data, error } = await supabase
+          .from('platform_config')
+          .select('id, spark_api_key, spark_model, elexess_username, elexess_password, updated_at')
+          .limit(1)
+          .single()
+        if (error) throw error
+        return json({
+          ...data,
+          spark_api_key: data.spark_api_key ? `${data.spark_api_key.slice(0, 12)}...` : null,
+          elexess_password: data.elexess_password ? '••••••••' : null,
+        })
+      }
+
+      case 'update_platform_config': {
+        const { spark_api_key, spark_model, elexess_username, elexess_password } = body
+        const updates: Record<string, unknown> = { updated_at: new Date().toISOString() }
+        if (spark_api_key !== undefined) updates.spark_api_key = spark_api_key || null
+        if (spark_model !== undefined) updates.spark_model = spark_model || 'claude-sonnet-4-20250514'
+        if (elexess_username !== undefined) updates.elexess_username = elexess_username || null
+        if (elexess_password !== undefined) updates.elexess_password = elexess_password || null
+
+        const { data: existing } = await supabase.from('platform_config').select('id').limit(1).single()
+        if (!existing) return json({ error: 'No platform config row' }, 500)
+
+        const { error } = await supabase.from('platform_config').update(updates).eq('id', existing.id)
+        if (error) throw error
+        return json({ success: true })
+      }
+
+      case 'update_team_integrations': {
+        const { team_id, ai_api_key, ai_model, elexess_username, elexess_password } = body
+        if (!team_id) return json({ error: 'team_id required' }, 400)
+
+        const updates: Record<string, unknown> = {}
+        if (ai_api_key !== undefined) updates.ai_api_key = ai_api_key || null
+        if (ai_model !== undefined) updates.ai_model = ai_model || ''
+        if (elexess_username !== undefined) updates.elexess_username = elexess_username || null
+        if (elexess_password !== undefined) updates.elexess_password = elexess_password || null
+
+        if (Object.keys(updates).length === 0) return json({ error: 'No fields to update' }, 400)
+
+        const { error } = await supabase.from('teams').update(updates).eq('id', team_id)
+        if (error) throw error
+        return json({ success: true, team_id })
+      }
+
       default:
         return json({ error: `Unknown action: ${action}` }, 400)
     }

@@ -11,16 +11,16 @@ export interface PlanLimits {
   members: number
   projects: number
   spaces: number
-  sparkAi: boolean
+  sparkAiRuns: number
   elexessSearches: number
   guests: boolean
 }
 
 const PLAN_LIMITS: Record<TeamPlan, PlanLimits> = {
-  free: { members: 5, projects: 20, spaces: 1, sparkAi: false, elexessSearches: 0, guests: false },
-  pro: { members: 15, projects: Infinity, spaces: 3, sparkAi: true, elexessSearches: 1_000, guests: false },
-  team: { members: 100, projects: Infinity, spaces: Infinity, sparkAi: true, elexessSearches: 10_000, guests: true },
-  enterprise: { members: Infinity, projects: Infinity, spaces: Infinity, sparkAi: true, elexessSearches: Infinity, guests: true },
+  free: { members: 5, projects: 20, spaces: 1, sparkAiRuns: 0, elexessSearches: 0, guests: false },
+  pro: { members: 15, projects: Infinity, spaces: 3, sparkAiRuns: 25, elexessSearches: 1_000, guests: false },
+  team: { members: 100, projects: Infinity, spaces: Infinity, sparkAiRuns: 150, elexessSearches: 10_000, guests: true },
+  enterprise: { members: Infinity, projects: Infinity, spaces: Infinity, sparkAiRuns: Infinity, elexessSearches: Infinity, guests: true },
 }
 
 const USAGE_REFRESH_INTERVAL_MS = 120_000
@@ -39,7 +39,7 @@ export function useTeamPlan() {
   const isTeam = computed(() => plan.value === 'team')
   const isEnterprise = computed(() => plan.value === 'enterprise')
 
-  const canUseSparkAi = computed(() => limits.value.sparkAi)
+  const canUseSparkAi = computed(() => limits.value.sparkAiRuns > 0)
   const canUseElexess = computed(() => limits.value.elexessSearches > 0)
   const canInviteGuests = computed(() => limits.value.guests)
 
@@ -47,6 +47,7 @@ export function useTeamPlan() {
   const maxProjects = computed(() => limits.value.projects)
   const maxSpaces = computed(() => limits.value.spaces)
   const maxElexessSearches = computed(() => limits.value.elexessSearches)
+  const maxSparkAiRuns = computed(() => limits.value.sparkAiRuns)
 
   const memberCount = computed(() => members.value.length)
   const projectCount = computed(() => projects.value.length)
@@ -67,6 +68,15 @@ export function useTeamPlan() {
   )
   const isAtElexessLimit = computed(() =>
     maxElexessSearches.value !== Infinity && elexessSearchesUsed.value >= maxElexessSearches.value,
+  )
+
+  const sparkAiRunsRemaining = computed(() =>
+    maxSparkAiRuns.value === Infinity
+      ? Infinity
+      : Math.max(0, maxSparkAiRuns.value - sparkAiRunsUsed.value),
+  )
+  const isAtSparkAiLimit = computed(() =>
+    maxSparkAiRuns.value !== Infinity && sparkAiRunsUsed.value >= maxSparkAiRuns.value,
   )
 
   const suggestedUpgrade = computed<'Pro' | 'Team' | null>(() => {
@@ -147,6 +157,7 @@ export function useTeamPlan() {
     maxProjects,
     maxSpaces,
     maxElexessSearches,
+    maxSparkAiRuns,
     memberCount,
     projectCount,
     isAtMemberLimit,
@@ -155,6 +166,8 @@ export function useTeamPlan() {
     sparkAiRunsUsed: readonly(sparkAiRunsUsed),
     elexessSearchesRemaining,
     isAtElexessLimit,
+    sparkAiRunsRemaining,
+    isAtSparkAiLimit,
     suggestedUpgrade,
     usageLoading: readonly(usageLoading),
     fetchUsage,

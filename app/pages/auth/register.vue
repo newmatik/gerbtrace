@@ -173,7 +173,7 @@ const resendCooldown = ref(0)
 let cooldownTimer: ReturnType<typeof setInterval> | null = null
 
 watch(isAuthenticated, (authed) => {
-  if (authed) router.replace('/')
+  if (authed) router.replace('/dashboard')
 }, { immediate: true })
 
 async function handleSubmit() {

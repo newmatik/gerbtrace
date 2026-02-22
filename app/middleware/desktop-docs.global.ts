@@ -12,5 +12,5 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const docsPath = to.fullPath.slice('/docs'.length)
   await openDocs(docsPath)
 
-  return navigateTo('/', { replace: true })
+  return navigateTo('/dashboard', { replace: true })
 })

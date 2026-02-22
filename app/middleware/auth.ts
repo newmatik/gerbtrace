@@ -12,5 +12,5 @@ export default defineNuxtRouteMiddleware(async () => {
     })
   }
 
-  if (!user.value) return navigateTo('/')
+  if (!user.value) return navigateTo('/dashboard')
 })

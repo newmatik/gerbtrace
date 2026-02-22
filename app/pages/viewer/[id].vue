@@ -4562,7 +4562,7 @@ function persistToProject(updates: Record<string, any>): Promise<void> {
     if (import.meta.dev && 'pcb_data' in mapped) {
       console.debug('[viewer] Persist pcb_data payload', mapped.pcb_data)
     }
-    const { data, error } = await updateTeamProject(teamProjectId, mapped)
+    const { data, error } = await updateTeamProject(teamProjectId, mapped, { returnData: false })
     if (error) {
       const message = String(error.message ?? '')
       const missingColumn = message.includes('Could not find the')
@@ -4574,7 +4574,7 @@ function persistToProject(updates: Record<string, any>): Promise<void> {
           const retryPayload: Record<string, any> = { ...mapped }
           delete retryPayload[missingColumnName]
           if (Object.keys(retryPayload).length > 0) {
-            const retry = await updateTeamProject(teamProjectId, retryPayload)
+            const retry = await updateTeamProject(teamProjectId, retryPayload, { returnData: false })
             if (retry.error) {
               console.warn('[viewer] Failed retry after dropping missing column:', retry.error.message ?? retry.error)
             }

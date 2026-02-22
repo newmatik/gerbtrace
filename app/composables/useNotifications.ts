@@ -13,11 +13,11 @@ export interface InboxNotification {
   created_at: string
 }
 
-const notifications = useState<InboxNotification[]>('inbox:notifications', () => [])
-const loading = useState<boolean>('inbox:loading', () => false)
 let channel: RealtimeChannel | null = null
 
 export function useNotifications() {
+  const notifications = useState<InboxNotification[]>('inbox:notifications', () => [])
+  const loading = useState<boolean>('inbox:loading', () => false)
   const supabase = useSupabase()
   const { user } = useAuth()
 
@@ -91,6 +91,7 @@ export function useNotifications() {
   }
 
   async function subscribe() {
+    if (!import.meta.client) return
     if (!user.value?.id || channel) return
     channel = supabase.channel(`notifications:${user.value.id}`)
     channel.on('postgres_changes', {

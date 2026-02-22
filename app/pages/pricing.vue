@@ -1,6 +1,16 @@
 <script setup lang="ts">
 import type { TeamPlan } from '~/composables/useTeam'
 
+useHead({
+  title: 'Pricing — Gerbtrace PCB NPI Platform',
+  meta: [
+    { name: 'description', content: 'Gerbtrace pricing plans. Free Gerber viewer for everyone. Pro and Team plans for BOM management, AI enrichment, part search, panelization, and team collaboration.' },
+    { property: 'og:title', content: 'Pricing — Gerbtrace PCB NPI Platform' },
+    { property: 'og:description', content: 'Free Gerber viewer for everyone. Pro and Team plans for manufacturing data preparation, AI BOM enrichment, and team collaboration.' },
+    { property: 'og:image', content: 'https://www.gerbtrace.com/images/docs/pcb-light.png' },
+  ],
+})
+
 const { isAuthenticated } = useAuth()
 const { currentTeam } = useTeam()
 
@@ -34,7 +44,7 @@ const features = [
   { name: 'Team members', free: 'Up to 5', pro: 'Up to 15', team: 'Up to 100' },
   { name: 'Projects', free: 'Up to 20', pro: 'Unlimited', team: 'Unlimited' },
   { name: 'Spaces', free: '1', pro: 'Up to 3', team: 'Unlimited' },
-  { name: 'Spark AI (BYOK)', free: false, pro: true, team: true },
+  { name: 'Spark AI', free: false, pro: '25 runs/month', team: '150 runs/month' },
   { name: 'Elexess Price Search', free: false, pro: '1,000/month', team: '10,000/month' },
   { name: 'Guest role', free: false, pro: false, team: true },
   { name: 'Priority support', free: false, pro: false, team: true },
@@ -55,22 +65,30 @@ const faqs = [
   },
   {
     q: 'What is Spark AI?',
-    a: 'Spark AI enriches your BOM automatically using AI. It suggests missing manufacturer part numbers, descriptions, and package types. You bring your own Anthropic API key — we do not charge extra for AI usage.',
+    a: 'Spark AI is included with Pro and Team plans. Each run enriches your full BOM with AI-generated descriptions, component types, manufacturer suggestions, and group assignments.',
   },
   {
     q: 'What is Elexess Price Search?',
-    a: 'Elexess is a component pricing API. With a paid plan and Elexess credentials configured in Team Settings, you can fetch live distributor pricing directly into your BOM.',
+    a: 'Elexess Price Search fetches live distributor pricing and availability directly into your BOM. It is included with Pro and Team plans, with monthly search limits based on your plan.',
   },
   {
     q: 'Do you offer annual billing?',
     a: 'Not yet, but we are working on it. Currently all plans are billed monthly.',
   },
 ]
+
+useSchemaOrg([
+  defineWebPage({ '@type': 'FAQPage' }),
+  ...faqs.map(faq => defineQuestion({
+    name: faq.q,
+    acceptedAnswer: faq.a,
+  })),
+])
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col">
-    <AppHeader />
+  <div class="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950">
+    <AppHeader marketing />
 
     <main class="flex-1 py-16 px-4">
       <div class="max-w-5xl mx-auto">
@@ -155,7 +173,7 @@ const faqs = [
               </li>
               <li class="flex items-center gap-2">
                 <UIcon name="i-lucide-sparkles" class="text-[var(--ui-primary)] shrink-0" />
-                Spark AI (bring your own key)
+                Spark AI (25 runs/month)
               </li>
               <li class="flex items-center gap-2">
                 <UIcon name="i-lucide-search" class="text-[var(--ui-primary)] shrink-0" />
@@ -196,7 +214,7 @@ const faqs = [
               </li>
               <li class="flex items-center gap-2">
                 <UIcon name="i-lucide-sparkles" class="text-green-500 shrink-0" />
-                Spark AI (bring your own key)
+                Spark AI (150 runs/month)
               </li>
               <li class="flex items-center gap-2">
                 <UIcon name="i-lucide-search" class="text-green-500 shrink-0" />
@@ -281,7 +299,7 @@ const faqs = [
             Need unlimited members, SSO, SLAs, or custom billing? Get in touch for a tailored plan.
           </p>
           <UButton
-            to="mailto:hello@gerbtrace.com?subject=Enterprise%20Plan"
+            to="mailto:software@newmatik.com?subject=Enterprise%20Plan"
             variant="outline"
             class="mt-4"
           >
@@ -301,5 +319,7 @@ const faqs = [
         </div>
       </div>
     </main>
+
+    <MarketingFooter />
   </div>
 </template>

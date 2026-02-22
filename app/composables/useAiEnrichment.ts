@@ -39,10 +39,10 @@ export function useAiEnrichment() {
   const enrichError = useState<string | null>('spark-enrich-error', () => null)
   const { currentTeam } = useTeam()
 
-  const { canUseSparkAi, logUsageEvent } = useTeamPlan()
+  const { canUseSparkAi, logUsageEvent, isAtSparkAiLimit } = useTeamPlan()
 
   const isAiEnabled = computed(() => {
-    return !!(canUseSparkAi.value && currentTeam.value?.ai_enabled && currentTeam.value?.ai_api_key && currentTeam.value?.ai_model)
+    return !!(canUseSparkAi.value && currentTeam.value?.ai_enabled && !isAtSparkAiLimit.value)
   })
 
   async function enrichBom(
@@ -51,8 +51,8 @@ export function useAiEnrichment() {
     thtPnpComponents: any[],
     existingGroups?: { id: string; name: string }[],
   ): Promise<BomAiSuggestions> {
-    if (!currentTeam.value?.ai_api_key || !currentTeam.value?.ai_model) {
-      throw new Error('AI not configured')
+    if (!currentTeam.value?.ai_enabled) {
+      throw new Error('Spark AI is not enabled for this team')
     }
 
     isEnriching.value = true
@@ -64,13 +64,17 @@ export function useAiEnrichment() {
       throw new Error('Spark AI requires a Pro plan or higher')
     }
 
+    const supabase = useSupabase()
+    const { data: sessionData } = await supabase.auth.getSession()
+    const token = sessionData.session?.access_token
+    if (!token) throw new Error('Not authenticated')
+
     try {
       const result = await $fetch<{ suggestions: BomAiSuggestions }>('/api/ai/enrich-bom', {
         method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
         body: {
-          apiKey: currentTeam.value.ai_api_key,
-          model: currentTeam.value.ai_model,
-          teamPlan: currentTeam.value.plan ?? 'free',
+          teamId: currentTeam.value.id,
           bomLines: activeLines,
           smdPnpComponents,
           thtPnpComponents,

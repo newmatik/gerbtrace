@@ -246,16 +246,22 @@ export function useTeamProjects() {
   }
 
   /** Update project metadata */
-  async function updateProject(projectId: string, updates: Partial<TeamProject>) {
+  async function updateProject(
+    projectId: string,
+    updates: Partial<TeamProject>,
+    options?: { returnData?: boolean },
+  ) {
     const teamId = currentTeamId.value
     if (!teamId) return { data: null, error: new Error('No team selected') }
 
-    const { data, error } = await supabase
+    const shouldReturnData = options?.returnData ?? true
+    const query = supabase
       .from('projects')
       .update(updates)
       .eq('id', projectId)
-      .select()
-      .single()
+    const { data, error } = shouldReturnData
+      ? await query.select().single()
+      : await query
 
     if (!error && data) {
       projectByIdCache.set(projectId, data as unknown as TeamProject)

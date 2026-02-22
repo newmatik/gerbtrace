@@ -22,5 +22,5 @@ jobs:
       - name: Type check
         run: npx nuxi typecheck
 
-      - name: Build (generate static)
-        run: npx nuxt generate
+      - name: Build
+        run: npx nuxt build

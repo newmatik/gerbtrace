@@ -222,7 +222,7 @@ const otpLoading = ref(false)
 
 // Redirect if already logged in
 watch(isAuthenticated, (authed) => {
-  if (authed) router.replace('/')
+  if (authed) router.replace('/dashboard')
 }, { immediate: true })
 
 async function handleSubmit() {
@@ -250,7 +250,7 @@ async function handleSubmit() {
           errorMessage.value = error.message
         }
       } else {
-        router.replace('/')
+        router.replace('/dashboard')
       }
     }
   } finally {
@@ -276,8 +276,7 @@ async function handleOtpSubmit() {
     if (error) {
       errorMessage.value = error.message
     } else if (data.session) {
-      // Success — the onAuthStateChange listener will update state and redirect
-      router.replace('/')
+      router.replace('/dashboard')
     }
   } finally {
     otpLoading.value = false

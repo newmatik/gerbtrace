@@ -89,7 +89,7 @@
                 variant="outline"
                 color="neutral"
                 size="lg"
-                to="/"
+                to="/dashboard"
                 class="flex-1"
               >
                 Cancel
@@ -207,7 +207,7 @@ async function handleCreate() {
     if (error) {
       errorMessage.value = typeof error === 'string' ? error : (error as any).message ?? 'Failed to create team'
     } else {
-      router.replace('/')
+      router.replace('/dashboard')
     }
   } finally {
     creating.value = false

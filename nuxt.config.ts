@@ -1,8 +1,21 @@
 export default defineNuxtConfig({
-  ssr: false,
+  ssr: true,
   devtools: { enabled: process.env.NODE_ENV !== 'production' },
 
+  routeRules: {
+    '/dashboard':    { ssr: false },
+    '/team/**':      { ssr: false },
+    '/viewer/**':    { ssr: false },
+    '/compare/**':   { ssr: false },
+    '/admin/**':     { ssr: false },
+    '/auth/**':      { ssr: false },
+    '/profile':      { ssr: false },
+    '/packages':     { ssr: false },
+    '/inbox':        { ssr: false },
+  },
+
   runtimeConfig: {
+    supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
     public: {
       appVersion: '1.2.0',
       supabaseUrl: process.env.SUPABASE_URL || 'https://gqrnlnlfidighosujpdb.supabase.co',
@@ -20,7 +33,32 @@ export default defineNuxtConfig({
     },
   },
 
-  modules: ['@nuxt/ui', '@nuxt/content', '@sentry/nuxt/module'],
+  modules: ['@nuxtjs/seo', '@nuxt/ui', '@nuxt/content', '@sentry/nuxt/module'],
+
+  site: {
+    url: 'https://www.gerbtrace.com',
+    name: 'Gerbtrace',
+    description: 'Open-source PCB NPI & Manufacturing Data Preparation Platform',
+    defaultLocale: 'en',
+  },
+
+  sitemap: {
+    exclude: [
+      '/dashboard',
+      '/team/**',
+      '/viewer/**',
+      '/compare/**',
+      '/admin/**',
+      '/auth/**',
+      '/profile',
+      '/packages',
+      '/inbox',
+    ],
+  },
+
+  ogImage: {
+    enabled: false,
+  },
 
   experimental: {
     emitRouteChunkError: 'automatic-immediate',
@@ -97,11 +135,17 @@ export default defineNuxtConfig({
   app: {
     baseURL: '/',
     head: {
+      htmlAttrs: { lang: 'en' },
       title: 'Gerbtrace \u2014 PCB NPI\u200B\u200C\u200D\uFEFF & Manufacturing Data Preparation',
       meta: [
         { name: 'description', content: 'Open-source PCB NPI\u200B\u200C\u200D\u200B\u200C\u200D\uFEFF\u200B platform. Import Gerber files, manage BOMs and Pick & Place, configure panelization and paste, estimate pricing, and collaborate with your team.' },
         { name: 'theme-color', content: '#3B8EF0' },
         { name: 'verify-v1', content: 'nwmk-7f3a9b2e4d1c8f5a6b0e3d7c9a2f4b8e' },
+        { property: 'og:type', content: 'website' },
+        { property: 'og:site_name', content: 'Gerbtrace' },
+        { property: 'og:image', content: 'https://www.gerbtrace.com/images/docs/pcb-light.png' },
+        { name: 'twitter:card', content: 'summary_large_image' },
+        { name: 'twitter:image', content: 'https://www.gerbtrace.com/images/docs/pcb-light.png' },
       ],
       link: [
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico', sizes: '16x16 32x32 48x48' },

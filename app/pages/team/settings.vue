@@ -3,7 +3,7 @@
     <AppHeader />
     <main class="flex-1 px-4 py-10">
       <div class="w-full max-w-4xl mx-auto">
-        <NuxtLink to="/" class="text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 flex items-center gap-1 mb-4">
+        <NuxtLink to="/dashboard" class="text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 flex items-center gap-1 mb-4">
           <UIcon name="i-lucide-arrow-left" class="text-sm" />
           Back to projects
         </NuxtLink>
@@ -217,9 +217,8 @@
                   <NuxtLink to="/team/settings?section=billing" class="text-primary underline">Upgrade</NuxtLink>
                 </p>
               </div>
-              <form
+              <div
                 v-else
-                @submit.prevent="handleSaveElexess"
                 class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-4 space-y-3"
               >
                 <div class="flex items-center justify-between gap-4">
@@ -231,76 +230,19 @@
                     <span class="text-xs font-medium text-neutral-500 dark:text-neutral-400">Enable</span>
                     <USwitch
                       :model-value="elexessEnabled"
-                      @update:model-value="elexessEnabled = $event"
+                      :loading="savingElexess"
+                      @update:model-value="toggleElexess"
                     />
                   </label>
                 </div>
                 <p class="text-sm text-neutral-500 dark:text-neutral-400">
-                  Enable Elexess to fetch BOM pricing and availability using your team credentials.
+                  Enable Elexess Price Search to fetch BOM pricing and availability. Credentials are managed by platform administrators.
                 </p>
 
-                <template v-if="elexessEnabled">
-                  <div class="grid gap-3 md:grid-cols-3">
-                    <UFormField label="Username">
-                      <UInput
-                        v-model="elexessUsername"
-                        size="md"
-                        placeholder="Elexess API username"
-                        :disabled="savingElexess"
-                      />
-                    </UFormField>
-
-                    <UFormField label="Password">
-                      <UInput
-                        v-model="elexessPassword"
-                        type="password"
-                        size="md"
-                        placeholder="Elexess API password"
-                        :disabled="savingElexess"
-                      />
-                    </UFormField>
-
-                    <div class="flex flex-col justify-end">
-                      <UButton
-                        type="button"
-                        size="sm"
-                        color="neutral"
-                        variant="outline"
-                        :loading="validatingElexess"
-                        :disabled="!elexessUsername || !elexessPassword || savingElexess"
-                        @click.prevent="validateElexessCredentials"
-                      >
-                        Test Connection
-                      </UButton>
-                      <span v-if="elexessValidationResult === 'valid'" class="mt-2 text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
-                        <UIcon name="i-lucide-check-circle" class="text-xs" />
-                        Connected
-                      </span>
-                      <span v-else-if="elexessValidationResult === 'invalid'" class="mt-2 text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
-                        <UIcon name="i-lucide-x-circle" class="text-xs" />
-                        {{ elexessValidationError || 'Connection failed' }}
-                      </span>
-                    </div>
-                  </div>
-                </template>
-
-                <div class="flex justify-end">
-                  <UButton
-                    type="submit"
-                    :loading="savingElexess"
-                    :disabled="!hasElexessChanges"
-                  >
-                    Save Settings
-                  </UButton>
-                </div>
-
-                <p v-if="elexessSuccessMessage" class="text-sm text-green-600 dark:text-green-400">
-                  {{ elexessSuccessMessage }}
-                </p>
                 <p v-if="elexessErrorMessage" class="text-sm text-red-600 dark:text-red-400">
                   {{ elexessErrorMessage }}
                 </p>
-              </form>
+              </div>
 
               <!-- Spark AI -->
               <div v-if="!canUseSparkAi" class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-4 space-y-2">
@@ -315,9 +257,8 @@
                   <NuxtLink to="/team/settings?section=billing" class="text-primary underline">Upgrade</NuxtLink>
                 </p>
               </div>
-              <form
+              <div
                 v-else
-                @submit.prevent="handleSaveSpark"
                 class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-4 space-y-3"
               >
                 <div class="flex items-center justify-between gap-4">
@@ -330,94 +271,19 @@
                     <span class="text-xs font-medium text-neutral-500 dark:text-neutral-400">Enable</span>
                     <USwitch
                       :model-value="sparkEnabled"
-                      @update:model-value="sparkEnabled = $event"
+                      :loading="savingSpark"
+                      @update:model-value="toggleSpark"
                     />
                   </label>
                 </div>
                 <p class="text-sm text-neutral-500 dark:text-neutral-400">
-                  Enable Spark to enrich BOM lines with AI-generated descriptions and component metadata.
+                  Enable Spark AI to enrich BOM lines with AI-generated descriptions, component types, and manufacturer suggestions.
                 </p>
 
-                <template v-if="sparkEnabled">
-                  <div class="grid gap-3 md:grid-cols-2">
-                    <UFormField label="Anthropic API Key">
-                      <UInput
-                        v-model="sparkApiKey"
-                        type="password"
-                        size="md"
-                        placeholder="sk-ant-..."
-                        :disabled="savingSpark"
-                      />
-                      <template #help>
-                        <span class="text-xs text-neutral-400">
-                          Get your API key from
-                          <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" class="underline hover:text-neutral-600 dark:hover:text-neutral-300">console.anthropic.com</a>
-                        </span>
-                      </template>
-                    </UFormField>
-
-                    <div class="flex flex-col justify-end">
-                      <UButton
-                        type="button"
-                        size="sm"
-                        color="neutral"
-                        variant="outline"
-                        :loading="validatingKey"
-                        :disabled="!sparkApiKey || savingSpark"
-                        @click.prevent="validateApiKey"
-                      >
-                        Test Connection
-                      </UButton>
-                      <span v-if="keyValidationResult === 'valid'" class="mt-2 text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
-                        <UIcon name="i-lucide-check-circle" class="text-xs" />
-                        Connected
-                      </span>
-                      <span v-else-if="keyValidationResult === 'invalid'" class="mt-2 text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
-                        <UIcon name="i-lucide-x-circle" class="text-xs" />
-                        {{ keyValidationError || 'Connection failed' }}
-                      </span>
-                    </div>
-                  </div>
-
-                  <UFormField v-if="keyValidationResult === 'valid' && sparkModelOptions.length > 0" label="Model">
-                    <USelectMenu
-                      v-model="sparkModel"
-                      :items="sparkModelOptions"
-                      value-key="value"
-                      label-key="label"
-                      size="lg"
-                      :disabled="savingSpark"
-                      placeholder="Select a model"
-                      class="w-full"
-                    />
-                    <template #help>
-                      <span class="text-xs text-neutral-400">
-                        Sonnet is recommended for best quality. Haiku is faster and cheaper.
-                      </span>
-                    </template>
-                  </UFormField>
-                  <p v-else-if="keyValidationResult === 'valid' && sparkModelOptions.length === 0" class="text-sm text-neutral-500 dark:text-neutral-400">
-                    Click "Test Connection" to load available models.
-                  </p>
-                </template>
-
-                <div class="flex justify-end">
-                  <UButton
-                    type="submit"
-                    :loading="savingSpark"
-                    :disabled="!hasSparkChanges"
-                  >
-                    Save Settings
-                  </UButton>
-                </div>
-
-                <p v-if="sparkSuccessMessage" class="text-sm text-green-600 dark:text-green-400">
-                  {{ sparkSuccessMessage }}
-                </p>
                 <p v-if="sparkErrorMessage" class="text-sm text-red-600 dark:text-red-400">
                   {{ sparkErrorMessage }}
                 </p>
-              </form>
+              </div>
             </div>
 
             <!-- Billing -->
@@ -540,7 +406,7 @@ watch(isAuthenticated, (authed) => {
 }, { immediate: true })
 
 watch(currentTeamRole, (role) => {
-  if (role === 'guest') router.replace('/')
+  if (role === 'guest') router.replace('/dashboard')
 }, { immediate: true })
 
 const navItems = [
@@ -657,25 +523,13 @@ const defaultsSuccessMessage = ref('')
 
 // Elexess credentials state
 const elexessEnabled = ref(false)
-const elexessUsername = ref('')
-const elexessPassword = ref('')
 const savingElexess = ref(false)
 const elexessErrorMessage = ref('')
-const elexessSuccessMessage = ref('')
-const validatingElexess = ref(false)
-const elexessValidationResult = ref<'valid' | 'invalid' | null>(null)
-const elexessValidationError = ref('')
 
 // Spark AI state
 const sparkEnabled = ref(false)
-const sparkApiKey = ref('')
-const sparkModel = ref('')
 const savingSpark = ref(false)
 const sparkErrorMessage = ref('')
-const sparkSuccessMessage = ref('')
-const validatingKey = ref(false)
-const keyValidationResult = ref<'valid' | 'invalid' | null>(null)
-const keyValidationError = ref('')
 
 const currencyOptions = [
   { label: 'EUR', value: 'EUR' as const },
@@ -687,8 +541,6 @@ const timeFormatOptions = [
   { label: '12-hour (01:25 PM)', value: '12h' as const },
 ]
 
-const sparkModelOptions = ref<Array<{ label: string, value: string }>>([])
-
 // Init from current team
 watch(currentTeam, (team) => {
   if (team) {
@@ -696,36 +548,14 @@ watch(currentTeam, (team) => {
     autoJoinDomain.value = team.auto_join_domain ?? ''
     defaultCurrency.value = team.default_currency ?? 'EUR'
     timeFormat.value = team.time_format ?? '24h'
-    elexessEnabled.value = team.elexess_enabled ?? !!(team.elexess_username && team.elexess_password)
-    elexessUsername.value = team.elexess_username ?? ''
-    elexessPassword.value = team.elexess_password ?? ''
+    elexessEnabled.value = team.elexess_enabled !== false
     preferredPanelWidthInput.value = toInputValue(team.preferred_panel_width_mm)
     preferredPanelHeightInput.value = toInputValue(team.preferred_panel_height_mm)
     maxPanelWidthInput.value = toInputValue(team.max_panel_width_mm)
     maxPanelHeightInput.value = toInputValue(team.max_panel_height_mm)
     sparkEnabled.value = team.ai_enabled
-    sparkApiKey.value = team.ai_api_key ?? ''
-    sparkModel.value = team.ai_model || ''
-    if (team.ai_api_key) {
-      keyValidationResult.value = 'valid'
-      if (sparkModel.value) {
-        sparkModelOptions.value = [{ label: sparkModel.value, value: sparkModel.value }]
-      } else {
-        sparkModelOptions.value = []
-      }
-    }
   }
 }, { immediate: true })
-
-watch([elexessUsername, elexessPassword], () => {
-  elexessValidationResult.value = null
-  elexessValidationError.value = ''
-})
-
-watch(sparkApiKey, () => {
-  keyValidationResult.value = null
-  keyValidationError.value = ''
-})
 
 const hasChanges = computed(() => {
   if (!currentTeam.value) return false
@@ -747,20 +577,6 @@ const hasDefaultsChanges = computed(() => {
     || maxPanelHeight !== currentTeam.value.max_panel_height_mm
 })
 
-const hasElexessChanges = computed(() => {
-  if (!currentTeam.value) return false
-  const currentEnabled = currentTeam.value.elexess_enabled ?? !!(currentTeam.value.elexess_username && currentTeam.value.elexess_password)
-  return elexessEnabled.value !== currentEnabled
-    || elexessUsername.value !== (currentTeam.value.elexess_username ?? '')
-    || elexessPassword.value !== (currentTeam.value.elexess_password ?? '')
-})
-
-const hasSparkChanges = computed(() => {
-  if (!currentTeam.value) return false
-  return sparkEnabled.value !== currentTeam.value.ai_enabled
-    || sparkApiKey.value !== (currentTeam.value.ai_api_key ?? '')
-    || sparkModel.value !== (currentTeam.value.ai_model ?? '')
-})
 
 async function handleSave() {
   errorMessage.value = ''
@@ -851,127 +667,39 @@ function toInputValue(value: number | null | undefined): string {
   return String(value)
 }
 
-async function handleSaveElexess() {
+async function toggleElexess(value: boolean) {
   elexessErrorMessage.value = ''
-  elexessSuccessMessage.value = ''
-
-  if (elexessEnabled.value && (!elexessUsername.value.trim() || !elexessPassword.value.trim())) {
-    elexessErrorMessage.value = 'Username and password are required when Elexess is enabled.'
-    return
-  }
-
+  elexessEnabled.value = value
   savingElexess.value = true
 
   try {
-    const { error } = await updateTeam({
-      elexess_enabled: elexessEnabled.value,
-      elexess_username: elexessUsername.value.trim() || null,
-      elexess_password: elexessPassword.value.trim() || null,
-    })
-
+    const { error } = await updateTeam({ elexess_enabled: value })
     if (error) {
+      elexessEnabled.value = !value
       elexessErrorMessage.value = (error as any).message ?? 'Failed to save settings'
-    } else {
-      elexessSuccessMessage.value = 'Elexess settings saved!'
-      setTimeout(() => { elexessSuccessMessage.value = '' }, 3000)
     }
+  } catch {
+    elexessEnabled.value = !value
+    elexessErrorMessage.value = 'Failed to save settings'
   } finally {
     savingElexess.value = false
   }
 }
 
-async function validateElexessCredentials() {
-  elexessValidationResult.value = null
-  elexessValidationError.value = ''
-  validatingElexess.value = true
-
-  try {
-    const result = await $fetch<{ valid: boolean, error?: string }>('/api/elexess/validate-credentials', {
-      method: 'POST',
-      body: {
-        username: elexessUsername.value,
-        password: elexessPassword.value,
-      },
-    })
-
-    if (result.valid) {
-      elexessValidationResult.value = 'valid'
-    } else {
-      elexessValidationResult.value = 'invalid'
-      elexessValidationError.value = result.error ?? 'Invalid credentials'
-    }
-  } catch (err: any) {
-    elexessValidationResult.value = 'invalid'
-    elexessValidationError.value = err?.data?.message ?? err?.message ?? 'Connection failed'
-  } finally {
-    validatingElexess.value = false
-  }
-}
-
-async function validateApiKey() {
-  keyValidationResult.value = null
-  keyValidationError.value = ''
-  validatingKey.value = true
-
-  try {
-    const result = await $fetch<{
-      valid: boolean
-      models: Array<{ id: string, name: string }>
-      error?: string
-    }>('/api/ai/validate-key', {
-      method: 'POST',
-      body: { apiKey: sparkApiKey.value },
-    })
-
-    if (result.valid) {
-      keyValidationResult.value = 'valid'
-      sparkModelOptions.value = result.models.map(m => ({
-        label: m.name,
-        value: m.id,
-      }))
-      if (sparkModelOptions.value.length > 0 && !sparkModelOptions.value.some(o => o.value === sparkModel.value)) {
-        sparkModel.value = sparkModelOptions.value[0].value
-      }
-    } else {
-      keyValidationResult.value = 'invalid'
-      keyValidationError.value = result.error ?? 'Invalid key'
-    }
-  } catch (err: any) {
-    keyValidationResult.value = 'invalid'
-    keyValidationError.value = err?.data?.message ?? err?.message ?? 'Connection failed'
-  } finally {
-    validatingKey.value = false
-  }
-}
-
-async function handleSaveSpark() {
+async function toggleSpark(value: boolean) {
   sparkErrorMessage.value = ''
-  sparkSuccessMessage.value = ''
-
-  if (sparkEnabled.value && !sparkApiKey.value.trim()) {
-    sparkErrorMessage.value = 'API key is required when Spark is enabled.'
-    return
-  }
-  if (sparkEnabled.value && sparkApiKey.value.trim() && !sparkModel.value) {
-    sparkErrorMessage.value = 'Please select a model before saving. Click "Test Connection" to load available models.'
-    return
-  }
-
+  sparkEnabled.value = value
   savingSpark.value = true
 
   try {
-    const { error } = await updateTeam({
-      ai_enabled: sparkEnabled.value,
-      ai_api_key: sparkApiKey.value.trim() || null,
-      ai_model: sparkModel.value || '',
-    })
-
+    const { error } = await updateTeam({ ai_enabled: value })
     if (error) {
-      sparkErrorMessage.value = (error as any).message ?? 'Failed to save Spark settings'
-    } else {
-      sparkSuccessMessage.value = 'Spark settings saved!'
-      setTimeout(() => { sparkSuccessMessage.value = '' }, 3000)
+      sparkEnabled.value = !value
+      sparkErrorMessage.value = (error as any).message ?? 'Failed to save settings'
     }
+  } catch {
+    sparkEnabled.value = !value
+    sparkErrorMessage.value = 'Failed to save settings'
   } finally {
     savingSpark.value = false
   }

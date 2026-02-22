@@ -32,7 +32,7 @@ export function useDocsLink() {
     const isLikelyTauri = typeof window !== 'undefined'
       && ('__TAURI_INTERNALS__' in window || '__TAURI__' in window)
     if (!isLikelyTauri) {
-      window.open(webUrl, '_blank', 'noopener,noreferrer')
+      window.location.href = webUrl
       return
     }
 
@@ -47,7 +47,7 @@ export function useDocsLink() {
       console.warn('[docs] Failed to open with Tauri opener:', error)
     }
 
-    window.open(webUrl, '_blank', 'noopener,noreferrer')
+    window.location.href = webUrl
   }
 
   return {

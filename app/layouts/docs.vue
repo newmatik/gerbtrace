@@ -13,12 +13,7 @@ provide('docs-search-files', searchFiles)
 <template>
   <div class="min-h-screen flex flex-col bg-white dark:bg-neutral-900">
     <div class="sticky top-0 z-10 shrink-0 bg-white dark:bg-neutral-900">
-      <AppHeader>
-        <div class="w-px h-5 bg-neutral-200 dark:bg-neutral-700/80" />
-        <NuxtLink to="/docs" class="text-xs font-medium text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors">
-          Docs
-        </NuxtLink>
-      </AppHeader>
+      <AppHeader marketing />
     </div>
 
     <UContainer class="flex-1">

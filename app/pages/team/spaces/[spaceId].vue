@@ -161,7 +161,7 @@ watch(isAuthenticated, (authed) => {
 
 watch(currentTeamRole, (role) => {
   if (role === 'guest') {
-    router.replace('/')
+    router.replace('/dashboard')
   }
 }, { immediate: true })
 
