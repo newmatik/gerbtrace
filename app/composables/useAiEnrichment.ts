@@ -39,9 +39,7 @@ export function useAiEnrichment() {
   const enrichError = useState<string | null>('spark-enrich-error', () => null)
   const { currentTeam } = useTeam()
 
-  const { canUseSparkAi, logUsageEvent } = useTeamPlan()
-
-  const { isAtSparkAiLimit } = useTeamPlan()
+  const { canUseSparkAi, logUsageEvent, isAtSparkAiLimit } = useTeamPlan()
 
   const isAiEnabled = computed(() => {
     return !!(canUseSparkAi.value && currentTeam.value?.ai_enabled && !isAtSparkAiLimit.value)

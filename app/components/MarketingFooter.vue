@@ -4,7 +4,7 @@
       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
         <!-- Brand -->
         <div class="flex items-center gap-2 text-xs text-gray-500">
-          <a href="https://www.newmatik.com" target="_blank" class="font-semibold text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Gerbtrace by Newmatik</a>
+          <a href="https://www.newmatik.com" target="_blank" rel="noopener noreferrer" class="font-semibold text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Gerbtrace by Newmatik</a>
           <span class="opacity-30">&bull;</span>
           <span>v{{ appVersion }}</span>
         </div>
@@ -14,7 +14,7 @@
           <NuxtLink to="/" class="hover:text-gray-900 dark:hover:text-white transition-colors">Home</NuxtLink>
           <NuxtLink to="/pricing" class="hover:text-gray-900 dark:hover:text-white transition-colors">Pricing</NuxtLink>
           <button class="hover:text-gray-900 dark:hover:text-white transition-colors" @click="openDocs()">Docs</button>
-          <a v-if="release?.releasePage" :href="release.releasePage" target="_blank" class="hover:text-gray-900 dark:hover:text-white transition-colors">Releases</a>
+          <a v-if="release?.releasePage" :href="release.releasePage" target="_blank" rel="noopener noreferrer" class="hover:text-gray-900 dark:hover:text-white transition-colors">Releases</a>
           <template v-if="!isTauri && release">
             <a v-if="release.macosUrl" :href="release.macosUrl" class="hover:text-gray-900 dark:hover:text-white transition-colors">macOS</a>
             <a v-if="release.windowsExeUrl" :href="release.windowsExeUrl" class="hover:text-gray-900 dark:hover:text-white transition-colors">Windows</a>

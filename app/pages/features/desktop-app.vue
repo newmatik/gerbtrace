@@ -247,7 +247,7 @@ const platforms = [
         <div class="max-w-3xl mx-auto text-center">
           <h2 class="text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl mb-3">Built with Tauri</h2>
           <p class="text-gray-600 dark:text-gray-400 max-w-lg mx-auto mb-6">
-            Gerbtrace uses <a href="https://tauri.app" target="_blank" class="text-[var(--ui-primary)] hover:underline">Tauri</a>
+            Gerbtrace uses <a href="https://tauri.app" target="_blank" rel="noopener noreferrer" class="text-[var(--ui-primary)] hover:underline">Tauri</a>
             to deliver a native desktop experience. Unlike Electron apps, Tauri uses your system's built-in webview,
             resulting in a much smaller download size and lower resource usage.
           </p>

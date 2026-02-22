@@ -194,8 +194,9 @@ async function handleTeamDetail(supabase: any, teamId: string) {
   const usage = Array.isArray(usageRes.data) && usageRes.data.length > 0 ? usageRes.data[0] : { elexess_searches: 0, spark_ai_runs: 0 }
 
   const team = teamRes.data
+  const { ai_api_key, elexess_password, ...safeTeam } = team
   return {
-    team,
+    team: safeTeam,
     members: membersRes.data ?? [],
     projects: projectsRes.data ?? [],
     subscription: subsRes.data?.[0] ?? null,

@@ -79,6 +79,17 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 403, statusMessage: 'Spark AI requires a Pro plan or higher' })
   }
 
+  const client = getAdminClient()
+  const { data: team } = await client
+    .from('teams')
+    .select('ai_enabled')
+    .eq('id', access.teamId)
+    .single()
+
+  if (team?.ai_enabled === false) {
+    throw createError({ statusCode: 403, statusMessage: 'Spark AI is disabled for this team' })
+  }
+
   const credentials = await resolveSparkCredentials(access.teamId)
 
   const body = await readBody(event)

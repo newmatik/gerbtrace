@@ -360,11 +360,16 @@ export function useElexessApi() {
 
       try {
         const token = await getAuthToken()
+        const teamId = currentTeam.value?.id
+        if (!teamId) {
+          console.warn('[Elexess] No team context available')
+          return null
+        }
         const result = await $fetch<any>('/api/elexess/search', {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
           body: {
-            teamId: currentTeam.value!.id,
+            teamId,
             searchTerm: partNumber,
           },
         })
