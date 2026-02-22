@@ -41,6 +41,7 @@ serve(async (req: Request) => {
       case 'subscriptions': return json(await handleSubscriptions(supabase))
       case 'usage_logs': return json(await handleUsageLogs(supabase, body))
       case 'team_detail': return json(await handleTeamDetail(supabase, body.team_id))
+      case 'platform_config': return json(await handlePlatformConfig(supabase))
       default: return json({ error: `Unknown mode: ${mode}` }, 400)
     }
   } catch (err) {
@@ -192,8 +193,9 @@ async function handleTeamDetail(supabase: any, teamId: string) {
 
   const usage = Array.isArray(usageRes.data) && usageRes.data.length > 0 ? usageRes.data[0] : { elexess_searches: 0, spark_ai_runs: 0 }
 
+  const team = teamRes.data
   return {
-    team: teamRes.data,
+    team,
     members: membersRes.data ?? [],
     projects: projectsRes.data ?? [],
     subscription: subsRes.data?.[0] ?? null,
@@ -201,6 +203,28 @@ async function handleTeamDetail(supabase: any, teamId: string) {
       elexess_searches: Number(usage.elexess_searches) || 0,
       spark_ai_runs: Number(usage.spark_ai_runs) || 0,
     },
+    integrations: {
+      elexess_enabled: team.elexess_enabled,
+      elexess_has_custom_credentials: !!(team.elexess_username && team.elexess_password),
+      ai_enabled: team.ai_enabled,
+      ai_has_custom_key: !!team.ai_api_key,
+    },
     recent_events: eventsRes.data ?? [],
+  }
+}
+
+async function handlePlatformConfig(supabase: any) {
+  const { data, error } = await supabase
+    .from('platform_config')
+    .select('id, spark_api_key, spark_model, elexess_username, elexess_password, updated_at')
+    .limit(1)
+    .single()
+
+  if (error) throw error
+
+  return {
+    ...data,
+    spark_api_key: data.spark_api_key ? `${data.spark_api_key.slice(0, 12)}...` : null,
+    elexess_password: data.elexess_password ? '••••••••' : null,
   }
 }

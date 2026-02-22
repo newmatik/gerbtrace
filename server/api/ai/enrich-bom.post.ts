@@ -73,19 +73,17 @@ function sanitizeSuggestions(raw: unknown): SanitizedSuggestions {
 }
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event)
-  const { apiKey, model, bomLines, smdPnpComponents, thtPnpComponents, existingGroups, teamPlan } = body ?? {}
+  const access = await verifyTeamAccess(event)
 
-  if (teamPlan === 'free') {
+  if (access.plan === 'free') {
     throw createError({ statusCode: 403, statusMessage: 'Spark AI requires a Pro plan or higher' })
   }
 
-  if (!apiKey || typeof apiKey !== 'string') {
-    throw createError({ statusCode: 400, statusMessage: 'Missing apiKey' })
-  }
-  if (!model || typeof model !== 'string' || !model.startsWith('claude-')) {
-    throw createError({ statusCode: 400, statusMessage: 'Invalid model' })
-  }
+  const credentials = await resolveSparkCredentials(access.teamId)
+
+  const body = await readBody(event)
+  const { bomLines, smdPnpComponents, thtPnpComponents, existingGroups } = body ?? {}
+
   if (!Array.isArray(bomLines) || bomLines.length === 0) {
     throw createError({ statusCode: 400, statusMessage: 'Missing or empty bomLines' })
   }
@@ -209,12 +207,12 @@ Only output the JSON object, nothing else.`
     const response = await $fetch<any>('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
-        'x-api-key': apiKey,
+        'x-api-key': credentials.apiKey,
         'anthropic-version': '2023-06-01',
         'content-type': 'application/json',
       },
       body: {
-        model,
+        model: credentials.model,
         max_tokens: 16384,
         temperature: 0,
         system: [{ type: 'text', text: systemPrompt }],
@@ -248,19 +246,19 @@ Only output the JSON object, nothing else.`
   } catch (err: any) {
     if (err.__h3_error__) throw err
 
-    const anthropicError = err?.data?.error?.message ?? err?.data?.message ?? null
+    const providerError = err?.data?.error?.message ?? err?.data?.message ?? null
     const status = err?.statusCode ?? err?.status ?? 502
 
-    console.error('[Spark] Anthropic API error:', {
+    console.error('[Spark] Provider API error:', {
       status,
-      anthropicError,
+      providerError,
       message: err?.message,
     })
 
     throw createError({
       statusCode: status === 401 || status === 403 ? status : 502,
-      statusMessage: status === 401 || status === 403 ? 'Invalid API key' : 'AI enrichment failed',
-      data: { message: anthropicError ?? err?.message ?? 'Unknown error' },
+      statusMessage: status === 401 || status === 403 ? 'Spark AI configuration error' : 'AI enrichment failed',
+      data: { message: providerError ?? err?.message ?? 'Unknown error' },
     })
   }
 })

@@ -82,7 +82,7 @@ const upgradeTo = computed(() =>
 const PRO_HIGHLIGHTS = [
   '15 team members',
   'Unlimited projects',
-  'Spark AI (bring your own key)',
+  'Spark AI (25 runs/month)',
   '1,000 Elexess price searches/month',
 ]
 

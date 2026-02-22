@@ -22,15 +22,11 @@ export interface Team {
   default_currency: 'USD' | 'EUR'
   time_format: '24h' | '12h'
   elexess_enabled: boolean
-  elexess_username: string | null
-  elexess_password: string | null
   preferred_panel_width_mm: number | null
   preferred_panel_height_mm: number | null
   max_panel_width_mm: number | null
   max_panel_height_mm: number | null
   ai_enabled: boolean
-  ai_api_key: string | null
-  ai_model: string
   created_at: string
   updated_at: string
 }
@@ -189,15 +185,11 @@ export function useTeam() {
     default_currency?: 'USD' | 'EUR'
     time_format?: '24h' | '12h'
     elexess_enabled?: boolean
-    elexess_username?: string | null
-    elexess_password?: string | null
     preferred_panel_width_mm?: number | null
     preferred_panel_height_mm?: number | null
     max_panel_width_mm?: number | null
     max_panel_height_mm?: number | null
     ai_enabled?: boolean
-    ai_api_key?: string | null
-    ai_model?: string
   }) {
     if (!currentTeamId.value) return { error: new Error('No team selected') }
     if (typeof updates.name === 'string') {

@@ -7,7 +7,7 @@ const { isAuthenticated } = useAuth()
 watch([isLoading, isAuthenticated, isPlatformAdmin], () => {
   if (isLoading.value) return
   if (!isAuthenticated.value) { router.replace('/auth/login'); return }
-  if (!isPlatformAdmin.value) router.replace('/')
+  if (!isPlatformAdmin.value) router.replace('/dashboard')
 }, { immediate: true })
 
 const navItems = [
@@ -16,6 +16,7 @@ const navItems = [
   { label: 'Users', icon: 'i-lucide-users', to: '/admin/users' },
   { label: 'Subscriptions', icon: 'i-lucide-credit-card', to: '/admin/subscriptions' },
   { label: 'Usage Logs', icon: 'i-lucide-scroll-text', to: '/admin/usage-logs' },
+  { label: 'Settings', icon: 'i-lucide-settings', to: '/admin/settings' },
 ]
 
 function isActive(item: { to: string }) {
@@ -32,7 +33,7 @@ function isActive(item: { to: string }) {
     </main>
     <main v-else-if="isPlatformAdmin" class="flex-1 px-4 py-10">
       <div class="w-full max-w-7xl mx-auto">
-        <NuxtLink to="/" class="text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 flex items-center gap-1 mb-4">
+        <NuxtLink to="/dashboard" class="text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 flex items-center gap-1 mb-4">
           <UIcon name="i-lucide-arrow-left" class="text-sm" />
           Back to app
         </NuxtLink>

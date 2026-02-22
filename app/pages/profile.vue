@@ -3,7 +3,7 @@
     <AppHeader />
     <main class="flex-1 px-4 py-10">
       <div class="w-full max-w-2xl mx-auto">
-        <NuxtLink to="/" class="text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 flex items-center gap-1 mb-4">
+        <NuxtLink to="/dashboard" class="text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 flex items-center gap-1 mb-4">
           <UIcon name="i-lucide-arrow-left" class="text-sm" />
           Back to projects
         </NuxtLink>

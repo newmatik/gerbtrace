@@ -42,7 +42,7 @@
 
       <!-- Right: Editor or Placeholder -->
       <div class="flex-1 flex flex-col overflow-hidden">
-        <NuxtLink to="/" class="text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 flex items-center gap-1 px-4 pt-4">
+        <NuxtLink to="/dashboard" class="text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 flex items-center gap-1 px-4 pt-4">
           <UIcon name="i-lucide-arrow-left" class="text-sm" />
           Back to projects
         </NuxtLink>

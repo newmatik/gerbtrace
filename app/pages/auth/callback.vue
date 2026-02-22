@@ -227,7 +227,7 @@ async function handlePostAuth(session: any) {
     }
   }
 
-  router.replace('/')
+  router.replace('/dashboard')
 }
 
 async function handlePasswordUpdate() {
@@ -249,7 +249,7 @@ async function handlePasswordUpdate() {
       errorMessage.value = error.message
     } else {
       successMessage.value = 'Password updated successfully! Redirecting...'
-      setTimeout(() => router.replace('/'), 1500)
+      setTimeout(() => router.replace('/dashboard'), 1500)
     }
   } finally {
     passwordLoading.value = false
