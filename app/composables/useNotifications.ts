@@ -91,6 +91,7 @@ export function useNotifications() {
   }
 
   async function subscribe() {
+    if (!import.meta.client) return
     if (!user.value?.id || channel) return
     channel = supabase.channel(`notifications:${user.value.id}`)
     channel.on('postgres_changes', {
