@@ -8,9 +8,9 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, statusMessage: 'Missing access token.' })
   }
 
-  const body = await readBody<{ teamId: string; email: string }>(event)
-  const teamId = body?.teamId?.trim()
-  const email = body?.email?.trim().toLowerCase()
+  const body = await readBody<{ teamId?: unknown; email?: unknown }>(event)
+  const teamId = typeof body?.teamId === 'string' ? body.teamId.trim() : ''
+  const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : ''
 
   if (!teamId || !email) {
     throw createError({ statusCode: 400, statusMessage: 'teamId and email are required.' })

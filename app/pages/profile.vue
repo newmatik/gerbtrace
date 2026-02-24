@@ -157,7 +157,6 @@
                 inputmode="numeric"
                 placeholder="000000"
                 maxlength="6"
-                autofocus
                 class="text-center tracking-[0.3em] font-mono"
               />
               <div class="flex gap-2">
@@ -194,7 +193,6 @@
                 inputmode="numeric"
                 placeholder="000000"
                 maxlength="6"
-                autofocus
                 class="text-center tracking-[0.3em] font-mono"
               />
             </UFormField>
@@ -372,6 +370,7 @@ const mfaError = ref('')
 const mfaSuccess = ref('')
 
 async function loadMfaFactors() {
+  mfaError.value = ''
   const { data, error } = await supabase.auth.mfa.listFactors()
   if (error) {
     mfaError.value = error.message
@@ -394,6 +393,7 @@ async function handleMfaStartEnroll() {
 async function handleMfaVerifyEnrollment() {
   if (mfaVerifyCode.value.length !== 6) return
   mfaError.value = ''
+  mfaSuccess.value = ''
   mfaVerifyLoading.value = true
   try {
     const { data: cd, error: ce } = await supabase.auth.mfa.challenge({ factorId: mfaNewFactorId.value })
@@ -409,6 +409,7 @@ async function handleMfaVerifyEnrollment() {
 async function handleMfaUnenroll() {
   if (!mfaUnenrollFactorId.value || mfaUnenrollCode.value.length !== 6) return
   mfaError.value = ''
+  mfaSuccess.value = ''
   mfaUnenrollLoading.value = true
   try {
     const { data: cd, error: ce } = await supabase.auth.mfa.challenge({ factorId: mfaUnenrollFactorId.value })

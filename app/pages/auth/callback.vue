@@ -6,6 +6,13 @@ const supabase = useSupabase()
 const processing = ref(true)
 const errorMessage = ref('')
 const errorHint = ref('')
+let authSubscription: { unsubscribe: () => void } | null = null
+let timeoutId: ReturnType<typeof setTimeout> | null = null
+
+onUnmounted(() => {
+  authSubscription?.unsubscribe()
+  if (timeoutId) clearTimeout(timeoutId)
+})
 
 onMounted(async () => {
   try {
@@ -54,6 +61,7 @@ onMounted(async () => {
         handlePostAuth(newSession)
       }
     })
+    authSubscription = subscription
 
     const { data: { session }, error } = await supabase.auth.getSession()
 
@@ -78,7 +86,7 @@ onMounted(async () => {
       return
     }
 
-    setTimeout(() => {
+    timeoutId = setTimeout(() => {
       if (processing.value) {
         processing.value = false
         errorMessage.value = 'Sign-in timed out. Please try again.'

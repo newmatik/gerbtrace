@@ -128,11 +128,9 @@ async function handleSubmit() {
             {{ errorMessage }}
           </p>
           <div class="mt-4 text-center">
-            <NuxtLink to="/auth/login">
-              <UButton variant="outline">
-                Go to sign in
-              </UButton>
-            </NuxtLink>
+            <UButton variant="outline" to="/auth/login">
+              Go to sign in
+            </UButton>
           </div>
         </template>
       </div>
