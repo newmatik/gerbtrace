@@ -50,7 +50,7 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ middleware: ['auth'] })
+definePageMeta({})
 
 const { notifications, loading, markAsRead, markAllAsRead } = useNotifications()
 

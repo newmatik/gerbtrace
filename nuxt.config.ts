@@ -1,5 +1,5 @@
 export default defineNuxtConfig({
-  ssr: true,
+  ssr: false,
   devtools: { enabled: process.env.NODE_ENV !== 'production' },
 
   routeRules: {
@@ -15,11 +15,12 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
-    supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
+    supabaseServiceRoleKey: process.env.SUPABASE_SECRET_KEY || '',
     public: {
-      appVersion: '1.2.0',
+      appVersion: '1.3.0',
       supabaseUrl: process.env.SUPABASE_URL || 'https://gqrnlnlfidighosujpdb.supabase.co',
       supabaseAnonKey: process.env.SUPABASE_ANON_KEY || '',
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'https://www.gerbtrace.com',
       // Keep in sync with Supabase Auth -> Email OTP length.
       supabaseEmailOtpLength: Number(process.env.SUPABASE_EMAIL_OTP_LENGTH || 8),
       elexessUrl: process.env.ELEXESS_URL || 'https://api.dev.elexess.com/api',
@@ -65,6 +66,10 @@ export default defineNuxtConfig({
   },
 
   content: {
+    database: {
+      type: 'd1',
+      bindingName: 'DB',
+    },
     build: {
       markdown: {
         toc: {
@@ -157,6 +162,10 @@ export default defineNuxtConfig({
         { rel: 'manifest', href: '/site.webmanifest' },
       ],
     },
+  },
+
+  nitro: {
+    preset: 'cloudflare-module',
   },
 
   compatibilityDate: '2025-01-01',

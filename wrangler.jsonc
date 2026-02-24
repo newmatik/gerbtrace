@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "gerbtrace",
+  "compatibility_date": "2025-01-01",
+  "assets": { "directory": ".output/public" },
+  "main": ".output/server/index.mjs",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "gerbtrace-content",
+      "database_id": "f87b5b83-2766-4ac8-a7dd-289d80ea0cc0"
+    }
+  ]
+}

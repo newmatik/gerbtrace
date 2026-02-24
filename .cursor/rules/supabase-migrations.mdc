@@ -1,0 +1,50 @@
+---
+description: Supabase migration authoring and application rules
+globs: supabase/migrations/**/*.sql
+alwaysApply: false
+---
+
+# Supabase Migrations
+
+Production Supabase runs on **Supabase Cloud**. Migrations are applied using the Supabase MCP tools.
+
+## Applying migrations
+
+After creating a new migration file under `supabase/migrations/`, apply it immediately using the Supabase MCP `apply_migration` tool. Do not wait for merge to `main` — the app will break if it references columns or tables that don't exist yet.
+
+```
+apply_migration(
+  project_id: "<project-id from Supabase dashboard>",
+  name: "descriptive_snake_case_name",
+  query: "<SQL from the migration file>"
+)
+```
+
+The project ID is the subdomain portion of `SUPABASE_URL` in `.env` (e.g. for `https://abc123.supabase.co`, the project ID is `abc123`).
+
+## Idempotency requirement
+
+Every statement must tolerate re-runs (migrations can be retried after partial failures):
+
+- `CREATE TABLE` -> `CREATE TABLE IF NOT EXISTS`
+- `CREATE FUNCTION` -> `CREATE OR REPLACE FUNCTION`
+- `CREATE POLICY` -> wrap in `DO $$ ... IF NOT EXISTS (select from pg_policy ...) ...`
+- `ALTER TABLE ADD COLUMN` -> `ADD COLUMN IF NOT EXISTS`
+- `ALTER TABLE ADD CONSTRAINT` -> check `pg_constraint` first in a `DO` block
+- `DELETE` dedup -> use `row_number()` with a stable tiebreaker (`ctid`) so re-runs are no-ops
+
+## Verifying changes
+
+After applying a migration, verify the schema change:
+
+```
+execute_sql(
+  project_id: "<project-id>",
+  query: "SELECT column_name, data_type FROM information_schema.columns WHERE table_schema='public' AND table_name='<table>';"
+)
+```
+
+## Notes
+
+- Supabase Cloud auto-reloads the PostgREST schema cache after `apply_migration`.
+- If a migration produces `NOTICE: ... already exists, skipping` that is fine.

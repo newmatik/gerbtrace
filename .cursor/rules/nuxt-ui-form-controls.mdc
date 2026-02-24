@@ -16,11 +16,6 @@ Use Nuxt UI form controls for consistency across the app.
   - `USwitch` for boolean toggle-style settings
 - Keep native controls only when a Nuxt UI component cannot reasonably satisfy behavior, accessibility, or performance needs.
 
-## Pick and Place selectors
-
-- SMD/THT package selectors should be searchable (autocomplete behavior).
-- Option labels should include package source context (for example library/source name).
-
 ## Notes
 
 - Keep value payloads unchanged unless the feature explicitly requires a data-model change.

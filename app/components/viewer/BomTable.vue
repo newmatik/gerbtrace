@@ -247,7 +247,7 @@
           <!-- BOM line -->
           <div
             v-else-if="row.kind === 'line'"
-            :ref="(el) => { if (el) lineRefs[row.line.id] = el as HTMLElement }"
+            :ref="(el: any) => { if (el) lineRefs[row.line.id] = el as HTMLElement }"
             class="rounded-lg border transition-colors cursor-pointer"
             :class="[
               selectedLineId === row.line.id

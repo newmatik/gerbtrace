@@ -1,0 +1,15 @@
+---
+description: Pre-commit hook runs nuxi typecheck and blocks on failure
+alwaysApply: true
+---
+
+# Pre-commit Typecheck
+
+A `simple-git-hooks` pre-commit hook runs `npx nuxi typecheck` before every commit. Commits are blocked if the typecheck fails.
+
+## Rules
+
+- Never introduce type errors. Run `npx nuxi typecheck` to verify before suggesting a commit.
+- If you change types, composables, or component props, verify typecheck still passes.
+- Do not bypass the hook with `--no-verify` unless the user explicitly asks.
+- Fix type errors in the same change that introduces them — do not leave them for a follow-up.
