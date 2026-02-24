@@ -40,7 +40,12 @@ async function handleSubmit() {
     if (error) {
       errorMessage.value = error.message
     } else {
-      router.replace('/dashboard')
+      const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+      if (assurance?.nextLevel === 'aal2' && assurance?.currentLevel === 'aal1') {
+        router.replace('/auth/mfa')
+      } else {
+        router.replace('/dashboard')
+      }
     }
   } finally {
     isLoading.value = false

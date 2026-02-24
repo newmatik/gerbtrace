@@ -74,7 +74,8 @@
     "tailwindcss": "^4.2.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.18"
+    "vitest": "^4.0.18",
+    "wrangler": "^4.68.0"
   },
   "simple-git-hooks": {
     "pre-commit": "npm run precommit"
@@ -84,7 +85,8 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
-      "better-sqlite3"
+      "better-sqlite3",
+      "workerd"
     ]
   }
 }

@@ -12,6 +12,11 @@ const isLoading = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 const sessionValid = ref(false)
+let redirectTimer: ReturnType<typeof setTimeout> | null = null
+
+onUnmounted(() => {
+  if (redirectTimer) clearTimeout(redirectTimer)
+})
 
 const passwordMismatch = computed(() =>
   confirmPassword.value.length > 0 && newPassword.value !== confirmPassword.value,
@@ -43,7 +48,8 @@ async function handleSubmit() {
       errorMessage.value = error.message
     } else {
       successMessage.value = 'Password updated successfully! Redirecting...'
-      setTimeout(() => router.replace('/auth/login'), 1500)
+      await supabase.auth.signOut()
+      redirectTimer = setTimeout(() => navigateTo('/auth/login'), 1500)
     }
   } finally {
     isLoading.value = false

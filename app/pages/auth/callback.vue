@@ -115,9 +115,7 @@ async function handlePostAuth(session: any) {
     }
   }
 
-  const isInvite = session.user?.app_metadata?.providers?.length === 1
-    && session.user?.app_metadata?.providers?.[0] === 'email'
-    && !session.user?.user_metadata?.email_verified
+  const isInvite = !!session.user?.invited_at && !session.user?.email_confirmed_at
 
   if (isInvite) {
     router.replace('/auth/set-password')

@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Nuxt UI dropdown items: use onSelect, not click
 
-Nuxt UI 4 (`@nuxt/ui` 3.x) uses `onSelect` as the action callback for menu item objects. The old `click` property is silently ignored — no error, no warning, nothing happens.
+Nuxt UI 4 (`@nuxt/ui` 4.x) uses `onSelect` as the action callback for menu item objects. The old `click` property is silently ignored — no error, no warning, nothing happens.
 
 ## Rule
 

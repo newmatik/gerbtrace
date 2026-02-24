@@ -27,16 +27,21 @@ export default defineEventHandler(async (event) => {
     .eq('team_id', teamId)
     .eq('user_id', callerData.user.id)
     .eq('role', 'admin')
+    .eq('status', 'active')
     .maybeSingle()
 
   if (membershipError) {
-    throw createError({ statusCode: 500, statusMessage: membershipError.message })
+    console.error('[invite] membership query error:', membershipError.message)
+    throw createError({ statusCode: 500, statusMessage: 'Failed to verify team membership.' })
   }
   if (!adminMembership) {
-    throw createError({ statusCode: 403, statusMessage: 'You must be an admin of this team.' })
+    throw createError({ statusCode: 403, statusMessage: 'You must be an active admin of this team.' })
   }
 
-  const siteUrl = (config.public as any).siteUrl as string || 'https://www.gerbtrace.com'
+  const siteUrl = (config.public as any).siteUrl as string
+  if (!siteUrl) {
+    throw createError({ statusCode: 500, statusMessage: 'siteUrl is not configured.' })
+  }
   const { data, error } = await adminClient.auth.admin.inviteUserByEmail(email, {
     redirectTo: `${siteUrl}/auth/callback`,
   })

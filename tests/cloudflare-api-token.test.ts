@@ -56,7 +56,7 @@ describe('Cloudflare API Token — Verification', () => {
       success: boolean
       result: { id: string }[]
     }
-    expect(accountsBody.result.length).toBeGreaterThan(0)
+    expect(accountsBody.result.length, 'No Cloudflare accounts accessible').toBeGreaterThan(0)
     const accountId = accountsBody.result[0].id
 
     const pagesRes = await fetch(
@@ -94,6 +94,7 @@ describe('Cloudflare API Token — Verification', () => {
       success: boolean
       result: { id: string }[]
     }
+    expect(accountsBody.result.length, 'No Cloudflare accounts accessible').toBeGreaterThan(0)
     const accountId = accountsBody.result[0].id
 
     const workersRes = await fetch(
