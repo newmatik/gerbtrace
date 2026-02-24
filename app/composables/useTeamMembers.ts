@@ -376,6 +376,9 @@ export function useTeamMembers() {
       })
 
     await channel.subscribe((status) => {
+      // #region agent log
+      fetch('http://127.0.0.1:7453/ingest/5870fb78-28fc-4f6a-a0a8-cbd461ff0af2', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '40e20a' }, body: JSON.stringify({ sessionId: '40e20a', runId: `run-${Date.now()}`, hypothesisId: 'H4', location: 'useTeamMembers.ts:378', message: 'team realtime subscribe status', data: { teamId, status }, timestamp: Date.now() }) }).catch(() => {})
+      // #endregion
       if (status === 'SUBSCRIBED') {
         console.log('[useTeamMembers] Real-time subscription established')
       } else if (status === 'CHANNEL_ERROR') {
