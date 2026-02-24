@@ -180,7 +180,7 @@ export function useAuth() {
     // Always use the web origin for password reset emails — the link in the
     // email will open in the user's browser, not inside the Tauri desktop app.
     const origin = webOrigin()
-    const redirectTo = `${origin}/auth/callback?type=recovery`
+    const redirectTo = `${origin}/auth/callback`
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo,
     })
@@ -191,6 +191,11 @@ export function useAuth() {
   async function updatePassword(newPassword: string) {
     const { data, error } = await supabase.auth.updateUser({ password: newPassword })
     return { data, error }
+  }
+
+  /** Get current MFA assurance level (aal1 vs aal2) */
+  async function getAssuranceLevel() {
+    return await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
   }
 
   return {
@@ -207,5 +212,6 @@ export function useAuth() {
     resetPassword,
     updatePassword,
     resendSignUpConfirmation,
+    getAssuranceLevel,
   }
 }

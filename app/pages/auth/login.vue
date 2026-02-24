@@ -243,14 +243,18 @@ async function handleSubmit() {
     } else {
       const { error } = await signIn(email.value, password.value)
       if (error) {
-        // Provide a friendlier message for unconfirmed emails
         if (error.message?.toLowerCase().includes('email not confirmed')) {
           errorMessage.value = 'Your email address has not been confirmed yet. Please check your inbox for the confirmation link, or sign up again to resend it.'
         } else {
           errorMessage.value = error.message
         }
       } else {
-        router.replace('/dashboard')
+        const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+        if (assurance?.nextLevel === 'aal2' && assurance?.currentLevel === 'aal1') {
+          router.replace('/auth/mfa')
+        } else {
+          router.replace('/dashboard')
+        }
       }
     }
   } finally {
@@ -276,7 +280,12 @@ async function handleOtpSubmit() {
     if (error) {
       errorMessage.value = error.message
     } else if (data.session) {
-      router.replace('/dashboard')
+      const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+      if (assurance?.nextLevel === 'aal2' && assurance?.currentLevel === 'aal1') {
+        router.replace('/auth/mfa')
+      } else {
+        router.replace('/dashboard')
+      }
     }
   } finally {
     otpLoading.value = false

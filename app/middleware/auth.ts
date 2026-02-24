@@ -1,5 +1,6 @@
 export default defineNuxtRouteMiddleware(async () => {
   const { user, loading } = useAuth()
+  const supabase = useSupabase()
 
   if (loading.value) {
     await new Promise<void>((resolve) => {
@@ -12,5 +13,10 @@ export default defineNuxtRouteMiddleware(async () => {
     })
   }
 
-  if (!user.value) return navigateTo('/dashboard')
+  if (!user.value) return navigateTo('/auth/login')
+
+  const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+  if (data?.nextLevel === 'aal2' && data?.currentLevel === 'aal1') {
+    return navigateTo('/auth/mfa')
+  }
 })

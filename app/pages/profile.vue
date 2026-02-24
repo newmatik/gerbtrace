@@ -115,6 +115,113 @@
             </div>
           </form>
         </div>
+
+        <!-- MFA / Two-Factor Authentication -->
+        <div class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-5 mt-4">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-semibold">Two-Factor Authentication</h2>
+            <UBadge v-if="mfaFactors.length > 0" color="success" variant="subtle" size="xs">
+              Enabled
+            </UBadge>
+          </div>
+          <p class="text-xs text-neutral-500 dark:text-neutral-400 mb-3">
+            Add an extra layer of security with a TOTP authenticator app.
+          </p>
+
+          <p v-if="mfaError" class="text-xs text-red-500 mb-3">{{ mfaError }}</p>
+          <p v-if="mfaSuccess" class="text-xs text-green-600 dark:text-green-400 mb-3">{{ mfaSuccess }}</p>
+
+          <!-- Enrolled factors -->
+          <div v-if="mfaFactors.length > 0 && !mfaEnrolling" class="space-y-3">
+            <div v-for="factor in mfaFactors" :key="factor.id" class="flex items-center justify-between p-3 rounded-lg border border-neutral-200 dark:border-neutral-800">
+              <div class="flex items-center gap-2">
+                <UIcon name="i-lucide-shield-check" class="text-green-500" />
+                <span class="text-sm">Authenticator App</span>
+              </div>
+              <UButton
+                v-if="mfaUnenrollFactorId !== factor.id"
+                size="xs"
+                color="error"
+                variant="soft"
+                @click="mfaUnenrollFactorId = factor.id; mfaUnenrollCode = ''; mfaError = ''"
+              >
+                Remove
+              </UButton>
+            </div>
+
+            <div v-if="mfaUnenrollFactorId" class="space-y-2 p-3 rounded-lg border border-neutral-200 dark:border-neutral-800">
+              <p class="text-xs font-medium">Enter your 6-digit code to confirm removal:</p>
+              <UInput
+                v-model="mfaUnenrollCode"
+                type="text"
+                inputmode="numeric"
+                placeholder="000000"
+                maxlength="6"
+                autofocus
+                class="text-center tracking-[0.3em] font-mono"
+              />
+              <div class="flex gap-2">
+                <UButton
+                  size="xs"
+                  color="error"
+                  :loading="mfaUnenrollLoading"
+                  :disabled="mfaUnenrollCode.length !== 6"
+                  @click="handleMfaUnenroll"
+                >
+                  Confirm Removal
+                </UButton>
+                <UButton size="xs" variant="ghost" @click="mfaUnenrollFactorId = null">
+                  Cancel
+                </UButton>
+              </div>
+            </div>
+          </div>
+
+          <!-- Enrollment flow -->
+          <div v-if="mfaEnrolling" class="space-y-3">
+            <p class="text-xs">Scan this QR code with your authenticator app:</p>
+            <div class="flex justify-center">
+              <img :src="mfaQrCode" alt="TOTP QR Code" class="w-40 h-40 rounded-lg border border-neutral-200 dark:border-neutral-800">
+            </div>
+            <div class="text-center">
+              <p class="text-xs text-neutral-500 mb-1">Or enter this secret manually:</p>
+              <code class="text-xs bg-neutral-100 dark:bg-neutral-900 px-2 py-1 rounded select-all">{{ mfaTotpSecret }}</code>
+            </div>
+            <UFormField label="Enter the 6-digit code from your app">
+              <UInput
+                v-model="mfaVerifyCode"
+                type="text"
+                inputmode="numeric"
+                placeholder="000000"
+                maxlength="6"
+                autofocus
+                class="text-center tracking-[0.3em] font-mono"
+              />
+            </UFormField>
+            <div class="flex gap-2">
+              <UButton
+                size="xs"
+                :loading="mfaVerifyLoading"
+                :disabled="mfaVerifyCode.length !== 6"
+                @click="handleMfaVerifyEnrollment"
+              >
+                Verify & Enable
+              </UButton>
+              <UButton
+                size="xs"
+                variant="ghost"
+                @click="mfaEnrolling = false; mfaQrCode = ''; mfaTotpSecret = ''; mfaVerifyCode = ''"
+              >
+                Cancel
+              </UButton>
+            </div>
+          </div>
+
+          <!-- Enable button -->
+          <UButton v-if="mfaFactors.length === 0 && !mfaEnrolling" size="sm" @click="handleMfaStartEnroll">
+            Set up two-factor authentication
+          </UButton>
+        </div>
       </div>
     </main>
   </div>
@@ -122,6 +229,7 @@
 
 <script setup lang="ts">
 const router = useRouter()
+const supabase = useSupabase()
 const { isAuthenticated, user, signIn, updatePassword } = useAuth()
 const { profile, updateProfile } = useCurrentUser()
 const { uploadAvatar } = useAvatarUpload()
@@ -248,11 +356,75 @@ async function handleAvatarUpload() {
   }
 }
 
+// MFA state
+type TotpFactor = { id: string; friendly_name?: string; status: string }
+const mfaFactors = ref<TotpFactor[]>([])
+const mfaEnrolling = ref(false)
+const mfaQrCode = ref('')
+const mfaTotpSecret = ref('')
+const mfaNewFactorId = ref('')
+const mfaVerifyCode = ref('')
+const mfaVerifyLoading = ref(false)
+const mfaUnenrollFactorId = ref<string | null>(null)
+const mfaUnenrollCode = ref('')
+const mfaUnenrollLoading = ref(false)
+const mfaError = ref('')
+const mfaSuccess = ref('')
+
+async function loadMfaFactors() {
+  const { data } = await supabase.auth.mfa.listFactors()
+  mfaFactors.value = (data?.totp ?? []) as TotpFactor[]
+}
+
+async function handleMfaStartEnroll() {
+  mfaError.value = ''
+  mfaSuccess.value = ''
+  const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp' })
+  if (error) { mfaError.value = error.message; return }
+  mfaEnrolling.value = true
+  mfaQrCode.value = data.totp.qr_code
+  mfaTotpSecret.value = data.totp.secret
+  mfaNewFactorId.value = data.id
+}
+
+async function handleMfaVerifyEnrollment() {
+  if (mfaVerifyCode.value.length !== 6) return
+  mfaError.value = ''
+  mfaVerifyLoading.value = true
+  try {
+    const { data: cd, error: ce } = await supabase.auth.mfa.challenge({ factorId: mfaNewFactorId.value })
+    if (ce) { mfaError.value = ce.message; return }
+    const { error: ve } = await supabase.auth.mfa.verify({ factorId: mfaNewFactorId.value, challengeId: cd.id, code: mfaVerifyCode.value })
+    if (ve) { mfaError.value = ve.message; mfaVerifyCode.value = ''; return }
+    mfaEnrolling.value = false; mfaQrCode.value = ''; mfaTotpSecret.value = ''; mfaVerifyCode.value = ''
+    mfaSuccess.value = 'Two-factor authentication enabled.'
+    await loadMfaFactors()
+  } finally { mfaVerifyLoading.value = false }
+}
+
+async function handleMfaUnenroll() {
+  if (!mfaUnenrollFactorId.value || mfaUnenrollCode.value.length !== 6) return
+  mfaError.value = ''
+  mfaUnenrollLoading.value = true
+  try {
+    const { data: cd, error: ce } = await supabase.auth.mfa.challenge({ factorId: mfaUnenrollFactorId.value })
+    if (ce) { mfaError.value = ce.message; return }
+    const { error: ve } = await supabase.auth.mfa.verify({ factorId: mfaUnenrollFactorId.value, challengeId: cd.id, code: mfaUnenrollCode.value })
+    if (ve) { mfaError.value = ve.message; mfaUnenrollCode.value = ''; return }
+    const { error: ue } = await supabase.auth.mfa.unenroll({ factorId: mfaUnenrollFactorId.value })
+    if (ue) { mfaError.value = ue.message; return }
+    mfaUnenrollFactorId.value = null; mfaUnenrollCode.value = ''
+    mfaSuccess.value = 'Two-factor authentication disabled.'
+    await loadMfaFactors()
+  } finally { mfaUnenrollLoading.value = false }
+}
+
 watch(() => profile.value?.name, (next) => {
   nameValue.value = next ?? ''
 }, { immediate: true })
 
 onMounted(() => {
   fetchSpaces({ background: true })
+  loadMfaFactors()
 })
 </script>

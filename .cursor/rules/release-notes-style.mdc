@@ -15,7 +15,7 @@ Use the bare version number as the release title:
 v1.0.X
 ```
 
-Do not prefix with the product name (no "Gerbtrace v1.0.X").
+Do not prefix with the product name.
 
 ## Body format
 
@@ -36,10 +36,4 @@ Do not prefix with the product name (no "Gerbtrace v1.0.X").
 
 ## When to write release notes
 
-Write release notes at the time the version tag is pushed and the GitHub Release is created. The notes are consumed by:
-
-1. The GitHub Releases page.
-2. The Tauri desktop updater (`latest.json` body field).
-3. The in-app "What's New" dialog shown after a desktop update.
-
-Keep the text short enough to read comfortably in a small modal dialog.
+Write release notes at the time the version tag is pushed and the GitHub Release is created. Keep the text short enough to read comfortably in a small dialog.

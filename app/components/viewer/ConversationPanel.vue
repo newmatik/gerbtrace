@@ -164,7 +164,7 @@
           <div class="flex items-start gap-2">
             <div class="flex-1 relative">
               <div
-                :ref="el => setReplyInputRef(message.id, el as HTMLElement | null)"
+                :ref="(el: any) => setReplyInputRef(message.id, el as HTMLElement | null)"
                 contenteditable="true"
                 class="ce-input ce-reply-input"
                 data-placeholder="Reply to this thread..."
