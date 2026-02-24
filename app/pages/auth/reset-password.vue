@@ -32,14 +32,14 @@ onMounted(async () => {
 })
 
 async function handleSubmit() {
+  errorMessage.value = ''
+  successMessage.value = ''
   if (newPassword.value.length < 8) {
     errorMessage.value = 'Password must be at least 8 characters.'
     return
   }
   if (newPassword.value !== confirmPassword.value) return
 
-  errorMessage.value = ''
-  successMessage.value = ''
   isLoading.value = true
 
   try {

@@ -11,6 +11,7 @@ const confirmPassword = ref('')
 const isLoading = ref(false)
 const errorMessage = ref('')
 const sessionValid = ref(false)
+const sessionChecked = ref(false)
 
 const passwordMismatch = computed(() =>
   confirmPassword.value.length > 0 && password.value !== confirmPassword.value,
@@ -18,6 +19,7 @@ const passwordMismatch = computed(() =>
 
 onMounted(async () => {
   const { data: { session } } = await supabase.auth.getSession()
+  sessionChecked.value = true
   if (!session) {
     errorMessage.value = 'This invitation link is invalid or has expired.'
     return
@@ -77,7 +79,13 @@ async function handleSubmit() {
           </p>
         </div>
 
-        <template v-if="sessionValid">
+        <template v-if="!sessionChecked">
+          <p class="text-sm text-center text-neutral-500 dark:text-neutral-400">
+            Checking invitation…
+          </p>
+        </template>
+
+        <template v-else-if="sessionValid">
           <form class="space-y-3" @submit.prevent="handleSubmit">
             <UFormField label="Password">
               <UInput

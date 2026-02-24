@@ -15,6 +15,9 @@ export default defineEventHandler(async (event) => {
   if (!teamId || !email) {
     throw createError({ statusCode: 400, statusMessage: 'teamId and email are required.' })
   }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw createError({ statusCode: 400, statusMessage: 'Invalid email address.' })
+  }
 
   const { data: callerData, error: callerError } = await adminClient.auth.getUser(accessToken)
   if (callerError || !callerData.user) {

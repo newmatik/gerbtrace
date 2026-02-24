@@ -3,6 +3,11 @@ const router = useRouter()
 const route = useRoute()
 const supabase = useSupabase()
 
+const queryParam = (v: unknown): string | undefined => {
+  if (Array.isArray(v)) return typeof v[0] === 'string' ? v[0] : undefined
+  return typeof v === 'string' ? v : undefined
+}
+
 const processing = ref(true)
 const errorMessage = ref('')
 const errorHint = ref('')
@@ -29,10 +34,6 @@ onMounted(async () => {
       return
     }
 
-    const queryParam = (v: unknown): string | undefined => {
-      if (Array.isArray(v)) return typeof v[0] === 'string' ? v[0] : undefined
-      return typeof v === 'string' ? v : undefined
-    }
     const code = queryParam(route.query.code)
     if (code) {
       const { error } = await supabase.auth.exchangeCodeForSession(code)
@@ -106,8 +107,8 @@ onMounted(async () => {
 })
 
 async function handlePostAuth(session: any) {
-  const invitationToken = route.query.invitation as string
-  const spaceInvitationToken = route.query.space_invitation as string
+  const invitationToken = queryParam(route.query.invitation)
+  const spaceInvitationToken = queryParam(route.query.space_invitation)
 
   if (invitationToken && session) {
     try {
