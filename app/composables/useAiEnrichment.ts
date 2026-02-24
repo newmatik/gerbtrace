@@ -70,9 +70,6 @@ export function useAiEnrichment() {
     if (!token) throw new Error('Not authenticated')
 
     try {
-      // #region agent log
-      fetch('http://127.0.0.1:7453/ingest/5870fb78-28fc-4f6a-a0a8-cbd461ff0af2', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '40e20a' }, body: JSON.stringify({ sessionId: '40e20a', runId: `run-${Date.now()}`, hypothesisId: 'H2', location: 'useAiEnrichment.ts:73', message: 'enrichBom invoke start', data: { teamId: currentTeam.value?.id ?? null, activeLinesCount: activeLines.length, endpoint: 'main/ai-enrich-bom' }, timestamp: Date.now() }) }).catch(() => {})
-      // #endregion
       const { data: result, error } = await supabase.functions.invoke<{ suggestions: BomAiSuggestions }>('main/ai-enrich-bom', {
         headers: { Authorization: `Bearer ${token}` },
         body: {
@@ -103,9 +100,6 @@ export function useAiEnrichment() {
 
       return cleaned
     } catch (err: any) {
-      // #region agent log
-      fetch('http://127.0.0.1:7453/ingest/5870fb78-28fc-4f6a-a0a8-cbd461ff0af2', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '40e20a' }, body: JSON.stringify({ sessionId: '40e20a', runId: `run-${Date.now()}`, hypothesisId: 'H2', location: 'useAiEnrichment.ts:103', message: 'enrichBom invoke failed', data: { status: err?.status ?? err?.statusCode ?? null, message: err?.message ?? null, statusMessage: err?.data?.statusMessage ?? null }, timestamp: Date.now() }) }).catch(() => {})
-      // #endregion
       enrichError.value = err?.data?.data?.message ?? err?.data?.statusMessage ?? err?.message ?? 'AI enrichment failed'
       throw err
     } finally {

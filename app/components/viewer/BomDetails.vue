@@ -106,6 +106,7 @@
               <div class="text-xs text-violet-900 dark:text-violet-200">{{ aiSuggestion.group }}</div>
             </div>
             <div class="flex items-center gap-0.5 shrink-0">
+              <UButton size="xs" color="warning" variant="ghost" icon="i-lucide-flag" class="!p-0.5" title="Report inaccurate suggestion" @click="openSuggestionReport()" />
               <UButton size="xs" color="secondary" variant="soft" icon="i-lucide-check" class="!p-0.5" title="Accept" :disabled="props.locked" @click="emit('acceptAiGroup', line.id, aiSuggestion!.group!)" />
               <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" class="!p-0.5" title="Dismiss" :disabled="props.locked" @click="emit('dismissAiGroup', line.id)" />
             </div>
@@ -509,9 +510,41 @@
       </div>
     </template>
   </div>
+
+  <UModal v-model:open="reportModalOpen" :ui="{ content: 'sm:max-w-lg' }">
+    <template #content>
+      <div class="p-4 space-y-3">
+        <h3 class="text-sm font-semibold">Report incorrect Spark suggestion</h3>
+        <p class="text-xs text-neutral-500 dark:text-neutral-400">
+          Tell us why this suggestion is wrong. We will send your note and the related suggestion payload to Sentry User Feedback.
+        </p>
+        <div v-if="line && aiSuggestion?.group" class="rounded border border-neutral-200 dark:border-neutral-800 px-2 py-1.5 text-[11px] text-neutral-600 dark:text-neutral-300">
+          <div><span class="font-medium">Ref:</span> {{ line.references || line.id }}</div>
+          <div><span class="font-medium">Suggested group:</span> {{ aiSuggestion.group }}</div>
+        </div>
+        <UTextarea
+          v-model="reportReason"
+          :rows="4"
+          autoresize
+          placeholder="Example: This is an SMD resettable fuse (1812) from Pick & Place F1, so THT group is wrong."
+          :disabled="reportSubmitting"
+          :ui="{ root: 'w-full' }"
+        />
+        <div class="flex justify-end gap-2">
+          <UButton size="sm" color="neutral" variant="ghost" :disabled="reportSubmitting" @click="reportModalOpen = false">
+            Cancel
+          </UButton>
+          <UButton size="sm" color="warning" :loading="reportSubmitting" :disabled="!canSubmitSuggestionReport" @click="submitSuggestionReport">
+            Send feedback
+          </UButton>
+        </div>
+      </div>
+    </template>
+  </UModal>
 </template>
 
 <script setup lang="ts">
+import * as Sentry from '@sentry/nuxt'
 import type { BomLine, BomPricingCache, BomManufacturer, AiSuggestion, BomGroup } from '~/utils/bom-types'
 import { BOM_LINE_TYPES, SMD_CLASSIFICATIONS } from '~/utils/bom-types'
 import type { ExchangeRateSnapshot, PricingQueueItem } from '~/composables/useElexessApi'
@@ -573,6 +606,109 @@ const pnpPackage = computed(() => {
   }
   return ''
 })
+
+const toast = useToast()
+const route = useRoute()
+const { profile } = useCurrentUser()
+
+const reportModalOpen = ref(false)
+const reportReason = ref('')
+const reportSubmitting = ref(false)
+
+const canSubmitSuggestionReport = computed(() => {
+  return reportReason.value.trim().length > 0 && !!props.line && !!props.aiSuggestion?.group
+})
+
+function openSuggestionReport() {
+  reportReason.value = ''
+  reportModalOpen.value = true
+}
+
+function safeSerialize(value: unknown): string {
+  const seen = new WeakSet<object>()
+  try {
+    return JSON.stringify(value, (_key, current) => {
+      if (typeof current === 'bigint') return current.toString()
+      if (current && typeof current === 'object') {
+        if (seen.has(current)) return '[Circular]'
+        seen.add(current)
+      }
+      return current
+    }, 2)
+  } catch {
+    return String(value)
+  }
+}
+
+async function submitSuggestionReport() {
+  if (!canSubmitSuggestionReport.value || !props.line || !props.aiSuggestion?.group) return
+  reportSubmitting.value = true
+  try {
+    const payload = {
+      type: 'spark_suggestion_inaccuracy',
+      occurredAt: new Date().toISOString(),
+      route: route.fullPath,
+      href: typeof window !== 'undefined' ? window.location.href : undefined,
+      appVersion: useRuntimeConfig().public?.appVersion,
+      userComment: reportReason.value.trim(),
+      line: {
+        id: props.line.id,
+        references: props.line.references,
+        description: props.line.description,
+        type: props.line.type,
+        package: props.line.package,
+        pnpPackage: pnpPackage.value || null,
+        groupId: props.line.groupId ?? null,
+      },
+      aiSuggestion: {
+        group: props.aiSuggestion.group,
+        fullSuggestion: props.aiSuggestion,
+      },
+      availableGroups: props.groups.map(g => ({ id: g.id, name: g.name })),
+    }
+
+    const message = [
+      `Spark suggestion reported inaccurate for line ${props.line.references || props.line.id}`,
+      `Suggested group: ${props.aiSuggestion.group}`,
+      `User feedback: ${reportReason.value.trim()}`,
+      '',
+      'Payload:',
+      safeSerialize(payload),
+    ].join('\n')
+
+    await Sentry.captureFeedback({
+      message,
+      name: profile.value?.name ?? undefined,
+      email: profile.value?.email ?? undefined,
+    })
+
+    Sentry.captureMessage('User Feedback: Spark suggestion inaccurate', {
+      level: 'warning',
+      tags: {
+        feedback_type: 'spark_suggestion_inaccuracy',
+        area: 'bom',
+      },
+      extra: payload,
+    })
+
+    toast.add({
+      title: 'Feedback sent',
+      description: 'Thanks. This Spark suggestion was reported to improve future prompts.',
+      color: 'success',
+    })
+    reportModalOpen.value = false
+    reportReason.value = ''
+  } catch (error) {
+    console.error('[Spark feedback] Failed to submit suggestion feedback', error)
+    toast.add({
+      title: 'Failed to send feedback',
+      description: 'Please try again in a moment.',
+      color: 'error',
+    })
+  } finally {
+    reportSubmitting.value = false
+  }
+}
 
 const hasAnySuggestion = computed(() => {
   const s = props.aiSuggestion
