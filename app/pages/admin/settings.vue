@@ -46,10 +46,12 @@ async function testSparkKey() {
   validatingSparkKey.value = true
   sparkKeyValid.value = null
   try {
-    const result = await $fetch<{ valid: boolean }>('/api/ai/validate-key', {
-      method: 'POST',
+    const supabase = useSupabase()
+    const { data: result, error } = await supabase.functions.invoke<{ valid: boolean }>('main/ai-validate-key', {
       body: { apiKey: key },
     })
+    if (error) throw error
+    if (!result) throw new Error('No response')
     sparkKeyValid.value = result.valid
   } catch {
     sparkKeyValid.value = false
@@ -66,10 +68,12 @@ async function testElexess() {
   validatingElexess.value = true
   elexessValid.value = null
   try {
-    const result = await $fetch<{ valid: boolean }>('/api/elexess/validate-credentials', {
-      method: 'POST',
+    const supabase = useSupabase()
+    const { data: result, error } = await supabase.functions.invoke<{ valid: boolean }>('main/elexess-validate-credentials', {
       body: { username: elexessUsername.value, password: elexessPassword.value },
     })
+    if (error) throw error
+    if (!result) throw new Error('No response')
     elexessValid.value = result.valid
   } catch {
     elexessValid.value = false

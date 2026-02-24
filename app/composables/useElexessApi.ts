@@ -365,16 +365,22 @@ export function useElexessApi() {
           console.warn('[Elexess] No team context available')
           return null
         }
-        const result = await $fetch<any>('/api/elexess/search', {
-          method: 'POST',
+        // #region agent log
+        fetch('http://127.0.0.1:7453/ingest/5870fb78-28fc-4f6a-a0a8-cbd461ff0af2', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '40e20a' }, body: JSON.stringify({ sessionId: '40e20a', runId: `run-${Date.now()}`, hypothesisId: 'H3', location: 'useElexessApi.ts:368', message: 'elexess search invoke start', data: { teamId, partNumber, endpoint: 'main/elexess-search' }, timestamp: Date.now() }) }).catch(() => {})
+        // #endregion
+        const { data, error } = await supabase.functions.invoke('main/elexess-search', {
           headers: { Authorization: `Bearer ${token}` },
           body: {
             teamId,
             searchTerm: partNumber,
           },
         })
-        return result
+        if (error) throw error
+        return data
       } catch (err: any) {
+        // #region agent log
+        fetch('http://127.0.0.1:7453/ingest/5870fb78-28fc-4f6a-a0a8-cbd461ff0af2', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '40e20a' }, body: JSON.stringify({ sessionId: '40e20a', runId: `run-${Date.now()}`, hypothesisId: 'H3', location: 'useElexessApi.ts:378', message: 'elexess search invoke failed', data: { partNumber, status: err?.status ?? err?.statusCode ?? null, message: err?.message ?? null, statusMessage: err?.data?.statusMessage ?? null }, timestamp: Date.now() }) }).catch(() => {})
+        // #endregion
         console.warn(`[Elexess] Search failed for "${partNumber}":`, err?.data?.statusMessage ?? err?.message)
         return null
       }
