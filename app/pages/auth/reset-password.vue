@@ -48,7 +48,7 @@ async function handleSubmit() {
       errorMessage.value = error.message
     } else {
       successMessage.value = 'Password updated successfully! Redirecting...'
-      await supabase.auth.signOut()
+      try { await supabase.auth.signOut() } catch { /* non-fatal; token TTL handles expiry */ }
       redirectTimer = setTimeout(() => navigateTo('/auth/login'), 1500)
     }
   } finally {

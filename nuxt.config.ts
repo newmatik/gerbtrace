@@ -1,5 +1,5 @@
 export default defineNuxtConfig({
-  ssr: true,
+  ssr: false,
   devtools: { enabled: process.env.NODE_ENV !== 'production' },
 
   routeRules: {
@@ -166,7 +166,6 @@ export default defineNuxtConfig({
 
   nitro: {
     preset: 'cloudflare-module',
-    minify: false,
   },
 
   compatibilityDate: '2025-01-01',

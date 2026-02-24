@@ -29,7 +29,11 @@ onMounted(async () => {
       return
     }
 
-    const code = route.query.code as string | undefined
+    const queryParam = (v: unknown): string | undefined => {
+      if (Array.isArray(v)) return typeof v[0] === 'string' ? v[0] : undefined
+      return typeof v === 'string' ? v : undefined
+    }
+    const code = queryParam(route.query.code)
     if (code) {
       const { error } = await supabase.auth.exchangeCodeForSession(code)
       if (error) {
@@ -72,7 +76,8 @@ onMounted(async () => {
       return
     }
 
-    if (session && (route.query.type === 'recovery' || hashType === 'recovery')) {
+    const queryType = queryParam(route.query.type)
+    if (session && (queryType === 'recovery' || hashType === 'recovery')) {
       handled = true
       processing.value = false
       subscription.unsubscribe()
