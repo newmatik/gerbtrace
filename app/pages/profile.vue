@@ -372,7 +372,11 @@ const mfaError = ref('')
 const mfaSuccess = ref('')
 
 async function loadMfaFactors() {
-  const { data } = await supabase.auth.mfa.listFactors()
+  const { data, error } = await supabase.auth.mfa.listFactors()
+  if (error) {
+    mfaError.value = error.message
+    return
+  }
   mfaFactors.value = (data?.totp ?? []) as TotpFactor[]
 }
 

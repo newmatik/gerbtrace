@@ -30,7 +30,10 @@ async function handleSubmit() {
     errorMessage.value = 'Password must be at least 8 characters.'
     return
   }
-  if (password.value !== confirmPassword.value) return
+  if (password.value !== confirmPassword.value) {
+    errorMessage.value = ''
+    return
+  }
 
   errorMessage.value = ''
   isLoading.value = true

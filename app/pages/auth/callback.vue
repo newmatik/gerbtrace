@@ -155,11 +155,9 @@ async function handlePostAuth(session: any) {
             <p v-if="errorHint" class="text-xs text-neutral-500 dark:text-neutral-400">
               {{ errorHint }}
             </p>
-            <NuxtLink to="/auth/login">
-              <UButton size="sm" variant="outline">
-                Back to sign in
-              </UButton>
-            </NuxtLink>
+            <UButton size="sm" variant="outline" to="/auth/login">
+              Back to sign in
+            </UButton>
           </div>
         </template>
       </div>

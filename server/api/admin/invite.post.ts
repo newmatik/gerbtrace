@@ -47,7 +47,8 @@ export default defineEventHandler(async (event) => {
   })
 
   if (error) {
-    throw createError({ statusCode: 400, statusMessage: error.message })
+    console.error('[invite] inviteUserByEmail error:', error.message)
+    throw createError({ statusCode: 400, statusMessage: 'Failed to send invitation.' })
   }
 
   return { ok: true, message: `Invitation sent to ${email}.`, userId: data.user.id }
