@@ -10,6 +10,18 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 let _client: SupabaseClient | null = null
 let _available = false
 
+function createStubClient(): any {
+  return new Proxy(function () {}, {
+    get(_, prop) {
+      if (prop === 'then') return undefined
+      return createStubClient()
+    },
+    apply() {
+      return Promise.resolve({ data: null, error: null })
+    },
+  })
+}
+
 /**
  * Returns true if Supabase is configured (URL + anon key present).
  * Use this to guard features that require Supabase.
@@ -32,17 +44,8 @@ export function useSupabase(): SupabaseClient {
 
   if (!url || !key) {
     console.warn('[Supabase] Missing SUPABASE_URL or SUPABASE_ANON_KEY — collaborative features disabled')
-    // Create a dummy client that throws clear errors instead of failing silently
     _available = false
-    _client = new Proxy({} as SupabaseClient, {
-      get(target, prop) {
-        return new Proxy(() => {}, {
-          apply() {
-            throw new Error('[Supabase] Supabase is not configured. Check your SUPABASE_URL and SUPABASE_ANON_KEY environment variables.')
-          }
-        })
-      }
-    })
+    _client = createStubClient() as SupabaseClient
     return _client
   }
 
