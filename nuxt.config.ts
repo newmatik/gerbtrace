@@ -66,6 +66,10 @@ export default defineNuxtConfig({
   },
 
   content: {
+    database: {
+      type: 'd1',
+      bindingName: 'DB',
+    },
     build: {
       markdown: {
         toc: {
@@ -158,6 +162,11 @@ export default defineNuxtConfig({
         { rel: 'manifest', href: '/site.webmanifest' },
       ],
     },
+  },
+
+  nitro: {
+    preset: 'cloudflare-module',
+    minify: false,
   },
 
   compatibilityDate: '2025-01-01',

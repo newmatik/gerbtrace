@@ -24,6 +24,7 @@
     "dev": "npm run precommit && cross-env CHOKIDAR_USEPOLLING=1 CHOKIDAR_INTERVAL=400 nuxt dev --logLevel verbose --no-fork",
     "dev:debug": "npm run precommit && cross-env CHOKIDAR_USEPOLLING=1 CHOKIDAR_INTERVAL=400 nuxt dev --logLevel verbose --no-fork",
     "build": "nuxt build",
+    "deploy": "nuxt build && wrangler deploy",
     "generate": "nuxt generate && node scripts/prune-static-output.mjs",
     "tauri:prepare-frontend": "node scripts/prepare-tauri-frontend.mjs",
     "preview": "nuxt preview",
