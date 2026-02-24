@@ -35,8 +35,13 @@ onMounted(async () => {
       }
     }
 
+    let handled = false
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
+      if (handled) return
+
       if (event === 'PASSWORD_RECOVERY') {
+        handled = true
         processing.value = false
         subscription.unsubscribe()
         router.replace('/auth/reset-password')
@@ -44,6 +49,7 @@ onMounted(async () => {
       }
 
       if (newSession) {
+        handled = true
         subscription.unsubscribe()
         handlePostAuth(newSession)
       }
@@ -59,13 +65,14 @@ onMounted(async () => {
     }
 
     if (session && (route.query.type === 'recovery' || hashType === 'recovery')) {
+      handled = true
       processing.value = false
       subscription.unsubscribe()
       router.replace('/auth/reset-password')
       return
     }
 
-    if (session) {
+    if (session && !handled) {
       subscription.unsubscribe()
       handlePostAuth(session)
       return

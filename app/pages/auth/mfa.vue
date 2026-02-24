@@ -6,6 +6,8 @@ const router = useRouter()
 const colorMode = useColorMode()
 const isDark = computed(() => colorMode.value === 'dark')
 
+const { signOut } = useAuth()
+
 const code = ref('')
 const isLoading = ref(false)
 const errorMessage = ref('')
@@ -107,9 +109,9 @@ async function handleVerify() {
         </form>
 
         <p class="mt-6 text-center text-sm text-neutral-500 dark:text-neutral-400">
-          <NuxtLink to="/auth/login" class="text-primary hover:underline">
+          <button class="text-primary hover:underline cursor-pointer" @click="signOut().then(() => { navigateTo('/auth/login') })">
             Back to sign in
-          </NuxtLink>
+          </button>
         </p>
       </div>
     </main>

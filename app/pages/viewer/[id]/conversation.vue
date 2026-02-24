@@ -18,7 +18,7 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ middleware: ['auth'] })
+definePageMeta({})
 
 const route = useRoute()
 const rawId = String(route.params.id || '')
