@@ -14,6 +14,7 @@ Gerbtrace takes your design output and turns it into production-ready manufactur
 New to Gerbtrace? Start here.
 
 - [Getting Started](/docs/getting-started) – Installation, creating your first project, and importing files
+- [Licensing](/docs/licensing) – Business Source License 1.1 (BUSL-1.1), permitted use, and automatic MIT relicensing
 
 ## Viewer
 
