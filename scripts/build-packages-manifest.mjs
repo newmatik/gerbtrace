@@ -24,14 +24,37 @@ async function existsDir(dirPath) {
 async function buildFlatManifest() {
   const entries = await fs.readdir(PACKAGES_DIR, { withFileTypes: true })
 
-  const filenames = entries
+  const rootFilenames = entries
     .filter((e) => e.isFile())
     .map((e) => e.name)
     .filter((n) => n.toLowerCase().endsWith('.json'))
     .filter((n) => n !== '_manifest.json')
     .sort(sortCaseInsensitive)
 
-  const json = JSON.stringify(filenames, null, 2) + '\n'
+  const allPaths = [...rootFilenames]
+
+  if (await existsDir(LIBRARIES_DIR)) {
+    const libEntries = await fs.readdir(LIBRARIES_DIR, { withFileTypes: true })
+    for (const entry of libEntries) {
+      if (!entry.isDirectory() || entry.name.startsWith('_')) continue
+      const packagesDir = path.join(LIBRARIES_DIR, entry.name, 'packages')
+      try {
+        const pkgEntries = await fs.readdir(packagesDir, { withFileTypes: true })
+        const files = pkgEntries
+          .filter((e) => e.isFile())
+          .map((e) => e.name)
+          .filter((n) => n.toLowerCase().endsWith('.json'))
+        for (const file of files.sort(sortCaseInsensitive)) {
+          allPaths.push(`libraries/${entry.name}/packages/${file}`)
+        }
+      } catch {
+        // skip library if packages dir missing or unreadable
+      }
+    }
+    allPaths.sort(sortCaseInsensitive)
+  }
+
+  const json = JSON.stringify(allPaths, null, 2) + '\n'
   await fs.writeFile(MANIFEST_PATH, json, 'utf8')
 }
 
