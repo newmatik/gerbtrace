@@ -137,7 +137,7 @@
                     v-if="teamPreviewUrls[project.id]"
                     :src="teamPreviewUrls[project.id]"
                     alt=""
-                    class="max-w-full max-h-full object-contain"
+                    class="max-w-full max-h-28 object-contain"
                   >
                   <UIcon
                     v-else
@@ -338,7 +338,7 @@
                     v-if="project.id && localPreviewUrls[project.id]"
                     :src="localPreviewUrls[project.id]"
                     alt=""
-                    class="max-w-full max-h-full object-contain"
+                    class="max-w-full max-h-28 object-contain"
                   >
                   <UIcon
                     v-else
