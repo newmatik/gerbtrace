@@ -1,3 +1,16 @@
+import { existsSync, realpathSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const projectRoot = fileURLToPath(new URL('.', import.meta.url))
+const viteFsAllow = Array.from(new Set([
+  projectRoot,
+  ...['node_modules', 'node_modules/.pnpm']
+    .map(relativePath => resolve(projectRoot, relativePath))
+    .filter(existsSync)
+    .map(targetPath => realpathSync(targetPath)),
+]))
+
 export default defineNuxtConfig({
   ssr: false,
   devtools: { enabled: process.env.NODE_ENV !== 'production' },
@@ -18,9 +31,9 @@ export default defineNuxtConfig({
     supabaseServiceRoleKey: process.env.SUPABASE_SECRET_KEY || '',
     public: {
       appVersion: '1.3.0',
-      supabaseUrl: process.env.SUPABASE_URL || 'https://gqrnlnlfidighosujpdb.supabase.co',
+      supabaseUrl: process.env.SUPABASE_URL || '[REDACTED]',
       supabaseAnonKey: process.env.SUPABASE_ANON_KEY || '',
-      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'https://www.gerbtrace.com',
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || '[REDACTED]',
       // Keep in sync with Supabase Auth -> Email OTP length.
       supabaseEmailOtpLength: Number(process.env.SUPABASE_EMAIL_OTP_LENGTH || 8),
       elexessUrl: process.env.ELEXESS_URL || 'https://api.dev.elexess.com/api',
@@ -37,7 +50,7 @@ export default defineNuxtConfig({
   modules: ['@nuxtjs/seo', '@nuxt/ui', '@nuxt/content', '@sentry/nuxt/module'],
 
   site: {
-    url: 'https://www.gerbtrace.com',
+    url: '[REDACTED]',
     name: 'Gerbtrace',
     description: 'Open-source PCB NPI & Manufacturing Data Preparation Platform',
     defaultLocale: 'en',
@@ -92,6 +105,10 @@ export default defineNuxtConfig({
 
   vite: {
     server: {
+      fs: {
+        // Allow pnpm virtual stores even when symlinked outside project root.
+        allow: viteFsAllow,
+      },
       watch: {
         // The package library contains thousands of JSON files and can exceed
         // macOS fs.watch limits in local dev. These files are served statically
@@ -148,9 +165,9 @@ export default defineNuxtConfig({
         { name: 'verify-v1', content: 'nwmk-7f3a9b2e4d1c8f5a6b0e3d7c9a2f4b8e' },
         { property: 'og:type', content: 'website' },
         { property: 'og:site_name', content: 'Gerbtrace' },
-        { property: 'og:image', content: 'https://www.gerbtrace.com/images/docs/pcb-light.png' },
+        { property: 'og:image', content: '[REDACTED]/images/docs/pcb-light.png' },
         { name: 'twitter:card', content: 'summary_large_image' },
-        { name: 'twitter:image', content: 'https://www.gerbtrace.com/images/docs/pcb-light.png' },
+        { name: 'twitter:image', content: '[REDACTED]/images/docs/pcb-light.png' },
       ],
       link: [
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico', sizes: '16x16 32x32 48x48' },

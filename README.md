@@ -4,7 +4,7 @@
 
 Need more? Gerbtrace is also a complete New Product Introduction (NPI) platform for electronics manufacturing — BOM management, Pick and Place, panelization, paste configuration, pricing estimation, and team collaboration. Use as much or as little as you need.
 
-[Web App](https://www.www.gerbtrace.com) · [Desktop Downloads](https://github.com/newmatik/gerbtrace/releases) · [Documentation](https://www.gerbtrace.com/docs)
+[Web App](https://www.www.gerbtrace.com) · [Desktop Downloads](https://github.com/newmatik/gerbtrace/releases) · [Documentation]([REDACTED]/docs)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="public/images/docs/pcb-realistic-dark.png">
@@ -18,7 +18,7 @@ Gerbtrace is built and maintained by **[Newmatik](https://www.newmatik.com)**, a
 
 ## View and Compare — No Setup Required
 
-Open [www.gerbtrace.com](https://www.gerbtrace.com), drag in a `.zip` of Gerber files, and you're looking at your PCB. That workflow is the heart of Gerbtrace and it will always be free.
+Open [www.gerbtrace.com]([REDACTED]), drag in a `.zip` of Gerber files, and you're looking at your PCB. That workflow is the heart of Gerbtrace and it will always be free.
 
 ### Gerber Viewer
 
@@ -116,7 +116,7 @@ Download production-ready data: Gerber ZIP packages, PNG/SVG board images, PnP p
 
 ## Quick Start
 
-**Just want to view a board?** Open [www.gerbtrace.com](https://www.gerbtrace.com) and drop your Gerber ZIP. Done.
+**Just want to view a board?** Open [www.gerbtrace.com]([REDACTED]) and drop your Gerber ZIP. Done.
 
 **Want the desktop app?** Download from [GitHub Releases](https://github.com/newmatik/gerbtrace/releases):
 
@@ -130,6 +130,7 @@ The desktop app checks for updates automatically on launch. No uploads, no serve
 ### Prerequisites
 
 - [Node.js](https://nodejs.org) 20 or later
+- [pnpm](https://pnpm.io) 10 or later (recommended via Corepack: `corepack enable pnpm`)
 - [Rust](https://rustup.rs) (only for desktop builds)
 
 ### Setup
@@ -137,13 +138,13 @@ The desktop app checks for updates automatically on launch. No uploads, no serve
 ```bash
 git clone https://github.com/newmatik/gerbtrace.git
 cd gerbtrace
-npm install
+pnpm install
 ```
 
 ### Web development
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 Visit `http://localhost:3000`.
@@ -151,7 +152,7 @@ Visit `http://localhost:3000`.
 ### Desktop development
 
 ```bash
-npm run tauri:dev
+pnpm run tauri:dev
 ```
 
 Launches a native window with hot reload. Changes to Vue files reflect immediately in the desktop window.
@@ -160,10 +161,10 @@ Launches a native window with hot reload. Changes to Vue files reflect immediate
 
 ```bash
 # Static web app
-npm run generate
+pnpm run generate
 
 # Desktop app for current platform
-npm run tauri:build
+pnpm run tauri:build
 ```
 
 ### Environment variables
@@ -175,7 +176,7 @@ SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=your-anon-key
 ```
 
-See the [Development Setup](https://www.gerbtrace.com/docs/development/setup) guide for full details.
+See the [Development Setup]([REDACTED]/docs/development/setup) guide for full details.
 
 ## Project Structure
 
@@ -201,12 +202,12 @@ gerbtrace/
 ## Contributing
 
 1. Fork the repository and clone your fork.
-2. Follow the [Development Setup](https://www.gerbtrace.com/docs/development/setup) guide.
+2. Follow the [Development Setup]([REDACTED]/docs/development/setup) guide.
 3. Create a feature branch from `main`.
 4. Make your changes and verify they work in both web and desktop modes.
 5. Submit a pull request.
 
-See the [Contributing](https://www.gerbtrace.com/docs/development/contributing) guide for coding conventions, the sidebar design system, and PR guidelines.
+See the [Contributing]([REDACTED]/docs/development/contributing) guide for coding conventions, the sidebar design system, and PR guidelines.
 
 ## Acknowledgments
 

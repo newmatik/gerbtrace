@@ -11,15 +11,15 @@ Gerbtrace is a Nuxt 4 SPA (SSR disabled) for viewing/comparing Gerber PCB files 
 | Task | Command |
 |---|---|
 | Install deps | `pnpm install` (runs `nuxt prepare` and `simple-git-hooks` via postinstall) |
-| Typecheck | `npx nuxi typecheck` |
-| Tests | `npx vitest run` |
-| Dev server | `CHOKIDAR_USEPOLLING=1 CHOKIDAR_INTERVAL=400 npx nuxt dev --no-fork` (or `npm run dev` which also runs precommit) |
-| Build | `npx nuxt build` |
+| Typecheck | `pnpm run typecheck` |
+| Tests | `pnpm run test` |
+| Dev server | `CHOKIDAR_USEPOLLING=1 CHOKIDAR_INTERVAL=400 pnpm exec nuxt dev --no-fork` (or `pnpm run dev` which also runs precommit) |
+| Build | `pnpm run build` |
 
 ### Dev server startup notes
 
-- `npm run dev` runs `precommit` (manifest build + typecheck) before starting the dev server. To skip this during iterative dev, start the server directly: `CHOKIDAR_USEPOLLING=1 CHOKIDAR_INTERVAL=400 npx nuxt dev --no-fork --port 3000`.
-- `cross-env` is a devDependency but not on the system PATH. Use `npx cross-env` or set env vars inline as shown above.
+- `pnpm run dev` runs `precommit` (manifest build + typecheck) before starting the dev server. To skip this during iterative dev, start the server directly: `CHOKIDAR_USEPOLLING=1 CHOKIDAR_INTERVAL=400 pnpm exec nuxt dev --no-fork --port 3000`.
+- `cross-env` is a devDependency but not on the system PATH. Use `pnpm exec cross-env` or set env vars inline as shown above.
 - The dev server takes ~30-45 seconds to be ready after starting. Check with `curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/`.
 - `@nuxtjs/mdc` dependency resolution warnings during startup are benign and do not affect functionality.
 
@@ -36,10 +36,10 @@ After login, the dashboard at `/dashboard` shows team projects. Click any projec
 
 ### Pre-commit hook
 
-`simple-git-hooks` runs `npm run precommit` which executes:
-1. `npm run packages:manifest` — rebuilds package manifest JSON
-2. `npm run packages:check` — validates package library
-3. `npx nuxi typecheck` — TypeScript validation
+`simple-git-hooks` runs `pnpm run precommit` which executes:
+1. `pnpm run packages:manifest` — rebuilds package manifest JSON
+2. `pnpm run packages:check` — validates package library
+3. `pnpm run typecheck` — TypeScript validation
 
 Commits are blocked if typecheck fails. Do not use `--no-verify` unless explicitly asked.
 
