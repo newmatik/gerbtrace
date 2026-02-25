@@ -58,9 +58,13 @@
           </a>
         </div>
 
-        <p class="text-[11px] text-neutral-400 dark:text-neutral-500">
+        <NuxtLink
+          to="/licensing"
+          class="text-[11px] text-neutral-400 dark:text-neutral-500 hover:text-primary transition-colors"
+          @click="open = false"
+        >
           BUSL-1.1 License
-        </p>
+        </NuxtLink>
 
         <!-- Update check (only in Tauri desktop app) -->
         <div v-if="isTauri" class="border-t border-neutral-200 dark:border-neutral-700 pt-3">

@@ -25,10 +25,11 @@ Gerbtrace is a Nuxt 4 SPA (SSR disabled) for viewing/comparing Gerber PCB files 
 
 ### Authentication
 
-- Public routes: `/`, `/auth/*`, `/docs/*`. All other routes require Supabase auth.
+- Public routes (defined in `app/middleware/auth.global.ts`): `/`, `/auth/*`, `/docs/*`, `/features/*`, `/licensing`, `/pricing`, `/privacy`, `/terms`. All other routes require Supabase auth.
 - The Gerber viewer at `/viewer/[id]` and dashboard at `/dashboard` require login.
 - Auth providers: Microsoft, GitHub, Magic Link (email). Configured via Supabase.
 - To test authenticated flows, use the "Email & Password" mode on `/auth/login` with `GERBTRACE_TEST_EMAIL` / `GERBTRACE_TEST_PASSWORD` secrets.
+- When adding new public marketing pages, add the path to `PUBLIC_PREFIXES` in `auth.global.ts` or users will be redirected to login.
 
 ### Testing authenticated features
 
@@ -43,9 +44,13 @@ After login, the dashboard at `/dashboard` shows team projects. Click any projec
 
 Commits are blocked if typecheck fails. Do not use `--no-verify` unless explicitly asked.
 
+### Dev server: avoid multiple instances
+
+Only run one `nuxt dev` process at a time. Multiple instances compete for ports and corrupt the local Nuxt Content SQLite database, causing persistent docs 404s and "Retry" errors. Before starting a dev server, kill any existing processes on port 3000: `lsof -ti :3000 | xargs kill -9`.
+
 ### Content/Docs
 
-Nuxt Content v3 uses D1 (Cloudflare) in production and SQLite locally. The docs page may show "Docs are still loading" briefly after a dev server restart — this is normal and resolves on reload.
+Nuxt Content v3 uses D1 (Cloudflare) in production and SQLite locally. The docs page may show "Docs are still loading" briefly after a dev server restart — this is normal and resolves on reload. If docs persistently fail (404s, stuck "Retry" button), clear the content cache and restart: `rm -rf .nuxt/content && pnpm exec nuxt dev --no-fork`.
 
 ### Package library
 

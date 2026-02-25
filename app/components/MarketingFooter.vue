@@ -20,6 +20,7 @@
             <a v-if="release.windowsExeUrl" :href="release.windowsExeUrl" class="hover:text-gray-900 dark:hover:text-white transition-colors">Windows</a>
           </template>
           <span class="opacity-30">&bull;</span>
+          <NuxtLink to="/licensing" class="hover:text-gray-900 dark:hover:text-white transition-colors">Licensing</NuxtLink>
           <NuxtLink to="/privacy" class="hover:text-gray-900 dark:hover:text-white transition-colors">Privacy</NuxtLink>
           <NuxtLink to="/terms" class="hover:text-gray-900 dark:hover:text-white transition-colors">Terms</NuxtLink>
         </div>
