@@ -12,6 +12,11 @@ export default defineNuxtConfig({
     '/profile':      { ssr: false },
     '/packages':     { ssr: false },
     '/inbox':        { ssr: false },
+    '/de/datenschutz': { ssr: false },
+    '/de/agb': { ssr: false },
+    '/de/impressum': { ssr: false },
+    '/de/avv': { ssr: false },
+    '/de/auth/consent': { ssr: false },
   },
 
   runtimeConfig: {

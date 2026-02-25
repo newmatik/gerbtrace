@@ -1,4 +1,5 @@
 import type { User, Session, AuthError } from '@supabase/supabase-js'
+import { CURRENT_LEGAL_VERSIONS } from '~/utils/legalVersions'
 
 /**
  * Reactive auth state backed by Supabase GoTrue.
@@ -85,7 +86,12 @@ export function useAuth() {
       email,
       password,
       options: {
-        data: { name: name ?? email.split('@')[0] },
+        data: {
+          name: name ?? email.split('@')[0],
+          consent_terms_version: CURRENT_LEGAL_VERSIONS.terms,
+          consent_privacy_version: CURRENT_LEGAL_VERSIONS.privacy,
+          consent_granted_at: new Date().toISOString(),
+        },
         emailRedirectTo: redirectTo,
       },
     })
