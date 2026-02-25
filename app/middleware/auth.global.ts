@@ -1,4 +1,4 @@
-const PUBLIC_PREFIXES = ['/', '/auth', '/docs', '/pricing', '/features', '/privacy', '/terms']
+const PUBLIC_PREFIXES = ['/', '/auth', '/docs']
 
 function isPublicRoute(path: string): boolean {
   if (path === '/') return true
