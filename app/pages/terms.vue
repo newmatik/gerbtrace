@@ -48,16 +48,16 @@ useHead({
         <ul>
           <li>Use the Service for any unlawful purpose.</li>
           <li>Attempt to gain unauthorized access to other users' accounts or data.</li>
-          <li>Reverse-engineer, decompile, or scrape the Service beyond what applicable open-source licenses allow.</li>
+          <li>Reverse-engineer, decompile, or scrape the Service beyond what the applicable license allows.</li>
           <li>Resell access to the Service without our written permission.</li>
           <li>Upload malicious files or attempt to compromise the Service's infrastructure.</li>
         </ul>
 
         <h2>5. Intellectual property</h2>
         <p>
-          The Gerbtrace name, logo, and branding are the property of Newmatik. Portions of the Gerbtrace codebase are
-          available under open-source licenses as described in the
-          <a href="https://github.com/nicbus/gerber-compare" target="_blank" rel="noopener">project repository</a>.
+          The Gerbtrace name, logo, and branding are the property of Newmatik. The Gerbtrace source code is
+          available under the Business Source License 1.1 (BUSL-1.1) as described on our
+          <NuxtLink to="/licensing">Licensing</NuxtLink> page.
           The Service itself (hosted platform, API, and proprietary features) remains our property.
         </p>
 

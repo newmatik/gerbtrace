@@ -217,7 +217,7 @@ See the [Contributing](https://www.gerbtrace.com/docs/development/contributing) 
 
 ## License
 
-Gerbtrace is source-available under the [Business Source License 1.1](LICENSE) (BUSL-1.1).
+Gerbtrace is source-available under the [Business Source License 1.1](LICENSE) (BUSL-1.1). See the [Licensing](https://www.gerbtrace.com/licensing) page for a full customer-facing explanation.
 
 The BUSL is not an open-source license. It grants broad usage rights while protecting against competitive repackaging. Here is what that means in practice:
 
