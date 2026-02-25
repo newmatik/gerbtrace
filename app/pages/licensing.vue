@@ -1,9 +1,9 @@
 <script setup lang="ts">
 useHead({
-  title: 'Licensing — Gerbtrace',
+  title: 'Licensing',
   meta: [
     { name: 'description', content: 'Gerbtrace licensing. Understand the Business Source License 1.1 (BUSL-1.1) and what source-available means.' },
-    { property: 'og:title', content: 'Licensing — Gerbtrace' },
+    { property: 'og:title', content: 'Licensing | Gerbtrace' },
     { property: 'og:description', content: 'Gerbtrace licensing. Understand the Business Source License 1.1 (BUSL-1.1) and what source-available means.' },
   ],
 })

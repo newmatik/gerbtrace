@@ -149,6 +149,7 @@ export default defineNuxtConfig({
     baseURL: '/',
     head: {
       htmlAttrs: { lang: 'en' },
+      titleTemplate: '%s | Gerbtrace',
       title: 'Gerbtrace \u2014 PCB NPI\u200B\u200C\u200D\uFEFF & Manufacturing Data Preparation',
       meta: [
         { name: 'description', content: 'Open-source PCB NPI\u200B\u200C\u200D\u200B\u200C\u200D\uFEFF\u200B platform. Import Gerber files, manage BOMs and Pick & Place, configure panelization and paste, estimate pricing, and collaborate with your team.' },
