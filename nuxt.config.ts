@@ -3,6 +3,9 @@ import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const projectRoot = fileURLToPath(new URL('.', import.meta.url))
+const canonicalSiteUrl = process.env.NUXT_PUBLIC_SITE_URL || 'https://www.gerbtrace.com'
+const runtimeSiteUrl = process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+const socialPreviewImage = `${canonicalSiteUrl}/images/docs/pcb-light.png`
 const viteFsAllow = Array.from(new Set([
   projectRoot,
   ...['node_modules', 'node_modules/.pnpm']
@@ -15,25 +18,13 @@ export default defineNuxtConfig({
   ssr: false,
   devtools: { enabled: process.env.NODE_ENV !== 'production' },
 
-  routeRules: {
-    '/dashboard':    { ssr: false },
-    '/team/**':      { ssr: false },
-    '/viewer/**':    { ssr: false },
-    '/compare/**':   { ssr: false },
-    '/admin/**':     { ssr: false },
-    '/auth/**':      { ssr: false },
-    '/profile':      { ssr: false },
-    '/packages':     { ssr: false },
-    '/inbox':        { ssr: false },
-  },
-
   runtimeConfig: {
     supabaseServiceRoleKey: process.env.SUPABASE_SECRET_KEY || '',
     public: {
       appVersion: '1.3.0',
       supabaseUrl: process.env.SUPABASE_URL || '[REDACTED]',
       supabaseAnonKey: process.env.SUPABASE_ANON_KEY || '',
-      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || '[REDACTED]',
+      siteUrl: runtimeSiteUrl,
       // Keep in sync with Supabase Auth -> Email OTP length.
       supabaseEmailOtpLength: Number(process.env.SUPABASE_EMAIL_OTP_LENGTH || 8),
       elexessUrl: process.env.ELEXESS_URL || 'https://api.dev.elexess.com/api',
@@ -50,7 +41,7 @@ export default defineNuxtConfig({
   modules: ['@nuxtjs/seo', '@nuxt/ui', '@nuxt/content', '@sentry/nuxt/module'],
 
   site: {
-    url: '[REDACTED]',
+    url: canonicalSiteUrl,
     name: 'Gerbtrace',
     description: 'Open-source PCB NPI & Manufacturing Data Preparation Platform',
     defaultLocale: 'en',
@@ -165,9 +156,9 @@ export default defineNuxtConfig({
         { name: 'verify-v1', content: 'nwmk-7f3a9b2e4d1c8f5a6b0e3d7c9a2f4b8e' },
         { property: 'og:type', content: 'website' },
         { property: 'og:site_name', content: 'Gerbtrace' },
-        { property: 'og:image', content: '[REDACTED]/images/docs/pcb-light.png' },
+        { property: 'og:image', content: socialPreviewImage },
         { name: 'twitter:card', content: 'summary_large_image' },
-        { name: 'twitter:image', content: '[REDACTED]/images/docs/pcb-light.png' },
+        { name: 'twitter:image', content: socialPreviewImage },
       ],
       link: [
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico', sizes: '16x16 32x32 48x48' },

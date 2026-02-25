@@ -20,7 +20,7 @@
     "packages:tree:check": "node scripts/check-packages.mjs",
     "packages:extract-mycenter": "node scripts/extract-mycenter-packages.mjs",
     "typecheck": "pnpm exec nuxi typecheck",
-    "precommit": "pnpm run packages:manifest && pnpm run packages:check && git add -u public/packages/libraries/_tree.json public/packages/_manifest.json 2>/dev/null || true && pnpm run typecheck",
+    "precommit": "pnpm run packages:manifest && pnpm run packages:check && (git add -u public/packages/libraries/_tree.json public/packages/_manifest.json 2>/dev/null || true) && pnpm run typecheck",
     "dev": "pnpm run precommit && cross-env CHOKIDAR_USEPOLLING=1 CHOKIDAR_INTERVAL=400 nuxt dev --logLevel verbose --no-fork",
     "dev:debug": "pnpm run precommit && cross-env CHOKIDAR_USEPOLLING=1 CHOKIDAR_INTERVAL=400 nuxt dev --logLevel verbose --no-fork",
     "build": "nuxt build",

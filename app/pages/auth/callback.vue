@@ -8,6 +8,8 @@ const queryParam = (v: unknown): string | undefined => {
   return typeof v === 'string' ? v : undefined
 }
 
+// Hotfix note: this relies on Supabase's current error wording and should move
+// to a stable SDK error code/signal when one is available.
 const isPkceVerifierMissingError = (message: string | undefined): boolean =>
   !!message && message.toLowerCase().includes('pkce code verifier not found')
 
