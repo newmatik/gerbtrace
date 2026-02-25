@@ -4,7 +4,7 @@
 
 Need more? Gerbtrace is also a complete New Product Introduction (NPI) platform for electronics manufacturing — BOM management, Pick and Place, panelization, paste configuration, pricing estimation, and team collaboration. Use as much or as little as you need.
 
-[Web App](https://www.www.gerbtrace.com) · [Desktop Downloads](https://github.com/newmatik/gerbtrace/releases) · [Documentation](https://www.gerbtrace.com/docs)
+[Web App](https://www.gerbtrace.com) · [Desktop Downloads](https://github.com/newmatik/gerbtrace/releases) · [Documentation](https://www.gerbtrace.com/docs)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="public/images/docs/pcb-realistic-dark.png">
@@ -130,6 +130,7 @@ The desktop app checks for updates automatically on launch. No uploads, no serve
 ### Prerequisites
 
 - [Node.js](https://nodejs.org) 20 or later
+- [pnpm](https://pnpm.io) 10 or later (recommended via Corepack: `corepack enable pnpm`)
 - [Rust](https://rustup.rs) (only for desktop builds)
 
 ### Setup
@@ -137,13 +138,13 @@ The desktop app checks for updates automatically on launch. No uploads, no serve
 ```bash
 git clone https://github.com/newmatik/gerbtrace.git
 cd gerbtrace
-npm install
+pnpm install
 ```
 
 ### Web development
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 Visit `http://localhost:3000`.
@@ -151,7 +152,7 @@ Visit `http://localhost:3000`.
 ### Desktop development
 
 ```bash
-npm run tauri:dev
+pnpm run tauri:dev
 ```
 
 Launches a native window with hot reload. Changes to Vue files reflect immediately in the desktop window.
@@ -160,10 +161,10 @@ Launches a native window with hot reload. Changes to Vue files reflect immediate
 
 ```bash
 # Static web app
-npm run generate
+pnpm run generate
 
 # Desktop app for current platform
-npm run tauri:build
+pnpm run tauri:build
 ```
 
 ### Environment variables

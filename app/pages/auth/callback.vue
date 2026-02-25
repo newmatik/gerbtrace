@@ -8,6 +8,11 @@ const queryParam = (v: unknown): string | undefined => {
   return typeof v === 'string' ? v : undefined
 }
 
+// Hotfix note: this relies on Supabase's current error wording and should move
+// to a stable SDK error code/signal when one is available.
+const isPkceVerifierMissingError = (message: string | undefined): boolean =>
+  !!message && message.toLowerCase().includes('pkce code verifier not found')
+
 const processing = ref(true)
 const errorMessage = ref('')
 const errorHint = ref('')
@@ -21,6 +26,7 @@ onUnmounted(() => {
 
 onMounted(async () => {
   try {
+    let recoverablePkceError = false
     const hashParams = new URLSearchParams(window.location.hash.substring(1))
     const hashType = hashParams.get('type')
     const urlError = hashParams.get('error_description') || hashParams.get('error')
@@ -37,13 +43,18 @@ onMounted(async () => {
     const code = queryParam(route.query.code)
     if (code) {
       const { error } = await supabase.auth.exchangeCodeForSession(code)
-      if (error) {
+      if (error && !isPkceVerifierMissingError(error.message)) {
         errorMessage.value = error.message
         if (error.message?.toLowerCase().includes('expired')) {
           errorHint.value = 'The link has expired. Please request a new one.'
         }
         processing.value = false
         return
+      }
+
+      if (error && isPkceVerifierMissingError(error.message)) {
+        // Supabase can auto-exchange PKCE before this page runs.
+        recoverablePkceError = true
       }
     }
 
@@ -95,8 +106,12 @@ onMounted(async () => {
     timeoutId = setTimeout(() => {
       if (processing.value) {
         processing.value = false
-        errorMessage.value = 'Sign-in timed out. Please try again.'
-        errorHint.value = 'If you clicked a link from an email, it may have expired.'
+        errorMessage.value = recoverablePkceError
+          ? 'Sign-in session could not be verified. Please start sign-in again.'
+          : 'Sign-in timed out. Please try again.'
+        errorHint.value = recoverablePkceError
+          ? 'Open /auth/login and retry in the same browser tab.'
+          : 'If you clicked a link from an email, it may have expired.'
         subscription.unsubscribe()
       }
     }, 15000)
