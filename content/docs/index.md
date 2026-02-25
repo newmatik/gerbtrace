@@ -1,11 +1,11 @@
 ---
 title: Gerbtrace Documentation
-description: Documentation for Gerbtrace, an open-source PCB NPI and manufacturing data preparation platform.
+description: Documentation for Gerbtrace, a source-available PCB NPI and manufacturing data preparation platform.
 ---
 
 # Gerbtrace Documentation
 
-Gerbtrace is an open-source PCB NPI and manufacturing data preparation platform by [Newmatik GmbH](https://www.newmatik.com). It runs as a web app at [gerbtrace.com](https://gerbtrace.com) and as a native desktop app for macOS and Windows.
+Gerbtrace is a source-available PCB NPI and manufacturing data preparation platform by [Newmatik GmbH](https://www.newmatik.com) ([BUSL-1.1](/docs/licensing)). It runs as a web app at [gerbtrace.com](https://gerbtrace.com) and as a native desktop app for macOS and Windows.
 
 Gerbtrace takes your design output and turns it into production-ready manufacturing data. Import Gerber and drill files, manage your Bill of Materials with pricing, configure Pick and Place with a full package library, set up panelization and paste, compare design revisions, estimate fabrication and assembly costs, and collaborate with your team – all from a single tool.
 

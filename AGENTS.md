@@ -50,7 +50,7 @@ Only run one `nuxt dev` process at a time. Multiple instances compete for ports 
 
 ### Content/Docs
 
-Nuxt Content v3 uses D1 (Cloudflare) in production and SQLite locally. The docs page may show "Docs are still loading" briefly after a dev server restart — this is normal and resolves on reload. If docs persistently fail (404s, stuck "Retry" button), clear the content cache and restart: `rm -rf .nuxt/content && nuxt dev`.
+Nuxt Content v3 uses D1 (Cloudflare) in production and SQLite locally. The docs page may show "Docs are still loading" briefly after a dev server restart — this is normal and resolves on reload. If docs persistently fail (404s, stuck "Retry" button), clear the content cache and restart: `rm -rf .nuxt/content && pnpm exec nuxt dev --no-fork`.
 
 ### Package library
 

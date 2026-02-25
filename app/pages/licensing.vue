@@ -9,89 +9,8 @@ useHead({
 })
 
 const showFullLicense = ref(false)
-</script>
 
-<template>
-  <div class="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950">
-    <AppHeader marketing />
-
-    <main class="flex-1 py-16 px-4">
-      <article class="max-w-3xl mx-auto prose prose-neutral dark:prose-invert prose-sm">
-        <h1>Licensing</h1>
-        <p class="lead">Last updated: February 25, 2026</p>
-
-        <p>
-          Gerbtrace is licensed under the
-          <a href="https://mariadb.com/bsl11/" target="_blank" rel="noopener noreferrer">Business Source License 1.1</a>
-          (BUSL-1.1). This page explains what that means for you.
-        </p>
-
-        <h2>1. Source available, not open source</h2>
-        <p>
-          Gerbtrace is <strong>source available</strong>. The entire source code is published on
-          <a href="https://github.com/newmatik/gerbtrace" target="_blank" rel="noopener noreferrer">GitHub</a>
-          and anyone can read, study, and modify it. However, the BUSL-1.1 is not an
-          <a href="https://opensource.org/osd" target="_blank" rel="noopener noreferrer">OSI-approved open-source license</a>
-          because it places one restriction on commercial use: you may not use the code to offer a product that competes
-          with Gerbtrace.
-        </p>
-        <p>
-          In practice, this distinction matters only if you intend to redistribute the software commercially. For
-          all other uses — internal tooling, learning, contributing — the license is permissive.
-        </p>
-
-        <h2>2. What you can do</h2>
-        <ul>
-          <li>Use Gerbtrace internally within your organization for any purpose, including production.</li>
-          <li>Read, study, modify, and learn from the source code.</li>
-          <li>Contribute improvements back via pull requests.</li>
-          <li>Build internal tools or integrations that use Gerbtrace.</li>
-        </ul>
-
-        <h2>3. What you cannot do</h2>
-        <ul>
-          <li>Offer Gerbtrace (or a modified version) to third parties as a competing product or service.</li>
-          <li>Rebrand and redistribute Gerbtrace as your own product to customers.</li>
-          <li>Embed Gerbtrace in a commercial offering that competes with Gerbtrace.</li>
-        </ul>
-        <p>
-          The license defines a "competitive offering" as a product offered to third parties — whether paid or free — that
-          substantially replicates the functionality of Gerbtrace. Using the software for internal purposes within your
-          organization, including all affiliates under common control, is not considered competitive.
-        </p>
-
-        <h2>4. Automatic relicensing to MIT</h2>
-        <p>
-          Each version of Gerbtrace automatically converts to the
-          <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener noreferrer">MIT license</a>
-          four years after its release date. This means every release will eventually become fully open source
-          with no restrictions on use.
-        </p>
-
-        <h2>5. Alternative licensing</h2>
-        <p>
-          If the BUSL-1.1 does not fit your use case — for example, if you want to embed Gerbtrace in a commercial
-          product — contact us to discuss an alternative commercial license.
-        </p>
-        <p>
-          Reach out at <a href="mailto:software@newmatik.com">software@newmatik.com</a>.
-        </p>
-
-        <h2>6. Full license text</h2>
-        <p>
-          The complete license is available in the
-          <a href="https://github.com/newmatik/gerbtrace/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">LICENSE</a>
-          file in the repository. A copy is included below.
-        </p>
-
-        <button
-          class="text-sm font-medium text-primary-600 dark:text-primary-400 hover:underline cursor-pointer not-prose"
-          @click="showFullLicense = !showFullLicense"
-        >
-          {{ showFullLicense ? 'Hide full license text' : 'Show full license text' }}
-        </button>
-
-        <div v-if="showFullLicense" class="mt-4 rounded-lg bg-gray-100 dark:bg-gray-900 p-4 overflow-x-auto text-xs leading-relaxed font-mono whitespace-pre-wrap not-prose text-gray-700 dark:text-gray-300">License text copyright (c) 2020 MariaDB Corporation Ab, All Rights Reserved.
+const LICENSE_TEXT = `License text copyright (c) 2020 MariaDB Corporation Ab, All Rights Reserved.
 "Business Source License" is a trademark of MariaDB Corporation Ab.
 
 Parameters
@@ -187,7 +106,94 @@ TO THE EXTENT PERMITTED BY APPLICABLE LAW, THE LICENSED WORK IS PROVIDED ON
 AN "AS IS" BASIS. LICENSOR HEREBY DISCLAIMS ALL WARRANTIES AND CONDITIONS,
 EXPRESS OR IMPLIED, INCLUDING (WITHOUT LIMITATION) WARRANTIES OF
 MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT, AND
-TITLE.</div>
+TITLE.`
+</script>
+
+<template>
+  <div class="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950">
+    <AppHeader marketing />
+
+    <main class="flex-1 py-16 px-4">
+      <article class="max-w-3xl mx-auto prose prose-neutral dark:prose-invert prose-sm">
+        <h1>Licensing</h1>
+        <p class="lead">Last updated: February 25, 2026</p>
+
+        <p>
+          Gerbtrace is licensed under the
+          <a href="https://mariadb.com/bsl11/" target="_blank" rel="noopener noreferrer">Business Source License 1.1</a>
+          (BUSL-1.1). This page explains what that means for you.
+        </p>
+
+        <h2>1. Source available, not open source</h2>
+        <p>
+          Gerbtrace is <strong>source available</strong>. The entire source code is published on
+          <a href="https://github.com/newmatik/gerbtrace" target="_blank" rel="noopener noreferrer">GitHub</a>
+          and anyone can read, study, and modify it. However, the BUSL-1.1 is not an
+          <a href="https://opensource.org/osd" target="_blank" rel="noopener noreferrer">OSI-approved open-source license</a>
+          because it places one restriction on commercial use: you may not use the code to offer a product that competes
+          with Gerbtrace.
+        </p>
+        <p>
+          In practice, this distinction matters only if you intend to redistribute the software commercially. For
+          all other uses — internal tooling, learning, contributing — the license is permissive.
+        </p>
+
+        <h2>2. What you can do</h2>
+        <ul>
+          <li>Use Gerbtrace internally within your organization for any purpose, including production.</li>
+          <li>Read, study, modify, and learn from the source code.</li>
+          <li>Contribute improvements back via pull requests.</li>
+          <li>Build internal tools or integrations that use Gerbtrace.</li>
+        </ul>
+
+        <h2>3. What you cannot do</h2>
+        <ul>
+          <li>Offer Gerbtrace (or a modified version) to third parties as a competing product or service.</li>
+          <li>Rebrand and redistribute Gerbtrace as your own product to customers.</li>
+          <li>Embed Gerbtrace in a commercial offering that competes with Gerbtrace.</li>
+        </ul>
+        <p>
+          The license defines a "competitive offering" as a product offered to third parties — whether paid or free — that
+          substantially replicates the functionality of Gerbtrace. Using the software for internal purposes within your
+          organization, including all affiliates under common control, is not considered competitive.
+        </p>
+
+        <h2>4. Automatic relicensing to MIT</h2>
+        <p>
+          Each version of Gerbtrace automatically converts to the
+          <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener noreferrer">MIT license</a>
+          four years after its release date. This means every release will eventually become fully open source
+          with no restrictions on use.
+        </p>
+
+        <h2>5. Alternative licensing</h2>
+        <p>
+          If the BUSL-1.1 does not fit your use case — for example, if you want to embed Gerbtrace in a commercial
+          product — contact us to discuss an alternative commercial license.
+        </p>
+        <p>
+          Reach out at <a href="mailto:software@newmatik.com">software@newmatik.com</a>.
+        </p>
+
+        <h2>6. Full license text</h2>
+        <p>
+          The complete license is available in the
+          <a href="https://github.com/newmatik/gerbtrace/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">LICENSE</a>
+          file in the repository. A copy is included below.
+        </p>
+
+        <button
+          class="text-sm font-medium text-primary-600 dark:text-primary-400 hover:underline cursor-pointer not-prose"
+          @click="showFullLicense = !showFullLicense"
+        >
+          {{ showFullLicense ? 'Hide full license text' : 'Show full license text' }}
+        </button>
+
+        <div
+          v-if="showFullLicense"
+          v-text="LICENSE_TEXT"
+          class="mt-4 rounded-lg bg-gray-100 dark:bg-gray-900 p-4 overflow-x-auto text-xs leading-relaxed font-mono whitespace-pre-wrap not-prose text-gray-700 dark:text-gray-300"
+        />
 
         <h2>7. Contact</h2>
         <p>
