@@ -1,6 +1,6 @@
 # Gerbtrace — Agent Instructions
 
-## Cursor Cloud specific instructions
+## Cursor Cloud-specific instructions
 
 ### Product overview
 
