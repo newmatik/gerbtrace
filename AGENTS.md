@@ -28,6 +28,11 @@ Gerbtrace is a Nuxt 4 SPA (SSR disabled) for viewing/comparing Gerber PCB files 
 - Public routes: `/`, `/auth/*`, `/docs/*`. All other routes require Supabase auth.
 - The Gerber viewer at `/viewer/[id]` and dashboard at `/dashboard` require login.
 - Auth providers: Microsoft, GitHub, Magic Link (email). Configured via Supabase.
+- To test authenticated flows, use the "Email & Password" mode on `/auth/login` with `GERBTRACE_TEST_EMAIL` / `GERBTRACE_TEST_PASSWORD` secrets.
+
+### Testing authenticated features
+
+After login, the dashboard at `/dashboard` shows team projects. Click any project card to open the Gerber viewer at `/viewer/[id]?tab=pcb`. The viewer supports layer mode (default) and realistic rendering mode via the toolbar toggle.
 
 ### Pre-commit hook
 
