@@ -33,6 +33,34 @@ async function listPackageJsonFiles() {
     .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
 }
 
+/** Expected flat manifest entries: root-level JSON files + library package paths (matches build-packages-manifest) */
+async function listExpectedFlatManifestPaths() {
+  const rootFiles = await listPackageJsonFiles()
+  const paths = [...rootFiles]
+  if (!(await existsDir(LIBRARIES_DIR))) return paths
+  const libraryIds = await listLibraryIds()
+  const sort = (a, b) => a.toLowerCase().localeCompare(b.toLowerCase())
+  for (const id of libraryIds) {
+    const packagesDir = path.join(LIBRARIES_DIR, id, 'packages')
+    let files = []
+    try {
+      const entries = await fs.readdir(packagesDir, { withFileTypes: true })
+      files = entries
+        .filter((e) => e.isFile())
+        .map((e) => e.name)
+        .filter((n) => n.toLowerCase().endsWith('.json'))
+        .sort(sort)
+    } catch {
+      continue
+    }
+    for (const file of files) {
+      paths.push(`libraries/${id}/packages/${file}`)
+    }
+  }
+  paths.sort(sort)
+  return paths
+}
+
 async function existsDir(dirPath) {
   try {
     const st = await fs.stat(dirPath)
@@ -51,7 +79,7 @@ async function listLibraryIds() {
 }
 
 async function checkManifestMatchesDir() {
-  const expected = await listPackageJsonFiles()
+  const expected = await listExpectedFlatManifestPaths()
 
   let manifest
   try {
