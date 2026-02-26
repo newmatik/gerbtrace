@@ -15,10 +15,29 @@
 
 import type { ImageTree } from '../gerber/types'
 import type { PcbPreset } from '../../app/utils/pcb-presets'
-import { renderToCanvas, renderOutlineMask } from './canvas-renderer'
+import { renderToCanvas, renderOutlineMask, renderOuterBoundaryOnly } from './canvas-renderer'
 import type { CanvasTransform } from './canvas-renderer'
 
 const SOLDER_PASTE_COLOR = '#B0B0B0'
+
+function sampledMaskCoverage(canvas: HTMLCanvasElement, step = 8): { opaque: number; total: number; ratio: number } {
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return { opaque: 0, total: 0, ratio: 0 }
+  const { width, height } = canvas
+  if (width === 0 || height === 0) return { opaque: 0, total: 0, ratio: 0 }
+  const data = ctx.getImageData(0, 0, width, height).data
+  let opaque = 0
+  let total = 0
+  for (let y = 0; y < height; y += step) {
+    for (let x = 0; x < width; x += step) {
+      total++
+      const a = data[(y * width + x) * 4 + 3]
+      if (a > 0) opaque++
+    }
+  }
+  const ratio = total > 0 ? opaque / total : 0
+  return { opaque, total, ratio }
+}
 
 export interface RealisticLayers {
   copper?: ImageTree
@@ -70,12 +89,34 @@ export function renderRealisticView(
 
   // Render the outline mask once and reuse across all passes that need it.
   let outlineMaskCanvas: HTMLCanvasElement | null = null
+  let outlineMaskInvalid = false
   function getOutlineMask(): HTMLCanvasElement | null {
+    if (outlineMaskInvalid) return null
     if (outlineMaskCanvas) return outlineMaskCanvas
     if (!layers.outline) return null
-    outlineMaskCanvas = acquire()
-    renderOutlineMask(layers.outline!, outlineMaskCanvas, { color: '#ffffff', transform, dpr })
-    return outlineMaskCanvas
+    const candidate = acquire()
+    renderOutlineMask(layers.outline!, candidate, { color: '#ffffff', transform, dpr })
+    const coverage = sampledMaskCoverage(candidate, 8)
+    // Reject outline masks that are empty OR suspiciously sparse (typically
+    // thin contour strokes rather than a filled board interior), because they
+    // would erase nearly all realistic passes when used as destination-in.
+    if (coverage.opaque < 8 || coverage.ratio < 0.005) {
+      // Some outline files are contour-only. Try an outer-boundary-only mask
+      // before giving up so we still follow the board outline shape.
+      release(candidate)
+      const outerMask = acquire()
+      renderOuterBoundaryOnly(layers.outline!, outerMask, { color: '#ffffff', transform, dpr })
+      const outerCoverage = sampledMaskCoverage(outerMask, 8)
+      if (outerCoverage.opaque >= 8 && outerCoverage.ratio >= 0.005) {
+        outlineMaskCanvas = outerMask
+        return outerMask
+      }
+      release(outerMask)
+      outlineMaskInvalid = true
+      return null
+    }
+    outlineMaskCanvas = candidate
+    return candidate
   }
 
   function clipToOutline(target: HTMLCanvasElement) {
@@ -99,16 +140,18 @@ export function renderRealisticView(
 
   // ── 1. Substrate fill (inside outline) ──
   if (layers.outline) {
-    const substrateCanvas = acquire()
-    const mask = getOutlineMask()!
-    const subCtx = substrateCanvas.getContext('2d')!
-    subCtx.drawImage(mask, 0, 0)
-    subCtx.globalCompositeOperation = 'source-in'
-    subCtx.fillStyle = preset.substrate
-    subCtx.fillRect(0, 0, w, h)
-    subCtx.globalCompositeOperation = 'source-over'
-    ctx.drawImage(substrateCanvas, 0, 0)
-    release(substrateCanvas)
+    const mask = getOutlineMask()
+    if (mask) {
+      const substrateCanvas = acquire()
+      const subCtx = substrateCanvas.getContext('2d')!
+      subCtx.drawImage(mask, 0, 0)
+      subCtx.globalCompositeOperation = 'source-in'
+      subCtx.fillStyle = preset.substrate
+      subCtx.fillRect(0, 0, w, h)
+      subCtx.globalCompositeOperation = 'source-over'
+      ctx.drawImage(substrateCanvas, 0, 0)
+      release(substrateCanvas)
+    }
   }
 
   // ── 2. Copper layer ──
@@ -122,26 +165,28 @@ export function renderRealisticView(
 
   // ── 3. Solder mask ──
   if (layers.outline) {
-    const maskCanvas = acquire()
-    const maskCtx = maskCanvas.getContext('2d')!
-    const outlineMask = getOutlineMask()!
-    maskCtx.drawImage(outlineMask, 0, 0)
-    maskCtx.globalCompositeOperation = 'source-in'
-    maskCtx.fillStyle = preset.solderMask
-    maskCtx.fillRect(0, 0, w, h)
-    maskCtx.globalCompositeOperation = 'source-over'
-
-    const openings = getOpenings()
-    if (openings) {
-      maskCtx.globalCompositeOperation = 'destination-out'
-      maskCtx.drawImage(openings, 0, 0)
+    const outlineMask = getOutlineMask()
+    if (outlineMask) {
+      const maskCanvas = acquire()
+      const maskCtx = maskCanvas.getContext('2d')!
+      maskCtx.drawImage(outlineMask, 0, 0)
+      maskCtx.globalCompositeOperation = 'source-in'
+      maskCtx.fillStyle = preset.solderMask
+      maskCtx.fillRect(0, 0, w, h)
       maskCtx.globalCompositeOperation = 'source-over'
-    }
 
-    ctx.globalAlpha = preset.solderMaskOpacity
-    ctx.drawImage(maskCanvas, 0, 0)
-    ctx.globalAlpha = 1.0
-    release(maskCanvas)
+      const openings = getOpenings()
+      if (openings) {
+        maskCtx.globalCompositeOperation = 'destination-out'
+        maskCtx.drawImage(openings, 0, 0)
+        maskCtx.globalCompositeOperation = 'source-over'
+      }
+
+      ctx.globalAlpha = preset.solderMaskOpacity
+      ctx.drawImage(maskCanvas, 0, 0)
+      ctx.globalAlpha = 1.0
+      release(maskCanvas)
+    }
   }
 
   // ── 4. Surface finish on exposed pads ──

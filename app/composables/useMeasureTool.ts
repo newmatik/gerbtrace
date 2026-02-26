@@ -259,13 +259,13 @@ export function useMeasureTool() {
   function collectSnapPoints(trees: ImageTree[]) {
     const points: SnapPoint[] = []
     const seen = new Set<string>()
+    // Use a single, stable unit basis from the first drawable tree.
+    // Some imports include auxiliary/invalid files that parse to empty trees
+    // with default inch units; those must not rescale all measurements.
+    const referenceTree = trees.find(t => t.children.length > 0)
+    unitsToMm.value = referenceTree?.units === 'in' ? 25.4 : 1
     for (const tree of trees) {
-      // Determine unit conversion from tree
-      if (tree.units === 'in') {
-        unitsToMm.value = 25.4
-      } else {
-        unitsToMm.value = 1
-      }
+      if (tree.children.length === 0) continue
       for (const graphic of tree.children) {
         extractFromGraphic(graphic, points, seen)
       }
