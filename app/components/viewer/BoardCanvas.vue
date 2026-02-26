@@ -394,6 +394,8 @@ function applyCropMaskSafely(targetCanvas: HTMLCanvasElement, maskCanvas: HTMLCa
   const dctx = targetCanvas.getContext('2d')
   if (!tctx || !dctx) return false
 
+  tctx.setTransform(1, 0, 0, 1, 0, 0)
+  tctx.clearRect(0, 0, temp.width, temp.height)
   tctx.drawImage(targetCanvas, 0, 0)
   tctx.globalCompositeOperation = 'destination-in'
   tctx.drawImage(maskCanvas, 0, 0)
@@ -405,8 +407,13 @@ function applyCropMaskSafely(targetCanvas: HTMLCanvasElement, maskCanvas: HTMLCa
     return false
   }
 
+  dctx.save()
+  dctx.setTransform(1, 0, 0, 1, 0, 0)
+  dctx.globalCompositeOperation = 'source-over'
+  dctx.globalAlpha = 1
   dctx.clearRect(0, 0, targetCanvas.width, targetCanvas.height)
   dctx.drawImage(temp, 0, 0)
+  dctx.restore()
   return true
 }
 
@@ -1891,6 +1898,7 @@ function draw() {
       const targetCtx = targetCanvas.getContext('2d')!
       targetCtx.clearRect(0, 0, targetCanvas.width, targetCanvas.height)
       for (const { layer, tree } of layerTrees) {
+        if (!layer.visible) continue
         const tempCanvas = acquireCanvas(overscanW, overscanH)
         renderToCanvas(tree, tempCanvas, {
           color: layer.color,
