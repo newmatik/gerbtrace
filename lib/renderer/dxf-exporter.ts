@@ -26,7 +26,7 @@ type DxfVertex = {
 }
 
 export function exportImageTreeToDxf(tree: ImageTree, options: DxfExportOptions = {}): string {
-  const variant = options.variant ?? 'r2000'
+  const variant = options.variant ?? 'r12'
   const layerName = sanitizeLayerName(options.layerName ?? 'GERBER')
   const entities = entitiesForTree(tree, layerName, variant)
   return buildDxfDocument(tree.units, variant, [layerName], entities)
@@ -36,7 +36,7 @@ export function exportImageTreesToCombinedDxf(
   layers: DxfLayerInput[],
   options: { variant?: DxfVariant } = {},
 ): string {
-  const variant = options.variant ?? 'r2000'
+  const variant = options.variant ?? 'r12'
   const usedLayerNames = new Set<string>()
   const entities: string[] = []
   let units: 'mm' | 'in' = 'mm'
@@ -209,6 +209,8 @@ function makeR2000LwPolyline(vertices: DxfVertex[], layerName: string, closed: b
     String(vertices.length),
     '70',
     closed ? '1' : '0',
+    '38',
+    '0.0',
   ]
 
   if (vertices.some(v => typeof v.width === 'number' && v.width! > 0)) {
@@ -284,7 +286,7 @@ function makeCircle(layerName: string, cx: number, cy: number, radius: number): 
 // ---------------------------------------------------------------------------
 
 class HandleAlloc {
-  private n = 1
+  private n = 0x10
   next(): string { return (this.n++).toString(16).toUpperCase() }
   get seed(): string { return this.n.toString(16).toUpperCase() }
 }
@@ -299,10 +301,10 @@ function buildDxfDocument(
   layerNames: string[],
   entityStrings: string[],
 ): string {
-  if (variant === 'r12') {
-    return buildR12Document(units, layerNames, entityStrings)
+  if (variant === 'r2000') {
+    return buildR2000Document(units, layerNames, entityStrings)
   }
-  return buildR2000Document(units, layerNames, entityStrings)
+  return buildR12Document(units, layerNames, entityStrings)
 }
 
 // ---------------------------------------------------------------------------
@@ -366,8 +368,16 @@ function buildR2000Document(
   const hPaperSpaceBlock = h.next()
   const hPaperSpaceEndBlk = h.next()
   const hRootDict = h.next()
+  const hAcadLayoutDict = h.next()
+  const hAcadGroupDict = h.next()
+  const hAcadPlotStyleDict = h.next()
+  const hAcadPlotStyleNormal = h.next()
+  const hModelLayout = h.next()
+  const hPaperLayout = h.next()
 
   const HANDSEED_PLACEHOLDER = '###HANDSEED###'
+  const MODEL_SPACE_NAME = '*Model_Space'
+  const PAPER_SPACE_NAME = '*Paper_Space'
 
   // ── HEADER ──
   L.push('0', 'SECTION', '2', 'HEADER')
@@ -482,12 +492,14 @@ function buildR2000Document(
   L.push(
     '0', 'BLOCK_RECORD', '5', hModelSpaceBlkRec, '330', hBlkRecTbl,
     '100', 'AcDbSymbolTableRecord', '100', 'AcDbBlockTableRecord',
-    '2', '*MODEL_SPACE',
+    '2', MODEL_SPACE_NAME,
+    '340', hModelLayout,
   )
   L.push(
     '0', 'BLOCK_RECORD', '5', hPaperSpaceBlkRec, '330', hBlkRecTbl,
     '100', 'AcDbSymbolTableRecord', '100', 'AcDbBlockTableRecord',
-    '2', '*PAPER_SPACE',
+    '2', PAPER_SPACE_NAME,
+    '340', hPaperLayout,
   )
   L.push('0', 'ENDTAB')
 
@@ -499,9 +511,9 @@ function buildR2000Document(
     '0', 'BLOCK', '5', hModelSpaceBlock, '330', hModelSpaceBlkRec,
     '100', 'AcDbEntity', '8', '0',
     '100', 'AcDbBlockBegin',
-    '2', '*MODEL_SPACE', '70', '0',
+    '2', MODEL_SPACE_NAME, '70', '0',
     '10', '0.0', '20', '0.0', '30', '0.0',
-    '3', '*MODEL_SPACE', '1', '',
+    '3', MODEL_SPACE_NAME, '1', '',
   )
   L.push(
     '0', 'ENDBLK', '5', hModelSpaceEndBlk, '330', hModelSpaceBlkRec,
@@ -512,9 +524,9 @@ function buildR2000Document(
     '0', 'BLOCK', '5', hPaperSpaceBlock, '330', hPaperSpaceBlkRec,
     '100', 'AcDbEntity', '8', '0',
     '100', 'AcDbBlockBegin',
-    '2', '*PAPER_SPACE', '70', '0',
+    '2', PAPER_SPACE_NAME, '70', '0',
     '10', '0.0', '20', '0.0', '30', '0.0',
-    '3', '*PAPER_SPACE', '1', '',
+    '3', PAPER_SPACE_NAME, '1', '',
   )
   L.push(
     '0', 'ENDBLK', '5', hPaperSpaceEndBlk, '330', hPaperSpaceBlkRec,
@@ -534,14 +546,135 @@ function buildR2000Document(
   L.push('0', 'SECTION', '2', 'OBJECTS')
   L.push(
     '0', 'DICTIONARY', '5', hRootDict, '330', '0',
-    '100', 'AcDbDictionary', '281', '1',
+    '100', 'AcDbDictionary', '280', '0', '281', '1',
+    '3', 'ACAD_GROUP', '350', hAcadGroupDict,
+    '3', 'ACAD_LAYOUT', '350', hAcadLayoutDict,
+    '3', 'ACAD_PLOTSTYLENAME', '350', hAcadPlotStyleDict,
   )
+  L.push(
+    '0', 'DICTIONARY', '5', hAcadGroupDict, '330', hRootDict,
+    '100', 'AcDbDictionary', '280', '1', '281', '1',
+  )
+  L.push(
+    '0', 'DICTIONARY', '5', hAcadLayoutDict, '330', hRootDict,
+    '100', 'AcDbDictionary', '280', '1', '281', '1',
+    '3', 'Model', '350', hModelLayout,
+    '3', 'Layout1', '350', hPaperLayout,
+  )
+  L.push(
+    '0', 'ACDBDICTIONARYWDFLT', '5', hAcadPlotStyleDict, '330', hRootDict,
+    '100', 'AcDbDictionary', '281', '1',
+    '3', 'Normal', '350', hAcadPlotStyleNormal,
+    '100', 'AcDbDictionaryWithDefault', '340', hAcadPlotStyleNormal,
+  )
+  L.push(
+    '0', 'ACDBPLACEHOLDER', '5', hAcadPlotStyleNormal, '330', hAcadPlotStyleDict,
+  )
+  L.push(...makeLayoutObject({
+    handle: hModelLayout,
+    owner: hAcadLayoutDict,
+    name: 'Model',
+    tabOrder: 0,
+    isModelSpace: true,
+    blockRecordHandle: hModelSpaceBlkRec,
+  }))
+  L.push(...makeLayoutObject({
+    handle: hPaperLayout,
+    owner: hAcadLayoutDict,
+    name: 'Layout1',
+    tabOrder: 1,
+    isModelSpace: false,
+    blockRecordHandle: hPaperSpaceBlkRec,
+  }))
   L.push('0', 'ENDSEC')
 
   L.push('0', 'EOF')
 
   const text = L.join('\n') + '\n'
   return text.replace(HANDSEED_PLACEHOLDER, h.seed)
+}
+
+function makeLayoutObject(options: {
+  handle: string
+  owner: string
+  name: string
+  tabOrder: number
+  isModelSpace: boolean
+  blockRecordHandle: string
+}): string[] {
+  const {
+    handle,
+    owner,
+    name,
+    tabOrder,
+    isModelSpace,
+    blockRecordHandle,
+  } = options
+
+  return [
+    '0', 'LAYOUT',
+    '5', handle,
+    '330', owner,
+    '100', 'AcDbPlotSettings',
+    '1', '',
+    '4', 'A3',
+    '6', '',
+    '40', '7.5',
+    '41', '20.0',
+    '42', '7.5',
+    '43', '20.0',
+    '44', '420.0',
+    '45', '297.0',
+    '46', '0.0',
+    '47', '0.0',
+    '48', '0.0',
+    '49', '0.0',
+    '140', '0.0',
+    '141', '0.0',
+    '142', '1.0',
+    '143', '1.0',
+    '70', isModelSpace ? '1024' : '0',
+    '72', '1',
+    '73', '0',
+    '74', '5',
+    '7', '',
+    '75', '16',
+    '76', '0',
+    '77', '2',
+    '78', '300',
+    '147', '1.0',
+    '148', '0.0',
+    '149', '0.0',
+    '100', 'AcDbLayout',
+    '1', name,
+    '70', isModelSpace ? '1' : '0',
+    '71', String(tabOrder),
+    '10', '0.0',
+    '20', '0.0',
+    '11', '420.0',
+    '21', '297.0',
+    '12', '0.0',
+    '22', '0.0',
+    '32', '0.0',
+    '14', '1e+20',
+    '24', '1e+20',
+    '34', '1e+20',
+    '15', '-1e+20',
+    '25', '-1e+20',
+    '35', '-1e+20',
+    '146', '0.0',
+    '13', '0.0',
+    '23', '0.0',
+    '33', '0.0',
+    '16', '1.0',
+    '26', '0.0',
+    '36', '0.0',
+    '17', '0.0',
+    '27', '1.0',
+    '37', '0.0',
+    '76', '1',
+    '330', blockRecordHandle,
+  ]
 }
 
 /**

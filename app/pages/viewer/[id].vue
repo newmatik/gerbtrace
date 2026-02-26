@@ -2317,7 +2317,7 @@ function detectGerberUnits(): 'mm' | 'in' {
   if (!canvas) return 'mm'
   for (const layer of layers.value) {
     const tree = canvas.getImageTree(layer)
-    if (tree) return tree.units
+    if (tree && tree.children.length > 0) return tree.units
   }
   return 'mm'
 }
@@ -3181,13 +3181,14 @@ const _gerberBoardSizeMm = computed<{ width: number; height: number } | undefine
 
   // Fallback: union of all Gerber layer bounds
   let bounds: BoundingBox = emptyBounds()
-  let units: 'mm' | 'in' = 'mm'
+  let units: 'mm' | 'in' | undefined
   for (const layer of ls) {
     if (isPnPLayer(layer.type)) continue
     const tree = _parseLayerTree(layer)
     if (!tree || tree.children.length === 0) continue
+    if (!units) units = tree.units
+    if (tree.units !== units) continue
     bounds = mergeBounds(bounds, tree.bounds as BoundingBox)
-    units = tree.units
   }
   if (isEmpty(bounds)) return undefined
   const bw = bounds[2] - bounds[0]

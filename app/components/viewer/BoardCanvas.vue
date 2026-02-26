@@ -355,6 +355,68 @@ function clearCanvasPool() {
 
 const gerberTreeCache = useGerberImageTreeCache()
 
+/**
+ * Fast alpha-density estimate using sparse sampling.
+ * Returns a sampled count of non-transparent pixels.
+ */
+function sampledOpaquePixelCount(canvas: HTMLCanvasElement, step = 8): number {
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return 0
+  const { width, height } = canvas
+  if (width === 0 || height === 0) return 0
+
+  const data = ctx.getImageData(0, 0, width, height).data
+  let count = 0
+  for (let y = 0; y < height; y += step) {
+    for (let x = 0; x < width; x += step) {
+      const a = data[(y * width + x) * 4 + 3]
+      if (a > 0) count++
+    }
+  }
+  return count
+}
+
+/**
+ * Apply a destination-in crop mask safely.
+ * If the mask is empty or would effectively erase the whole scene, skip crop.
+ */
+function applyCropMaskSafely(targetCanvas: HTMLCanvasElement, maskCanvas: HTMLCanvasElement): boolean {
+  const maskAlpha = sampledOpaquePixelCount(maskCanvas, 8)
+  if (maskAlpha < 8) return false
+
+  const beforeAlpha = sampledOpaquePixelCount(targetCanvas, 8)
+  if (beforeAlpha < 8) return false
+
+  const temp = document.createElement('canvas')
+  temp.width = targetCanvas.width
+  temp.height = targetCanvas.height
+  const tctx = temp.getContext('2d')
+  const dctx = targetCanvas.getContext('2d')
+  if (!tctx || !dctx) return false
+
+  tctx.setTransform(1, 0, 0, 1, 0, 0)
+  tctx.clearRect(0, 0, temp.width, temp.height)
+  tctx.drawImage(targetCanvas, 0, 0)
+  tctx.globalCompositeOperation = 'destination-in'
+  tctx.drawImage(maskCanvas, 0, 0)
+  tctx.globalCompositeOperation = 'source-over'
+
+  const afterAlpha = sampledOpaquePixelCount(temp, 8)
+  // Reject obviously bad masks that would blank almost everything.
+  if (afterAlpha < Math.max(8, Math.floor(beforeAlpha * 0.02))) {
+    return false
+  }
+
+  dctx.save()
+  dctx.setTransform(1, 0, 0, 1, 0, 0)
+  dctx.globalCompositeOperation = 'source-over'
+  dctx.globalAlpha = 1
+  dctx.clearRect(0, 0, targetCanvas.width, targetCanvas.height)
+  dctx.drawImage(temp, 0, 0)
+  dctx.restore()
+  return true
+}
+
 function getImageTree(layer: LayerInfo): ImageTree | null {
   // PnP layers are not Gerber — skip parsing
   if (isPnPLayer(layer.type)) return null
@@ -583,7 +645,10 @@ function gatherRealisticLayers(side: RealisticSide): RealisticLayers {
   const silkTrees: ImageTree[] = []
   const pasteTrees: ImageTree[] = []
   const drillTrees: ImageTree[] = []
-  let outlineTree: ImageTree | undefined
+  const preferredOutlineTree = props.outlineLayer ? getImageTree(props.outlineLayer) : null
+  let outlineTree: ImageTree | undefined = preferredOutlineTree && preferredOutlineTree.children.length > 0
+    ? preferredOutlineTree
+    : undefined
   let detectedUnits: 'mm' | 'in' | undefined
   const usedTrees: ImageTree[] = []
 
@@ -593,7 +658,7 @@ function gatherRealisticLayers(side: RealisticSide): RealisticLayers {
 
     // Outline/Keep-Out always participate (they define board shape),
     // but all other layers respect visibility toggling.
-    if (layer.type === 'Outline') { outlineTree = tree }
+    if (layer.type === 'Outline') { if (!outlineTree) outlineTree = tree }
     else if (layer.type === 'Keep-Out' && !outlineTree) { outlineTree = tree }
     else if (!layer.visible) { continue }
     else if (copperTypes.includes(layer.type)) { copperTrees.push(tree); usedTrees.push(tree) }
@@ -672,7 +737,7 @@ function detectUnits(): 'mm' | 'in' {
   const source = props.allLayers ?? props.layers
   for (const layer of source) {
     const tree = getImageTree(layer)
-    if (tree) return tree.units
+    if (tree && tree.children.length > 0) return tree.units
   }
   return 'mm'
 }
@@ -1829,6 +1894,37 @@ function draw() {
     }
 
     let sceneCanvas: HTMLCanvasElement
+    const renderStandardScene = (targetCanvas: HTMLCanvasElement) => {
+      const targetCtx = targetCanvas.getContext('2d')!
+      targetCtx.clearRect(0, 0, targetCanvas.width, targetCanvas.height)
+      for (const { layer, tree } of layerTrees) {
+        if (!layer.visible) continue
+        const tempCanvas = acquireCanvas(overscanW, overscanH)
+        renderToCanvas(tree, tempCanvas, {
+          color: layer.color,
+          transform: osTransform,
+          dpr,
+        })
+        targetCtx.drawImage(tempCanvas, 0, 0)
+        releaseCanvas(tempCanvas)
+      }
+
+      if (props.cropToOutline && props.outlineLayer) {
+        const outlineTree = getImageTree(props.outlineLayer)
+        if (outlineTree && outlineTree.children.length > 0) {
+          const maskCanvas = acquireCanvas(overscanW, overscanH)
+          renderOutlineMask(outlineTree, maskCanvas, {
+            color: '#ffffff',
+            transform: osTransform,
+            dpr,
+          })
+          if (!applyCropMaskSafely(targetCanvas, maskCanvas)) {
+            console.warn('[BoardCanvas] Crop mask rejected (empty or destructive); skipping crop.')
+          }
+          releaseCanvas(maskCanvas)
+        }
+      }
+    }
 
     if (isRealistic) {
       // ── Realistic rendering mode ──
@@ -1877,42 +1973,17 @@ function draw() {
           ...realisticPoolOpts,
         })
       }
+
+      // Fail-safe: if realistic pass produced an empty frame, render standard
+      // layers instead of leaving the viewport blank.
+      if (sampledOpaquePixelCount(sceneCanvas, 8) < 8) {
+        console.warn('[BoardCanvas] Realistic render produced empty scene; falling back to standard layers.')
+        renderStandardScene(sceneCanvas)
+      }
     } else {
       // ── Standard layer rendering mode ──
       sceneCanvas = acquireCanvas(overscanW, overscanH)
-      const sceneCtx = sceneCanvas.getContext('2d')!
-
-      for (const { layer, tree } of layerTrees) {
-        const tempCanvas = acquireCanvas(overscanW, overscanH)
-
-        renderToCanvas(tree, tempCanvas, {
-          color: layer.color,
-          transform: osTransform,
-          dpr,
-        })
-
-        sceneCtx.drawImage(tempCanvas, 0, 0)
-        releaseCanvas(tempCanvas)
-      }
-
-      if (props.cropToOutline && props.outlineLayer) {
-        const outlineTree = getImageTree(props.outlineLayer)
-        if (outlineTree && outlineTree.children.length > 0) {
-          const maskCanvas = acquireCanvas(overscanW, overscanH)
-
-          renderOutlineMask(outlineTree, maskCanvas, {
-            color: '#ffffff',
-            transform: osTransform,
-            dpr,
-          })
-
-          sceneCtx.globalCompositeOperation = 'destination-in'
-          sceneCtx.drawImage(maskCanvas, 0, 0)
-          sceneCtx.globalCompositeOperation = 'source-over'
-
-          releaseCanvas(maskCanvas)
-        }
-      }
+      renderStandardScene(sceneCanvas)
     }
 
     blitScene(sceneCanvas, osTransform)
@@ -2273,9 +2344,9 @@ function exportPng(dpi: number = 600): Promise<Blob | null> {
             transform: exportTransform,
             dpr: 1,
           })
-          ctx.globalCompositeOperation = 'destination-in'
-          ctx.drawImage(maskCanvas, 0, 0)
-          ctx.globalCompositeOperation = 'source-over'
+          if (!applyCropMaskSafely(exportCanvas, maskCanvas)) {
+            console.warn('[BoardCanvas] Export crop mask rejected; skipping crop.')
+          }
         }
       }
 
@@ -2460,9 +2531,9 @@ function exportPngForSide(
             transform: exportTransform,
             dpr: 1,
           })
-          ctx.globalCompositeOperation = 'destination-in'
-          ctx.drawImage(maskCanvas, 0, 0)
-          ctx.globalCompositeOperation = 'source-over'
+          if (!applyCropMaskSafely(exportCanvas, maskCanvas)) {
+            console.warn('[BoardCanvas] Side export crop mask rejected; skipping crop.')
+          }
         }
       }
 

@@ -29,10 +29,14 @@ const LAYER_TYPE_MAP: Record<string, string> = {
   '.gbo': 'Bottom Silkscreen',
   '.gtp': 'Top Paste',
   '.gbp': 'Bottom Paste',
+  // Altium alternate paste naming
+  '.gpt': 'Top Paste',
+  '.gpb': 'Bottom Paste',
   '.gm1': 'Outline',
   '.gm2': 'Outline',
   '.gm3': 'Outline',
   '.gm7': 'Outline',
+  '.gml': 'Outline',
   '.gm': 'Outline',
   '.gko': 'Outline',
   // Altium drawing / guide layers (Gerber-format, generic)
@@ -156,9 +160,13 @@ const VALID_LAYER_TYPES = new Set(ALL_LAYER_TYPES)
  * type strings persisted in older DB records.
  */
 export function resolveLayerType(fileName: string, storedLayerType?: string | null): string {
-  // Respect any valid persisted assignment, including an explicit "Unmatched".
-  // Only re-detect when missing or unknown.
-  if (storedLayerType && VALID_LAYER_TYPES.has(storedLayerType)) return storedLayerType
+  // Respect any valid persisted assignment except legacy "Unmatched" values
+  // that can now be auto-detected by extension rules introduced later.
+  if (storedLayerType && VALID_LAYER_TYPES.has(storedLayerType)) {
+    if (storedLayerType !== 'Unmatched') return storedLayerType
+    const detected = detectLayerType(fileName)
+    return detected !== 'Unmatched' ? detected : storedLayerType
+  }
   return detectLayerType(fileName)
 }
 
@@ -323,7 +331,8 @@ export function isGerberFile(fileName: string): boolean {
   const gerberExts = [
     // KiCad / modern
     '.gtl', '.gbl', '.gts', '.gbs', '.gto', '.gbo', '.gtp', '.gbp',
-    '.gm1', '.gm2', '.gm3', '.gm7', '.gm', '.gko', '.gbr', '.ger', '.pho',
+    '.gpt', '.gpb',
+    '.gm1', '.gm2', '.gm3', '.gm7', '.gml', '.gm', '.gko', '.gbr', '.ger', '.pho',
     // Altium drawing / guide / inner layers
     '.gd1', '.gd2', '.gg1', '.gg2',
     '.g1', '.g2', '.g3', '.g4',
