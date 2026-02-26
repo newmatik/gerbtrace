@@ -152,6 +152,7 @@ async function handlePostAuth(session: any) {
       isConsentVersionAtLeast(termsVersion, CURRENT_LEGAL_VERSIONS.terms)
       && isConsentVersionAtLeast(privacyVersion, CURRENT_LEGAL_VERSIONS.privacy)
     ) {
+      // Backfill metadata-based consent into user_consents; server upsert keeps this idempotent.
       await recordConsent(['terms', 'privacy'])
     }
   }

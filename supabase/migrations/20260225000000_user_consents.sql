@@ -9,8 +9,7 @@ create table if not exists public.user_consents (
   accepted     boolean not null default true,
   ip_address   text,
   user_agent   text,
-  created_at   timestamptz not null default now(),
-  unique (user_id, consent_type, version)
+  created_at   timestamptz not null default now()
 );
 
 alter table public.user_consents
@@ -64,7 +63,6 @@ begin
 end $$;
 
 create index if not exists idx_user_consents_user on public.user_consents(user_id);
-create index if not exists idx_user_consents_lookup on public.user_consents(user_id, consent_type, version);
 
 alter table public.user_consents enable row level security;
 

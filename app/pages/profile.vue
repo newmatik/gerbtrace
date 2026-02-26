@@ -263,7 +263,7 @@
               />
               <p v-if="deleteError" class="text-xs text-red-500 mb-3">{{ deleteError }}</p>
               <div class="flex justify-end gap-2">
-                <UButton variant="ghost" color="neutral" @click="showDeleteModal = false; deleteConfirmEmail = ''">
+                <UButton variant="ghost" color="neutral" @click="showDeleteModal = false">
                   Cancel
                 </UButton>
                 <UButton
@@ -523,6 +523,11 @@ async function handleExportData() {
 const showDeleteModal = ref(false)
 const deleteConfirmEmail = ref('')
 const deleteError = ref('')
+
+watch(showDeleteModal, () => {
+  deleteConfirmEmail.value = ''
+  deleteError.value = ''
+})
 
 async function handleDeleteAccount() {
   deleteError.value = ''

@@ -2,7 +2,9 @@ import { createClient } from '@supabase/supabase-js'
 
 export default defineEventHandler(async (event) => {
   const authHeader = getHeader(event, 'authorization')
-  if (!authHeader) {
+  const bearerMatch = authHeader?.match(/^Bearer\s+(.+)$/)
+  const token = bearerMatch?.[1]?.trim()
+  if (!token) {
     throw createError({ statusCode: 401, statusMessage: 'Unauthorized' })
   }
 
@@ -12,7 +14,6 @@ export default defineEventHandler(async (event) => {
     config.supabaseServiceRoleKey,
   )
 
-  const token = authHeader.replace('Bearer ', '')
   const { data: { user }, error: authError } = await supabase.auth.getUser(token)
   if (authError || !user) {
     throw createError({ statusCode: 401, statusMessage: 'Unauthorized' })
