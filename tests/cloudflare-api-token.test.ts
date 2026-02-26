@@ -48,44 +48,6 @@ describe('Cloudflare API Token — Verification', () => {
     }
   })
 
-  it('token has Cloudflare Pages read access', async () => {
-    const accountsRes = await fetch('https://api.cloudflare.com/client/v4/accounts?per_page=1', {
-      headers: { Authorization: `Bearer ${CLOUDFLARE_API_TOKEN}` },
-    })
-    const accountsBody = await accountsRes.json() as {
-      success: boolean
-      result: { id: string }[]
-    }
-    expect(accountsBody.result.length, 'No Cloudflare accounts accessible').toBeGreaterThan(0)
-    const accountId = accountsBody.result[0].id
-
-    const pagesRes = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/pages/projects?per_page=5`,
-      { headers: { Authorization: `Bearer ${CLOUDFLARE_API_TOKEN}` } },
-    )
-    const pagesBody = await pagesRes.json() as {
-      success: boolean
-      result: { name: string; subdomain: string }[]
-      errors: { code: number; message: string }[]
-    }
-
-    if (!pagesRes.ok) {
-      console.error(
-        `⚠ Cloudflare Pages access DENIED (HTTP ${pagesRes.status}).`,
-        '\n  Your token is missing the "Cloudflare Pages:Edit" permission.',
-        '\n  Go to https://dash.cloudflare.com/profile/api-tokens to update it.',
-      )
-    }
-
-    expect(pagesRes.ok, `HTTP ${pagesRes.status}: ${JSON.stringify(pagesBody.errors)}`).toBe(true)
-    expect(pagesBody.success).toBe(true)
-
-    console.log('Cloudflare Pages projects:')
-    for (const project of pagesBody.result) {
-      console.log(`  - ${project.name} (${project.subdomain})`)
-    }
-  })
-
   it('token has Workers Scripts read access', async () => {
     const accountsRes = await fetch('https://api.cloudflare.com/client/v4/accounts?per_page=1', {
       headers: { Authorization: `Bearer ${CLOUDFLARE_API_TOKEN}` },

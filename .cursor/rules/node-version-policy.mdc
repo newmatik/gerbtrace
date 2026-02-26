@@ -1,0 +1,17 @@
+---
+description: Pin Node version consistently across local, CI, and Workers builds
+alwaysApply: true
+---
+
+# Node Version Policy
+
+- Pin Node.js to `22.20.0` (LTS) for local development, CI, and Cloudflare Workers builds.
+- Keep `.nvmrc`, `.node-version`, and `package.json` `engines.node` aligned.
+- Keep CI Node pins aligned (for example in `.github/workflows/build-desktop.yml`).
+- Ensure Cloudflare Workers build config sets `NODE_VERSION=22.20.0` (or honors `.nvmrc`).
+- Reason: Cloudflare Workers Builds rely on a Node build environment, and pinning a fixed LTS patch improves reproducibility across web and desktop pipelines.
+- Note: Cloudflare Workers runtime behavior is controlled by Worker compatibility settings, not by this Node pin.
+
+## Upgrade Rule
+
+- Do not change Node major versions ad hoc; update all pins together and run a Node canary validation path before adopting a new major.

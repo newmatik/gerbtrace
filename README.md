@@ -129,9 +129,20 @@ The desktop app checks for updates automatically on launch. No uploads, no serve
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org) 20 or later
+- [Node.js](https://nodejs.org) 22.20.0 (LTS)
 - [pnpm](https://pnpm.io) 10 or later (recommended via Corepack: `corepack enable pnpm`)
 - [Rust](https://rustup.rs) (only for desktop builds)
+
+### Node.js Version Policy
+
+This repository pins Node.js to `22.20.0` (LTS) via `.nvmrc`, `.node-version`, `package.json` `engines`, and CI workflow configuration.
+
+Why this is pinned:
+
+- Cloudflare Workers Builds run your Node-based build tooling, and pinning to `22.20.0` keeps local, CI, and deployed build environments aligned.
+- Set `NODE_VERSION=22.20.0` in your Cloudflare Workers build settings (or rely on `.nvmrc`) to keep hosted builds deterministic.
+- Cloudflare Workers runtime behavior is controlled by Worker compatibility settings, so this pin is for consistent build tooling and dependency behavior.
+- A fixed LTS patch version reduces cross-platform drift for both web and desktop pipelines.
 
 ### Setup
 
