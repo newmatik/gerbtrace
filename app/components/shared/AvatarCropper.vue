@@ -27,6 +27,7 @@
 <script setup lang="ts">
 const emit = defineEmits<{
   cropped: [blob: Blob]
+  picked: []
 }>()
 
 const pickedFile = ref<File | null>(null)
@@ -45,7 +46,10 @@ function onPickFile(event: Event) {
   const file = target.files?.[0] ?? null
   pickedFile.value = file
   cleanupPreview()
-  if (file) previewUrl.value = URL.createObjectURL(file)
+  if (file) {
+    previewUrl.value = URL.createObjectURL(file)
+    emit('picked')
+  }
 }
 
 async function emitCropped() {

@@ -46,7 +46,7 @@ export function useCurrentUser() {
     }
   }
 
-  async function updateProfile(updates: { name?: string; avatar_url?: string }) {
+  async function updateProfile(updates: { name?: string; avatar_url?: string | null }) {
     if (!user.value) return { error: new Error('Not authenticated') }
 
     const { data, error } = await supabase
