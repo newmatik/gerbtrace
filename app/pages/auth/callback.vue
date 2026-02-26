@@ -8,6 +8,13 @@ const queryParam = (v: unknown): string | undefined => {
   return typeof v === 'string' ? v : undefined
 }
 
+const isExternalProviderEmailError = (message: string | null | undefined) =>
+  !!message && message.toLowerCase().includes('error getting user email from external provider')
+
+async function clearLocalAuthSession() {
+  await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined)
+}
+
 // Hotfix note: this relies on Supabase's current error wording and should move
 // to a stable SDK error code/signal when one is available.
 const isPkceVerifierMissingError = (message: string | undefined): boolean =>
@@ -32,7 +39,12 @@ onMounted(async () => {
     const urlError = hashParams.get('error_description') || hashParams.get('error')
     if (urlError) {
       const errorCode = hashParams.get('error_code') || ''
-      errorMessage.value = decodeURIComponent(urlError.replace(/\+/g, ' '))
+      const decodedError = decodeURIComponent(urlError.replace(/\+/g, ' '))
+      errorMessage.value = decodedError
+      if (isExternalProviderEmailError(decodedError)) {
+        await clearLocalAuthSession()
+        errorHint.value = 'Microsoft sign-in did not return a usable verified email. Retry sign-in and verify Azure email claims plus email scope.'
+      }
       if (errorCode === 'otp_expired') {
         errorHint.value = 'The link has expired. Please request a new one.'
       }
@@ -45,6 +57,10 @@ onMounted(async () => {
       const { error } = await supabase.auth.exchangeCodeForSession(code)
       if (error && !isPkceVerifierMissingError(error.message)) {
         errorMessage.value = error.message
+        if (isExternalProviderEmailError(error.message)) {
+          await clearLocalAuthSession()
+          errorHint.value = 'Microsoft sign-in did not return a usable verified email. Retry sign-in and verify Azure email claims plus email scope.'
+        }
         if (error.message?.toLowerCase().includes('expired')) {
           errorHint.value = 'The link has expired. Please request a new one.'
         }
