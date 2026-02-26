@@ -69,8 +69,13 @@ alter table public.user_consents enable row level security;
 do $$
 begin
   if not exists (
-    select 1 from pg_policies
-    where tablename = 'user_consents' and policyname = 'Users can read own consents'
+    select 1
+    from pg_policy p
+    join pg_class c on c.oid = p.polrelid
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public'
+      and c.relname = 'user_consents'
+      and p.polname = 'Users can read own consents'
   ) then
     create policy "Users can read own consents"
       on public.user_consents for select
@@ -81,8 +86,13 @@ end $$;
 do $$
 begin
   if not exists (
-    select 1 from pg_policies
-    where tablename = 'user_consents' and policyname = 'Users can insert own consents'
+    select 1
+    from pg_policy p
+    join pg_class c on c.oid = p.polrelid
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public'
+      and c.relname = 'user_consents'
+      and p.polname = 'Users can insert own consents'
   ) then
     create policy "Users can insert own consents"
       on public.user_consents for insert
