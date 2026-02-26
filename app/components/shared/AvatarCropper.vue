@@ -91,5 +91,14 @@ function loadImage(file: File): Promise<HTMLImageElement> {
   })
 }
 
+function reset() {
+  pickedFile.value = null
+  cleanupPreview()
+  zoom.value = 1
+  if (fileInputRef.value) fileInputRef.value.value = ''
+}
+
+defineExpose({ reset })
+
 onBeforeUnmount(() => cleanupPreview())
 </script>

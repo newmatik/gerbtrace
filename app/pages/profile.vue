@@ -44,7 +44,7 @@
 
           <div class="mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-800 space-y-3">
             <h3 class="text-xs font-semibold text-neutral-500">Change Avatar</h3>
-            <AvatarCropper @cropped="handleAvatarCropped" @picked="avatarMessage = ''" />
+            <AvatarCropper ref="avatarCropperRef" @cropped="handleAvatarCropped" @picked="avatarMessage = ''" />
             <p v-if="avatarMessage" class="text-xs" :class="avatarError ? 'text-red-500' : 'text-green-600 dark:text-green-400'">
               {{ avatarMessage }}
             </p>
@@ -243,6 +243,7 @@ const nameValue = ref('')
 const nameSaving = ref(false)
 const nameMessage = ref('')
 const nameError = ref(false)
+const avatarCropperRef = ref<{ reset: () => void } | null>(null)
 const avatarSaving = ref(false)
 const avatarRemoving = ref(false)
 const avatarMessage = ref('')
@@ -342,6 +343,7 @@ async function handleAvatarUpload() {
     }
     avatarMessage.value = 'Avatar updated.'
     croppedAvatarBlob.value = null
+    avatarCropperRef.value?.reset()
   } finally {
     avatarSaving.value = false
   }
@@ -360,6 +362,7 @@ async function handleRemoveAvatar() {
     }
     avatarMessage.value = 'Avatar removed.'
     croppedAvatarBlob.value = null
+    avatarCropperRef.value?.reset()
   } finally {
     avatarRemoving.value = false
   }
