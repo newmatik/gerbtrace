@@ -110,6 +110,8 @@ onMounted(async () => {
 })
 
 async function handlePostAuth(session: any) {
+  const redirect = queryParam(route.query.redirect) || '/dashboard'
+  const safeRedirect = redirect.startsWith('/') ? redirect : '/dashboard'
   const invitationToken = queryParam(route.query.invitation)
   const spaceInvitationToken = queryParam(route.query.space_invitation)
 
@@ -163,9 +165,9 @@ async function handlePostAuth(session: any) {
 
   const hasConsent = await hasAcceptedCurrentTerms()
   if (!hasConsent) {
-    router.replace('/auth/consent')
+    router.replace({ path: '/auth/consent', query: { redirect: safeRedirect } })
   } else {
-    router.replace('/dashboard')
+    router.replace(safeRedirect)
   }
 }
 </script>

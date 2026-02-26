@@ -61,14 +61,18 @@ serve(async (req: Request) => {
 
           if (sub?.stripe_subscription_id && STRIPE_SECRET_KEY) {
             try {
-              await fetch(`https://api.stripe.com/v1/subscriptions/${sub.stripe_subscription_id}`, {
+              const stripeRes = await fetch(`https://api.stripe.com/v1/subscriptions/${sub.stripe_subscription_id}`, {
                 method: 'DELETE',
                 headers: { Authorization: `Bearer ${STRIPE_SECRET_KEY}` },
               })
+              if (!stripeRes.ok) {
+                throw new Error(`Stripe cancellation failed: ${await stripeRes.text()}`)
+              }
               await supabase.from('subscriptions').update({ status: 'canceled' }).eq('stripe_subscription_id', sub.stripe_subscription_id)
               await supabase.from('teams').update({ plan: 'free' }).eq('id', team_id)
             } catch (e) {
               console.error('Failed to cancel Stripe subscription:', e)
+              return json({ error: 'Failed to cancel active subscription. Please contact support.' }, 500)
             }
           }
         }
@@ -92,10 +96,15 @@ serve(async (req: Request) => {
         if (projects) {
           for (const { id: projectId } of projects) {
             const prefix = `${team_id}/${projectId}/`
-            const { data: files } = await supabase.storage.from('gerber-files').list(prefix, { limit: 1000 })
-            if (files?.length) {
+            let offset = 0
+            const batchSize = 1000
+            while (true) {
+              const { data: files } = await supabase.storage.from('gerber-files').list(prefix, { limit: batchSize, offset })
+              if (!files?.length) break
               const paths = files.map(f => `${prefix}${f.name}`)
               await supabase.storage.from('gerber-files').remove(paths)
+              if (files.length < batchSize) break
+              offset += batchSize
             }
           }
         }

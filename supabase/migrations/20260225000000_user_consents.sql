@@ -41,6 +41,20 @@ begin
   if not exists (
     select 1
     from pg_constraint
+    where conname = 'user_consents_user_type_version_key'
+      and conrelid = 'public.user_consents'::regclass
+  ) then
+    alter table public.user_consents
+      add constraint user_consents_user_type_version_key
+      unique (user_id, consent_type, version);
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
     where conname = 'user_consents_type_check'
       and conrelid = 'public.user_consents'::regclass
   ) then

@@ -4,14 +4,21 @@ type ConsentType = keyof typeof CURRENT_LEGAL_VERSIONS
 
 const consentChecked = ref(false)
 const consentResult = ref<boolean | null>(null)
+const consentUserId = ref<string | null>(null)
 
 export function useConsent() {
   const supabase = useSupabase()
   const { user } = useAuth()
 
   async function hasAcceptedCurrentTerms(): Promise<boolean> {
-    if (consentResult.value !== null) return consentResult.value
     if (!user.value) return false
+
+    if (consentUserId.value !== user.value.id) {
+      consentUserId.value = user.value.id
+      consentResult.value = null
+      consentChecked.value = false
+    }
+    if (consentResult.value !== null) return consentResult.value
 
     const { data, error } = await supabase
       .from('user_consents')
@@ -64,6 +71,7 @@ export function useConsent() {
         },
       })
       consentResult.value = null
+      consentChecked.value = false
       return { error: null }
     }
     catch (error: any) {
@@ -74,6 +82,7 @@ export function useConsent() {
   function clearConsentCache() {
     consentResult.value = null
     consentChecked.value = false
+    consentUserId.value = null
   }
 
   return {

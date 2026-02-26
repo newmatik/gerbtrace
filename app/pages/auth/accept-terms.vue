@@ -94,7 +94,7 @@ onMounted(async () => {
     router.replace(redirect)
     return
   }
-  isReConsent.value = true
+  isReConsent.value = route.query.reconsent === '1'
 })
 
 async function handleAccept() {

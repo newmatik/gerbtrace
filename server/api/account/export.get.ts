@@ -42,6 +42,18 @@ export default defineEventHandler(async (event) => {
       .order('created_at', { ascending: true }),
   ])
 
+  const queryErrors = [
+    profileRes.error,
+    teamsRes.error,
+    projectsRes.error,
+    consentsRes.error,
+    usageRes.error,
+  ].filter(Boolean)
+  if (queryErrors.length > 0) {
+    console.error('[account/export] query failure', queryErrors)
+    throw createError({ statusCode: 500, statusMessage: 'Failed to generate account export' })
+  }
+
   const exportData = {
     exported_at: new Date().toISOString(),
     user: {

@@ -506,6 +506,8 @@ async function handleExportData() {
     a.download = res.headers.get('Content-Disposition')?.split('filename=')[1]?.replace(/"/g, '') || 'gerbtrace-export.json'
     a.click()
     URL.revokeObjectURL(url)
+  } catch {
+    exportError.value = 'Export failed. Please try again.'
   } finally {
     exportLoading.value = false
   }
