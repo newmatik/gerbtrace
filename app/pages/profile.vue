@@ -23,7 +23,7 @@
               </div>
               <div class="space-y-2">
                 <UFormField label="Display name">
-                  <UInput v-model="nameValue" placeholder="Your name" />
+                  <UInput v-model="nameValue" placeholder="Your name" class="w-full" />
                 </UFormField>
                 <p v-if="nameMessage" class="text-xs" :class="nameError ? 'text-red-500' : 'text-green-600 dark:text-green-400'">
                   {{ nameMessage }}
@@ -71,6 +71,7 @@
                 v-model="currentPassword"
                 type="password"
                 placeholder="Enter your current password"
+                class="w-full"
                 required
                 autofocus
               />
@@ -80,6 +81,7 @@
                 v-model="newPassword"
                 type="password"
                 placeholder="At least 8 characters"
+                class="w-full"
                 required
               />
             </UFormField>
@@ -88,6 +90,7 @@
                 v-model="confirmPassword"
                 type="password"
                 placeholder="Repeat your new password"
+                class="w-full"
                 required
               />
             </UFormField>
@@ -96,7 +99,7 @@
             </p>
             <p v-if="passwordError" class="text-xs text-red-500">{{ passwordError }}</p>
             <p v-if="passwordSuccess" class="text-xs text-green-600 dark:text-green-400">{{ passwordSuccess }}</p>
-            <div class="flex justify-end pt-2">
+            <div class="pt-2">
               <UButton
                 type="submit"
                 size="sm"

@@ -1,8 +1,11 @@
 <template>
   <div class="space-y-3">
-    <UFormField label="Avatar image">
-      <UInput type="file" accept="image/*" @change="onPickFile" />
-    </UFormField>
+    <div class="flex items-center gap-3">
+      <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-upload" @click="fileInputRef?.click()">
+        {{ pickedFile ? pickedFile.name : 'Choose image' }}
+      </UButton>
+      <input ref="fileInputRef" type="file" accept="image/*" class="hidden" @change="onPickFile">
+    </div>
 
     <template v-if="previewUrl">
       <div class="space-y-2">
@@ -30,6 +33,7 @@ const emit = defineEmits<{
   picked: []
 }>()
 
+const fileInputRef = ref<HTMLInputElement | null>(null)
 const pickedFile = ref<File | null>(null)
 const previewUrl = ref<string | null>(null)
 const zoom = ref(1)
