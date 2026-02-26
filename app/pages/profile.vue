@@ -36,7 +36,7 @@
 
             <div class="flex flex-col items-center gap-2">
               <UserAvatar :src="profile?.avatar_url" :name="profile?.name ?? profile?.email ?? user?.email ?? ''" class="size-20 text-lg bg-primary/10 text-primary font-semibold border border-neutral-200 dark:border-neutral-800" />
-              <UButton v-if="profile?.avatar_url" size="xs" color="error" variant="soft" :loading="avatarRemoving" @click="handleRemoveAvatar">
+              <UButton v-if="profile?.avatar_url" size="xs" color="error" variant="soft" :loading="avatarRemoving" :disabled="avatarSaving" @click="handleRemoveAvatar">
                 Remove
               </UButton>
             </div>
@@ -48,7 +48,7 @@
             <p v-if="avatarMessage" class="text-xs" :class="avatarError ? 'text-red-500' : 'text-green-600 dark:text-green-400'">
               {{ avatarMessage }}
             </p>
-            <UButton size="sm" :loading="avatarSaving" :disabled="!croppedAvatarBlob" @click="handleAvatarUpload">
+            <UButton size="sm" :loading="avatarSaving" :disabled="!croppedAvatarBlob || avatarRemoving" @click="handleAvatarUpload">
               Upload Avatar
             </UButton>
           </div>
@@ -330,7 +330,7 @@ function handleAvatarCropped(blob: Blob) {
 }
 
 async function handleAvatarUpload() {
-  if (!croppedAvatarBlob.value) return
+  if (!croppedAvatarBlob.value || avatarRemoving.value) return
   avatarSaving.value = true
   avatarMessage.value = ''
   avatarError.value = false
@@ -350,6 +350,7 @@ async function handleAvatarUpload() {
 }
 
 async function handleRemoveAvatar() {
+  if (avatarSaving.value) return
   avatarRemoving.value = true
   avatarMessage.value = ''
   avatarError.value = false

@@ -630,16 +630,18 @@ function getUserInitials(label: string) {
   return parts.slice(0, 2).map(part => part[0]?.toUpperCase() ?? '').join('') || '?'
 }
 
+const userDisplayCache = computed(() => {
+  const map = new Map<string, { label: string; avatarUrl: string | null; initials: string }>()
+  for (const m of members.value) {
+    const label = m.profile?.name?.trim() || m.profile?.email || 'Former member'
+    map.set(m.user_id, { label, avatarUrl: m.profile?.avatar_url ?? null, initials: getUserInitials(label) })
+  }
+  return map
+})
+
 function getUserDisplay(userId: string | null): { label: string; avatarUrl: string | null; initials: string } {
   if (!userId) return { label: 'Unknown user', avatarUrl: null, initials: '?' }
-  const member = members.value.find(m => m.user_id === userId)
-  const label = member?.profile?.name?.trim() || member?.profile?.email || 'Former member'
-  const avatarUrl = member?.profile?.avatar_url ?? null
-  return {
-    label,
-    avatarUrl,
-    initials: getUserInitials(label),
-  }
+  return userDisplayCache.value.get(userId) ?? { label: 'Former member', avatarUrl: null, initials: '?' }
 }
 
 function getApproverLabel(approverUserId: string | null) {
