@@ -116,7 +116,7 @@ useHead({
         <ul>
           <li>Use the Service for any unlawful purpose.</li>
           <li>Attempt to gain unauthorized access to other users' accounts or data.</li>
-          <li>Reverse-engineer, decompile, or scrape the Service beyond what applicable open-source licenses allow.</li>
+          <li>Reverse-engineer, decompile, or scrape the Service beyond what the applicable license allows.</li>
           <li>Resell access to the Service without our written permission.</li>
           <li>Upload malicious files or attempt to compromise the Service's infrastructure.</li>
           <li>Use the Service in a manner that imposes an unreasonable load on our infrastructure.</li>
@@ -150,8 +150,8 @@ useHead({
         <h2>10. Intellectual Property</h2>
         <p>
           The Gerbtrace name, logo, and branding are the property of Newmatik GmbH. The Gerbtrace source code is
-          available under the Business Source License 1.1 (BUSL-1.1) as described in the
-          <a href="https://github.com/newmatik/gerbtrace" target="_blank" rel="noopener">project repository</a>.
+          available under the Business Source License 1.1 (BUSL-1.1) as described on our
+          <NuxtLink to="/licensing">Licensing</NuxtLink> page.
           The Service itself (hosted platform, APIs, and proprietary features) remains our property.
         </p>
 

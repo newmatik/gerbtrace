@@ -2,6 +2,7 @@ const PUBLIC_PREFIXES = [
   '/',
   '/auth',
   '/docs',
+  '/licensing',
   '/pricing',
   '/privacy',
   '/terms',
