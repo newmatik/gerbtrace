@@ -13,7 +13,7 @@
         <div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-gray-500">
           <NuxtLink to="/" class="hover:text-gray-900 dark:hover:text-white transition-colors">Home</NuxtLink>
           <NuxtLink to="/pricing" class="hover:text-gray-900 dark:hover:text-white transition-colors">Pricing</NuxtLink>
-          <button class="hover:text-gray-900 dark:hover:text-white transition-colors" @click="openDocs()">Docs</button>
+          <NuxtLink to="/docs" class="hover:text-gray-900 dark:hover:text-white transition-colors">Docs</NuxtLink>
           <a v-if="release?.releasePage" :href="release.releasePage" target="_blank" rel="noopener noreferrer" class="hover:text-gray-900 dark:hover:text-white transition-colors">Releases</a>
           <template v-if="!isTauri && release">
             <a v-if="release.macosUrl" :href="release.macosUrl" class="hover:text-gray-900 dark:hover:text-white transition-colors">macOS</a>
@@ -32,7 +32,6 @@
 <script setup lang="ts">
 import { isTauri as coreIsTauri } from '@tauri-apps/api/core'
 
-const { openDocs } = useDocsLink()
 const { release } = useLatestRelease()
 const isTauri = import.meta.client && coreIsTauri()
 const appVersion = useRuntimeConfig().public.appVersion as string
