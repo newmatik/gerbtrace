@@ -74,15 +74,7 @@
                 class="flex items-center gap-3 p-3 rounded-lg border border-neutral-200 dark:border-neutral-800"
                 :class="{ 'opacity-50': member.status === 'disabled' }"
               >
-            <img
-              v-if="member.profile?.avatar_url"
-              :src="member.profile.avatar_url"
-              alt="Avatar"
-              class="size-8 rounded-full object-cover shrink-0"
-            >
-            <div v-else class="size-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary shrink-0">
-                  {{ initials(member.profile?.name ?? member.profile?.email) }}
-                </div>
+            <UserAvatar :src="member.profile?.avatar_url" :name="member.profile?.name ?? member.profile?.email ?? ''" class="size-8 text-sm bg-primary/10 text-primary font-semibold" />
                 <div class="flex-1 min-w-0">
                   <div class="text-sm font-medium truncate">
                     {{ member.profile?.name ?? 'Unknown' }}
@@ -445,10 +437,6 @@ async function handleConfirmRemove() {
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────
-function initials(name: string | null | undefined): string {
-  if (!name) return '?'
-  return name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2)
-}
 
 function roleBadgeColor(role: string) {
   switch (role) {

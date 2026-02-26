@@ -2,7 +2,7 @@
   <div class="min-h-screen flex flex-col">
     <AppHeader />
     <main class="flex-1 px-4 py-10">
-      <div class="w-full max-w-2xl mx-auto">
+      <div class="w-full max-w-3xl mx-auto">
         <NuxtLink to="/dashboard" class="text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 flex items-center gap-1 mb-4">
           <UIcon name="i-lucide-arrow-left" class="text-sm" />
           Back to projects
@@ -15,15 +15,15 @@
 
         <div class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-5">
           <h2 class="text-sm font-semibold mb-3">Account</h2>
-          <div class="grid gap-4 md:grid-cols-[1fr_auto]">
+          <div class="grid gap-6 md:grid-cols-[1fr_auto]">
             <div class="space-y-3 text-sm">
               <div>
                 <div class="text-neutral-500 dark:text-neutral-400">Email</div>
                 <div class="font-medium break-all">{{ profile?.email ?? user?.email ?? '—' }}</div>
               </div>
-              <div class="space-y-2">
+              <div class="space-y-2 max-w-md">
                 <UFormField label="Display name">
-                  <UInput v-model="nameValue" placeholder="Your name" />
+                  <UInput v-model="nameValue" placeholder="Your name" class="w-full" />
                 </UFormField>
                 <p v-if="nameMessage" class="text-xs" :class="nameError ? 'text-red-500' : 'text-green-600 dark:text-green-400'">
                   {{ nameMessage }}
@@ -33,51 +33,45 @@
                 </UButton>
               </div>
             </div>
-            <div class="space-y-2">
-              <div class="text-xs text-neutral-500">Avatar</div>
-              <img
-                v-if="profile?.avatar_url"
-                :src="profile.avatar_url"
-                alt="Avatar"
-                class="size-20 rounded-full object-cover border border-neutral-200 dark:border-neutral-800"
-              >
-              <div v-else class="size-20 rounded-full bg-primary/10 flex items-center justify-center text-lg font-semibold text-primary">
-                {{ userInitials }}
-              </div>
+
+            <div class="flex flex-col items-center gap-2">
+              <UserAvatar :src="profile?.avatar_url" :name="profile?.name ?? profile?.email ?? user?.email ?? ''" class="size-20 text-lg bg-primary/10 text-primary font-semibold border border-neutral-200 dark:border-neutral-800" />
+              <UButton v-if="profile?.avatar_url" size="xs" color="error" variant="soft" :loading="avatarRemoving" :disabled="avatarSaving" @click="handleRemoveAvatar">
+                Remove
+              </UButton>
             </div>
           </div>
-        </div>
 
-        <div class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-5 mt-4 space-y-3">
-          <h2 class="text-sm font-semibold">Avatar</h2>
-          <AvatarCropper @cropped="handleAvatarCropped" />
-          <p v-if="avatarMessage" class="text-xs" :class="avatarError ? 'text-red-500' : 'text-green-600 dark:text-green-400'">
-            {{ avatarMessage }}
-          </p>
-          <UButton size="sm" :loading="avatarSaving" :disabled="!croppedAvatarBlob" @click="handleAvatarUpload">
-            Upload Avatar
-          </UButton>
-        </div>
+          <div class="mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-800 space-y-3">
+            <h3 class="text-xs font-semibold text-neutral-500">Change Avatar</h3>
+            <AvatarCropper ref="avatarCropperRef" @cropped="handleAvatarCropped" @picked="avatarMessage = ''" />
+            <p v-if="avatarMessage" class="text-xs" :class="avatarError ? 'text-red-500' : 'text-green-600 dark:text-green-400'">
+              {{ avatarMessage }}
+            </p>
+            <UButton size="sm" :loading="avatarSaving" :disabled="!croppedAvatarBlob || avatarRemoving" @click="handleAvatarUpload">
+              Upload Avatar
+            </UButton>
+          </div>
 
-        <div class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-5 mt-4 space-y-3">
-          <h2 class="text-sm font-semibold">Spaces You Can Access</h2>
-          <div v-if="spacesLoading" class="text-sm text-neutral-500">Loading spaces...</div>
-          <div v-else-if="spaces.length === 0" class="text-sm text-neutral-500">No accessible spaces.</div>
-          <div v-else class="flex flex-wrap gap-2">
-            <UBadge v-for="space in spaces" :key="space.id" color="primary" variant="subtle">
-              {{ space.name }}
-            </UBadge>
+          <div v-if="!spacesLoading && spaces.length > 0" class="mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-800">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-xs font-medium text-neutral-500">Spaces</span>
+              <UBadge v-for="space in spaces" :key="space.id" color="primary" variant="subtle">
+                {{ space.name }}
+              </UBadge>
+            </div>
           </div>
         </div>
 
         <div class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-5 mt-4">
           <h2 class="text-sm font-semibold mb-3">Change Password</h2>
-          <form class="space-y-3" @submit.prevent="handleUpdatePassword">
+          <form class="space-y-3 max-w-md" @submit.prevent="handleUpdatePassword">
             <UFormField label="Current password">
               <UInput
                 v-model="currentPassword"
                 type="password"
                 placeholder="Enter your current password"
+                class="w-full"
                 required
                 autofocus
               />
@@ -87,6 +81,7 @@
                 v-model="newPassword"
                 type="password"
                 placeholder="At least 8 characters"
+                class="w-full"
                 required
               />
             </UFormField>
@@ -95,6 +90,7 @@
                 v-model="confirmPassword"
                 type="password"
                 placeholder="Repeat your new password"
+                class="w-full"
                 required
               />
             </UFormField>
@@ -103,7 +99,7 @@
             </p>
             <p v-if="passwordError" class="text-xs text-red-500">{{ passwordError }}</p>
             <p v-if="passwordSuccess" class="text-xs text-green-600 dark:text-green-400">{{ passwordSuccess }}</p>
-            <div class="flex justify-end pt-2">
+            <div class="pt-2">
               <UButton
                 type="submit"
                 size="sm"
@@ -306,15 +302,13 @@ const nameValue = ref('')
 const nameSaving = ref(false)
 const nameMessage = ref('')
 const nameError = ref(false)
+const avatarCropperRef = ref<{ reset: () => void } | null>(null)
 const avatarSaving = ref(false)
+const avatarRemoving = ref(false)
 const avatarMessage = ref('')
 const avatarError = ref(false)
 const croppedAvatarBlob = ref<Blob | null>(null)
 
-const userInitials = computed(() => {
-  const name = profile.value?.name ?? profile.value?.email ?? user.value?.email ?? ''
-  return name.split(' ').map(part => part[0]).join('').toUpperCase().slice(0, 2) || '?'
-})
 
 const canSaveName = computed(() => {
   const next = nameValue.value.trim()
@@ -396,12 +390,12 @@ async function handleUpdateName() {
 
 function handleAvatarCropped(blob: Blob) {
   croppedAvatarBlob.value = blob
-  avatarMessage.value = ''
+  avatarMessage.value = 'Image ready. Click "Upload Avatar" to save.'
   avatarError.value = false
 }
 
 async function handleAvatarUpload() {
-  if (!croppedAvatarBlob.value) return
+  if (!croppedAvatarBlob.value || avatarSaving.value || avatarRemoving.value) return
   avatarSaving.value = true
   avatarMessage.value = ''
   avatarError.value = false
@@ -414,8 +408,29 @@ async function handleAvatarUpload() {
     }
     avatarMessage.value = 'Avatar updated.'
     croppedAvatarBlob.value = null
+    avatarCropperRef.value?.reset()
   } finally {
     avatarSaving.value = false
+  }
+}
+
+async function handleRemoveAvatar() {
+  if (avatarRemoving.value || avatarSaving.value) return
+  avatarRemoving.value = true
+  avatarMessage.value = ''
+  avatarError.value = false
+  try {
+    const { error } = await updateProfile({ avatar_url: null })
+    if (error) {
+      avatarMessage.value = error.message
+      avatarError.value = true
+      return
+    }
+    avatarMessage.value = 'Avatar removed.'
+    croppedAvatarBlob.value = null
+    avatarCropperRef.value?.reset()
+  } finally {
+    avatarRemoving.value = false
   }
 }
 

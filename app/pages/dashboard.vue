@@ -155,18 +155,7 @@
                           <span class="shrink-0">Created</span>
                           <UBadge color="neutral" variant="outline" size="xs" class="min-w-0 max-w-[11rem]">
                             <span class="inline-flex items-center gap-1 min-w-0">
-                              <img
-                                v-if="getUserDisplay(project.created_by).avatarUrl"
-                                :src="getUserDisplay(project.created_by).avatarUrl!"
-                                alt=""
-                                class="w-3 h-3 rounded-full object-cover shrink-0"
-                              >
-                              <span
-                                v-else
-                                class="w-3 h-3 rounded-full border border-gray-300 dark:border-gray-600 flex items-center justify-center text-[8px] leading-none shrink-0"
-                              >
-                                {{ getUserDisplay(project.created_by).initials }}
-                              </span>
+                              <UserAvatar :src="getUserDisplay(project.created_by).avatarUrl" :name="getUserDisplay(project.created_by).label" class="w-3 h-3 text-[8px] leading-none border border-gray-300 dark:border-gray-600" />
                               <span class="truncate">{{ getUserDisplay(project.created_by).label }}</span>
                             </span>
                           </UBadge>
@@ -176,18 +165,7 @@
                           <span class="shrink-0">Updated</span>
                           <UBadge color="neutral" variant="outline" size="xs" class="min-w-0 max-w-[11rem]">
                             <span class="inline-flex items-center gap-1 min-w-0">
-                              <img
-                                v-if="getUserDisplay(project.updated_by).avatarUrl"
-                                :src="getUserDisplay(project.updated_by).avatarUrl!"
-                                alt=""
-                                class="w-3 h-3 rounded-full object-cover shrink-0"
-                              >
-                              <span
-                                v-else
-                                class="w-3 h-3 rounded-full border border-gray-300 dark:border-gray-600 flex items-center justify-center text-[8px] leading-none shrink-0"
-                              >
-                                {{ getUserDisplay(project.updated_by).initials }}
-                              </span>
+                              <UserAvatar :src="getUserDisplay(project.updated_by).avatarUrl" :name="getUserDisplay(project.updated_by).label" class="w-3 h-3 text-[8px] leading-none border border-gray-300 dark:border-gray-600" />
                               <span class="truncate">{{ getUserDisplay(project.updated_by).label }}</span>
                             </span>
                           </UBadge>
@@ -652,16 +630,18 @@ function getUserInitials(label: string) {
   return parts.slice(0, 2).map(part => part[0]?.toUpperCase() ?? '').join('') || '?'
 }
 
+const userDisplayCache = computed(() => {
+  const map = new Map<string, { label: string; avatarUrl: string | null; initials: string }>()
+  for (const m of members.value) {
+    const label = m.profile?.name?.trim() || m.profile?.email || 'Former member'
+    map.set(m.user_id, { label, avatarUrl: m.profile?.avatar_url ?? null, initials: getUserInitials(label) })
+  }
+  return map
+})
+
 function getUserDisplay(userId: string | null): { label: string; avatarUrl: string | null; initials: string } {
   if (!userId) return { label: 'Unknown user', avatarUrl: null, initials: '?' }
-  const member = members.value.find(m => m.user_id === userId)
-  const label = member?.profile?.name?.trim() || member?.profile?.email || 'Former member'
-  const avatarUrl = member?.profile?.avatar_url ?? null
-  return {
-    label,
-    avatarUrl,
-    initials: getUserInitials(label),
-  }
+  return userDisplayCache.value.get(userId) ?? { label: 'Former member', avatarUrl: null, initials: '?' }
 }
 
 function getApproverLabel(approverUserId: string | null) {
