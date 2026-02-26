@@ -25,9 +25,11 @@ export function useConsent() {
       .select('consent_type, version')
       .eq('user_id', user.value.id)
       .in('consent_type', ['terms', 'privacy'])
+      .eq('accepted', true)
 
     if (error || !data) {
       consentResult.value = false
+      consentChecked.value = true
       return false
     }
 

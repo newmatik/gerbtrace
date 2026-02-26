@@ -70,6 +70,9 @@ export default defineEventHandler(async (event) => {
 
   const date = new Date().toISOString().split('T')[0]
   setHeader(event, 'Content-Type', 'application/json')
+  setHeader(event, 'Cache-Control', 'no-store, private, max-age=0')
+  setHeader(event, 'Pragma', 'no-cache')
+  setHeader(event, 'Expires', '0')
   setHeader(event, 'Content-Disposition', `attachment; filename="gerbtrace-export-${date}.json"`)
   return exportData
 })

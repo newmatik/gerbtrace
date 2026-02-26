@@ -269,7 +269,7 @@
                 <UButton
                   color="error"
                   :loading="accountDeleting"
-                  :disabled="deleteConfirmEmail !== (profile?.email ?? user?.email ?? '')"
+                  :disabled="!canConfirmDelete"
                   @click="handleDeleteAccount"
                 >
                   Permanently Delete
@@ -325,6 +325,12 @@ const canSaveName = computed(() => {
 const passwordMismatch = computed(() =>
   confirmPassword.value.length > 0 && newPassword.value !== confirmPassword.value,
 )
+
+const expectedDeleteEmail = computed(() => (profile.value?.email ?? user.value?.email ?? '').trim().toLowerCase())
+const canConfirmDelete = computed(() => {
+  const provided = deleteConfirmEmail.value.trim().toLowerCase()
+  return expectedDeleteEmail.value.length > 0 && provided === expectedDeleteEmail.value
+})
 
 async function handleUpdatePassword() {
   if (!currentPassword.value) {

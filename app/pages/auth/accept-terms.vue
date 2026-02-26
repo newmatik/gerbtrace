@@ -89,9 +89,10 @@ watch(isAuthenticated, (authed) => {
 
 onMounted(async () => {
   const alreadyAccepted = await hasAcceptedCurrentTerms()
+  const redirect = (route.query.redirect as string) || '/dashboard'
+  const safeRedirect = /^\/(?!\/)/.test(redirect) ? redirect : '/dashboard'
   if (alreadyAccepted) {
-    const redirect = (route.query.redirect as string) || '/dashboard'
-    router.replace(redirect)
+    router.replace(safeRedirect)
     return
   }
   isReConsent.value = route.query.reconsent === '1'
@@ -109,7 +110,8 @@ async function handleAccept() {
       return
     }
     const redirect = (route.query.redirect as string) || '/dashboard'
-    router.replace(redirect)
+    const safeRedirect = /^\/(?!\/)/.test(redirect) ? redirect : '/dashboard'
+    router.replace(safeRedirect)
   } finally {
     submitting.value = false
   }

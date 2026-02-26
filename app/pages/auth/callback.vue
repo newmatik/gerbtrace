@@ -111,7 +111,7 @@ onMounted(async () => {
 
 async function handlePostAuth(session: any) {
   const redirect = queryParam(route.query.redirect) || '/dashboard'
-  const safeRedirect = redirect.startsWith('/') ? redirect : '/dashboard'
+  const safeRedirect = /^\/(?!\/)/.test(redirect) ? redirect : '/dashboard'
   const invitationToken = queryParam(route.query.invitation)
   const spaceInvitationToken = queryParam(route.query.space_invitation)
 
