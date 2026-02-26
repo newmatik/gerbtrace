@@ -220,6 +220,64 @@
             Set up two-factor authentication
           </UButton>
         </div>
+
+        <!-- Data Export -->
+        <div class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-5 mt-4">
+          <h2 class="text-sm font-semibold mb-2">Your Data</h2>
+          <p class="text-xs text-neutral-500 dark:text-neutral-400 mb-3">
+            Download a copy of your personal data in JSON format (Art. 20 GDPR).
+          </p>
+          <UButton size="sm" variant="outline" :loading="exportLoading" @click="handleExportData">
+            Export My Data
+          </UButton>
+          <p v-if="exportError" class="mt-2 text-xs text-red-500">{{ exportError }}</p>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="rounded-lg border border-red-300 dark:border-red-800 p-5 mt-4">
+          <h2 class="text-sm font-semibold text-red-600 dark:text-red-400 mb-2">Danger Zone</h2>
+          <p class="text-xs text-neutral-500 dark:text-neutral-400 mb-3">
+            Permanently delete your account, all your personal data, and remove yourself from all teams. This action cannot be undone.
+          </p>
+          <UButton size="sm" color="error" variant="soft" @click="showDeleteModal = true">
+            Delete My Account
+          </UButton>
+        </div>
+
+        <!-- Delete Account Confirmation Modal -->
+        <UModal v-model:open="showDeleteModal">
+          <template #content>
+            <div class="p-6">
+              <h3 class="text-lg font-semibold text-red-600 dark:text-red-400 mb-3">Delete Account</h3>
+              <p class="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
+                This will permanently delete your account and all associated data. Active subscriptions will be cancelled. This cannot be undone.
+              </p>
+              <p class="text-sm font-medium mb-2">
+                Type your email address to confirm:
+              </p>
+              <UInput
+                v-model="deleteConfirmEmail"
+                type="email"
+                :placeholder="profile?.email ?? user?.email ?? ''"
+                class="mb-4"
+              />
+              <p v-if="deleteError" class="text-xs text-red-500 mb-3">{{ deleteError }}</p>
+              <div class="flex justify-end gap-2">
+                <UButton variant="ghost" color="neutral" @click="showDeleteModal = false; deleteConfirmEmail = ''">
+                  Cancel
+                </UButton>
+                <UButton
+                  color="error"
+                  :loading="accountDeleting"
+                  :disabled="deleteConfirmEmail !== (profile?.email ?? user?.email ?? '')"
+                  @click="handleDeleteAccount"
+                >
+                  Permanently Delete
+                </UButton>
+              </div>
+            </div>
+          </template>
+        </UModal>
       </div>
     </main>
   </div>
@@ -232,6 +290,7 @@ const { isAuthenticated, user, signIn, updatePassword } = useAuth()
 const { profile, updateProfile } = useCurrentUser()
 const { uploadAvatar } = useAvatarUpload()
 const { spaces, spacesLoading, fetchSpaces } = useSpaces()
+const { deleteAccount, deleting: accountDeleting, error: deleteAccountError } = useAccountDeletion()
 
 watch(isAuthenticated, (authed) => {
   if (!authed) router.replace('/auth/login')
@@ -422,6 +481,50 @@ async function handleMfaUnenroll() {
     mfaSuccess.value = 'Two-factor authentication disabled.'
     await loadMfaFactors()
   } finally { mfaUnenrollLoading.value = false }
+}
+
+// Data export
+const exportLoading = ref(false)
+const exportError = ref('')
+
+async function handleExportData() {
+  exportLoading.value = true
+  exportError.value = ''
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) { exportError.value = 'Session expired.'; return }
+
+    const res = await fetch('/api/account/export', {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+    if (!res.ok) { exportError.value = 'Export failed. Please try again.'; return }
+
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = res.headers.get('Content-Disposition')?.split('filename=')[1]?.replace(/"/g, '') || 'gerbtrace-export.json'
+    a.click()
+    URL.revokeObjectURL(url)
+  } finally {
+    exportLoading.value = false
+  }
+}
+
+// Account deletion
+const showDeleteModal = ref(false)
+const deleteConfirmEmail = ref('')
+const deleteError = ref('')
+
+async function handleDeleteAccount() {
+  deleteError.value = ''
+  const success = await deleteAccount()
+  if (success) {
+    showDeleteModal.value = false
+    router.replace('/')
+  } else {
+    deleteError.value = deleteAccountError.value || 'Failed to delete account.'
+  }
 }
 
 watch(() => profile.value?.name, (next) => {
