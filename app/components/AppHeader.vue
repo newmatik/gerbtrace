@@ -169,7 +169,7 @@
       variant="ghost"
       icon="i-lucide-book-open-text"
       title="Docs / Help"
-      @click="openDocumentation"
+      to="/docs"
     />
 
     <!-- Settings / Packages dropdown -->
@@ -251,8 +251,6 @@ const emit = defineEmits<{ openPerformanceMonitor: [] }>()
 const router = useRouter()
 const colorMode = useColorMode()
 const isDark = computed(() => colorMode.value === 'dark')
-const { openDocs } = useDocsLink()
-
 const featuresMenuOpen = ref(false)
 
 const featureMenuItems = [
@@ -403,10 +401,6 @@ watch(isDark, (dark) => syncWindowTheme(dark), { immediate: true })
 
 function toggleColorMode() {
   colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
-}
-
-function openDocumentation() {
-  void openDocs()
 }
 
 function openInbox() {
