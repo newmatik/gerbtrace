@@ -8,7 +8,7 @@ import {
 } from '../lib/renderer/dxf-exporter'
 
 async function loadFixture(name: string): Promise<string> {
-  const path = new URL(`../.local/cadexport/${name}`, import.meta.url)
+  const path = new URL(`./fixtures/cadexport/${name}`, import.meta.url)
   return readFile(path, 'utf8')
 }
 
@@ -39,7 +39,7 @@ describe('DXF exporter defaults', () => {
 })
 
 describe('DXF R2000 structure hardening', () => {
-  it('uses R12-safe document structure in r2000 compatibility mode', async () => {
+  it('emits AC1015 structure when variant is r2000', async () => {
     const tree = await fixtureToImageTree('22_SILKSCREEN_BOTTOM.art')
     const dxf = exportImageTreeToDxf(tree, {
       variant: 'r2000',
@@ -47,20 +47,18 @@ describe('DXF R2000 structure hardening', () => {
     })
 
     expect(dxf).toContain('$ACADVER')
-    expect(dxf).toContain('AC1009')
-    expect(dxf).not.toContain('AC1015')
-    expect(dxf).not.toContain('SECTION\n2\nOBJECTS')
+    expect(dxf).toContain('AC1015')
+    expect(dxf).toContain('SECTION\n2\nOBJECTS')
   })
 
-  it('emits classic POLYLINE entities in r2000 compatibility mode', async () => {
+  it('emits LWPOLYLINE entities in r2000 mode', async () => {
     const tree = await fixtureToImageTree('21_SOLDERMASK_BOTTOM.art')
     const dxf = exportImageTreeToDxf(tree, {
       variant: 'r2000',
       layerName: 'SOLDERMASK_BOTTOM',
     })
 
-    expect(dxf).toContain('\nPOLYLINE\n')
-    expect(dxf).not.toContain('\nLWPOLYLINE\n')
+    expect(dxf).toContain('\nLWPOLYLINE\n')
   })
 
   it('produces non-empty exports for both problematic fixtures', async () => {

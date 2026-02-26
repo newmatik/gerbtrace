@@ -27,10 +27,9 @@ type DxfVertex = {
 
 export function exportImageTreeToDxf(tree: ImageTree, options: DxfExportOptions = {}): string {
   const variant = options.variant ?? 'r12'
-  const effectiveVariant: DxfVariant = variant === 'r2000' ? 'r12' : variant
   const layerName = sanitizeLayerName(options.layerName ?? 'GERBER')
-  const entities = entitiesForTree(tree, layerName, effectiveVariant)
-  return buildDxfDocument(tree.units, effectiveVariant, [layerName], entities)
+  const entities = entitiesForTree(tree, layerName, variant)
+  return buildDxfDocument(tree.units, variant, [layerName], entities)
 }
 
 export function exportImageTreesToCombinedDxf(
@@ -38,7 +37,6 @@ export function exportImageTreesToCombinedDxf(
   options: { variant?: DxfVariant } = {},
 ): string {
   const variant = options.variant ?? 'r12'
-  const effectiveVariant: DxfVariant = variant === 'r2000' ? 'r12' : variant
   const usedLayerNames = new Set<string>()
   const entities: string[] = []
   let units: 'mm' | 'in' = 'mm'
@@ -47,10 +45,10 @@ export function exportImageTreesToCombinedDxf(
     const layerName = sanitizeLayerName(input.name)
     usedLayerNames.add(layerName)
     units = input.tree.units
-    entities.push(...entitiesForTree(input.tree, layerName, effectiveVariant))
+    entities.push(...entitiesForTree(input.tree, layerName, variant))
   }
 
-  return buildDxfDocument(units, effectiveVariant, Array.from(usedLayerNames), entities)
+  return buildDxfDocument(units, variant, Array.from(usedLayerNames), entities)
 }
 
 // ---------------------------------------------------------------------------
@@ -303,12 +301,8 @@ function buildDxfDocument(
   layerNames: string[],
   entityStrings: string[],
 ): string {
-  // Temporary hard-compatibility mode:
-  // Autodesk tooling accepts the R12 structure reliably for all tested files,
-  // while strict AC1015 parsing still rejects some generated outputs.
-  // Keep the "r2000" option in UI, but emit the proven-safe document format.
   if (variant === 'r2000') {
-    return buildR12Document(units, layerNames, entityStrings)
+    return buildR2000Document(units, layerNames, entityStrings)
   }
   return buildR12Document(units, layerNames, entityStrings)
 }
