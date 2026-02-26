@@ -330,7 +330,7 @@ function handleAvatarCropped(blob: Blob) {
 }
 
 async function handleAvatarUpload() {
-  if (!croppedAvatarBlob.value || avatarRemoving.value) return
+  if (!croppedAvatarBlob.value || avatarSaving.value || avatarRemoving.value) return
   avatarSaving.value = true
   avatarMessage.value = ''
   avatarError.value = false
@@ -350,7 +350,7 @@ async function handleAvatarUpload() {
 }
 
 async function handleRemoveAvatar() {
-  if (avatarSaving.value) return
+  if (avatarRemoving.value || avatarSaving.value) return
   avatarRemoving.value = true
   avatarMessage.value = ''
   avatarError.value = false
