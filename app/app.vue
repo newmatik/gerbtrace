@@ -4,6 +4,8 @@
       <NuxtPage />
     </NuxtLayout>
 
+    <CookieConsentBanner />
+
     <!-- Global About modal – opened via native "Check for Updates…" menu -->
     <AppAboutModal v-if="isTauri" v-model:open="aboutOpen" />
 

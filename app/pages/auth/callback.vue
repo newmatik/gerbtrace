@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { CURRENT_LEGAL_VERSIONS, isConsentVersionAtLeast } from '~/utils/legalVersions'
+
 const router = useRouter()
 const route = useRoute()
 const supabase = useSupabase()
+const { recordConsent, hasAcceptedCurrentTerms } = useConsent()
 
 const queryParam = (v: unknown): string | undefined => {
   if (Array.isArray(v)) return typeof v[0] === 'string' ? v[0] : undefined
@@ -122,6 +125,8 @@ onMounted(async () => {
 })
 
 async function handlePostAuth(session: any) {
+  const redirect = queryParam(route.query.redirect) || '/dashboard'
+  const safeRedirect = /^\/(?!\/)/.test(redirect) ? redirect : '/dashboard'
   const invitationToken = queryParam(route.query.invitation)
   const spaceInvitationToken = queryParam(route.query.space_invitation)
 
@@ -151,12 +156,34 @@ async function handlePostAuth(session: any) {
     }
   }
 
+  const pendingConsent = sessionStorage.getItem('gerbtrace-pending-consent')
+  if (pendingConsent) {
+    sessionStorage.removeItem('gerbtrace-pending-consent')
+    await recordConsent(['terms', 'privacy'])
+  } else {
+    const termsVersion = String(session.user.user_metadata?.consent_terms_version ?? '')
+    const privacyVersion = String(session.user.user_metadata?.consent_privacy_version ?? '')
+    if (
+      isConsentVersionAtLeast(termsVersion, CURRENT_LEGAL_VERSIONS.terms)
+      && isConsentVersionAtLeast(privacyVersion, CURRENT_LEGAL_VERSIONS.privacy)
+    ) {
+      // Backfill metadata-based consent into user_consents; server upsert keeps this idempotent.
+      await recordConsent(['terms', 'privacy'])
+    }
+  }
+
   const isInvite = !!session.user?.invited_at && !session.user?.email_confirmed_at
 
   if (isInvite) {
     router.replace('/auth/set-password')
+    return
+  }
+
+  const hasConsent = await hasAcceptedCurrentTerms()
+  if (!hasConsent) {
+    router.replace({ path: '/auth/consent', query: { redirect: safeRedirect } })
   } else {
-    router.replace('/dashboard')
+    router.replace(safeRedirect)
   }
 }
 </script>

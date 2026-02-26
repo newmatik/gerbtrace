@@ -47,7 +47,12 @@ provide('docs-search-files', searchFiles)
       <UContainer>
         <div class="flex items-center justify-between py-4 text-sm text-neutral-500 dark:text-neutral-400">
           <span><a href="https://www.newmatik.com" target="_blank" rel="noopener noreferrer" class="hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors">Gerbtrace by Newmatik</a></span>
-          <span>&copy; {{ new Date().getFullYear() }} Newmatik GmbH</span>
+          <div class="flex items-center gap-4">
+            <NuxtLink to="/privacy" class="hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors">Privacy</NuxtLink>
+            <NuxtLink to="/terms" class="hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors">Terms</NuxtLink>
+            <NuxtLink to="/imprint" class="hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors">Imprint</NuxtLink>
+            <span>&copy; {{ new Date().getFullYear() }} Newmatik GmbH</span>
+          </div>
         </div>
       </UContainer>
     </footer>

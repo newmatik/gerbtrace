@@ -124,12 +124,23 @@
               </UFormField>
             </div>
 
+            <label class="flex items-start gap-3 mt-5 cursor-pointer">
+              <UCheckbox v-model="termsAccepted" class="mt-0.5" />
+              <span class="text-sm text-neutral-600 dark:text-neutral-400">
+                I agree to the
+                <NuxtLink to="/terms" target="_blank" class="text-primary hover:underline">Terms of Service</NuxtLink>
+                and the
+                <NuxtLink to="/privacy" target="_blank" class="text-primary hover:underline">Privacy Policy</NuxtLink>.
+              </span>
+            </label>
+
             <UButton
               type="submit"
               block
               size="lg"
-              class="mt-5"
+              class="mt-4"
               :loading="submitLoading"
+              :disabled="!termsAccepted"
             >
               Create Account
             </UButton>
@@ -160,6 +171,7 @@ const { signUp, signInWithGitHub, signInWithMicrosoft, resendSignUpConfirmation,
 const name = ref('')
 const email = ref('')
 const password = ref('')
+const termsAccepted = ref(false)
 const submitLoading = ref(false)
 const githubLoading = ref(false)
 const microsoftLoading = ref(false)
@@ -185,13 +197,12 @@ async function handleSubmit() {
     if (error) {
       errorMessage.value = error.message
     } else {
-      // Check if email confirmation is required (no session returned = needs confirmation)
+      sessionStorage.setItem('gerbtrace-pending-consent', '1')
       if (!data.session) {
         registeredEmail.value = email.value
         confirmationPending.value = true
         startResendCooldown()
       }
-      // If a session is returned, autoconfirm is on and the watcher will redirect
     }
   } finally {
     submitLoading.value = false

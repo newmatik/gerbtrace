@@ -23,6 +23,8 @@
           <NuxtLink to="/licensing" class="hover:text-gray-900 dark:hover:text-white transition-colors">Licensing</NuxtLink>
           <NuxtLink to="/privacy" class="hover:text-gray-900 dark:hover:text-white transition-colors">Privacy</NuxtLink>
           <NuxtLink to="/terms" class="hover:text-gray-900 dark:hover:text-white transition-colors">Terms</NuxtLink>
+          <NuxtLink to="/imprint" class="hover:text-gray-900 dark:hover:text-white transition-colors">Imprint</NuxtLink>
+          <NuxtLink to="/dpa" class="hover:text-gray-900 dark:hover:text-white transition-colors">DPA</NuxtLink>
         </div>
       </div>
     </div>

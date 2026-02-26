@@ -76,8 +76,8 @@ async function main() {
     redistribution: 'allowed',
     attribution: {
       upstreamOwner: 'Newmatik GmbH',
-      upstreamRepo: 'gerber-compare',
-      upstreamUrl: 'https://github.com/newmatik/gerber-compare',
+      upstreamRepo: 'gerbtrace',
+      upstreamUrl: 'https://github.com/newmatik/gerbtrace',
       notice: 'Canonical built-in package set maintained by Newmatik.',
     },
     source: {

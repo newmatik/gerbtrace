@@ -18,6 +18,23 @@ export default defineNuxtConfig({
   ssr: false,
   devtools: { enabled: process.env.NODE_ENV !== 'production' },
 
+  routeRules: {
+    '/dashboard':    { ssr: false },
+    '/team/**':      { ssr: false },
+    '/viewer/**':    { ssr: false },
+    '/compare/**':   { ssr: false },
+    '/admin/**':     { ssr: false },
+    '/auth/**':      { ssr: false },
+    '/profile':      { ssr: false },
+    '/packages':     { ssr: false },
+    '/inbox':        { ssr: false },
+    '/licensing':    { ssr: false },
+    '/de/datenschutz': { ssr: false },
+    '/de/agb': { ssr: false },
+    '/de/impressum': { ssr: false },
+    '/de/avv': { ssr: false },
+    '/de/auth/consent': { ssr: false },
+  },
   runtimeConfig: {
     supabaseServiceRoleKey: process.env.SUPABASE_SECRET_KEY || '',
     public: {
