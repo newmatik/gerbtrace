@@ -140,7 +140,7 @@ const variantOptions: Array<{ label: string; value: DxfExportVariant }> = [
 ]
 
 const selectedMode = ref<DxfExportMode>('combined')
-const selectedVariant = ref<DxfExportVariant>('r2000')
+const selectedVariant = ref<DxfExportVariant>('r12')
 const selectedLayerSet = ref<Set<number>>(new Set())
 
 const selectedCount = computed(() => selectedLayerSet.value.size)
@@ -166,7 +166,7 @@ function toggleLayer(index: number, checked: boolean) {
 watch(open, (isOpen) => {
   if (!isOpen) return
   selectedMode.value = 'combined'
-  selectedVariant.value = 'r2000'
+  selectedVariant.value = 'r12'
   selectAll()
 })
 
