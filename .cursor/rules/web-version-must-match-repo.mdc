@@ -12,13 +12,13 @@ Gerbtrace displays its web version from `nuxt.config.ts` (`runtimeConfig.public.
 - Update **both**:
   - `package.json` `version`
   - `nuxt.config.ts` `runtimeConfig.public.appVersion`
-- Ensure the Cloudflare Pages deploy ran for the commit containing the bump.
+- Ensure the Cloudflare Workers deploy/build ran for the commit containing the bump.
 
 ## If production shows an old version
 
 Do **not** assume the repo is wrong — first confirm what is deployed:
 
 - Fetch `https://www.gerbtrace.com/index.html` and read `window.__NUXT__.config.public.appVersion`.
-- If it's old, the Cloudflare Pages deployment contains an older build (or the edge cache is stale).
+- If it's old, the Cloudflare Workers deployment contains an older build (or the edge cache is stale).
   - Purge the cache in the Cloudflare dashboard under **Caching > Configuration > Purge Everything**.
-  - If still old after a purge, redeploy via Cloudflare Pages (trigger a new build from the latest `main` commit).
+  - If still old after a purge, redeploy via Cloudflare Workers (trigger a new build from the latest `main` commit).

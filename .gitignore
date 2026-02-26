@@ -47,3 +47,8 @@ supabase/.temp/
 
 .local
 public/mycenter-packages/
+
+# Track Cursor rules
+!.cursor/
+!.cursor/rules/
+!.cursor/rules/**
