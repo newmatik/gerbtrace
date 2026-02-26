@@ -35,15 +35,7 @@
             </div>
             <div class="space-y-2">
               <div class="text-xs text-neutral-500">Avatar</div>
-              <img
-                v-if="profile?.avatar_url"
-                :src="profile.avatar_url"
-                alt="Avatar"
-                class="size-20 rounded-full object-cover border border-neutral-200 dark:border-neutral-800"
-              >
-              <div v-else class="size-20 rounded-full bg-primary/10 flex items-center justify-center text-lg font-semibold text-primary">
-                {{ userInitials }}
-              </div>
+              <UserAvatar :src="profile?.avatar_url" :name="profile?.name ?? profile?.email ?? user?.email ?? ''" class="size-20 text-lg bg-primary/10 text-primary font-semibold border border-neutral-200 dark:border-neutral-800" />
             </div>
           </div>
         </div>
@@ -252,10 +244,6 @@ const avatarMessage = ref('')
 const avatarError = ref(false)
 const croppedAvatarBlob = ref<Blob | null>(null)
 
-const userInitials = computed(() => {
-  const name = profile.value?.name ?? profile.value?.email ?? user.value?.email ?? ''
-  return name.split(' ').map(part => part[0]).join('').toUpperCase().slice(0, 2) || '?'
-})
 
 const canSaveName = computed(() => {
   const next = nameValue.value.trim()

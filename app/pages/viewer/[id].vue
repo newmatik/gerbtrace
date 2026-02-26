@@ -41,21 +41,15 @@
       <!-- Team project: Presence avatars -->
       <template v-if="isTeamProject && presentUsers.length > 0">
         <div class="flex items-center -space-x-1">
-          <div
+          <UserAvatar
             v-for="u in presentUsers.slice(0, 5)"
             :key="u.userId"
-            class="size-5 rounded-full border-2 border-white dark:border-neutral-900 flex items-center justify-center text-[8px] font-bold"
+            :src="u.avatarUrl"
+            :name="u.name"
+            class="size-5 border-2 border-white dark:border-neutral-900 text-[8px] font-bold"
             :class="u.mode === 'editing' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' : 'bg-neutral-100 text-neutral-500 dark:bg-neutral-700 dark:text-neutral-300'"
             :title="`${u.name} (${u.role}, ${u.mode})`"
-          >
-            <img
-              v-if="u.avatarUrl"
-              :src="u.avatarUrl"
-              alt=""
-              class="size-full rounded-full object-cover"
-            >
-            <span v-else>{{ u.name.split(' ').map((p: string) => p[0]).join('').toUpperCase().slice(0, 2) }}</span>
-          </div>
+          />
           <div
             v-if="presentUsers.length > 5"
             class="size-5 rounded-full border-2 border-white dark:border-neutral-900 bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center text-[8px] font-medium text-neutral-500 dark:text-neutral-400"

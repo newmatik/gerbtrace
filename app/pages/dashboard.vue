@@ -155,18 +155,7 @@
                           <span class="shrink-0">Created</span>
                           <UBadge color="neutral" variant="outline" size="xs" class="min-w-0 max-w-[11rem]">
                             <span class="inline-flex items-center gap-1 min-w-0">
-                              <img
-                                v-if="getUserDisplay(project.created_by).avatarUrl"
-                                :src="getUserDisplay(project.created_by).avatarUrl!"
-                                alt=""
-                                class="w-3 h-3 rounded-full object-cover shrink-0"
-                              >
-                              <span
-                                v-else
-                                class="w-3 h-3 rounded-full border border-gray-300 dark:border-gray-600 flex items-center justify-center text-[8px] leading-none shrink-0"
-                              >
-                                {{ getUserDisplay(project.created_by).initials }}
-                              </span>
+                              <UserAvatar :src="getUserDisplay(project.created_by).avatarUrl" :name="getUserDisplay(project.created_by).label" class="w-3 h-3 text-[8px] leading-none border border-gray-300 dark:border-gray-600" />
                               <span class="truncate">{{ getUserDisplay(project.created_by).label }}</span>
                             </span>
                           </UBadge>
@@ -176,18 +165,7 @@
                           <span class="shrink-0">Updated</span>
                           <UBadge color="neutral" variant="outline" size="xs" class="min-w-0 max-w-[11rem]">
                             <span class="inline-flex items-center gap-1 min-w-0">
-                              <img
-                                v-if="getUserDisplay(project.updated_by).avatarUrl"
-                                :src="getUserDisplay(project.updated_by).avatarUrl!"
-                                alt=""
-                                class="w-3 h-3 rounded-full object-cover shrink-0"
-                              >
-                              <span
-                                v-else
-                                class="w-3 h-3 rounded-full border border-gray-300 dark:border-gray-600 flex items-center justify-center text-[8px] leading-none shrink-0"
-                              >
-                                {{ getUserDisplay(project.updated_by).initials }}
-                              </span>
+                              <UserAvatar :src="getUserDisplay(project.updated_by).avatarUrl" :name="getUserDisplay(project.updated_by).label" class="w-3 h-3 text-[8px] leading-none border border-gray-300 dark:border-gray-600" />
                               <span class="truncate">{{ getUserDisplay(project.updated_by).label }}</span>
                             </span>
                           </UBadge>

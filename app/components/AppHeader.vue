@@ -86,15 +86,7 @@
             variant="ghost"
             class="rounded-full"
           >
-            <img
-              v-if="profile?.avatar_url"
-              :src="profile.avatar_url"
-              alt="User avatar"
-              class="size-6 rounded-full object-cover"
-            >
-            <div v-else class="size-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
-              {{ userInitials }}
-            </div>
+            <UserAvatar :src="profile?.avatar_url" :name="profile?.name ?? profile?.email ?? ''" class="size-6 text-xs bg-primary/10 text-primary font-bold" />
           </UButton>
         </UDropdownMenu>
 
@@ -212,15 +204,7 @@
         variant="ghost"
         class="rounded-full"
       >
-        <img
-          v-if="profile?.avatar_url"
-          :src="profile.avatar_url"
-          alt="User avatar"
-          class="size-5 rounded-full object-cover"
-        >
-        <div v-else class="size-5 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
-          {{ userInitials }}
-        </div>
+        <UserAvatar :src="profile?.avatar_url" :name="profile?.name ?? profile?.email ?? ''" class="size-5 text-[10px] bg-primary/10 text-primary font-bold" />
       </UButton>
     </UDropdownMenu>
     <UButton
@@ -293,10 +277,6 @@ const { unreadCount } = useNotifications()
 const { teams, currentTeam, currentTeamRole, hasTeam, switchTeam } = useTeam()
 const { isPlatformAdmin } = useAdminGuard()
 
-const userInitials = computed(() => {
-  const name = profile.value?.name ?? profile.value?.email ?? ''
-  return name.split(' ').map((p: string) => p[0]).join('').toUpperCase().slice(0, 2) || '?'
-})
 
 // Team selector dropdown items
 const teamSelectorItems = computed(() => {
