@@ -21,7 +21,7 @@
                 <div class="text-neutral-500 dark:text-neutral-400">Email</div>
                 <div class="font-medium break-all">{{ profile?.email ?? user?.email ?? '—' }}</div>
               </div>
-              <div class="space-y-2">
+              <div class="space-y-2 max-w-md">
                 <UFormField label="Display name">
                   <UInput v-model="nameValue" placeholder="Your name" class="w-full" />
                 </UFormField>
@@ -65,7 +65,7 @@
 
         <div class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-5 mt-4">
           <h2 class="text-sm font-semibold mb-3">Change Password</h2>
-          <form class="space-y-3" @submit.prevent="handleUpdatePassword">
+          <form class="space-y-3 max-w-md" @submit.prevent="handleUpdatePassword">
             <UFormField label="Current password">
               <UInput
                 v-model="currentPassword"
