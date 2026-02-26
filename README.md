@@ -141,6 +141,14 @@ cd gerbtrace
 pnpm install
 ```
 
+If `pnpm` is not found, install [Corepack](https://nodejs.org/api/corepack.html) and enable it, then run `pnpm install` again:
+
+```bash
+npm install --global corepack@latest
+corepack enable pnpm
+pnpm install
+```
+
 ### Web development
 
 ```bash
